@@ -1,0 +1,18 @@
+name = "harptabs-ai"
+main = "src/index.ts"
+compatibility_date = "2025-01-01"
+
+# Gemini chặn một số vùng (vd. Hồng Kông) — chạy Worker cạnh máy chủ Google ở Mỹ
+[placement]
+region = "gcp:us-central1"
+
+[vars]
+DEFAULT_MODEL = "gemini-3.5-flash-lite"
+ALLOWED_MODELS = "gemini-3.5-flash-lite,gemini-3.1-flash-lite"
+DAILY_LIMIT = "30"
+ALLOWED_ORIGINS = "https://harptabs.pages.dev,http://localhost:5173,http://localhost:4173"
+
+# Giới hạn lượt/ngày theo IP
+[[kv_namespaces]]
+binding = "RATE"
+id = "f0e8f88f16ad4781a922e5a3e65cd6c0"

@@ -1,0 +1,147 @@
+import { useLiveQuery } from 'dexie-react-hooks';
+import { useMemo, useRef, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { db, fold, importBackup } from '../lib/db';
+import { HARP_KEYS } from '../lib/harp';
+import { Song } from '../lib/types';
+import { Icon } from '../components/Icon';
+import { KeyPlate } from '../components/KeySelect';
+import { useAppState } from '../state';
+import { PATTERNS } from '../audio/patterns';
+
+type Sort = 'recent' | 'title' | 'practiced';
+
+const DIFF = ['', 'Dễ', 'Vừa', 'Khó'];
+
+function styleLabel(s: Song['style']) {
+  if (s === 'none') return 'Không beat';
+  if (s === 'metronome') return 'Đếm nhịp';
+  return PATTERNS[s]?.label ?? s;
+}
+
+export default function Library() {
+  const songs = useLiveQuery(() => db.songs.toArray(), []);
+  const [q, setQ] = useState('');
+  const [fav, setFav] = useState(false);
+  const [key, setKey] = useState<string>('');
+  const [diff, setDiff] = useState<number>(0);
+  const [sort, setSort] = useState<Sort>('recent');
+  const fileRef = useRef<HTMLInputElement>(null);
+  const nav = useNavigate();
+  const { toast } = useAppState();
+
+  const list = useMemo(() => {
+    if (!songs) return [];
+    const fq = fold(q.trim());
+    return songs
+      .filter((s) => !fav || s.favorite)
+      .filter((s) => !key || s.harpKey === key)
+      .filter((s) => !diff || s.difficulty === diff)
+      .filter((s) => !fq || fold(`${s.title} ${s.artist ?? ''} ${s.tags.join(' ')}`).includes(fq))
+      .sort((a, b) => {
+        if (sort === 'title') return a.title.localeCompare(b.title, 'vi');
+        if (sort === 'practiced') return (b.lastPracticedAt ?? 0) - (a.lastPracticedAt ?? 0);
+        return b.updatedAt - a.updatedAt;
+      });
+  }, [songs, q, fav, key, diff, sort]);
+
+  const onImport = async (f: File | undefined) => {
+    if (!f) return;
+    try {
+      const r = await importBackup(JSON.parse(await f.text()));
+      toast(`Đã nhập ${r.added} bài mới, cập nhật ${r.updated} bài`);
+    } catch (e) {
+      toast((e as Error).message || 'File không hợp lệ');
+    } finally {
+      if (fileRef.current) fileRef.current.value = '';
+    }
+  };
+
+  return (
+    <div className="page">
+      <header className="page-head">
+        <div>
+          <h1>Bài hát</h1>
+          <p className="muted">{songs ? `${songs.length} bài trong máy` : 'Đang tải…'}</p>
+        </div>
+        <div className="head-actions">
+          <button type="button" className="btn btn-ghost" onClick={() => fileRef.current?.click()}>
+            <Icon name="upload" size={18} /> Nhập file
+          </button>
+          <button type="button" className="btn btn-primary" onClick={() => nav('/new')}>
+            <Icon name="plus" size={18} /> Thêm bài
+          </button>
+          <input ref={fileRef} type="file" accept=".json,application/json" hidden onChange={(e) => onImport(e.target.files?.[0])} />
+        </div>
+      </header>
+
+      <div className="filters">
+        <label className="search">
+          <Icon name="search" size={18} />
+          <span className="sr-only">Tìm bài</span>
+          <input type="search" placeholder="Tìm theo tên, tác giả, thẻ" value={q} onChange={(e) => setQ(e.target.value)} />
+        </label>
+        <div className="filter-row">
+          <button type="button" className={`chip${fav ? ' on' : ''}`} aria-pressed={fav} onClick={() => setFav(!fav)}>
+            <Icon name="star" size={15} filled={fav} /> Yêu thích
+          </button>
+          <select aria-label="Lọc theo kèn" value={key} onChange={(e) => setKey(e.target.value)} className="chip-select">
+            <option value="">Mọi kèn</option>
+            {HARP_KEYS.map((k) => <option key={k} value={k}>Kèn {k}</option>)}
+          </select>
+          <select aria-label="Lọc theo độ khó" value={diff} onChange={(e) => setDiff(Number(e.target.value))} className="chip-select">
+            <option value={0}>Mọi độ khó</option>
+            <option value={1}>Dễ</option>
+            <option value={2}>Vừa</option>
+            <option value={3}>Khó</option>
+          </select>
+          <select aria-label="Sắp xếp" value={sort} onChange={(e) => setSort(e.target.value as Sort)} className="chip-select">
+            <option value="recent">Mới sửa</option>
+            <option value="practiced">Mới tập</option>
+            <option value="title">Tên A–Z</option>
+          </select>
+        </div>
+      </div>
+
+      {songs && list.length === 0 && (
+        <div className="empty">
+          {songs.length === 0 ? (
+            <>
+              <p>Thư viện đang trống. Thêm bài đầu tiên bằng tay, hoặc chụp khuông nhạc để AI chuyển thành tab.</p>
+              <div className="row gap">
+                <Link to="/new" className="btn btn-primary">Thêm bài</Link>
+                <Link to="/ai" className="btn btn-ghost">Nhập bằng AI</Link>
+              </div>
+            </>
+          ) : (
+            <p>Không có bài nào khớp bộ lọc.</p>
+          )}
+        </div>
+      )}
+
+      <ul className="song-list">
+        {list.map((s) => (
+          <li key={s.id}>
+            <Link to={`/song/${s.id}`} className="song-row">
+              <KeyPlate k={s.harpKey} />
+              <span className="sr-body">
+                <span className="sr-title">
+                  {s.title || 'Chưa đặt tên'}
+                  {s.favorite && <Icon name="star" size={14} filled label="Yêu thích" />}
+                </span>
+                {s.artist && <span className="sr-artist">{s.artist}</span>}
+                <span className="sr-meta">
+                  <span className={`diff d${s.difficulty}`}>{DIFF[s.difficulty]}</span>
+                  <span>{s.timeSig}</span>
+                  <span>{s.bpm} bpm</span>
+                  <span>{styleLabel(s.style)}</span>
+                  {s.position && s.position > 1 && <span>Vị trí {s.position}</span>}
+                </span>
+              </span>
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}

@@ -1,0 +1,139 @@
+import { Fragment, ReactNode, useMemo } from 'react';
+import { Link, useParams } from 'react-router-dom';
+import { Block, LESSON_GROUPS, LESSONS } from '../data/lessons';
+import { HARP_KEYS, positionKey } from '../lib/harp';
+import { flatten, parseTab } from '../lib/tabText';
+import { beatsPerBar } from '../lib/types';
+import { HarpDiagram } from '../components/HarpDiagram';
+import { TabView } from '../components/TabView';
+import { MiniPlay } from '../components/PlayerBar';
+import { usePlayer } from '../components/usePlayer';
+import { Icon } from '../components/Icon';
+import { useAppState } from '../state';
+
+/** **đậm** và `mã` trong nội dung bài học */
+function rich(text: string): ReactNode {
+  const parts = text.split(/(\*\*[^*]+\*\*|`[^`]+`)/g);
+  return parts.map((p, i) => {
+    if (p.startsWith('**') && p.endsWith('**')) return <strong key={i}>{p.slice(2, -2)}</strong>;
+    if (p.startsWith('`') && p.endsWith('`')) return <code key={i}>{p.slice(1, -1)}</code>;
+    return <Fragment key={i}>{p}</Fragment>;
+  });
+}
+
+export default function Learn() {
+  return (
+    <div className="page page-learn">
+      <header className="page-head">
+        <div>
+          <h1>Học thổi harmonica</h1>
+          <p className="muted">Kỹ thuật, thủ thuật và mẹo, kèm bài tập nghe được. Tất cả dùng offline.</p>
+        </div>
+      </header>
+      {LESSON_GROUPS.map((g) => (
+        <section key={g} className="lesson-group">
+          <h2>{g}</h2>
+          <ol className="lesson-list">
+            {LESSONS.filter((l) => l.group === g).map((l) => (
+              <li key={l.id}>
+                <Link to={`/learn/${l.id}`} className="lesson-row">
+                  <span className="lr-title">{l.title}</span>
+                  <span className="lr-sum">{l.summary}</span>
+                  <span className="lr-min">{l.minutes} phút</span>
+                </Link>
+              </li>
+            ))}
+          </ol>
+        </section>
+      ))}
+    </div>
+  );
+}
+
+function LessonTab({ b }: { b: Extract<Block, { t: 'tab' }> }) {
+  const { settings } = useAppState();
+  const key = b.harpKey ?? 'C';
+  const parsed = useMemo(() => parseTab(b.body, key), [b.body, key]);
+  const flat = useMemo(() => flatten(parsed), [parsed]);
+  const p = usePlayer(flat, {
+    bpm: b.bpm ?? 80, tempoScale: 1, beatsPerBar: beatsPerBar(b.timeSig ?? '4/4'), pickupBeats: 0,
+    style: b.style ?? 'metronome', melody: true, beat: true, click: false, countIn: true,
+  });
+  return (
+    <figure className="lesson-tab">
+      <figcaption className="row between center gap">
+        <span>{b.caption ?? 'Bài tập'} <span className="muted">(kèn {key}, {b.bpm ?? 80} bpm)</span></span>
+        <MiniPlay p={p} />
+      </figcaption>
+      <TabView parsed={parsed} flat={flat} active={p.active} size="s" showNames={settings.showNoteNames} nameStyle={settings.noteNames} />
+    </figure>
+  );
+}
+
+function PositionsTable() {
+  return (
+    <div className="table-wrap">
+      <table className="positions">
+        <thead>
+          <tr><th scope="col">Kèn</th><th scope="col">Vị trí 1</th><th scope="col">Vị trí 2</th><th scope="col">Vị trí 3</th></tr>
+        </thead>
+        <tbody>
+          {HARP_KEYS.map((k) => (
+            <tr key={k} className={k === 'C' ? 'hl' : ''}>
+              <th scope="row">{k}</th>
+              <td>{positionKey(k, 1)}</td>
+              <td>{positionKey(k, 2)}</td>
+              <td>{positionKey(k, 3)}m</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+export function LessonPage() {
+  const { lessonId } = useParams();
+  const { settings } = useAppState();
+  const idx = LESSONS.findIndex((l) => l.id === lessonId);
+  const lesson = LESSONS[idx];
+  if (!lesson) return <div className="page"><p>Không tìm thấy bài học.</p><Link to="/learn" className="btn btn-ghost">Về danh sách</Link></div>;
+  const next = LESSONS[idx + 1];
+  const prev = LESSONS[idx - 1];
+
+  return (
+    <article className="page page-lesson">
+      <header className="page-head">
+        <div className="row gap center">
+          <Link to="/learn" className="icon-btn" aria-label="Về danh sách bài học"><Icon name="back" /></Link>
+          <div>
+            <p className="muted small">{lesson.group}</p>
+            <h1>{lesson.title}</h1>
+          </div>
+        </div>
+      </header>
+      <p className="lead">{lesson.summary}</p>
+      <div className="prose">
+        {lesson.blocks.map((b, i) => {
+          switch (b.t) {
+            case 'p': return <p key={i}>{rich(b.text)}</p>;
+            case 'h': return <h2 key={i}>{b.text}</h2>;
+            case 'list': {
+              const L = b.ordered ? 'ol' : 'ul';
+              return <L key={i}>{b.items.map((it, j) => <li key={j}>{rich(it)}</li>)}</L>;
+            }
+            case 'tip': return <aside key={i} className="callout tip"><strong>Mẹo</strong>{rich(b.text)}</aside>;
+            case 'warn': return <aside key={i} className="callout warn"><strong>Lưu ý</strong>{rich(b.text)}</aside>;
+            case 'tab': return <LessonTab key={i} b={b} />;
+            case 'diagram': return <HarpDiagram key={i} harpKey={b.harpKey ?? 'C'} showAdvanced={b.advanced ?? true} nameStyle={settings.noteNames} />;
+            case 'positions': return <PositionsTable key={i} />;
+          }
+        })}
+      </div>
+      <nav className="lesson-nav" aria-label="Chuyển bài học">
+        {prev ? <Link to={`/learn/${prev.id}`} className="btn btn-ghost"><Icon name="back" size={16} /> {prev.title}</Link> : <span />}
+        {next && <Link to={`/learn/${next.id}`} className="btn btn-primary">Bài tiếp: {next.title}</Link>}
+      </nav>
+    </article>
+  );
+}
