@@ -37,5 +37,11 @@ jobs:
         run: npx tsc --noEmit
         working-directory: worker
       - name: Deploy Worker
-        run: npx wrangler deploy
+        run: |
+          set -o pipefail
+          npx wrangler deploy 2>&1 | tee deploy.log || {
+            # đưa lỗi lên Annotations để xem được mà không cần mở log
+            echo "::error title=wrangler deploy::$(grep -v '^\s*$' deploy.log | tail -n 15 | sed 's/%/%25/g' | tr '\n' '|' | sed 's/|/%0A/g')"
+            exit 1
+          }
         working-directory: worker
