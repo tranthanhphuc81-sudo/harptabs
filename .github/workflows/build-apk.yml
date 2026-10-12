@@ -61,7 +61,13 @@ jobs:
           BUBBLEWRAP_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           BUBBLEWRAP_KEY_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
         run: |
-          bubblewrap build
+          set -o pipefail
+          bubblewrap build 2>&1 | tee build.log || {
+            # đưa lỗi lên Annotations để xem được mà không cần mở log
+            echo "::error title=bubblewrap build::$(grep -v '^\s*$' build.log | grep -iE -B2 -A8 'error|fail|what went wrong|exception' | tail -n 40 | sed 's/%/%25/g' | tr '\n' '|' | sed 's/|/%0A/g')"
+            echo "::error title=bubblewrap build (cuối log)::$(grep -v '^\s*$' build.log | tail -n 20 | sed 's/%/%25/g' | tr '\n' '|' | sed 's/|/%0A/g')"
+            exit 1
+          }
           mv app-release-signed.apk "harptabs-$VERSION_NAME.apk"
 
       - uses: actions/upload-artifact@v4
