@@ -1,0 +1,41 @@
+name: Deploy Worker AI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'worker/**'
+      - 'shared/**'
+      - '.github/workflows/deploy-worker.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: worker-deploy
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_ACCOUNT_ID: a26c5a5c07ffa3054c4cefabbdffd75e
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            worker/package-lock.json
+      - run: npm ci
+      - run: npm ci
+        working-directory: worker
+      - name: Test Worker
+        run: npx vitest run worker
+      - name: Typecheck Worker
+        run: npx tsc --noEmit
+        working-directory: worker
+      - name: Deploy Worker
+        run: npx wrangler deploy
+        working-directory: worker
