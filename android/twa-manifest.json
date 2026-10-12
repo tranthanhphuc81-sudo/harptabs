@@ -25,7 +25,7 @@
   "appVersion": "1.0.0",
   "fallbackType": "customtabs",
   "enableSiteSettingsShortcut": true,
-  "minSdkVersion": 21,
+  "minSdkVersion": 24,
   "shortcuts": [],
   "features": {},
   "alphaDependencies": { "enabled": false },
