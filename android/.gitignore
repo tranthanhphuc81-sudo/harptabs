@@ -1,0 +1,4 @@
+# Dự án Android do Bubblewrap sinh ra khi build trên CI — chỉ giữ twa-manifest.json
+*
+!.gitignore
+!twa-manifest.json
