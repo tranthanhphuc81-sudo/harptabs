@@ -27,6 +27,7 @@ export default function AiImport() {
   const online = useOnline();
   const nav = useNavigate();
   const [mode, setMode] = useState<Mode>('image');
+  const [lastMode, setLastMode] = useState<Mode>('image'); // chế độ đã tạo ra kết quả đang hiện
   const [images, setImages] = useState<Img[]>([]);
   const [title, setTitle] = useState('');
   const [artist, setArtist] = useState('');
@@ -83,6 +84,7 @@ export default function AiImport() {
     try {
       const r = await transcribe(input, settings, ac.signal);
       setResp(r);
+      setLastMode(mode);
       await db.aiLog.add({ at: Date.now(), kind: mode, model: r.usage.model, inputTokens: r.usage.inputTokens, outputTokens: r.usage.outputTokens, costUsd: estimateCostUsd(r.usage) });
     } catch (e) {
       if ((e as Error).name !== 'AbortError') setError((e as Error).message || 'Có lỗi xảy ra');
@@ -106,13 +108,29 @@ export default function AiImport() {
       style: converted.style,
       body: converted.body,
       difficulty: converted.fit.stats.bends > 3 || converted.fit.stats.overblows ? 3 : converted.fit.stats.bends ? 2 : 1,
-      source: mode === 'image' ? 'ai-image' : 'ai-name',
+      source: lastMode === 'image' ? 'ai-image' : 'ai-name',
       tags: ['AI'],
-      notes: r.confidence < 0.6 ? 'AI chưa chắc chắn về giai điệu — nghe lại và sửa những chỗ sai.' : undefined,
+      notes: lastMode === 'image'
+        ? 'Quét từ ảnh — AI hay đọc sai cao độ. Nghe lại, so với bản nhạc và sửa những chỗ sai.'
+        : r.confidence < 0.6 ? 'AI chưa chắc chắn về giai điệu — nghe lại và sửa những chỗ sai.' : undefined,
     });
     await db.songs.put(song);
     toast('Đã lưu vào thư viện — kiểm tra lại rồi bấm Lưu bài');
     nav(`/song/${song.id}/edit`);
+  };
+
+  // AI quét ảnh hay bịa cao độ mà vẫn tự chấm 90–100% → không hiện con số đó cho chế độ ảnh
+  const fromImage = lastMode === 'image';
+  // AI hay chỉ trả về một đoạn ngắn đầu bài → báo cho người dùng biết
+  const SHORT_RESULT = 24;
+  const noteCount = converted?.fit.stats.notes ?? 0;
+  const tooShort = !!converted && noteCount < SHORT_RESULT;
+
+  const tryByName = () => {
+    if (resp?.result.title && !title) setTitle(resp.result.title);
+    if (resp?.result.artist && !artist) setArtist(resp.result.artist);
+    setResp(null);
+    setMode('name');
   };
 
   const canRun = online && configured && !busy && (mode === 'image' ? images.length > 0 : title.trim().length >= 2);
@@ -161,6 +179,7 @@ export default function AiImport() {
                   <button type="button" className="btn btn-primary" onClick={() => camRef.current?.click()}><Icon name="camera" size={18} /> Chụp ảnh</button>
                   <button type="button" className="btn btn-ghost" onClick={() => galRef.current?.click()}><Icon name="image" size={18} /> Chọn ảnh có sẵn</button>
                   <p className="muted small">Chụp thẳng, đủ sáng, thấy rõ khoá nhạc và dấu hoá. Tối đa {MAX_IMAGES} trang, theo thứ tự.</p>
+                  <p className="muted small"><strong>Đang thử nghiệm:</strong> AI thường đọc sai cao độ. Bài nổi tiếng thì có thể thử <button type="button" className="link-btn" onClick={() => setMode('name')}>Tên bài hát</button> (AI cũng có thể nhớ sai).</p>
                 </div>
               )}
               <input ref={camRef} type="file" accept="image/*" capture="environment" hidden onChange={(e) => addFiles(e.target.files)} />
@@ -234,20 +253,32 @@ export default function AiImport() {
                 {`, ${converted.timeSig}, ${converted.bpm} bpm`}
               </p>
             </div>
-            <div className="confidence" title="Độ tin cậy AI tự đánh giá">
-              <span>Độ tin cậy</span>
-              <meter min={0} max={1} low={0.4} high={0.75} optimum={1} value={resp.result.confidence} />
-              <strong>{Math.round(resp.result.confidence * 100)}%</strong>
-            </div>
+            {!fromImage && (
+              <div className="confidence" title="Độ tin cậy AI tự đánh giá">
+                <span>Độ tin cậy</span>
+                <meter min={0} max={1} low={0.4} high={0.75} optimum={1} value={resp.result.confidence} />
+                <strong>{Math.round(resp.result.confidence * 100)}%</strong>
+              </div>
+            )}
           </div>
           <p className="small">
             {converted.fit.stats.natural} nốt thường, {converted.fit.stats.bends} nốt bend
             {converted.fit.stats.unplayable > 0 && `, ${converted.fit.stats.unplayable} nốt ngoài tầm kèn (đã thành dấu nghỉ)`}
             {`. Lần này tốn khoảng ${vnd(estimateCostUsd(resp.usage))}.`}
           </p>
-          {(resp.result.warnings.length > 0 || converted.invalidPitches > 0 || resp.result.confidence < 0.4) && (
+          {fromImage && (
+            <div className="alert" role="note">
+              <strong>Kiểm tra kỹ trước khi tập.</strong> Đọc ảnh khuông nhạc đang thử nghiệm: AI thường đếm đủ số nốt nhưng đọc sai cao độ.
+              Bấm Nghe thử và so với bản nhạc, sửa những chỗ sai trong trang Sửa bài.
+              <div className="row gap wrap" style={{ marginTop: 8 }}>
+                <button type="button" className="btn btn-ghost" onClick={tryByName}><Icon name="search" size={18} /> Thử bằng tên bài</button>
+              </div>
+            </div>
+          )}
+          {(tooShort || resp.result.warnings.length > 0 || converted.invalidPitches > 0 || (!fromImage && resp.result.confidence < 0.4)) && (
             <ul className="warnings">
-              {resp.result.confidence < 0.4 && <li>AI không chắc về giai điệu bài này. Hãy nghe thử và sửa lại trước khi tập.</li>}
+              {tooShort && <li>AI chỉ trả về {noteCount} nốt — có thể mới là một đoạn ngắn, thiếu phần lớn bài. {fromImage ? 'Thử lại, hoặc chụp từng phần của bản nhạc.' : 'Có thể AI không biết rõ bài này.'}</li>}
+              {!fromImage && resp.result.confidence < 0.4 && <li>AI không chắc về giai điệu bài này. Hãy nghe thử và sửa lại trước khi tập.</li>}
               {converted.invalidPitches > 0 && <li>{converted.invalidPitches} nốt AI ghi sai định dạng đã được bỏ qua.</li>}
               {resp.result.warnings.map((w, i) => <li key={i}>{w}</li>)}
             </ul>
