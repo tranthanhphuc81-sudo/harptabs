@@ -12,7 +12,8 @@ App lưu và tập harptab cho kèn **diatonic 10 lỗ**. Chạy **offline hoàn
 | Đổi kèn | Offline | Chuyển bài sang kèn khác, tự chọn lỗ dễ thổi nhất (thuật toán quy hoạch động), giữ giọng gốc hoặc dịch giọng |
 | Dò nốt | Offline (micro, YIN) | Hiện lỗ/kỹ thuật đang thổi, kim lệch cent để tập bend |
 | Học | Offline | 18 bài: cầm kèn, hơi thở, đơn âm, vibrato, wah, tonguing, bend hút/thổi, overblow, vị trí, blues 12 ô nhịp, bảo quản, lỗi thường gặp, lộ trình 30 ngày, kèm bài tập phát được |
-| Nhập AI | Online (Gemini) | Chụp tối đa 4 trang khuông nhạc hoặc nhập tên bài, AI trả giai điệu → app tự xếp tab, beat, ghép lời |
+| Quét khuông nhạc | Offline | Chụp bản nhạc in (khoá Sol, một bè), máy tự đọc cao độ + trường độ + vạch nhịp ngay trên điện thoại, hiện số lỗ trên từng nốt để chạm vào sửa |
+| Nhập AI | Online (Gemini) | Nhờ AI đọc ảnh hoặc nhớ bài theo tên → app tự xếp tab, beat, ghép lời. Đọc ảnh bằng AI còn hay sai cao độ, bản in nên dùng Quét khuông nhạc |
 
 ## Chạy thử
 
@@ -27,6 +28,19 @@ npm run preview    # chạy bản build (có service worker offline)
 ```
 
 Để cài lên điện thoại như app thật, đưa thư mục `dist/` lên một host HTTPS tĩnh bất kỳ (Cloudflare Pages, Netlify, Vercel, GitHub Pages). Mở bằng trình duyệt điện thoại → "Thêm vào màn hình chính". Từ đó app chạy offline.
+
+## Quét khuông nhạc (offline)
+
+`src/lib/omr.ts` đọc bản nhạc theo luật, giống cách người học tự đọc:
+
+1. Làm phẳng nền ảnh chụp, co giãn ảnh để khoảng cách dòng kẻ ≈ 13,5 px.
+2. Tìm 5 dòng kẻ (hàng điểm ảnh tối dài), xoá dòng kẻ.
+3. Tìm đầu nốt (đốm cỡ một khe, phải có thân nốt); nốt trắng nhận qua lòng rỗng.
+4. Cao độ = vị trí đầu nốt so với dòng dưới cùng (khoá Sol: dòng dưới = Mi 4), cộng hoá biểu đầu khuông.
+5. Trường độ: đầu rỗng/đặc, số móc ở đầu thân, chấm dôi. Vạch nhịp chia ô; ô thiếu phách được chèn dấu lặng.
+
+Chưa đọc: khoá Fa, hợp âm, dấu hoá bất thường giữa bài, liên ba, dấu nhắc lại, lời bài hát, chữ viết tay. Ảnh nghiêng nhiều cũng chưa xử lý.
+Kết quả hiện trên ảnh để người dùng sửa từng nốt trước khi lưu.
 
 ## Kết nối AI
 
@@ -85,9 +99,10 @@ src/lib/harp.ts        Lý thuyết kèn Richter, 12 tông, bend, overblow, tên
 src/lib/tabText.ts     Parser / serializer định dạng tab
 src/lib/converter.ts   Chọn lỗ tối ưu (Viterbi), tìm kèn hợp nhất, đổi kèn
 src/lib/ai.ts          Gọi AI, nén ảnh, chuyển kết quả AI → tab
+src/lib/omr.ts         Đọc khuông nhạc offline (OMR theo luật)
 src/lib/db.ts          IndexedDB (Dexie), sao lưu / khôi phục
 src/audio/             Tổng hợp âm, beat mẫu, bộ lập lịch phát, dò cao độ YIN
-src/pages/             Thư viện, Xem bài, Sửa bài, Nhập AI, Học, Dò nốt, Cài đặt
+src/pages/             Thư viện, Xem bài, Sửa bài, Nhập bài (quét / AI), Học, Dò nốt, Cài đặt
 src/data/              Bài mẫu (public domain) và nội dung bài học
 shared/ai.ts           Prompt, JSON schema, kiểm tra kết quả, bảng giá — dùng chung app & worker
 worker/                Cloudflare Worker proxy

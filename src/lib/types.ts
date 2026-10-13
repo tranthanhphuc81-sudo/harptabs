@@ -1,7 +1,7 @@
 import type { HarpKey, NoteNameStyle } from './harp';
 import type { BeatStyle } from '../audio/patterns';
 
-export type SongSource = 'sample' | 'user' | 'ai-image' | 'ai-name' | 'import';
+export type SongSource = 'sample' | 'user' | 'ai-image' | 'ai-name' | 'scan' | 'import';
 
 export interface Song {
   id: string;

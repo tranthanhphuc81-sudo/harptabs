@@ -13,8 +13,9 @@ import { MiniPlay } from '../components/PlayerBar';
 import { usePlayer } from '../components/usePlayer';
 import { Icon } from '../components/Icon';
 import { useAppState, useOnline } from '../state';
+import ScanImport from './ScanImport';
 
-type Mode = 'image' | 'name';
+type Mode = 'scan' | 'image' | 'name';
 interface Img { id: string; mimeType: string; data: string; preview: string }
 
 function vnd(usd: number) {
@@ -26,7 +27,7 @@ export default function AiImport() {
   const { settings, toast } = useAppState();
   const online = useOnline();
   const nav = useNavigate();
-  const [mode, setMode] = useState<Mode>('image');
+  const [mode, setMode] = useState<Mode>('scan');
   const [lastMode, setLastMode] = useState<Mode>('image'); // chế độ đã tạo ra kết quả đang hiện
   const [images, setImages] = useState<Img[]>([]);
   const [title, setTitle] = useState('');
@@ -85,7 +86,7 @@ export default function AiImport() {
       const r = await transcribe(input, settings, ac.signal);
       setResp(r);
       setLastMode(mode);
-      await db.aiLog.add({ at: Date.now(), kind: mode, model: r.usage.model, inputTokens: r.usage.inputTokens, outputTokens: r.usage.outputTokens, costUsd: estimateCostUsd(r.usage) });
+      await db.aiLog.add({ at: Date.now(), kind: mode === 'name' ? 'name' : 'image', model: r.usage.model, inputTokens: r.usage.inputTokens, outputTokens: r.usage.outputTokens, costUsd: estimateCostUsd(r.usage) });
     } catch (e) {
       if ((e as Error).name !== 'AbortError') setError((e as Error).message || 'Có lỗi xảy ra');
     } finally {
@@ -140,27 +141,31 @@ export default function AiImport() {
     <div className="page page-ai">
       <header className="page-head">
         <div>
-          <h1>Nhập bằng AI</h1>
-          <p className="muted">Chụp khuông nhạc hoặc gõ tên bài, AI đọc giai điệu rồi app tự xếp tab, beat và lời.</p>
+          <h1>Nhập bài</h1>
+          <p className="muted">Chụp khuông nhạc để máy tự đọc nốt (offline), hoặc nhờ AI đọc ảnh / nhớ bài theo tên. App tự xếp tab và beat.</p>
         </div>
       </header>
 
-      {!configured && (
+      {mode !== 'scan' && !configured && (
         <div className="alert">
           Chưa kết nối AI. Vào <Link to="/settings">Cài đặt</Link> để nhập địa chỉ máy chủ AI, hoặc dán Gemini API key của bạn (chỉ nên dùng cho máy cá nhân).
         </div>
       )}
-      {!online && <div className="alert">Bạn đang offline. Phần này cần mạng; các phần khác của app vẫn dùng bình thường.</div>}
+      {mode !== 'scan' && !online && <div className="alert">Bạn đang offline. Phần này cần mạng; các phần khác của app vẫn dùng bình thường.</div>}
 
       <div className="segmented" role="tablist" aria-label="Cách nhập">
+        <button type="button" role="tab" aria-selected={mode === 'scan'} className={mode === 'scan' ? 'on' : ''} onClick={() => setMode('scan')}>
+          <Icon name="scan" size={18} /> Quét nhạc
+        </button>
         <button type="button" role="tab" aria-selected={mode === 'image'} className={mode === 'image' ? 'on' : ''} onClick={() => setMode('image')}>
-          <Icon name="camera" size={18} /> Ảnh khuông nhạc
+          <Icon name="camera" size={18} /> Ảnh + AI
         </button>
         <button type="button" role="tab" aria-selected={mode === 'name'} className={mode === 'name' ? 'on' : ''} onClick={() => setMode('name')}>
-          <Icon name="search" size={18} /> Tên bài hát
+          <Icon name="search" size={18} /> Tên bài
         </button>
       </div>
 
+      {mode === 'scan' ? <ScanImport /> : <>
       <div className="ai-form">
         {mode === 'image' ? (
           <>
@@ -179,7 +184,7 @@ export default function AiImport() {
                   <button type="button" className="btn btn-primary" onClick={() => camRef.current?.click()}><Icon name="camera" size={18} /> Chụp ảnh</button>
                   <button type="button" className="btn btn-ghost" onClick={() => galRef.current?.click()}><Icon name="image" size={18} /> Chọn ảnh có sẵn</button>
                   <p className="muted small">Chụp thẳng, đủ sáng, thấy rõ khoá nhạc và dấu hoá. Tối đa {MAX_IMAGES} trang, theo thứ tự.</p>
-                  <p className="muted small"><strong>Đang thử nghiệm:</strong> AI thường đọc sai cao độ. Bài nổi tiếng thì có thể thử <button type="button" className="link-btn" onClick={() => setMode('name')}>Tên bài hát</button> (AI cũng có thể nhớ sai).</p>
+                  <p className="muted small"><strong>Đang thử nghiệm:</strong> AI thường đọc sai cao độ. Bản nhạc in thì dùng <button type="button" className="link-btn" onClick={() => setMode('scan')}>Quét nhạc</button> chính xác hơn, không tốn tiền.</p>
                 </div>
               )}
               <input ref={camRef} type="file" accept="image/*" capture="environment" hidden onChange={(e) => addFiles(e.target.files)} />
@@ -290,6 +295,7 @@ export default function AiImport() {
           <TabView parsed={parsed} flat={flat} active={player.active} size="s" showNames={settings.showNoteNames} nameStyle={settings.noteNames} />
         </section>
       )}
+      </>}
     </div>
   );
 }

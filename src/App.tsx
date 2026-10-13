@@ -13,7 +13,7 @@ import SettingsPage from './pages/Settings';
 
 const NAV = [
   { to: '/', icon: 'library', label: 'Bài hát', end: true },
-  { to: '/ai', icon: 'camera', label: 'Nhập AI' },
+  { to: '/ai', icon: 'scan', label: 'Nhập bài' },
   { to: '/learn', icon: 'learn', label: 'Học' },
   { to: '/tuner', icon: 'mic', label: 'Dò nốt' },
   { to: '/settings', icon: 'settings', label: 'Cài đặt' },
@@ -47,7 +47,7 @@ function Shell() {
         ))}
       </nav>
       <main className="main">
-        {!online && <div className="offline-pill" role="status">Đang offline — mọi thứ vẫn dùng được, trừ nhập bằng AI</div>}
+        {!online && <div className="offline-pill" role="status">Đang offline — mọi thứ vẫn dùng được, trừ phần nhờ AI</div>}
         {err && <div className="alert error">Không mở được kho dữ liệu trên máy: {err}. Hãy tắt chế độ ẩn danh hoặc cho phép lưu trữ.</div>}
         {ready && (
           <Routes>
