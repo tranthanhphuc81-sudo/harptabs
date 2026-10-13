@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { blankSong, db } from '../lib/db';
+import { blankSong, db, deleteSongs } from '../lib/db';
 import { HarpKey, normalizeKey } from '../lib/harp';
 import { flatten, parseTab } from '../lib/tabText';
 import { beatsPerBar, Song } from '../lib/types';
@@ -88,10 +88,7 @@ function Editor({ initial, isNew }: { initial: Song; isNew: boolean }) {
 
   const remove = async () => {
     if (!confirmDel) { setConfirmDel(true); setTimeout(() => setConfirmDel(false), 4000); return; }
-    await db.transaction('rw', db.songs, db.scans, async () => {
-      await db.songs.delete(s.id);
-      await db.scans.delete(s.id);
-    });
+    await deleteSongs([s.id]);
     toast('Đã xoá bài');
     nav('/', { replace: true });
   };

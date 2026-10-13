@@ -1,7 +1,7 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { db, fold, importBackup } from '../lib/db';
+import { db, deleteSongs, fold, importBackup } from '../lib/db';
 import { HARP_KEYS } from '../lib/harp';
 import { Song } from '../lib/types';
 import { Icon } from '../components/Icon';
@@ -29,6 +29,20 @@ export default function Library() {
   const fileRef = useRef<HTMLInputElement>(null);
   const nav = useNavigate();
   const { toast } = useAppState();
+  // chọn nhiều bài để xoá
+  const [selecting, setSelecting] = useState(false);
+  const [picked, setPicked] = useState<Set<string>>(new Set());
+  const [confirmDel, setConfirmDel] = useState(false);
+  const togglePick = (id: string) => setPicked((p) => { const n = new Set(p); if (n.has(id)) n.delete(id); else n.add(id); return n; });
+  const stopSelecting = () => { setSelecting(false); setPicked(new Set()); setConfirmDel(false); };
+  const removePicked = async () => {
+    if (!picked.size) return;
+    if (!confirmDel) { setConfirmDel(true); setTimeout(() => setConfirmDel(false), 4000); return; }
+    const n = picked.size;
+    await deleteSongs([...picked]);
+    toast(`Đã xoá ${n} bài`);
+    stopSelecting();
+  };
 
   const list = useMemo(() => {
     if (!songs) return [];
@@ -65,6 +79,11 @@ export default function Library() {
           <p className="muted">{songs ? `${songs.length} bài trong máy` : 'Đang tải…'}</p>
         </div>
         <div className="head-actions">
+          {!!songs?.length && (
+            <button type="button" className={`btn btn-ghost${selecting ? ' on' : ''}`} aria-pressed={selecting} onClick={() => (selecting ? stopSelecting() : setSelecting(true))}>
+              <Icon name="check" size={18} /> {selecting ? 'Xong' : 'Chọn'}
+            </button>
+          )}
           <button type="button" className="btn btn-ghost" onClick={() => fileRef.current?.click()}>
             <Icon name="upload" size={18} /> Nhập file
           </button>
@@ -122,7 +141,10 @@ export default function Library() {
       <ul className="song-list">
         {list.map((s) => (
           <li key={s.id}>
-            <Link to={`/song/${s.id}`} className="song-row">
+            <Link to={`/song/${s.id}`} className={`song-row${selecting ? ' picking' : ''}${picked.has(s.id) ? ' picked' : ''}`}
+              aria-pressed={selecting ? picked.has(s.id) : undefined}
+              onClick={selecting ? (e) => { e.preventDefault(); togglePick(s.id); } : undefined}>
+              {selecting && <span className="pick-box" aria-hidden="true">{picked.has(s.id) && <Icon name="check" size={16} />}</span>}
               <KeyPlate k={s.harpKey} />
               <span className="sr-body">
                 <span className="sr-title">
@@ -142,6 +164,18 @@ export default function Library() {
           </li>
         ))}
       </ul>
+
+      {selecting && (
+        <div className="select-bar" role="toolbar" aria-label="Xoá bài đã chọn">
+          <span className="grow">Đã chọn <strong>{picked.size}</strong> bài</span>
+          <button type="button" className="btn btn-ghost" onClick={() => setPicked(picked.size === list.length ? new Set() : new Set(list.map((s) => s.id)))}>
+            {picked.size === list.length && list.length ? 'Bỏ chọn' : 'Chọn tất cả'}
+          </button>
+          <button type="button" className="btn btn-danger" disabled={!picked.size} onClick={removePicked}>
+            <Icon name="trash" size={18} /> {confirmDel ? `Bấm lần nữa để xoá ${picked.size} bài` : `Xoá ${picked.size || ''} bài`}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

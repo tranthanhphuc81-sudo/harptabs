@@ -31,6 +31,14 @@ export function newId(): string {
   return `s-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
 }
 
+/** Xoá bài (kèm ảnh quét của bài). Bài mẫu đã xoá không tự xuất hiện lại. */
+export async function deleteSongs(ids: string[]): Promise<void> {
+  await db.transaction('rw', db.songs, db.scans, async () => {
+    await db.songs.bulkDelete(ids);
+    await db.scans.bulkDelete(ids);
+  });
+}
+
 export async function ensureSeeded(): Promise<void> {
   const seeded = await db.kv.get('seeded');
   if (seeded) return;

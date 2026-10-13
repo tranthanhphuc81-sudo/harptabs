@@ -1,7 +1,7 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { db, downloadJson, exportOne, newId, slugify } from '../lib/db';
+import { db, deleteSongs, downloadJson, exportOne, newId, slugify } from '../lib/db';
 import { HARP_KEYS, HarpKey, midiToName } from '../lib/harp';
 import { countTechniques, flatten, parseTab } from '../lib/tabText';
 import { rekeyBody } from '../lib/converter';
@@ -148,6 +148,14 @@ function SongPlayerView({ song }: { song: Song }) {
 
   const toggleFav = () => db.songs.update(song.id, { favorite: !song.favorite });
   const exportSong = () => downloadJson(exportOne(song), `${slugify(song.title)}.harptab.json`);
+  // xoá: bấm lần đầu để hỏi lại, bấm lần nữa trong 4 giây mới xoá
+  const [confirmDel, setConfirmDel] = useState(false);
+  const removeSong = async () => {
+    if (!confirmDel) { setConfirmDel(true); setTimeout(() => setConfirmDel(false), 4000); return; }
+    await deleteSongs([song.id]);
+    toast(`Đã xoá "${song.title || 'bài'}"`);
+    nav('/', { replace: true });
+  };
 
   const issues = parsed.issues.filter((i) => i.level === 'error');
 
@@ -175,6 +183,10 @@ function SongPlayerView({ song }: { song: Song }) {
           <button type="button" className="icon-btn" onClick={() => setRekeyOpen(true)} aria-label="Chuyển sang kèn khác"><Icon name="swap" /></button>
           <button type="button" className="icon-btn" onClick={exportSong} aria-label="Xuất file bài"><Icon name="download" /></button>
           <Link to={`/song/${song.id}/edit`} className="icon-btn" aria-label="Sửa bài"><Icon name="edit" /></Link>
+          <button type="button" className={confirmDel ? 'btn btn-danger del-confirm' : 'icon-btn'} onClick={removeSong}
+            aria-label={confirmDel ? 'Bấm lần nữa để xoá bài' : 'Xoá bài'}>
+            {confirmDel ? 'Xoá?' : <Icon name="trash" />}
+          </button>
         </div>
       </header>
 
