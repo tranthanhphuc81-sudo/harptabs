@@ -5,6 +5,7 @@ import { db, deleteSongs, fold, importBackup } from '../lib/db';
 import { HARP_KEYS } from '../lib/harp';
 import { Song } from '../lib/types';
 import { Icon } from '../components/Icon';
+import { ThemeToggle } from '../components/ThemeToggle';
 import { KeyPlate } from '../components/KeySelect';
 import { useAppState } from '../state';
 import { PATTERNS } from '../audio/patterns';
@@ -79,6 +80,7 @@ export default function Library() {
           <p className="muted">{songs ? `${songs.length} bài trong máy` : 'Đang tải…'}</p>
         </div>
         <div className="head-actions">
+          <ThemeToggle className="btn btn-ghost theme-btn" />
           {!!songs?.length && (
             <button type="button" className={`btn btn-ghost${selecting ? ' on' : ''}`} aria-pressed={selecting} onClick={() => (selecting ? stopSelecting() : setSelecting(true))}>
               <Icon name="check" size={18} /> {selecting ? 'Xong' : 'Chọn'}

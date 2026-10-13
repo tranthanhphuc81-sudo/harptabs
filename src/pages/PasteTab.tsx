@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { blankSong, db } from '../lib/db';
 import { HarpKey } from '../lib/harp';
@@ -19,6 +19,20 @@ export default function PasteTab() {
   const [title, setTitle] = useState<string | null>(null); // null = dùng tên tự nhận
   const [key, setKey] = useState<HarpKey | null>(null); // null = dùng tông tự nhận (hoặc C)
   const [tempo, setTempo] = useState(90);
+  const [sharedUrl, setSharedUrl] = useState<string | null>(null);
+
+  // nội dung chia sẻ từ app khác (xem main.tsx)
+  useEffect(() => {
+    let raw: string | null = null;
+    try { raw = sessionStorage.getItem('harptabs-shared'); sessionStorage.removeItem('harptabs-shared'); } catch { /* bỏ qua */ }
+    if (!raw) return;
+    const { title: t, text: body, url } = JSON.parse(raw) as { title: string; text: string; url: string };
+    // trình duyệt hay gửi kèm đường dẫn trang ở cuối nội dung
+    const link = url || /(https?:\/\/\S+)\s*$/.exec(body)?.[1] || '';
+    const content = body.replace(/\s*https?:\/\/\S+\s*$/, '').trim();
+    if (content) { setText(t && !content.includes(t) ? `${t}\n${content}` : content); setTitle(null); setKey(null); }
+    if (link) setSharedUrl(link);
+  }, []);
 
   const imp = useMemo(() => (text.trim() ? importTabText(text) : null), [text]);
   const harpKey: HarpKey = key ?? imp?.harpKey ?? 'C';
@@ -70,6 +84,12 @@ export default function PasteTab() {
         <button type="button" className="btn btn-primary" onClick={pasteFromClipboard}><Icon name="download" size={18} /> Dán từ bộ nhớ</button>
         {text && <button type="button" className="btn btn-ghost" onClick={() => { setText(''); setTitle(null); setKey(null); }}>Xoá</button>}
       </div>
+      {sharedUrl && !text && (
+        <div className="alert" role="note">
+          Bạn vừa chia sẻ <strong>đường dẫn trang</strong>, chưa có nội dung tab. Hãy mở trang, <strong>bôi đen phần tab</strong> rồi bấm Chia sẻ → Harp Tab
+          (hoặc Sao chép rồi bấm “Dán từ bộ nhớ”). <a href={sharedUrl} target="_blank" rel="noreferrer">Mở lại trang</a>
+        </div>
+      )}
       <label className="field">
         <span className="field-label">Nội dung tab</span>
         <textarea rows={8} value={text} onChange={(e) => setText(e.target.value)} spellCheck={false}

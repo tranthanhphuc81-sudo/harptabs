@@ -28,9 +28,20 @@
   "minSdkVersion": 24,
   "shortcuts": [],
   "features": {},
-  "alphaDependencies": { "enabled": false },
+  "alphaDependencies": {
+    "enabled": false
+  },
   "isChromeOSOnly": false,
   "isMetaQuest": false,
   "fullScopeUrl": "https://harptabs.pages.dev/",
-  "generatorApp": "bubblewrap-cli"
+  "generatorApp": "bubblewrap-cli",
+  "shareTarget": {
+    "action": "/",
+    "method": "GET",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url"
+    }
+  }
 }

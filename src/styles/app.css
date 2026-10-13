@@ -715,3 +715,11 @@ button, input, select, textarea { font: inherit; color: inherit; }
   border-radius: var(--r-m); background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow);
 }
 @media (min-width: 900px) { .select-bar { bottom: 12px; } }
+
+/* ───── đổi sáng / tối ───── */
+.theme-btn { min-width: 44px; padding: 0 10px; }
+.nav-theme { display: none; }
+@media (min-width: 900px) {
+  .nav-theme { display: flex; margin-top: auto; padding: 8px 10px; }
+  .head-actions .theme-btn { display: none; } /* máy tính: nút nằm ở thanh bên */
+}

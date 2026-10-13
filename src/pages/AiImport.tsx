@@ -30,7 +30,7 @@ export default function AiImport() {
   const nav = useNavigate();
   const [params] = useSearchParams();
   const editScan = params.get('scan') ?? undefined;
-  const [mode, setMode] = useState<Mode>('scan');
+  const [mode, setMode] = useState<Mode>(params.get('paste') ? 'paste' : 'scan');
   const [lastMode, setLastMode] = useState<Mode>('image'); // chế độ đã tạo ra kết quả đang hiện
   const [images, setImages] = useState<Img[]>([]);
   const [title, setTitle] = useState('');

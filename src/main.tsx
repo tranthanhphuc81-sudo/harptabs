@@ -11,6 +11,14 @@ import App from './App';
 
 registerSW({ immediate: true });
 
+// Nội dung được chia sẻ vào app (?title=&text=&url=): cất tạm rồi mở thẳng "Dán tab"
+const shared = new URLSearchParams(location.search);
+if (shared.has('text') || shared.has('url') || shared.has('title')) {
+  const payload = { title: shared.get('title') ?? '', text: shared.get('text') ?? '', url: shared.get('url') ?? '' };
+  try { sessionStorage.setItem('harptabs-shared', JSON.stringify(payload)); } catch { /* chế độ riêng tư */ }
+  history.replaceState(null, '', `${location.pathname}#/ai?paste=1`);
+}
+
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <App />

@@ -3,6 +3,7 @@ import { HashRouter, NavLink, Route, Routes } from 'react-router-dom';
 import { AppStateProvider, useOnline } from './state';
 import { ensureSeeded } from './lib/db';
 import { Icon } from './components/Icon';
+import { ThemeToggle } from './components/ThemeToggle';
 import Library from './pages/Library';
 import SongView from './pages/SongView';
 import SongEdit from './pages/SongEdit';
@@ -45,6 +46,7 @@ function Shell() {
             <span>{n.label}</span>
           </NavLink>
         ))}
+        <div className="nav-theme"><ThemeToggle /></div>
       </nav>
       <main className="main">
         {!online && <div className="offline-pill" role="status">Đang offline — mọi thứ vẫn dùng được, trừ phần nhờ AI</div>}
