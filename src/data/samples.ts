@@ -3,10 +3,15 @@
  * Tất cả viết cho kèn C.
  */
 import type { Song } from '../lib/types';
+import { MORE_SAMPLES } from './samples2';
 
 type Sample = Omit<Song, 'id' | 'createdAt' | 'updatedAt' | 'favorite' | 'source'>;
+export type SampleSong = Sample & { sampleId: string };
 
-export const SAMPLE_SONGS: (Sample & { sampleId: string })[] = [
+/** Các bài mẫu có từ bản đầu tiên (máy đã cài trước khi có danh sách bài mẫu đã thêm) */
+export const FIRST_SAMPLE_IDS = ['scale-c', 'twinkle', 'frere-jacques', 'ode-to-joy', 'jingle-bells', 'happy-birthday', 'amazing-grace', 'blues-scale'];
+
+const BASE_SAMPLES: SampleSong[] = [
   {
     sampleId: 'scale-c',
     title: 'Thang âm Đô trưởng',
@@ -154,3 +159,5 @@ Sol Fa Rê Đô# Đô Sib Sol
 `,
   },
 ];
+
+export const SAMPLE_SONGS: SampleSong[] = [...BASE_SAMPLES, ...MORE_SAMPLES];

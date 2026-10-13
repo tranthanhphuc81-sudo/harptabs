@@ -70,7 +70,7 @@ export default function SettingsPage() {
   };
 
   const restoreSamples = async () => {
-    await db.kv.delete('seeded');
+    await db.kv.bulkDelete(['seeded', 'seededSamples']);
     await ensureSeeded();
     toast('Đã khôi phục các bài mẫu');
   };

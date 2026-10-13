@@ -1,6 +1,6 @@
 /** Lưu trữ offline bằng IndexedDB (Dexie). Mọi dữ liệu nằm trên thiết bị. */
 import Dexie, { Table } from 'dexie';
-import { SAMPLE_SONGS } from '../data/samples';
+import { FIRST_SAMPLE_IDS, SAMPLE_SONGS } from '../data/samples';
 import { normalizeKey } from './harp';
 import { AiLogEntry, DEFAULT_SETTINGS, Settings, Song } from './types';
 import type { SongScan } from './scanStore';
@@ -39,12 +39,19 @@ export async function deleteSongs(ids: string[]): Promise<void> {
   });
 }
 
+/**
+ * Thêm bài mẫu. Mỗi bản cập nhật chỉ thêm các bài mẫu MỚI; bài mẫu người dùng đã xoá không thêm lại.
+ * Danh sách bài mẫu đã từng thêm lưu ở kv 'seededSamples'.
+ */
 export async function ensureSeeded(): Promise<void> {
-  const seeded = await db.kv.get('seeded');
-  if (seeded) return;
+  const [seeded, list] = await Promise.all([db.kv.get('seeded'), db.kv.get('seededSamples')]);
+  // máy cài từ bản cũ: đã có 8 bài mẫu đầu tiên
+  const done = new Set<string>((list?.value as string[] | undefined) ?? (seeded ? FIRST_SAMPLE_IDS : []));
+  const todo = SAMPLE_SONGS.filter((s) => !done.has(s.sampleId));
+  if (!todo.length && list) return;
   const now = Date.now();
   await db.songs.bulkPut(
-    SAMPLE_SONGS.map(({ sampleId, ...s }, i) => ({
+    todo.map(({ sampleId, ...s }, i) => ({
       ...s,
       id: `sample-${sampleId}`,
       source: 'sample' as const,
@@ -53,7 +60,10 @@ export async function ensureSeeded(): Promise<void> {
       updatedAt: now - i * 1000,
     })),
   );
-  await db.kv.put({ key: 'seeded', value: 1 });
+  await db.kv.bulkPut([
+    { key: 'seeded', value: 1 },
+    { key: 'seededSamples', value: SAMPLE_SONGS.map((s) => s.sampleId) },
+  ]);
 }
 
 export async function loadSettings(): Promise<Settings> {
