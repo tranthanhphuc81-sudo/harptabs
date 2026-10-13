@@ -134,7 +134,7 @@ export default function ScanImport() {
       notes: p.notes.flatMap((n) => {
         if (n.id !== id) return [n];
         const c = change(n);
-        return c === null ? [] : [{ ...n, ...c }];
+        return c === null ? [] : [{ ...n, ...c, guess: false }];
       }),
     })));
   };
@@ -201,6 +201,20 @@ export default function ScanImport() {
     return bad;
   }, [pages, timeSig]);
 
+  /** ô nhịp có dấu lặng máy tự chèn (key trang:khuông:ô) */
+  const guessBars = useMemo(() => {
+    const out = new Set<string>();
+    pages.forEach((p, pi) => p.staves.forEach((st, si) => {
+      const edges = [-Infinity, ...st.bars, Infinity];
+      p.notes.filter((n) => n.staff === si && n.guess).forEach((n) => {
+        const i = edges.findIndex((e, k) => k < edges.length - 1 && e < n.x && n.x < edges[k + 1]);
+        if (i >= 0) out.add(`${pi}:${si}:${i}`);
+      });
+    }));
+    return out;
+  }, [pages]);
+  const guessCount = allNotes.filter((n) => n.guess).length;
+
   const save = async () => {
     if (!converted) return;
     const song = blankSong({
@@ -259,6 +273,11 @@ export default function ScanImport() {
               <button type="button" className="btn btn-ghost" onClick={reset}>Làm lại</button>
             </div>
           </div>
+          {guessCount > 0 && (
+            <div className="alert" role="note">
+              Máy tự chèn {guessCount} dấu lặng (dấu <strong>?</strong> màu cam) vào ô thiếu phách. Có thể đó là chỗ máy <strong>sót nốt</strong> — hãy so với bản nhạc, nếu đúng là nốt thì chạm vào, bấm “Thành nốt” và chỉnh cao độ.
+            </div>
+          )}
           {offBars.size > 0 && (
             <div className="alert" role="note">
               Có {offBars.size} ô nhịp không đủ/thừa phách (vạch nhịp màu đỏ). Thường do máy đọc nhầm trường độ hoặc sót nốt — chạm vào nốt trong ô đó để sửa.
@@ -273,19 +292,20 @@ export default function ScanImport() {
                 <svg viewBox={`0 0 ${p.image.width} ${p.image.height}`} className="scan-overlay" role="group" aria-label={`Trang ${pi + 1}`}>
                   {p.staves.map((st, si) => st.bars.map((bx, bi) => (
                     <line key={`b${si}-${bi}`} x1={bx} x2={bx} y1={st.top - st.space} y2={st.bottom + st.space}
-                      className={offBars.has(`${pi}:${si}:${bi}`) || offBars.has(`${pi}:${si}:${bi + 1}`) ? 'bar bad' : 'bar'} />
+                      className={offBars.has(`${pi}:${si}:${bi}`) || offBars.has(`${pi}:${si}:${bi + 1}`) ? 'bar bad'
+                        : guessBars.has(`${pi}:${si}:${bi}`) || guessBars.has(`${pi}:${si}:${bi + 1}`) ? 'bar guess' : 'bar'} />
                   )))}
                   {p.notes.map((n) => {
                     const st = p.staves[n.staff];
                     const tok = tokenOf.get(n.id);
                     const isDraw = !!tok && tok.startsWith('-');
                     return (
-                      <g key={n.id} className={`onote${n.id === selected ? ' sel' : ''}${n.rest ? ' rest' : ''}`}
+                      <g key={n.id} className={`onote${n.id === selected ? ' sel' : ''}${n.rest ? ' rest' : ''}${n.guess ? ' guess' : ''}`}
                         onClick={() => setSelected(n.id === selected ? null : n.id)}>
                         <circle cx={n.x} cy={n.y} r={st.space * 1.7} className="hit" />
                         <ellipse cx={n.x} cy={n.y} rx={st.space * 0.85} ry={st.space * 0.65} className="mark" />
-                        <text x={n.x} y={st.top - st.space * 1.3} fontSize={st.space * 2.1} textAnchor="middle" className={n.rest ? 'tok-rest' : isDraw ? 'tok-draw' : 'tok-blow'}>
-                          {n.rest ? '—' : tok ?? '×'}
+                        <text x={n.x} y={st.top - st.space * 1.3} fontSize={st.space * 2.1} textAnchor="middle" className={n.guess ? 'tok-guess' : n.rest ? 'tok-rest' : isDraw ? 'tok-draw' : 'tok-blow'}>
+                          {n.rest ? (n.guess ? '?' : '—') : tok ?? '×'}
                         </text>
                       </g>
                     );

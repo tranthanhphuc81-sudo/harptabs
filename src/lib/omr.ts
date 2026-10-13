@@ -28,6 +28,8 @@ export interface OmrNote {
   rest: boolean;
   /** nối (dấu nối ⌒) với nốt trước: khi chuyển tab, cộng trường độ vào nốt trước */
   tied?: boolean;
+  /** dấu lặng máy tự chèn vào ô thiếu phách (không thấy trên ảnh) — có thể là nốt bị sót */
+  guess?: boolean;
 }
 
 export interface OmrStaff { page: number; top: number; bottom: number; space: number; bars: number[]; xRight: number }
@@ -161,6 +163,7 @@ function morph(b: Bits, kh: number, kw: number, erode: boolean) {
 }
 const opening = (b: Bits, k: number) => morph(morph(b, k, k, true), k, k, false);
 const closingV = (b: Bits, k: number) => morph(morph(b, k, 1, false), k, 1, true);
+const closing = (b: Bits, k: number) => morph(morph(b, k, k, false), k, k, true);
 
 /** Đoạn mực dọc liền đi qua hàng y ở cột x (vá chỗ đứt 1 px). Trả [đầu, cuối] hoặc null */
 function verticalRun(b: Bits, x: number, y: number): [number, number] | null {
@@ -451,25 +454,23 @@ function clefEnd(img: Bits, top: number, bottom: number, s: number, xLeft: numbe
 }
 
 /** Hoá biểu: dấu thăng (2 nét dọc) / giáng (1 nét dọc + bụng) giữa khoá nhạc và nốt đầu */
-function keySignature(img: Bits, top: number, bottom: number, s: number, xFrom: number, xTo: number): [number, number] {
-  if (xTo - xFrom < 0.8 * s) return [0, xFrom];
-  const band = img.crop(Math.trunc(top - 1.5 * s), Math.trunc(bottom + s), xFrom, xTo);
+function keySignature(img: Bits, top: number, bottom: number, s: number, xFrom: number): [number, number] {
+  const y0 = Math.trunc(top - 1.5 * s);
+  const band = img.crop(y0, Math.trunc(bottom + s), xFrom, xFrom + Math.trunc(9 * s));
   const { lab, boxes } = label(band);
-  let sharps = 0, flats = 0, end = xFrom;
-  boxes.map((o, i) => ({ o, id: i + 1 })).sort((a, b) => a.o.x0 - b.o.x0).forEach(({ o, id }) => {
-    if (!(1.8 * s <= bh(o) && bh(o) <= 3.6 * s && 0.5 * s <= bw(o) && bw(o) <= 1.4 * s)) return;
-    const tall: number[] = [];
-    for (let x = o.x0; x < o.x1; x++) {
-      let n = 0;
-      for (let y = o.y0; y < o.y1; y++) if (lab[y * band.w + x] === id) n++;
-      if (n >= 1.6 * s) tall.push(x);
-    }
-    const groups = tall.filter((x, i) => i === 0 || x !== tall[i - 1] + 1).length;
-    if (groups >= 2) sharps++; else flats++;
-    end = Math.max(end, xFrom + o.x1);
-  });
-  if (sharps && !flats) return [sharps, end];
-  if (flats && !sharps) return [-flats, end];
+  let sharps = 0, flats = 0, end = 0;
+  for (const { o, id } of boxes.map((o, i) => ({ o, id: i + 1 })).sort((a, b) => a.o.x0 - b.o.x0)) {
+    if (bh(o) < 0.5 * s) continue; // hạt nhiễu
+    if (o.x0 - end > (end ? 1.2 : 2.5) * s) break; // dấu hoá trong hoá biểu đứng sát nhau
+    if (!(1.8 * s <= bh(o) && bh(o) <= 3.6 * s && 0.45 * s <= bw(o) && bw(o) <= 1.4 * s)) break;
+    const kind = classifyAccidental(lab, band.w, o, id, s);
+    if (kind === 1) sharps++;
+    else if (kind === -1) flats++;
+    else break;
+    end = o.x1;
+  }
+  if (sharps && !flats) return [sharps, xFrom + end];
+  if (flats && !sharps) return [-flats, xFrom + end];
   return [0, xFrom];
 }
 
@@ -514,6 +515,37 @@ function barlines(img: Bits, top: number, bottom: number, s: number, xFrom: numb
 
 interface Accidental { box: Box; kind: -1 | 0 | 1 }
 
+/**
+ * Phân loại ký hiệu dấu hoá theo hình dạng của chính nó (so các phần với nhau, đơn vị = khe):
+ *  - thăng: phần trên có 2 nét dọc mảnh
+ *  - giáng: phần trên là 1 nét mảnh, phần dưới phình "bụng" sang phải
+ *  - bình: phần trên 1 nét, phần dưới 1 nét mảnh lệch sang phải
+ * Nốt có thân thì khác: phần trên rộng (đầu nốt) hoặc đầu nốt nằm bên trái thân.
+ */
+function classifyAccidental(lab: Int32Array, w: number, o: Box, id: number, s: number): -1 | 0 | 1 | null {
+  const runsAt = (y: number) => {
+    const r: [number, number][] = [];
+    for (let x = o.x0; x < o.x1; x++) {
+      const on = lab[y * w + x] === id;
+      if (on && (!r.length || r[r.length - 1][1] !== x - 1)) r.push([x, x]);
+      else if (on) r[r.length - 1][1] = x;
+    }
+    return r;
+  };
+  const thin = (r: [number, number]) => r[1] - r[0] + 1 <= 0.6 * s; // đầu nốt luôn rộng > 1 khe
+  const tops = [0.05, 0.1, 0.15, 0.2, 0.25].map((f) => runsAt(Math.trunc(o.y0 + f * bh(o))));
+  if (tops.some((r) => r.length >= 2 && r.every(thin))) return 1;
+  const top = tops[2];
+  if (top.length !== 1 || !thin(top[0])) return null;
+  const bot = runsAt(Math.trunc(o.y0 + 0.88 * bh(o)));
+  if (bot.length === 1 && thin(bot[0]) && bot[0][0] > top[0][1] + 0.15 * s) return 0;
+  // bụng của dấu giáng: ở nửa dưới, mực lan sang phải thân ≥ 0.3 khe, không lan sang trái
+  let right = -Infinity, left = Infinity;
+  for (const f of [0.5, 0.6, 0.7, 0.8, 0.9]) for (const r of runsAt(Math.trunc(o.y0 + f * bh(o)))) { right = Math.max(right, r[1]); left = Math.min(left, r[0]); }
+  if (right >= top[0][1] + 0.3 * s && left >= top[0][0] - 0.15 * s) return -1;
+  return null;
+}
+
 /** Dấu hoá giữa bài: ký hiệu cao 1.8–3.6 khe đứng ngay trước một đầu nốt */
 function findAccidentals(img: Bits, heads: Box[], s: number, xFrom: number): Accidental[] {
   const out: Accidental[] = [];
@@ -523,24 +555,8 @@ function findAccidentals(img: Bits, heads: Box[], s: number, xFrom: number): Acc
     // phải đứng ngay bên trái một đầu nốt (không phải chính nó), ngang tầm đầu nốt
     const near = heads.some((h) => cx(h) > o.x1 && h.x0 - 1.8 * s <= o.x1 && o.x1 <= h.x0 + 0.4 * s && Math.abs(cy(h) - cy(o)) <= 1.3 * s);
     if (!near) return;
-    // ảnh nhỏ: hai nét dọc của dấu thăng dễ dính nhau → nhìn phần trên / dưới của ký hiệu
-    const runsAt = (y: number) => {
-      const r: [number, number][] = [];
-      for (let x = o.x0; x < o.x1; x++) {
-        const on = lab[y * img.w + x] === i + 1;
-        if (on && (!r.length || r[r.length - 1][1] !== x - 1)) r.push([x, x]);
-        else if (on) r[r.length - 1][1] = x;
-      }
-      return r;
-    };
-    const tops = [0.05, 0.1, 0.15, 0.2, 0.25].map((f) => runsAt(Math.trunc(o.y0 + f * bh(o))));
-    const topRuns = tops[2];
-    const botRuns = runsAt(Math.trunc(o.y0 + 0.88 * bh(o)));
-    let kind: -1 | 0 | 1;
-    if (tops.some((r) => r.length >= 2)) kind = 1; // thăng: hai nét dọc nhô lên trên
-    else if (topRuns.length === 1 && botRuns.length === 1 && botRuns[0][1] - botRuns[0][0] < 0.35 * s && botRuns[0][0] > topRuns[0][1] + 0.15 * s) kind = 0; // bình: nét dưới lệch phải
-    else if (topRuns.length === 1) kind = -1; // giáng: một nét + bụng
-    else return;
+    const kind = classifyAccidental(lab, img.w, o, i + 1, s);
+    if (kind === null) return;
     out.push({ box: o, kind });
   });
   return out;
@@ -624,11 +640,24 @@ export function readPage(input: Gray, page = 0): OmrPage | null {
     const thinRoi = thin.rows(y0, y1);
     const headLike = (o: Box) => 0.5 * s <= bh(o) && bh(o) <= 1.6 * s && 0.7 * s <= bw(o) && bw(o) <= 2 * s;
 
-    // lượt 1: nốt đặc (và nốt trắng trên dòng kẻ) — chỉ lấp lỗ nhỏ cỡ lòng đầu nốt
+    // lượt 1: lấp lỗ nhỏ cỡ lòng đầu nốt, và khe 3 px (ảnh nhỏ: dòng kẻ xẻ nốt trắng thành nhiều mảnh mỏng)
     const bridged = roi.or(closingV(roi, 3));
     const small = keepHeadHoles(fillHoles(bridged).andNot(bridged), s, 0);
-    const heads = opening(roi.or(small), k);
-    const objs: { o: Box; hollow: boolean }[] = label(heads).boxes.filter(headLike).map((o) => ({ o, hollow: anyIn(small, o) }));
+    const heads = opening(closing(roi.or(small), 3), k);
+    // hàng thuộc dòng kẻ (toạ độ trong roi) — bỏ qua khi đo độ đặc của lõi đầu nốt
+    const lineRow = new Uint8Array(roi.h);
+    for (const [a, b] of lines) for (let y = a - 1; y <= b + 1; y++) if (y >= y0 && y - y0 < roi.h) lineRow[y - y0] = 1;
+    /** nốt trắng nếu có lòng rỗng, hoặc lõi đầu nốt (nửa giữa của hộp) thưa mực so với chính nó */
+    const isHollow = (o: Box) => {
+      if (anyIn(small, o)) return true;
+      let n = 0, ink = 0;
+      for (let y = o.y0 + Math.floor(bh(o) / 4); y < o.y1 - Math.floor(bh(o) / 4); y++) {
+        if (lineRow[y]) continue;
+        for (let x = o.x0 + Math.floor(bw(o) / 4); x < o.x1 - Math.floor(bw(o) / 4); x++) { n++; ink += roi.d[y * roi.w + x]; }
+      }
+      return n >= 4 && ink / n < 0.75;
+    };
+    const objs: { o: Box; hollow: boolean }[] = label(heads).boxes.filter(headLike).map((o) => ({ o, hollow: isHollow(o) }));
 
     // lượt 2: nốt trắng nằm ở khe — vòng nốt + hai dòng kẻ bao thành ô kín
     const wl = lineInk.rows(y0, y1); wl.clearLeft(ce);
@@ -643,37 +672,42 @@ export function readPage(input: Gray, page = 0): OmrPage | null {
     const inAcc = (o: Box) => accs.some((a) => a.box.x0 - 1 <= cx(o) && cx(o) <= a.box.x1 + 1 && a.box.y0 - 1 <= cy(o) && cy(o) <= a.box.y1 + 1);
     const cand = objs.filter((p) => !inAcc(p.o));
 
-    // hai đốm cùng cột: giữ nốt đặc (bỏ vòng móc rỗng); cùng loại = hợp âm → giữ nốt cao nhất (giai điệu)
-    const drop = new Set<number>();
-    cand.forEach((a, i) => cand.forEach((b, j) => {
-      if (i === j || Math.abs(cx(a.o) - cx(b.o)) >= 1.2 * s) return;
-      if ((a.hollow && !b.hollow) || (a.hollow === b.hollow && cy(a.o) > cy(b.o) + 0.5 * s)) drop.add(i);
-    }));
-    const kept = cand.filter((_, i) => !drop.has(i));
-    const firstX = kept.length ? Math.min(...kept.map((p) => cx(p.o))) : xRight;
-    const [ks, ksEnd] = keySignature(thin, top, bottom, s, ce + 1, Math.trunc(firstX - 1.2 * s));
+    const [ks, ksEnd] = keySignature(thin, top, bottom, s, ce + 1);
     if (si === 0) keySig = ks;
     const ts = timeSigSpan(thin, top, bottom, s, Math.max(ce, ksEnd) + 1);
     const contentFrom = Math.max(ce, ksEnd, ts ? ts[1] : 0);
 
-    const staffNotes: OmrNote[] = [];
-    const occupied: Box[] = [...accs.map((a) => a.box), ...cand.map((p) => ({ x0: p.o.x0 - 1, x1: p.o.x1 + 1, y0: p.o.y0 - 1, y1: p.o.y1 + 1 }))];
-    for (const { o, hollow } of kept) {
-      const x = cx(o);
-      if (x < ksEnd || (ts && ts[0] <= x && x <= ts[1])) continue;
+    // xác minh từng đốm là nốt thật (có thân, hoặc nốt tròn trong khuông) TRƯỚC khi xét hợp âm:
+    // chữ hợp âm "Gm" phía trên khuông có vòng giống đầu nốt rỗng
+    const valid: { o: Box; hollow: boolean; stem: Stem | null; beats: number }[] = [];
+    for (const { o, hollow } of cand) {
+      if (cx(o) <= contentFrom) continue;
       const stem = findStem(thinRoi, o, s);
-      let beats: number;
       if (!stem) {
-        // nốt tròn: rỗng, không thân, nằm trong khuông (± 1.2 khe) — tránh chữ "o", "a" của tên bài, tác giả
-        // (hộp của nốt tìm qua lòng rỗng hẹp hơn cả nốt → ngưỡng 0.8 khe)
-        if (!hollow || bw(o) < 0.8 * s || cy(o) + y0 < top - 1.2 * s || cy(o) + y0 > bottom + 1.2 * s) continue;
-        beats = 4;
+        // nốt tròn: rỗng, không thân, nằm trong khuông ± 0.7 khe (tránh ♭ của chữ hợp âm "B♭") (hộp tìm qua lòng rỗng hẹp hơn cả nốt → 0.8 khe)
+        if (!hollow || bw(o) < 0.8 * s || cy(o) + y0 < top - 0.7 * s || cy(o) + y0 > bottom + 0.7 * s) continue;
+        valid.push({ o, hollow, stem, beats: 4 });
       } else {
         if (hollow && stem.b - stem.a + 1 < 3 * s) continue; // dấu lặng γ có nét chéo ngắn
-        beats = hollow ? 2 : 1 / 2 ** countFlags(thinRoi, stem, s);
-        // thân nốt + vùng móc bên phải → không tính là dấu lặng / dấu nối
-        occupied.push({ x0: stem.x - 2, x1: stem.x + Math.ceil(1.4 * s), y0: stem.a - 1, y1: stem.b + 2 });
+        valid.push({ o, hollow, stem, beats: hollow ? 2 : 1 / 2 ** countFlags(thinRoi, stem, s) });
       }
+    }
+    // hai nốt cùng cột: giữ nốt đặc (bỏ vòng móc rỗng); cùng loại = hợp âm → giữ nốt cao nhất (giai điệu)
+    const drop = new Set<number>();
+    const flagZones = valid.filter((v) => v.stem).map((v) => ({ x0: v.stem!.x - 2, x1: v.stem!.x + Math.ceil(1.4 * s), y0: v.stem!.a - 1, y1: v.stem!.b + 2 }));
+    valid.forEach((v, i) => { if (!v.stem && flagZones.some((z) => overlaps(z, v.o))) drop.add(i); });
+    valid.forEach((a, i) => valid.forEach((b, j) => {
+      if (i === j || Math.abs(cx(a.o) - cx(b.o)) >= 1.2 * s) return;
+      if ((a.hollow && !b.hollow) || (a.hollow === b.hollow && cy(a.o) > cy(b.o) + 0.5 * s)) drop.add(i);
+    }));
+
+    const staffNotes: OmrNote[] = [];
+    const occupied: Box[] = [...accs.map((a) => a.box), ...cand.map((p) => ({ x0: p.o.x0 - 1, x1: p.o.x1 + 1, y0: p.o.y0 - 1, y1: p.o.y1 + 1 }))];
+    for (const [i, { o, hollow, stem, beats }] of valid.entries()) {
+      if (drop.has(i)) continue;
+      const x = cx(o);
+      // thân nốt + vùng móc bên phải → không tính là dấu lặng / dấu nối
+      if (stem) occupied.push({ x0: stem.x - 2, x1: stem.x + Math.ceil(1.4 * s), y0: stem.a - 1, y1: stem.b + 2 });
       occupied.push({ x0: o.x0 - 1, x1: o.x1 + 1, y0: o.y0 - 1, y1: o.y1 + 1 });
       const dot = hasDot(roi, o, s);
       const acc = accs.find((a) => o.x0 - 1.8 * s <= a.box.x1 && a.box.x1 <= o.x0 + 0.4 * s && Math.abs(cy(a.box) - cy(o)) <= 1.3 * s);
@@ -749,7 +783,7 @@ export function fillRests(pages: OmrPage[]): number {
     for (let i = 0; i < xs.length - 1; i++) if (xs[i + 1] - xs[i] >= gmax) { gmax = xs[i + 1] - xs[i]; gi = i; }
     m.page.notes.push({
       id: `n${++noteSeq}`, page: m.ms[0].page, staff: m.si, x: (xs[gi] + xs[gi + 1]) / 2, y: (m.st.top + m.st.bottom) / 2,
-      step: 4, accidental: null, beats: missing, hollow: false, dot: false, rest: true,
+      step: 4, accidental: null, beats: missing, hollow: false, dot: false, rest: true, guess: true,
     });
   });
   for (const p of pages) p.notes.sort((a, b) => a.staff - b.staff || a.x - b.x);
