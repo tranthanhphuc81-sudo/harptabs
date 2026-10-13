@@ -43,8 +43,10 @@ describe('bài mẫu', () => {
         if (s.style === 'metronome' || s.tags.includes('luyện tập')) return; // bài luyện không theo ô nhịp
         const total = s.body.split('\n').filter((l) => looksLikeTabLine(l))
           .flatMap((l) => l.trim().split(/\s+/)).reduce((t, tok) => t + beatsOf(tok), 0);
-        const rem = (total - s.pickupBeats) % barQuarters(s.timeSig);
-        expect(Math.min(rem, barQuarters(s.timeSig) - rem), `${s.title}: tổng ${total} phách`).toBeLessThan(0.01);
+        // hai cách ghi đều đúng: ô cuối đủ phách, hoặc ô cuối rút ngắn bù cho nhịp lấy đà
+        const bar = barQuarters(s.timeSig);
+        const off = (x: number) => { const r = ((x % bar) + bar) % bar; return Math.min(r, bar - r); };
+        expect(Math.min(off(total - s.pickupBeats), off(total)), `${s.title}: tổng ${total} phách`).toBeLessThan(0.01);
       });
     });
   }

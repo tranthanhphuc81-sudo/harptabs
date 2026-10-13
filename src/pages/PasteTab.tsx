@@ -20,6 +20,14 @@ export default function PasteTab() {
   const [key, setKey] = useState<HarpKey | null>(null); // null = dùng tông tự nhận (hoặc C)
   const [tempo, setTempo] = useState(90);
   const [sharedUrl, setSharedUrl] = useState<string | null>(null);
+  const [query, setQuery] = useState('');
+
+  /** mở trang tìm kiếm tab harmonica trong trình duyệt; người dùng copy / chia sẻ tab về app */
+  const searchTabs = () => {
+    const q = query.trim();
+    if (!q) return;
+    window.open(`https://www.google.com/search?q=${encodeURIComponent(`${q} harmonica tab`)}`, '_blank', 'noopener');
+  };
 
   // nội dung chia sẻ từ app khác (xem main.tsx)
   useEffect(() => {
@@ -76,7 +84,15 @@ export default function PasteTab() {
 
   return (
     <div className="ai-form">
+      <form className="row gap wrap end-align" onSubmit={(e) => { e.preventDefault(); searchTabs(); }}>
+        <label className="field grow">
+          <span className="field-label">Tìm tab trên mạng</span>
+          <input type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Tên bài, ví dụ: Tie a yellow ribbon" enterKeyHint="search" />
+        </label>
+        <button type="submit" className="btn btn-ghost" disabled={!query.trim()}><Icon name="search" size={18} /> Tìm</button>
+      </form>
       <p className="muted small">
+        Mở trang có tab, <strong>bôi đen phần tab → Chia sẻ → Harp Tab</strong>, hoặc Sao chép rồi quay lại bấm “Dán từ bộ nhớ”.
         Copy tab harmonica trên trang web (kiểu <code>4 -4 5 -5</code>, <code>4↑ 4↓</code>, <code>B4 D4</code>, <code>-3b</code>…) rồi dán vào đây.
         App tự nhận dòng tab, lời bài hát, tên bài và tông kèn nếu có ghi.
       </p>

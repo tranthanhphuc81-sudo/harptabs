@@ -4,6 +4,7 @@
  */
 import type { Song } from '../lib/types';
 import { MORE_SAMPLES } from './samples2';
+import { FOLK_SAMPLES } from './samples3';
 
 type Sample = Omit<Song, 'id' | 'createdAt' | 'updatedAt' | 'favorite' | 'source'>;
 export type SampleSong = Sample & { sampleId: string };
@@ -160,4 +161,4 @@ Sol Fa Rê Đô# Đô Sib Sol
   },
 ];
 
-export const SAMPLE_SONGS: SampleSong[] = [...BASE_SAMPLES, ...MORE_SAMPLES];
+export const SAMPLE_SONGS: SampleSong[] = [...BASE_SAMPLES, ...MORE_SAMPLES, ...FOLK_SAMPLES];
