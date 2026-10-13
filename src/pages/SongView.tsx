@@ -12,6 +12,8 @@ import { PlayerBar } from '../components/PlayerBar';
 import { usePlayer } from '../components/usePlayer';
 import { Icon } from '../components/Icon';
 import { KeyPlate } from '../components/KeySelect';
+import { ScanPageView } from '../components/ScanPageView';
+import type { SongScan } from '../lib/scanStore';
 import { useAppState } from '../state';
 import { MicPitch, PitchReading } from '../audio/pitch';
 import { previewNote } from '../audio/engine';
@@ -217,6 +219,8 @@ function SongPlayerView({ song }: { song: Song }) {
       </div>
       {showDiagram && <HarpDiagram harpKey={song.harpKey} highlight={activeToken ? [activeToken] : []} nameStyle={settings.noteNames} />}
 
+      <ScanSection songId={song.id} />
+
       <PlayerBar
         p={player}
         loopLabel={loopInfo?.label}
@@ -287,5 +291,41 @@ function RekeyDialog({ song, onClose, onDone }: { song: Song; onClose: () => voi
         <button type="button" className="btn btn-primary" onClick={() => apply(false)}>Chuyển bài này</button>
       </div>
     </dialog>
+  );
+}
+
+/** Ảnh khuông nhạc đã quét của bài (nếu có): xem lại số lỗ trên từng nốt, mở lại để sửa */
+function ScanSection({ songId }: { songId: string }) {
+  const scan = useLiveQuery(() => db.scans.get(songId), [songId]);
+  const [open, setOpen] = useState(false);
+  const [zoom, setZoom] = useState(1);
+  if (!scan) return null;
+  return (
+    <details className="scan-saved" open={open} onToggle={(e) => setOpen((e.target as HTMLDetailsElement).open)}>
+      <summary>Bản nhạc gốc (ảnh đã quét{scan.pages.length > 1 ? `, ${scan.pages.length} trang` : ''})</summary>
+      {open && <ScanPages scan={scan} zoom={zoom} setZoom={setZoom} songId={songId} />}
+    </details>
+  );
+}
+
+function ScanPages({ scan, zoom, setZoom, songId }: { scan: SongScan; zoom: number; setZoom: (z: number) => void; songId: string }) {
+  const urls = useMemo(() => scan.pages.map((p) => URL.createObjectURL(p.image)), [scan]);
+  useEffect(() => () => urls.forEach((u) => URL.revokeObjectURL(u)), [urls]);
+  return (
+    <div className="scan-saved-body">
+      <div className="row between center wrap gap">
+        <p className="small muted">Số trên nốt là lỗ kèn lúc quét: <span className="tok-blow">cam = thổi</span>, <span className="tok-draw">xanh = hút</span>.</p>
+        <div className="row gap wrap">
+          <div className="segmented" role="group" aria-label="Phóng to ảnh">
+            {[1, 2, 3].map((z) => <button key={z} type="button" className={zoom === z ? 'on' : ''} aria-pressed={zoom === z} onClick={() => setZoom(z)}>{z}×</button>)}
+          </div>
+          <Link to={`/ai?scan=${songId}`} className="btn btn-ghost"><Icon name="edit" size={18} /> Sửa nốt trên ảnh</Link>
+        </div>
+      </div>
+      {scan.pages.map((p, i) => (
+        <ScanPageView key={i} image={{ url: urls[i], width: p.width, height: p.height }} staves={p.staves} notes={p.notes}
+          tokenOf={(id) => scan.tokens[id]} zoom={zoom} label={`Trang ${i + 1}`} />
+      ))}
+    </div>
   );
 }

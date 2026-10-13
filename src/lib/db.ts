@@ -3,6 +3,7 @@ import Dexie, { Table } from 'dexie';
 import { SAMPLE_SONGS } from '../data/samples';
 import { normalizeKey } from './harp';
 import { AiLogEntry, DEFAULT_SETTINGS, Settings, Song } from './types';
+import type { SongScan } from './scanStore';
 
 interface KV { key: string; value: unknown }
 
@@ -10,6 +11,8 @@ class HarpDB extends Dexie {
   songs!: Table<Song, string>;
   kv!: Table<KV, string>;
   aiLog!: Table<AiLogEntry, number>;
+  /** ảnh khuông nhạc đã quét của bài (khoá = id bài) — không đưa vào file sao lưu vì nặng */
+  scans!: Table<SongScan, string>;
   constructor() {
     super('harptabs');
     this.version(1).stores({
@@ -17,6 +20,7 @@ class HarpDB extends Dexie {
       kv: 'key',
       aiLog: '++id, at',
     });
+    this.version(2).stores({ scans: 'songId' });
   }
 }
 

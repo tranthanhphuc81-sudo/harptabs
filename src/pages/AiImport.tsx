@@ -1,6 +1,6 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useMemo, useRef, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { AiInput, AiResponse, estimateCostUsd, MAX_IMAGES, VND_PER_USD } from '../../shared/ai';
 import { aiToTab, prepareImage, transcribe } from '../lib/ai';
 import { blankSong, db } from '../lib/db';
@@ -27,6 +27,8 @@ export default function AiImport() {
   const { settings, toast } = useAppState();
   const online = useOnline();
   const nav = useNavigate();
+  const [params] = useSearchParams();
+  const editScan = params.get('scan') ?? undefined;
   const [mode, setMode] = useState<Mode>('scan');
   const [lastMode, setLastMode] = useState<Mode>('image'); // chế độ đã tạo ra kết quả đang hiện
   const [images, setImages] = useState<Img[]>([]);
@@ -141,7 +143,7 @@ export default function AiImport() {
     <div className="page page-ai">
       <header className="page-head">
         <div>
-          <h1>Nhập bài</h1>
+          <h1>{editScan ? 'Sửa nốt trên ảnh' : 'Nhập bài'}</h1>
           <p className="muted">Chụp khuông nhạc để máy tự đọc nốt (offline), hoặc nhờ AI đọc ảnh / nhớ bài theo tên. App tự xếp tab và beat.</p>
         </div>
       </header>
@@ -165,7 +167,7 @@ export default function AiImport() {
         </button>
       </div>
 
-      {mode === 'scan' ? <ScanImport /> : <>
+      {mode === 'scan' ? <ScanImport key={editScan ?? 'new'} editSongId={editScan} /> : <>
       <div className="ai-form">
         {mode === 'image' ? (
           <>

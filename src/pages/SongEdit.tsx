@@ -88,7 +88,10 @@ function Editor({ initial, isNew }: { initial: Song; isNew: boolean }) {
 
   const remove = async () => {
     if (!confirmDel) { setConfirmDel(true); setTimeout(() => setConfirmDel(false), 4000); return; }
-    await db.songs.delete(s.id);
+    await db.transaction('rw', db.songs, db.scans, async () => {
+      await db.songs.delete(s.id);
+      await db.scans.delete(s.id);
+    });
     toast('Đã xoá bài');
     nav('/', { replace: true });
   };

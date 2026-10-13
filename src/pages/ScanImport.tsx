@@ -5,6 +5,7 @@ import { aiToTab } from '../lib/ai';
 import { blankSong, db } from '../lib/db';
 import { HarpKey } from '../lib/harp';
 import { Gray, OmrNote, OmrPage, keyName, notePitch, readSheet, toGray, toTranscription } from '../lib/omr';
+import { loadScanPages, saveScan } from '../lib/scanStore';
 import { flatten, parseTab } from '../lib/tabText';
 import { beatsPerBar } from '../lib/types';
 import { KeySelect } from '../components/KeySelect';
@@ -12,6 +13,7 @@ import { TabView } from '../components/TabView';
 import { MiniPlay } from '../components/PlayerBar';
 import { usePlayer } from '../components/usePlayer';
 import { Icon } from '../components/Icon';
+import { ScanPageView } from '../components/ScanPageView';
 import { useAppState } from '../state';
 
 /** Ảnh chụp rất lớn thì thu nhỏ trước cho nhanh; bước đọc tự đưa về cỡ chuẩn */
@@ -47,25 +49,8 @@ const durIndex = (b: number) => DURATIONS.findIndex((d) => Math.abs(d.beats - b)
 
 const keySigLabel = (k: number) => (k === 0 ? 'Không dấu hoá' : `${Math.abs(k)} dấu ${k > 0 ? 'thăng ♯' : 'giáng ♭'}`) + ` (${keyName(k)} trưởng)`;
 
-/** Vẽ ảnh xám đã chuẩn hoá lên canvas */
-function PageCanvas({ image }: { image: Gray }) {
-  const ref = useRef<HTMLCanvasElement>(null);
-  useEffect(() => {
-    const c = ref.current;
-    if (!c) return;
-    c.width = image.width; c.height = image.height;
-    const g = c.getContext('2d')!;
-    const img = g.createImageData(image.width, image.height);
-    for (let i = 0, j = 0; i < image.data.length; i++, j += 4) {
-      img.data[j] = img.data[j + 1] = img.data[j + 2] = image.data[i];
-      img.data[j + 3] = 255;
-    }
-    g.putImageData(img, 0, 0);
-  }, [image]);
-  return <canvas ref={ref} className="scan-canvas" aria-hidden="true" />;
-}
-
-export default function ScanImport() {
+/** editSongId: mở lại ảnh đã quét của một bài để sửa tiếp (lưu sẽ cập nhật bài đó) */
+export default function ScanImport({ editSongId }: { editSongId?: string }) {
   const { settings, toast } = useAppState();
   const nav = useNavigate();
   const camRef = useRef<HTMLInputElement>(null);
@@ -82,6 +67,36 @@ export default function ScanImport() {
   const [target, setTarget] = useState<HarpKey | 'auto'>('auto');
   const [allowTranspose, setAllowTranspose] = useState(true);
   const [zoom, setZoom] = useState(1);
+  const [fromStore, setFromStore] = useState(false);
+
+  // mở lại bài đã quét
+  useEffect(() => {
+    if (!editSongId) return;
+    let alive = true;
+    (async () => {
+      const [song, scan] = await Promise.all([db.songs.get(editSongId), db.scans.get(editSongId)]);
+      if (!alive) return;
+      if (!song || !scan) { setError('Bài này chưa có ảnh quét được lưu.'); return; }
+      setBusy(true);
+      try {
+        const ps = await loadScanPages(scan);
+        if (!alive) return;
+        setPages(ps);
+        setFromStore(true);
+        setTitle(song.title);
+        setKeySig(scan.keySig);
+        setTimeSig(scan.timeSig);
+        setTempo(scan.tempo);
+        setTarget(scan.target);
+        setAllowTranspose(scan.allowTranspose);
+      } catch (e) {
+        setError((e as Error).message || 'Không mở được ảnh đã lưu');
+      } finally {
+        if (alive) setBusy(false);
+      }
+    })();
+    return () => { alive = false; };
+  }, [editSongId]);
 
   const read = (list: Gray[]) => {
     setBusy(true);
@@ -123,7 +138,7 @@ export default function ScanImport() {
     if (galRef.current) galRef.current.value = '';
   };
 
-  const reset = () => { setGrays([]); setPages([]); setSelected(null); setError(null); };
+  const reset = () => { setGrays([]); setPages([]); setSelected(null); setError(null); setFromStore(false); };
 
   // ───── sửa nốt ─────
   const allNotes = useMemo(() => pages.flatMap((p) => p.notes), [pages]);
@@ -217,7 +232,7 @@ export default function ScanImport() {
 
   const save = async () => {
     if (!converted) return;
-    const song = blankSong({
+    const fields = {
       title: title.trim() || 'Bài quét',
       harpKey: converted.harpKey,
       songKey: converted.fit.shift % 12 === 0 ? keyName(keySig) : undefined,
@@ -226,14 +241,28 @@ export default function ScanImport() {
       pickupBeats: converted.pickupBeats,
       style: converted.style,
       body: converted.body,
-      difficulty: converted.fit.stats.bends > 3 || converted.fit.stats.overblows ? 3 : converted.fit.stats.bends ? 2 : 1,
-      source: 'scan',
-      tags: ['Quét'],
-      notes: 'Quét từ ảnh khuông nhạc — nghe lại và sửa nếu có chỗ sai.',
-    });
+      difficulty: (converted.fit.stats.bends > 3 || converted.fit.stats.overblows ? 3 : converted.fit.stats.bends ? 2 : 1) as 1 | 2 | 3,
+    };
+    const existing = editSongId ? await db.songs.get(editSongId) : undefined;
+    const song = existing
+      ? { ...existing, ...fields, updatedAt: Date.now() }
+      : blankSong({ ...fields, source: 'scan', tags: ['Quét'], notes: 'Quét từ ảnh khuông nhạc — nghe lại và sửa nếu có chỗ sai.' });
+    try {
+      // ảnh + vị trí nốt + số lỗ kèn được lưu kèm bài để mở lại xem / sửa trên ảnh
+      const tokens: Record<string, string | null> = {};
+      tokenOf.forEach((v, k) => { tokens[k] = v; });
+      await saveScan(song.id, pages, { keySig, timeSig, tempo, target, allowTranspose, tokens });
+    } catch {
+      toast('Không lưu được ảnh quét (bộ nhớ đầy?) — tab vẫn được lưu');
+    }
     await db.songs.put(song);
-    toast('Đã lưu vào thư viện — kiểm tra lại rồi bấm Lưu bài');
-    nav(`/song/${song.id}/edit`);
+    if (existing) {
+      toast('Đã cập nhật bài');
+      nav(`/song/${song.id}`, { replace: true });
+    } else {
+      toast('Đã lưu vào thư viện kèm ảnh quét — kiểm tra lại rồi bấm Lưu bài');
+      nav(`/song/${song.id}/edit`);
+    }
   };
 
   const noteCount = allNotes.filter((n) => !n.rest).length;
@@ -241,7 +270,7 @@ export default function ScanImport() {
   return (
     <div className="ai-form">
       <div className="shots">
-        {pages.length === 0 && grays.length < MAX_IMAGES && (
+        {pages.length === 0 && !busy && grays.length < MAX_IMAGES && (
           <div className="shot-add">
             <button type="button" className="btn btn-primary" onClick={() => camRef.current?.click()} disabled={busy}><Icon name="camera" size={18} /> Chụp bản nhạc</button>
             <button type="button" className="btn btn-ghost" onClick={() => galRef.current?.click()} disabled={busy}><Icon name="image" size={18} /> Chọn ảnh có sẵn</button>
@@ -269,8 +298,8 @@ export default function ScanImport() {
               <div className="segmented" role="group" aria-label="Phóng to ảnh">
                 {[1, 2, 3].map((z) => <button key={z} type="button" className={zoom === z ? 'on' : ''} aria-pressed={zoom === z} onClick={() => setZoom(z)}>{z}×</button>)}
               </div>
-              {grays.length < MAX_IMAGES && <button type="button" className="btn btn-ghost" onClick={() => galRef.current?.click()}><Icon name="plus" size={18} /> Thêm trang</button>}
-              <button type="button" className="btn btn-ghost" onClick={reset}>Làm lại</button>
+              {!fromStore && grays.length < MAX_IMAGES && <button type="button" className="btn btn-ghost" onClick={() => galRef.current?.click()}><Icon name="plus" size={18} /> Thêm trang</button>}
+              <button type="button" className="btn btn-ghost" onClick={reset}>{fromStore ? 'Quét ảnh khác' : 'Làm lại'}</button>
             </div>
           </div>
           {guessCount > 0 && (
@@ -286,33 +315,8 @@ export default function ScanImport() {
 
           {pages.map((p, pi) => (
             <figure key={pi} className="scan-page">
-              <div className="scan-scroll">
-              <div className="scan-stage" style={{ width: `${zoom * 100}%` }}>
-                <PageCanvas image={p.image} />
-                <svg viewBox={`0 0 ${p.image.width} ${p.image.height}`} className="scan-overlay" role="group" aria-label={`Trang ${pi + 1}`}>
-                  {p.staves.map((st, si) => st.bars.map((bx, bi) => (
-                    <line key={`b${si}-${bi}`} x1={bx} x2={bx} y1={st.top - st.space} y2={st.bottom + st.space}
-                      className={offBars.has(`${pi}:${si}:${bi}`) || offBars.has(`${pi}:${si}:${bi + 1}`) ? 'bar bad'
-                        : guessBars.has(`${pi}:${si}:${bi}`) || guessBars.has(`${pi}:${si}:${bi + 1}`) ? 'bar guess' : 'bar'} />
-                  )))}
-                  {p.notes.map((n) => {
-                    const st = p.staves[n.staff];
-                    const tok = tokenOf.get(n.id);
-                    const isDraw = !!tok && tok.startsWith('-');
-                    return (
-                      <g key={n.id} className={`onote${n.id === selected ? ' sel' : ''}${n.rest ? ' rest' : ''}${n.guess ? ' guess' : ''}`}
-                        onClick={() => setSelected(n.id === selected ? null : n.id)}>
-                        <circle cx={n.x} cy={n.y} r={st.space * 1.7} className="hit" />
-                        <ellipse cx={n.x} cy={n.y} rx={st.space * 0.85} ry={st.space * 0.65} className="mark" />
-                        <text x={n.x} y={st.top - st.space * 1.3} fontSize={st.space * 2.1} textAnchor="middle" className={n.guess ? 'tok-guess' : n.rest ? 'tok-rest' : isDraw ? 'tok-draw' : 'tok-blow'}>
-                          {n.rest ? (n.guess ? '?' : '—') : tok ?? '×'}
-                        </text>
-                      </g>
-                    );
-                  })}
-                </svg>
-              </div>
-              </div>
+              <ScanPageView image={p.image} staves={p.staves} notes={p.notes} tokenOf={(id) => tokenOf.get(id)} zoom={zoom}
+                label={`Trang ${pi + 1}`} selected={selected} onSelect={setSelected} offBars={offBars} guessBars={guessBars} page={pi} />
               {pages.length > 1 && <figcaption>Trang {pi + 1}</figcaption>}
             </figure>
           ))}
@@ -394,7 +398,7 @@ export default function ScanImport() {
               </p>
               <div className="row gap">
                 <MiniPlay p={player} />
-                <button type="button" className="btn btn-primary" onClick={save}>Lưu vào thư viện</button>
+                <button type="button" className="btn btn-primary" onClick={save}>{editSongId ? 'Lưu thay đổi' : 'Lưu vào thư viện'}</button>
               </div>
               <TabView parsed={parsed} flat={flat} active={player.active} size="s" showNames={settings.showNoteNames} nameStyle={settings.noteNames} />
             </section>
