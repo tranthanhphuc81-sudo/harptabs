@@ -454,6 +454,36 @@ function clefEnd(img: Bits, top: number, bottom: number, s: number, xLeft: numbe
 }
 
 /** Hoá biểu: dấu thăng (2 nét dọc) / giáng (1 nét dọc + bụng) giữa khoá nhạc và nốt đầu */
+/**
+ * Khối các dấu hoá dính nhau (ảnh nhỏ, in sát): cắt tại các nét dọc rồi phân loại từng phần.
+ * Mỗi dấu giáng có 1 nét dọc, mỗi dấu thăng 2 nét. Trả [số dấu (+thăng / −giáng), hoặc 0 nếu không chắc].
+ */
+function splitAccidentals(lab: Int32Array, w: number, o: Box, id: number, s: number): number {
+  const cols: number[] = [];
+  for (let x = o.x0; x < o.x1; x++) {
+    let best = 0, run = 0;
+    for (let y = o.y0; y < o.y1; y++) { if (lab[y * w + x] === id) { run++; best = Math.max(best, run); } else run = 0; }
+    if (best >= 1.4 * s) cols.push(x);
+  }
+  const strokes = cols.filter((x, i) => i === 0 || x !== cols[i - 1] + 1);
+  const part = (x0: number, x1: number): Box | null => {
+    let y0 = Infinity, y1 = -1;
+    for (let y = o.y0; y < o.y1; y++) for (let x = x0; x < x1; x++) if (lab[y * w + x] === id) { y0 = Math.min(y0, y); y1 = Math.max(y1, y + 1); }
+    return y1 > y0 ? { x0, x1, y0, y1 } : null;
+  };
+  for (const per of [1, 2]) {
+    if (strokes.length < 2 || strokes.length % per) continue;
+    const cuts = strokes.filter((_, i) => i % per === 0).concat(o.x1);
+    const kinds = cuts.slice(0, -1).map((x, i) => {
+      const b = part(i === 0 ? o.x0 : x, cuts[i + 1]);
+      return b ? classifyAccidental(lab, w, b, id, s) : null;
+    });
+    if (per === 1 && kinds.every((k) => k === -1)) return -kinds.length;
+    if (per === 2 && kinds.every((k) => k === 1)) return kinds.length;
+  }
+  return 0;
+}
+
 function keySignature(img: Bits, top: number, bottom: number, s: number, xFrom: number): [number, number] {
   const y0 = Math.trunc(top - 1.5 * s);
   const band = img.crop(y0, Math.trunc(bottom + s), xFrom, xFrom + Math.trunc(9 * s));
@@ -462,15 +492,19 @@ function keySignature(img: Bits, top: number, bottom: number, s: number, xFrom: 
   for (const { o, id } of boxes.map((o, i) => ({ o, id: i + 1 })).sort((a, b) => a.o.x0 - b.o.x0)) {
     if (bh(o) < 0.5 * s) continue; // hạt nhiễu
     if (o.x0 - end > (end ? 1.2 : 2.5) * s) break; // dấu hoá trong hoá biểu đứng sát nhau
-    if (!(1.8 * s <= bh(o) && bh(o) <= 3.6 * s && 0.45 * s <= bw(o) && bw(o) <= 1.4 * s)) break;
-    const kind = classifyAccidental(lab, band.w, o, id, s);
-    if (kind === 1) sharps++;
-    else if (kind === -1) flats++;
-    else break;
+    let n = 0;
+    if (1.8 * s <= bh(o) && bh(o) <= 3.6 * s && 0.45 * s <= bw(o) && bw(o) <= 1.4 * s) {
+      const kind = classifyAccidental(lab, band.w, o, id, s);
+      n = kind === 1 ? 1 : kind === -1 ? -1 : 0;
+    } else if (1.8 * s <= bh(o) && bh(o) <= 4.8 * s && 1.4 * s < bw(o) && bw(o) <= 6 * s) {
+      n = splitAccidentals(lab, band.w, o, id, s); // nhiều dấu dính nhau
+    }
+    if (!n) break;
+    if (n > 0) sharps += n; else flats -= n;
     end = o.x1;
   }
-  if (sharps && !flats) return [sharps, xFrom + end];
-  if (flats && !sharps) return [-flats, xFrom + end];
+  if (sharps && !flats) return [Math.min(sharps, 7), xFrom + end];
+  if (flats && !sharps) return [-Math.min(flats, 7), xFrom + end];
   return [0, xFrom];
 }
 
@@ -480,10 +514,12 @@ function timeSigSpan(img: Bits, top: number, bottom: number, s: number, xFrom: n
   const band = img.crop(y0, Math.trunc(bottom + 0.5 * s) + 1, xFrom, xFrom + Math.trunc(8 * s));
   const { boxes } = label(band);
   const mid = (bottom - top) / 2 + 0.5 * s;
-  for (const a of boxes) {
-    // chữ "C" (nhịp 4/4): một khối ở giữa khuông, cao ~2 khe
-    if (Math.abs(cy(a) + y0 - (top + bottom) / 2) <= 0.6 * s && 1.5 * s <= bh(a) && bh(a) <= 2.6 * s && 1.1 * s <= bw(a) && bw(a) <= 2.4 * s) {
-      return [xFrom + a.x0 - 1, xFrom + a.x1 + 1];
+  // chữ "C" (nhịp 4/4): một khối ở giữa khuông, cao ~2 khe — có thể vỡ thành vài mảnh khi xoá dòng kẻ
+  const near = boxes.filter((b) => bh(b) >= 0.5 * s && bh(b) <= 3 * s && b.x0 < 3 * s);
+  if (near.length) {
+    const u = { x0: Math.min(...near.map((b) => b.x0)), x1: Math.max(...near.map((b) => b.x1)), y0: Math.min(...near.map((b) => b.y0)), y1: Math.max(...near.map((b) => b.y1)) };
+    if (Math.abs(cy(u) + y0 - (top + bottom) / 2) <= 0.6 * s && 1.5 * s <= bh(u) && bh(u) <= 2.6 * s && 1.1 * s <= bw(u) && bw(u) <= 2.4 * s) {
+      return [xFrom + u.x0 - 1, xFrom + u.x1 + 1];
     }
   }
   for (const a of boxes) {
@@ -600,6 +636,92 @@ function findTies(img: Bits, s: number, xFrom: number, occupied: Box[]): Box[] {
   });
 }
 
+/**
+ * Lòng nốt trắng: số điểm trắng bị mực bao kín, nằm ở giữa đầu nốt (50% bề ngang, 70% chiều cao).
+ * Đo trên ảnh CÒN dòng kẻ: dòng kẻ dày cùng vành nốt khép kín các khe trắng nhỏ.
+ */
+function enclosedWhite(img: Bits, o: Box): number {
+  const patch = img.crop(o.y0 - 1, o.y1 + 1, o.x0 - 1, o.x1 + 1);
+  const holes = fillHoles(patch).andNot(patch);
+  // chỉ tính phần giữa: ô trắng kẹp giữa mép đầu nốt, thân nốt và dòng kẻ nằm sát cạnh, không phải lòng nốt
+  const mx = Math.floor(bw(o) * 0.25), my = Math.floor(bh(o) * 0.15);
+  let n = 0;
+  for (let y = 1 + my; y < patch.h - 1 - my; y++) for (let x = 1 + mx; x < patch.w - 1 - mx; x++) n += holes.d[y * patch.w + x];
+  return n;
+}
+
+/** Các thân nốt (nét dọc thẳng, mảnh, dài 2.8–6 khe) trong vùng khuông; bỏ vạch nhịp */
+function stemSegments(img: Bits, s: number, xFrom: number, xTo: number): Stem[] {
+  const segs: { x: number; a: number; b: number }[] = [];
+  for (let x = Math.max(0, xFrom); x < Math.min(img.w, xTo); x++) {
+    let y = 0;
+    while (y < img.h) {
+      if (!img.get(x, y)) { y++; continue; }
+      const r = verticalRun(img, x, y)!;
+      if (r[1] - r[0] + 1 >= 2.8 * s && r[1] - r[0] + 1 <= 6 * s) segs.push({ x, a: r[0], b: r[1] });
+      y = r[1] + 1;
+    }
+  }
+  // gộp các cột liền nhau của cùng một nét
+  const out: Stem[] = [];
+  const used = new Array(segs.length).fill(false);
+  segs.forEach((g, i) => {
+    if (used[i]) return;
+    let xs = [g.x], a = g.a, b = g.b, last = g.x;
+    for (let j = i + 1; j < segs.length; j++) {
+      const h = segs[j];
+      if (h.x > last + 1) break;
+      if (!used[j] && h.x === last + 1 && h.a < b && a < h.b) { used[j] = true; xs.push(h.x); a = Math.min(a, h.a); b = Math.max(b, h.b); last = h.x; }
+    }
+    if (xs.length > 0.48 * s) return; // không mảnh
+    // nét phủ đúng cả khuông có thể là vạch nhịp HOẶC thân nốt nằm trên dòng dưới (E4, F4):
+    // vẫn giữ lại, bên gọi chỉ nhận khi có đầu nốt ở đầu nét
+    out.push({ x: Math.round(xs.reduce((t, v) => t + v, 0) / xs.length), a, b, up: true });
+  });
+  return out;
+}
+
+/**
+ * Đầu nốt ở đầu một thân nốt: khối mực cỡ đầu nốt ngay bên trái đầu dưới (thân quay lên)
+ * hoặc bên phải đầu trên (thân quay xuống). Lõi thưa mực so với vành → nốt trắng.
+ */
+function headAtStem(img: Bits, inkWithLines: Bits, st: Stem, s: number, lineRow: Uint8Array): { box: Box; hollow: boolean; up: boolean } | null {
+  // thân nốt thường chạy xuyên qua mép đầu nốt → đầu nốt có thể nằm lùi vào trong thân tới 1.3 khe
+  const tries: { box: Box; up: boolean }[] = [
+    { box: { x0: Math.round(st.x - 1.6 * s), x1: st.x - 1, y0: Math.round(st.b - 1.3 * s), y1: Math.round(st.b + 0.5 * s) }, up: true },
+    { box: { x0: st.x + 2, x1: Math.round(st.x + 1.6 * s), y0: Math.round(st.a - 0.5 * s), y1: Math.round(st.a + 1.3 * s) }, up: false },
+  ];
+  let best: { box: Box; hollow: boolean; up: boolean; score: number } | null = null;
+  for (const { box, up } of tries) {
+    let x0 = Infinity, x1 = -1, y0 = Infinity, y1 = -1, n = 0;
+    for (let y = Math.max(0, box.y0); y < Math.min(img.h, box.y1); y++) {
+      if (lineRow[y]) continue;
+      for (let x = Math.max(0, box.x0); x < Math.min(img.w, box.x1); x++) {
+        if (!img.get(x, y)) continue;
+        n++; x0 = Math.min(x0, x); x1 = Math.max(x1, x + 1); y0 = Math.min(y0, y); y1 = Math.max(y1, y + 1);
+      }
+    }
+    if (!n) continue;
+    const w = x1 - x0, h = y1 - y0;
+    if (w < 0.8 * s || w > 1.7 * s || h < 0.5 * s || h > 1.4 * s) continue;
+    // lõi: nửa giữa của khối, bỏ hàng dòng kẻ
+    let cn = 0, ci = 0;
+    for (let y = y0 + Math.floor(h / 4); y < y1 - Math.floor(h / 4); y++) {
+      if (lineRow[y]) continue;
+      for (let x = x0 + Math.floor(w / 4); x < x1 - Math.floor(w / 4); x++) { cn++; ci += img.get(x, y); }
+    }
+    const core = cn ? ci / cn : 1;
+    let rows = 0;
+    for (let y = y0; y < y1; y++) if (!lineRow[y]) rows++;
+    const dens = n / Math.max(1, w * rows);
+    if (dens < 0.2) continue;
+    const hollow = core < 0.5 || enclosedWhite(inkWithLines, { x0, x1, y0, y1 }) >= Math.max(3, 0.02 * s * s);
+    const score = hollow ? 2 : dens; // ưu tiên dạng vòng (nốt trắng) — đầu kia thường là vạch nối / móc
+    if (!best || score > best.score) best = { box: { x0, x1, y0, y1 }, hollow, up, score };
+  }
+  return best && { box: best.box, hollow: best.hollow, up: best.up };
+}
+
 // ───────────────────────── đọc một trang ─────────────────────────
 
 let noteSeq = 0;
@@ -645,11 +767,13 @@ export function readPage(input: Gray, page = 0): OmrPage | null {
     const small = keepHeadHoles(fillHoles(bridged).andNot(bridged), s, 0);
     const heads = opening(closing(roi.or(small), 3), k);
     // hàng thuộc dòng kẻ (toạ độ trong roi) — bỏ qua khi đo độ đặc của lõi đầu nốt
+    const inkRoi = ink.rows(y0, y1); inkRoi.clearLeft(ce); // còn dòng kẻ
     const lineRow = new Uint8Array(roi.h);
     for (const [a, b] of lines) for (let y = a - 1; y <= b + 1; y++) if (y >= y0 && y - y0 < roi.h) lineRow[y - y0] = 1;
     /** nốt trắng nếu có lòng rỗng, hoặc lõi đầu nốt (nửa giữa của hộp) thưa mực so với chính nó */
     const isHollow = (o: Box) => {
       if (anyIn(small, o)) return true;
+      if (enclosedWhite(inkRoi, o) >= Math.max(3, 0.02 * s * s)) return true;
       let n = 0, ink = 0;
       for (let y = o.y0 + Math.floor(bh(o) / 4); y < o.y1 - Math.floor(bh(o) / 4); y++) {
         if (lineRow[y]) continue;
@@ -716,6 +840,35 @@ export function readPage(input: Gray, page = 0): OmrPage | null {
         id: `n${++noteSeq}`, page, staff: outStaves.length, x, y,
         step: Math.round((bottom - y) / (s / 2)), accidental: acc ? acc.kind : null,
         beats: beats * (dot ? 1.5 : 1), hollow, dot, rest: false,
+      });
+    }
+    // nốt bị sót (thường là nốt trắng vành mảnh bị bước tìm đầu nốt gặm mất): tìm thân nốt "mồ côi"
+    // rồi xem ở đầu thân có đầu nốt không
+    const usedStems = valid.filter((v, i) => !drop.has(i) && v.stem).map((v) => v.stem!.x);
+    for (const st of stemSegments(thinRoi, s, contentFrom + 1, xRight + 1)) {
+      if (usedStems.some((x) => Math.abs(x - st.x) <= 0.4 * s)) continue;
+      // móc / thân của nốt đã nhận không phải thân mồ côi
+      const stBox = { x0: st.x - 1, x1: st.x + 2, y0: st.a, y1: st.b + 1 };
+      if (occupied.some((z) => overlaps(z, stBox))) continue;
+      const head = headAtStem(roi, inkRoi, st, s, lineRow);
+      if (!head) continue;
+      // nét phủ đúng cả khuông: vạch nhịp, trừ khi ở đầu nét là nốt TRẮNG (nốt đen đã được tìm ở trên)
+      const spansStaff = Math.abs(st.a - (top - y0)) <= 0.5 * s && Math.abs(st.b - (bottom - y0)) <= 0.5 * s;
+      if (spansStaff && !head.hollow) continue;
+      const o = head.box;
+      if (occupied.some((z) => overlaps(z, o))) continue;
+      if (staffNotes.some((n) => Math.abs(n.x - cx(o)) < 0.8 * s && Math.abs(n.y - (cy(o) + y0)) < s)) continue;
+      const stem: Stem = { ...st, up: head.up };
+      const beats = head.hollow ? 2 : 1 / 2 ** countFlags(thinRoi, stem, s);
+      const dot = hasDot(roi, o, s);
+      usedStems.push(st.x);
+      occupied.push({ x0: st.x - 2, x1: st.x + Math.ceil(1.4 * s), y0: st.a - 1, y1: st.b + 2 }, { x0: o.x0 - 1, x1: o.x1 + 1, y0: o.y0 - 1, y1: o.y1 + 1 });
+      const acc = accs.find((a) => o.x0 - 1.8 * s <= a.box.x1 && a.box.x1 <= o.x0 + 0.4 * s && Math.abs(cy(a.box) - cy(o)) <= 1.3 * s);
+      const y = cy(o) + y0;
+      staffNotes.push({
+        id: `n${++noteSeq}`, page, staff: outStaves.length, x: cx(o), y,
+        step: Math.round((bottom - y) / (s / 2)), accidental: acc ? acc.kind : null,
+        beats: beats * (dot ? 1.5 : 1), hollow: head.hollow, dot, rest: false,
       });
     }
     // dấu lặng vẽ trong khuông
