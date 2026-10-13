@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { Gray, keyName, notePitch, readSheet, toTranscription } from './omr';
 
 /** Vẽ một khuông nhạc giả lập: khoá (khối cao), nốt, vạch nhịp — đủ để kiểm tra các luật đọc */
-type Sym = { kind: 'note'; step: number; beats: 0.5 | 1 | 1.5 | 2 | 3 } | { kind: 'bar' };
+type Sym = { kind: 'note'; step: number; beats: 0.5 | 1 | 1.5 | 2 | 3 | 4; sharp?: boolean } | { kind: 'bar' };
 
 function render(symbols: Sym[], S = 14): Gray {
   const width = 80 + symbols.length * 4 * S + 40, height = 14 * S;
@@ -25,6 +25,23 @@ function render(symbols: Sym[], S = 14): Gray {
     if (sym.kind === 'bar') { rect(Math.round(x), top - 1, Math.round(x) + 2, bottom + 1); x += 1.5 * S; continue; }
     const cyy = bottom - sym.step * (S / 2);
     const hollow = sym.beats >= 2;
+    if (sym.sharp) x += 1.5 * S; // chừa chỗ cho dấu thăng
+    if (sym.beats === 4) {
+      // nốt tròn: bầu dục rộng, lòng nghiêng, không thân
+      for (let yy = -S; yy <= S; yy++) for (let xx = -S; xx <= S; xx++) {
+        const u = xx / (0.85 * S), v = yy / (0.5 * S);
+        const iu = (xx * 0.6 - yy * 0.8) / (0.4 * S), iv = (xx * 0.8 + yy * 0.6) / (0.24 * S);
+        if (u * u + v * v <= 1 && iu * iu + iv * iv > 1) dot(x + xx, cyy + yy);
+      }
+      x += 4 * S; continue;
+    }
+    if (sym.sharp) {
+      // dấu thăng: hai nét dọc + hai nét ngang dày, đứng trước đầu nốt
+      const ax = x - 1.9 * S;
+      rect(Math.round(ax - 0.2 * S), Math.round(cyy - 1.4 * S), Math.round(ax - 0.2 * S) + 2, Math.round(cyy + 1.3 * S));
+      rect(Math.round(ax + 0.25 * S), Math.round(cyy - 1.5 * S), Math.round(ax + 0.25 * S) + 2, Math.round(cyy + 1.2 * S));
+      for (const dy of [-0.45, 0.45]) for (let t = -0.45 * S; t < 0.6 * S; t++) for (let k = 0; k < 4; k++) dot(ax + t, cyy + dy * S - t * 0.3 + k);
+    }
     // đầu nốt hình bầu dục hơi nghiêng
     for (let yy = -S; yy <= S; yy++) for (let xx = -S; xx <= S; xx++) {
       const u = (xx * 0.95 + yy * 0.3) / (0.66 * S), v = (-xx * 0.3 + yy * 0.95) / (0.45 * S);
@@ -49,7 +66,7 @@ function render(symbols: Sym[], S = 14): Gray {
   return { width, height, data };
 }
 
-const N = (step: number, beats: 0.5 | 1 | 1.5 | 2 | 3 = 1): Sym => ({ kind: 'note', step, beats });
+const N = (step: number, beats: 0.5 | 1 | 1.5 | 2 | 3 | 4 = 1, sharp = false): Sym => ({ kind: 'note', step, beats, sharp });
 const BAR: Sym = { kind: 'bar' };
 
 describe('đọc khuông nhạc (OMR)', () => {
@@ -101,6 +118,16 @@ describe('đọc khuông nhạc (OMR)', () => {
     const r = readSheet([render([N(2), N(2), N(2), N(2), BAR, N(3), N(3), N(3), BAR, N(4), N(4), N(4), N(4), BAR, N(2, 2), N(2, 2)])]);
     const seq = r.pages[0].notes.map((n) => `${notePitch(n, 0)}:${n.beats}`);
     expect(seq.slice(4, 8)).toEqual(['A4:1', 'A4:1', 'A4:1', 'R:1']);
+  });
+
+  it('nốt tròn và dấu thăng giữa bài (giữ hiệu lực đến hết ô nhịp)', () => {
+    const r = readSheet([render([N(2), N(3), N(4), N(5), BAR, N(1, 1, true), N(2), N(1), N(0), BAR, N(1), N(2), N(3), N(4), BAR, N(3, 4)])]);
+    expect(r.pages[0].notes.map((n) => `${notePitch(n, 0)}:${n.beats}`)).toEqual([
+      'G4:1', 'A4:1', 'B4:1', 'C5:1',
+      'F#4:1', 'G4:1', 'F#4:1', 'E4:1',
+      'F4:1', 'G4:1', 'A4:1', 'B4:1',
+      'A4:4',
+    ]);
   });
 
   it('không thấy khuông nhạc thì không bịa nốt', () => {

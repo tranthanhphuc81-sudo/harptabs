@@ -18,7 +18,7 @@ import { useAppState } from '../state';
 const MAX_SIDE = 2600;
 const TIME_SIGS = ['2/4', '3/4', '4/4', '6/8', '3/8', '2/2'];
 const DURATIONS: { beats: number; label: string }[] = [
-  { beats: 0.25, label: 'Móc kép' }, { beats: 0.5, label: 'Móc đơn' }, { beats: 0.75, label: 'Móc chấm' },
+  { beats: 0.25, label: 'Móc kép' }, { beats: 1 / 3, label: 'Liên ba' }, { beats: 0.5, label: 'Móc đơn' }, { beats: 0.75, label: 'Móc chấm' },
   { beats: 1, label: 'Đen' }, { beats: 1.5, label: 'Đen chấm' }, { beats: 2, label: 'Trắng' },
   { beats: 3, label: 'Trắng chấm' }, { beats: 4, label: 'Tròn' },
 ];
@@ -42,6 +42,8 @@ const barBeats = (ts: string) => {
   const [n, d] = ts.split('/').map(Number);
   return n && d ? (n * 4) / d : 4;
 };
+
+const durIndex = (b: number) => DURATIONS.findIndex((d) => Math.abs(d.beats - b) < 0.01);
 
 const keySigLabel = (k: number) => (k === 0 ? 'Không dấu hoá' : `${Math.abs(k)} dấu ${k > 0 ? 'thăng ♯' : 'giáng ♭'}`) + ` (${keyName(k)} trưởng)`;
 
@@ -79,6 +81,7 @@ export default function ScanImport() {
   const [title, setTitle] = useState('');
   const [target, setTarget] = useState<HarpKey | 'auto'>('auto');
   const [allowTranspose, setAllowTranspose] = useState(true);
+  const [zoom, setZoom] = useState(1);
 
   const read = (list: Gray[]) => {
     setBusy(true);
@@ -171,9 +174,16 @@ export default function ScanImport() {
     const m = new Map<string, string | null>();
     if (!converted) return m;
     const order = pages.flatMap((p) => p.staves.flatMap((_, si) => p.notes.filter((n) => n.staff === si).sort((a, b) => a.x - b.x)));
-    order.forEach((n, i) => m.set(n.id, converted.fit.tokens[i] ?? null));
+    let i = 0;
+    let last: OmrNote | null = null;
+    for (const n of order) {
+      // giống toTranscription: nốt nối cùng cao độ được gộp vào nốt trước
+      if (n.tied && !n.rest && last && notePitch(last, keySig) === notePitch(n, keySig)) { m.set(n.id, '⌒'); continue; }
+      m.set(n.id, converted.fit.tokens[i++] ?? null);
+      last = n.rest ? null : n;
+    }
     return m;
-  }, [pages, converted]);
+  }, [pages, converted, keySig]);
 
   /** ô nhịp lệch phách (bỏ ô đầu và ô cuối của bài) */
   const offBars = useMemo(() => {
@@ -241,7 +251,10 @@ export default function ScanImport() {
               Đọc được <strong>{noteCount} nốt</strong> trên {pages.reduce((t, p) => t + p.staves.length, 0)} khuông.
               {' '}Chạm vào nốt để sửa. Số trên nốt là lỗ kèn: <span className="tok-blow">cam = thổi</span>, <span className="tok-draw">xanh = hút</span>.
             </p>
-            <div className="row gap">
+            <div className="row gap wrap">
+              <div className="segmented" role="group" aria-label="Phóng to ảnh">
+                {[1, 2, 3].map((z) => <button key={z} type="button" className={zoom === z ? 'on' : ''} aria-pressed={zoom === z} onClick={() => setZoom(z)}>{z}×</button>)}
+              </div>
               {grays.length < MAX_IMAGES && <button type="button" className="btn btn-ghost" onClick={() => galRef.current?.click()}><Icon name="plus" size={18} /> Thêm trang</button>}
               <button type="button" className="btn btn-ghost" onClick={reset}>Làm lại</button>
             </div>
@@ -254,7 +267,8 @@ export default function ScanImport() {
 
           {pages.map((p, pi) => (
             <figure key={pi} className="scan-page">
-              <div className="scan-stage">
+              <div className="scan-scroll">
+              <div className="scan-stage" style={{ width: `${zoom * 100}%` }}>
                 <PageCanvas image={p.image} />
                 <svg viewBox={`0 0 ${p.image.width} ${p.image.height}`} className="scan-overlay" role="group" aria-label={`Trang ${pi + 1}`}>
                   {p.staves.map((st, si) => st.bars.map((bx, bi) => (
@@ -278,6 +292,7 @@ export default function ScanImport() {
                   })}
                 </svg>
               </div>
+              </div>
               {pages.length > 1 && <figcaption>Trang {pi + 1}</figcaption>}
             </figure>
           ))}
@@ -297,13 +312,14 @@ export default function ScanImport() {
                   <button key={l} type="button" className={`chip${sel.accidental === a ? ' on' : ''}`} title={a === null ? 'Theo hoá biểu' : undefined}
                     onClick={() => editNote(sel.id, () => ({ accidental: a }))}>{l}</button>
                 ))}
-                <select className="chip-select" aria-label="Trường độ" value={sel.beats} onChange={(e) => editNote(sel.id, () => ({ beats: Number(e.target.value) }))}>
-                  {(DURATIONS.some((d) => d.beats === sel.beats) ? DURATIONS : [...DURATIONS, { beats: sel.beats, label: `${sel.beats} phách` }])
-                    .map((d) => <option key={d.beats} value={d.beats}>{d.label}</option>)}
+                <select className="chip-select" aria-label="Trường độ" value={durIndex(sel.beats)} onChange={(e) => editNote(sel.id, () => ({ beats: DURATIONS[Number(e.target.value)]?.beats ?? sel.beats }))}>
+                  {DURATIONS.map((d, i) => <option key={d.label} value={i}>{d.label}</option>)}
+                  {durIndex(sel.beats) === -1 && <option value={-1}>{`${+sel.beats.toFixed(2)} phách`}</option>}
                 </select>
               </div>
               <div className="row gap wrap">
                 <button type="button" className="chip" onClick={() => editNote(sel.id, (n) => ({ rest: !n.rest }))}>{sel.rest ? 'Thành nốt' : 'Thành lặng'}</button>
+                {!sel.rest && <button type="button" className={`chip${sel.tied ? ' on' : ''}`} title="Dấu nối: cộng trường độ vào nốt trước cùng cao độ" onClick={() => editNote(sel.id, (n) => ({ tied: !n.tied }))}>⌒ Nối nốt trước</button>}
                 <button type="button" className="chip" onClick={() => insertAfter(sel)}><Icon name="plus" size={16} /> Thêm sau</button>
                 <button type="button" className="chip" onClick={() => { editNote(sel.id, () => null); setSelected(null); }}><Icon name="trash" size={16} /> Xoá</button>
               </div>
