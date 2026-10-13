@@ -12,6 +12,7 @@ App lưu và tập harptab cho kèn **diatonic 10 lỗ**. Chạy **offline hoàn
 | Đổi kèn | Offline | Chuyển bài sang kèn khác, tự chọn lỗ dễ thổi nhất (thuật toán quy hoạch động), giữ giọng gốc hoặc dịch giọng |
 | Dò nốt | Offline (micro, YIN) | Hiện lỗ/kỹ thuật đang thổi, kim lệch cent để tập bend |
 | Học | Offline | 18 bài: cầm kèn, hơi thở, đơn âm, vibrato, wah, tonguing, bend hút/thổi, overblow, vị trí, blues 12 ô nhịp, bảo quản, lỗi thường gặp, lộ trình 30 ngày, kèm bài tập phát được |
+| Dán tab từ mạng | Offline | Copy tab trên web (`4 -4`, `4↑ 4↓`, `B4 D4`, `-3b`, `(4)`…) dán vào, app tự nhận dòng tab, lời, tên bài, tông kèn và chuyển sang định dạng của app |
 | Quét khuông nhạc | Offline | Chụp bản nhạc in (khoá Sol, một bè), máy tự đọc cao độ + trường độ + vạch nhịp ngay trên điện thoại, hiện số lỗ trên từng nốt để chạm vào sửa |
 | Nhập AI | Online (Gemini) | Nhờ AI đọc ảnh hoặc nhớ bài theo tên → app tự xếp tab, beat, ghép lời. Đọc ảnh bằng AI còn hay sai cao độ, bản in nên dùng Quét khuông nhạc |
 
@@ -100,6 +101,7 @@ src/lib/tabText.ts     Parser / serializer định dạng tab
 src/lib/converter.ts   Chọn lỗ tối ưu (Viterbi), tìm kèn hợp nhất, đổi kèn
 src/lib/ai.ts          Gọi AI, nén ảnh, chuyển kết quả AI → tab
 src/lib/omr.ts         Đọc khuông nhạc offline (OMR theo luật)
+src/lib/tabImport.ts   Nhận tab dán từ mạng (nhiều kiểu ký hiệu) → định dạng của app
 src/lib/db.ts          IndexedDB (Dexie), sao lưu / khôi phục
 src/audio/             Tổng hợp âm, beat mẫu, bộ lập lịch phát, dò cao độ YIN
 src/pages/             Thư viện, Xem bài, Sửa bài, Nhập bài (quét / AI), Học, Dò nốt, Cài đặt

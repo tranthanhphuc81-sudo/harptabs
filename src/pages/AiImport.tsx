@@ -14,8 +14,9 @@ import { usePlayer } from '../components/usePlayer';
 import { Icon } from '../components/Icon';
 import { useAppState, useOnline } from '../state';
 import ScanImport from './ScanImport';
+import PasteTab from './PasteTab';
 
-type Mode = 'scan' | 'image' | 'name';
+type Mode = 'scan' | 'paste' | 'image' | 'name';
 interface Img { id: string; mimeType: string; data: string; preview: string }
 
 function vnd(usd: number) {
@@ -144,20 +145,23 @@ export default function AiImport() {
       <header className="page-head">
         <div>
           <h1>{editScan ? 'Sửa nốt trên ảnh' : 'Nhập bài'}</h1>
-          <p className="muted">Chụp khuông nhạc để máy tự đọc nốt (offline), hoặc nhờ AI đọc ảnh / nhớ bài theo tên. App tự xếp tab và beat.</p>
+          <p className="muted">Chụp khuông nhạc để máy tự đọc nốt, dán tab copy từ mạng, hoặc nhờ AI đọc ảnh / nhớ bài theo tên.</p>
         </div>
       </header>
 
-      {mode !== 'scan' && !configured && (
+      {(mode === 'image' || mode === 'name') && !configured && (
         <div className="alert">
           Chưa kết nối AI. Vào <Link to="/settings">Cài đặt</Link> để nhập địa chỉ máy chủ AI, hoặc dán Gemini API key của bạn (chỉ nên dùng cho máy cá nhân).
         </div>
       )}
-      {mode !== 'scan' && !online && <div className="alert">Bạn đang offline. Phần này cần mạng; các phần khác của app vẫn dùng bình thường.</div>}
+      {(mode === 'image' || mode === 'name') && !online && <div className="alert">Bạn đang offline. Phần này cần mạng; các phần khác của app vẫn dùng bình thường.</div>}
 
       <div className="segmented" role="tablist" aria-label="Cách nhập">
         <button type="button" role="tab" aria-selected={mode === 'scan'} className={mode === 'scan' ? 'on' : ''} onClick={() => setMode('scan')}>
           <Icon name="scan" size={18} /> Quét nhạc
+        </button>
+        <button type="button" role="tab" aria-selected={mode === 'paste'} className={mode === 'paste' ? 'on' : ''} onClick={() => setMode('paste')}>
+          <Icon name="edit" size={18} /> Dán tab
         </button>
         <button type="button" role="tab" aria-selected={mode === 'image'} className={mode === 'image' ? 'on' : ''} onClick={() => setMode('image')}>
           <Icon name="camera" size={18} /> Ảnh + AI
@@ -167,7 +171,7 @@ export default function AiImport() {
         </button>
       </div>
 
-      {mode === 'scan' ? <ScanImport key={editScan ?? 'new'} editSongId={editScan} /> : <>
+      {mode === 'scan' ? <ScanImport key={editScan ?? 'new'} editSongId={editScan} /> : mode === 'paste' ? <PasteTab /> : <>
       <div className="ai-form">
         {mode === 'image' ? (
           <>
