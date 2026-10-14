@@ -1,8 +1,14 @@
 /**
  * Đọc khuông nhạc in (OMR) bằng luật, chạy offline, không cần AI.
- * Giống cách người học tự đọc: tìm 5 dòng kẻ → xoá dòng kẻ → tìm đầu nốt → vị trí so với
- * dòng kẻ cho cao độ; thân nốt, móc, chấm dôi, đầu rỗng/đặc cho trường độ.
- * Giả định: khoá Sol, một bè giai điệu (không hợp âm), bản in rõ, chụp thẳng.
+ * Giống cách người học tự đọc, theo thứ tự:
+ *  1. Khoảng cách dòng kẻ: độ dài "mực + trắng" lặp đều theo cột → phóng ảnh về TARGET_SPACE.
+ *  2. Khuông nhạc: khớp mẫu 5 dòng cách đều trên từng dải dọc rồi nối lại → chịu được ảnh nghiêng,
+ *     cong nhẹ; nắn thẳng từng khuông.
+ *  3. Đầu nốt: khớp mẫu bầu dục (đặc / rỗng) ngay tại các bậc cao độ của khuông trên ảnh xám —
+ *     vị trí dọc là cao độ luôn, không phụ thuộc bước xoá dòng kẻ (ảnh nhỏ, nét mờ vẫn đọc được).
+ *  4. Hoá biểu: dấu thăng / giáng ở các bậc cố định theo thứ tự cố định; đối chiếu giữa các khuông.
+ *  5. Trường độ: thân nốt, móc / vạch nối (đếm theo độ đậm), chấm dôi, dấu lặng; dấu hoá trước nốt.
+ * Giả định: khoá Sol, một bè giai điệu (không hợp âm), bản in.
  *
  * Mọi toạ độ là trên ảnh đã chuẩn hoá (khoảng cách dòng kẻ ≈ TARGET_SPACE px).
  */
@@ -132,39 +138,6 @@ function fillHoles(b: Bits) {
   return r;
 }
 
-/** Co/giãn bằng cửa sổ chữ nhật kh×kw có tâm ở giữa (mép ảnh coi như nền, như scipy) */
-function morph(b: Bits, kh: number, kw: number, erode: boolean) {
-  const { w, h, d } = b;
-  const ay = Math.floor(kh / 2), ax = Math.floor(kw / 2);
-  // ảnh tích phân
-  const I = new Int32Array((w + 1) * (h + 1));
-  for (let y = 0; y < h; y++) {
-    let row = 0;
-    for (let x = 0; x < w; x++) { row += d[y * w + x]; I[(y + 1) * (w + 1) + x + 1] = I[y * (w + 1) + x + 1] + row; }
-  }
-  const sum = (x0: number, y0: number, x1: number, y1: number) =>
-    I[y1 * (w + 1) + x1] - I[y0 * (w + 1) + x1] - I[y1 * (w + 1) + x0] + I[y0 * (w + 1) + x0];
-  const r = new Bits(w, h);
-  for (let y = 0; y < h; y++) {
-    for (let x = 0; x < w; x++) {
-      const x0 = x - ax, y0 = y - ay, x1 = x0 + kw, y1 = y0 + kh;
-      if (erode) {
-        if (x0 < 0 || y0 < 0 || x1 > w || y1 > h) continue;
-        r.d[y * w + x] = sum(x0, y0, x1, y1) === kh * kw ? 1 : 0;
-      } else {
-        // giãn: điểm (x,y) có mực nếu cửa sổ phản chiếu chứa mực
-        const X0 = Math.max(0, x - (kw - 1 - ax)), Y0 = Math.max(0, y - (kh - 1 - ay));
-        const X1 = Math.min(w, x + ax + 1), Y1 = Math.min(h, y + ay + 1);
-        r.d[y * w + x] = sum(X0, Y0, X1, Y1) > 0 ? 1 : 0;
-      }
-    }
-  }
-  return r;
-}
-const opening = (b: Bits, k: number) => morph(morph(b, k, k, true), k, k, false);
-const closingV = (b: Bits, k: number) => morph(morph(b, k, 1, false), k, 1, true);
-const closing = (b: Bits, k: number) => morph(morph(b, k, k, false), k, k, true);
-
 /** Đoạn mực dọc liền đi qua hàng y ở cột x (vá chỗ đứt 1 px). Trả [đầu, cuối] hoặc null */
 function verticalRun(b: Bits, x: number, y: number): [number, number] | null {
   if (!b.get(x, y)) return null;
@@ -283,42 +256,181 @@ export function resizeGray(g: Gray, width: number, height: number): Gray {
 
 type Line = [number, number];
 
-function lineRows(lineInk: Bits): Line[] {
-  const { w, h, d } = lineInk;
-  const cand: number[] = [];
-  for (let y = 0; y < h; y++) {
-    let n = 0;
-    for (let x = 0; x < w; x++) n += d[y * w + x];
-    if (n > 0.45 * w) cand.push(y);
+const mean = (a: number[]) => a.reduce((s, v) => s + v, 0) / a.length;
+const median = (a: number[]) => { const s = [...a].sort((x, y) => x - y); const m = s.length >> 1; return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2; };
+
+/**
+ * Khoảng cách dòng kẻ (tâm–tâm, px) đo theo cột: đoạn mực + đoạn trắng kế tiếp lặp lại đều nhau
+ * (5 dòng kẻ) → độ dài phổ biến nhất. Không phụ thuộc ảnh có nghiêng hay dòng kẻ đứt quãng.
+ */
+function runSpacing(b: Bits): number | null {
+  const { w, h, d } = b;
+  const hist = new Float64Array(80);
+  const pairs: number[] = [];
+  for (let x = 0; x < w; x++) {
+    pairs.length = 0;
+    let y = 0;
+    while (y < h && d[y * w + x]) y++; // bỏ đoạn mực chạm mép trên
+    while (y < h) {
+      while (y < h && !d[y * w + x]) y++;
+      const a = y;
+      while (y < h && d[y * w + x]) y++;
+      const bl = y - a;
+      const c = y;
+      while (y < h && !d[y * w + x]) y++;
+      if (y >= h || !bl) break;
+      pairs.push(bl + y - c);
+      y = c; // đoạn trắng này là khởi đầu cặp sau
+    }
+    // chỉ đếm cặp lặp lại (dòng kẻ kế bên cách đều) — chữ, nốt thì không
+    for (let i = 0; i + 1 < pairs.length; i++) if (Math.abs(pairs[i] - pairs[i + 1]) <= 1 && pairs[i] < hist.length) hist[pairs[i]]++;
   }
-  const lines: Line[] = [];
-  let start = cand[0];
-  for (let i = 1; i <= cand.length; i++) {
-    if (i === cand.length || cand[i] !== cand[i - 1] + 1) { if (start !== undefined) lines.push([start, cand[i - 1]]); start = cand[i]; }
-  }
-  return lines;
+  let m = 0;
+  for (let i = 3; i < hist.length; i++) if (hist[i] > hist[m]) m = i;
+  if (hist[m] < 20) return null;
+  const lo = hist[m - 1] ?? 0, hi = hist[m + 1] ?? 0;
+  return m + (hi - lo) / (hist[m] + lo + hi);
 }
 
-function groupStaves(lines: Line[]): { centers: number[]; lines: Line[] }[] {
-  const centers = lines.map(([a, b]) => (a + b) / 2);
-  const out: { centers: number[]; lines: Line[] }[] = [];
-  // độ đều của 5 dòng bắt đầu từ i (nhỏ = đều); Infinity nếu không phải khuông
-  const unevenness = (i: number) => {
-    if (i + 4 >= centers.length) return Infinity;
-    const g = centers.slice(i, i + 5);
-    const d = g.slice(1).map((v, k) => v - g[k]);
-    const r = Math.max(...d) / Math.min(...d);
-    return r < 1.4 ? r : Infinity;
-  };
-  let i = 0;
-  while (i + 4 < centers.length) {
-    const u = unevenness(i);
-    // đường kẻ ngang lạ (ngoặc lặp "1." "2.", gạch chân) sát khuông: chọn bộ 5 dòng đều hơn
-    if (u < Infinity && unevenness(i + 1) < u) { i++; continue; }
-    if (u < Infinity) { out.push({ centers: centers.slice(i, i + 5), lines: lines.slice(i, i + 5) }); i += 5; }
-    else i++;
+/** Một khuông nhạc tìm được: tâm khuông theo từng cột (cho phép ảnh nghiêng/cong nhẹ), khoảng cách dòng kẻ */
+interface StaffGeo { yc: Float32Array; sp: number; center: number }
+
+/**
+ * Tìm khuông nhạc theo từng dải dọc: trong mỗi dải, khớp mẫu "5 dòng cách đều" lên biểu đồ mực của các
+ * đoạn ngang dài (bỏ chữ, đầu nốt), rồi nối các dải cùng một khuông lại. Chịu được ảnh nghiêng, dòng kẻ
+ * dày/mỏng không đều, khuông ngắn (khuông đầu thụt lề), đường kẻ lạ sát khuông (ngoặc lặp "1." "2.").
+ */
+function findStaves(ink: Bits, s: number): StaffGeo[] {
+  const { w, h, d } = ink;
+  // chỉ giữ mực thuộc đoạn ngang dài ≥ 2 khe
+  const minRun = Math.round(2 * s);
+  const hl = new Uint8Array(w * h);
+  for (let y = 0; y < h; y++) {
+    let x = 0;
+    while (x < w) {
+      if (!d[y * w + x]) { x++; continue; }
+      const a = x;
+      while (x < w && d[y * w + x]) x++;
+      if (x - a >= minRun) hl.fill(1, y * w + a, y * w + x);
+    }
   }
-  return out;
+  const SW = Math.max(8, Math.round(4 * s));
+  const nStrips = Math.max(1, Math.floor(w / SW));
+  const sps: number[] = [];
+  for (let sp = 0.85 * s; sp <= 1.15 * s; sp += 0.25) sps.push(sp);
+  type Cand = { strip: number; xc: number; center: number; sp: number; score: number };
+  const cands: Cand[] = [];
+  const prof = new Float32Array(h), near = new Float32Array(h);
+  for (let i = 0; i < nStrips; i++) {
+    const x0 = Math.round((i * w) / nStrips), x1 = Math.round(((i + 1) * w) / nStrips);
+    for (let y = 0; y < h; y++) {
+      let n = 0;
+      for (let x = x0; x < x1; x++) n += hl[y * w + x];
+      prof[y] = n / (x1 - x0);
+    }
+    for (let y = 0; y < h; y++) near[y] = Math.max(prof[y], y > 0 ? prof[y - 1] : 0, y + 1 < h ? prof[y + 1] : 0);
+    const score = new Float32Array(h), best = new Float32Array(h);
+    for (let y = 0; y < h; y++) {
+      for (const sp of sps) {
+        if (y + 4 * sp >= h - 1) break;
+        let m = Infinity;
+        for (let k = 0; k < 5 && m > score[y]; k++) m = Math.min(m, near[Math.round(y + k * sp)]);
+        if (m > score[y]) { score[y] = m; best[y] = sp; }
+      }
+    }
+    const r = Math.round(1.5 * s);
+    for (let y = 0; y < h; y++) {
+      if (score[y] < 0.35) continue;
+      let isMax = true;
+      for (let j = Math.max(0, y - r); j <= Math.min(h - 1, y + r) && isMax; j++) if (score[j] > score[y] || (score[j] === score[y] && j < y)) isMax = false;
+      if (!isMax) continue;
+      // tinh chỉnh: trọng tâm mực của từng dòng kẻ (dòng dày nhiều hàng), rồi khớp tâm + khoảng cách
+      const cs = [0, 1, 2, 3, 4].map((k) => {
+        const c = y + k * best[y], rr = best[y] / 3;
+        let sw = 0, sy = 0;
+        for (let j = Math.max(0, Math.ceil(c - rr)); j <= Math.min(h - 1, Math.floor(c + rr + 1)); j++) { sw += prof[j]; sy += prof[j] * j; }
+        return sw ? sy / sw : c;
+      });
+      const center = mean(cs), sp = (2 * (cs[4] - cs[0]) + (cs[3] - cs[1])) / 10;
+      cands.push({ strip: i, xc: (x0 + x1) / 2, center, sp, score: score[y] });
+    }
+  }
+  // nối các dải: cùng khuông thì tâm gần nhau
+  type Chain = { items: Cand[]; last: Cand };
+  const chains: Chain[] = [];
+  for (let i = 0; i < nStrips; i++) {
+    for (const c of cands.filter((c) => c.strip === i)) {
+      let bestC: Chain | null = null;
+      for (const ch of chains) {
+        if (ch.last.strip >= i || i - ch.last.strip > 4) continue;
+        const dy = Math.abs(ch.last.center - c.center);
+        if (dy < 0.6 * s && (!bestC || dy < Math.abs(bestC.last.center - c.center))) bestC = ch;
+      }
+      if (bestC) { bestC.items.push(c); bestC.last = c; } else chains.push({ items: [c], last: c });
+    }
+  }
+  const total = (ch: Chain) => ch.items.reduce((t, c) => t + c.score, 0);
+  const kept: StaffGeo[] = [];
+  for (const ch of chains.filter((ch) => ch.items.length >= Math.max(3, 0.25 * nStrips)).sort((a, b) => total(b) - total(a))) {
+    const center = median(ch.items.map((c) => c.center));
+    if (kept.some((k) => Math.abs(k.center - center) < 4 * s)) continue;
+    // tâm theo cột: nội suy tuyến tính giữa các dải (đã lọc trung vị 3 dải), ngoài hai đầu giữ nguyên
+    const pts = ch.items.map((c, j, a) => ({ x: c.xc, y: median(a.slice(Math.max(0, j - 1), j + 2).map((q) => q.center)) }));
+    const yc = new Float32Array(w);
+    let j = 0;
+    for (let x = 0; x < w; x++) {
+      while (j + 1 < pts.length && pts[j + 1].x <= x) j++;
+      if (x <= pts[0].x) yc[x] = pts[0].y;
+      else if (j + 1 >= pts.length) yc[x] = pts[pts.length - 1].y;
+      else yc[x] = pts[j].y + ((pts[j + 1].y - pts[j].y) * (x - pts[j].x)) / (pts[j + 1].x - pts[j].x);
+    }
+    kept.push({ yc, sp: median(ch.items.map((c) => c.sp)), center });
+  }
+  return kept.sort((a, b) => a.center - b.center);
+}
+
+/**
+ * Nắn thẳng từng khuông: dời mỗi cột lên/xuống để tâm khuông nằm ngang ở một hàng cố định.
+ * Vùng của mỗi khuông kéo tới nửa đường sang khuông bên cạnh.
+ */
+function straighten(g: Gray, staves: StaffGeo[]): Gray {
+  const { width: w, height: h } = g;
+  const shifts = staves.map((st) => st.yc.map((v) => v - st.center));
+  if (shifts.every((sh) => sh.every((v) => Math.abs(v) < 0.35))) return g;
+  const data = new Uint8Array(w * h);
+  for (let x = 0; x < w; x++) {
+    let j = 0;
+    for (let y = 0; y < h; y++) {
+      while (j + 1 < staves.length && y > (staves[j].center + staves[j + 1].center) / 2) j++;
+      const sy = y + shifts[j][x];
+      const y0 = Math.floor(sy), t = sy - y0;
+      const a = y0 >= 0 && y0 < h ? g.data[y0 * w + x] : 255, b = y0 + 1 >= 0 && y0 + 1 < h ? g.data[(y0 + 1) * w + x] : 255;
+      data[y * w + x] = Math.round(a * (1 - t) + b * t);
+    }
+  }
+  return { width: w, height: h, data };
+}
+
+/** Hàng mực của từng dòng kẻ (sau khi nắn thẳng): các hàng quanh vị trí dòng có mực ngang ≥ nửa đỉnh */
+function staffLines(lineInk: Bits, st: StaffGeo): Line[] {
+  const { w, d } = lineInk;
+  // bề ngang khuông: cột có mực ở tâm khuông
+  const rowFrac = (y: number) => {
+    if (y < 0 || y >= lineInk.h) return 0;
+    let n = 0;
+    for (let x = 0; x < w; x++) n += d[y * w + x];
+    return n / w;
+  };
+  return [0, 1, 2, 3, 4].map((k) => {
+    const c = st.center + (k - 2) * st.sp;
+    const r = Math.max(1, Math.floor(st.sp / 3));
+    const ys: number[] = [];
+    for (let y = Math.round(c) - r; y <= Math.round(c) + r; y++) ys.push(y);
+    const fr = ys.map(rowFrac);
+    const peak = Math.max(...fr);
+    const on = ys.filter((_, i) => fr[i] >= 0.5 * peak && peak > 0);
+    return on.length ? [Math.min(...on), Math.max(...on)] as Line : [Math.round(c), Math.round(c)] as Line;
+  });
 }
 
 /** Xoá dòng kẻ (nới pad px mỗi bên cho hết viền xám), giữ chỗ có nét đi xuyên qua */
@@ -336,51 +448,18 @@ function removeLines(ink: Bits, lines: Line[], pad: number) {
   return out;
 }
 
-const mean = (a: number[]) => a.reduce((s, v) => s + v, 0) / a.length;
-const median = (a: number[]) => { const s = [...a].sort((x, y) => x - y); const m = s.length >> 1; return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2; };
-const spaceOf = (c: number[]) => mean(c.slice(1).map((v, k) => v - c[k]));
-
 /** Khoảng cách dòng kẻ của ảnh (px), hoặc null nếu không thấy khuông nhạc */
 export function staffSpacing(g: Gray): number | null {
-  const st = groupStaves(lineRows(threshold(g, 225)));
-  return st.length ? median(st.map((s) => spaceOf(s.centers))) : null;
+  const s = runSpacing(threshold(g, 210));
+  return s && s >= 3 && findStaves(threshold(g, 225), s).length ? s : null;
 }
 
 // ───────────────────────── các phép đo cục bộ ─────────────────────────
 
-function keepHeadHoles(holes: Bits, s: number, minW: number) {
-  const { lab, boxes } = label(holes);
-  const keep = new Uint8Array(boxes.length + 1);
-  boxes.forEach((o, i) => { if (bh(o) <= 0.9 * s && minW <= bw(o) && bw(o) <= 1.4 * s && bh(o) <= bw(o) + 1) keep[i + 1] = 1; });
-  const r = new Bits(holes.w, holes.h);
-  for (let i = 0; i < r.d.length; i++) r.d[i] = keep[lab[i]];
-  return r;
-}
-
-function anyIn(b: Bits, o: Box) {
-  for (let y = o.y0; y < o.y1; y++) for (let x = o.x0; x < o.x1; x++) if (b.d[y * b.w + x]) return true;
-  return false;
-}
-
-/** Lòng nốt trắng phải có vành mực ngắn ở cả hai bên (không phải thân nốt / móc dài) */
-function ringSides(img: Bits, o: Box, s: number) {
-  const sides: number[] = [];
-  const left: number[] = [], right: number[] = [];
-  for (let x = o.x0 - 1; x > Math.max(o.x0 - 4, -1); x--) left.push(x);
-  for (let x = o.x1; x < Math.min(o.x1 + 3, img.w); x++) right.push(x);
-  for (const xs of [left, right]) {
-    const runs: number[] = [];
-    for (const x of xs) for (let y = o.y0; y < o.y1; y++) { const r = verticalRun(img, x, y); if (r) runs.push(r[1] - r[0] + 1); }
-    if (!runs.length) return false;
-    sides.push(Math.min(...runs));
-  }
-  return Math.max(...sides) <= 1.6 * s;
-}
-
 interface Stem { x: number; a: number; b: number; up: boolean }
 
 /** Thân nốt: đoạn dọc ≥ 2.6 khe chạm đầu nốt, sát mép trái/phải */
-function findStem(img: Bits, o: Box, s: number): Stem | null {
+function findStem(img: Bits, o: Box, s: number, strict: Bits = img): Stem | null {
   let best: [number, number, number] | null = null;
   const xs: number[] = [];
   for (let x = Math.max(o.x0 - 2, 0); x < o.x0 + 3; x++) xs.push(x);
@@ -394,14 +473,19 @@ function findStem(img: Bits, o: Box, s: number): Stem | null {
   if (!best) return null;
   const [x, a, b] = best;
   if (Math.max(o.y0 - a, b - o.y1) < 1.8 * s) return null;
+  // thân nốt bắt đầu từ đầu nốt; nét dọc nhô ra cả hai phía là vạch nhịp / nét khác đi xuyên qua
+  if (Math.min(o.y0 - a, b - o.y1) > 0.8 * s) return null;
   // thân nốt là nét thẳng, mảnh: đo bề ngang nét ở phần nhô ra khỏi đầu nốt (lặng đen zig-zag thì rộng)
-  const [ya, yb] = o.y0 - a > b - o.y1 ? [a, o.y0 - 2] : [o.y1 + 2, b];
+  // chỉ đo nửa gần đầu nốt: nửa xa là chỗ móc / vạch nối dính vào thân
+  const up = o.y0 - a > b - o.y1;
+  const [ya, yb] = up ? [Math.round((a + o.y0 - 2) / 2), o.y0 - 2] : [o.y1 + 2, Math.round((o.y1 + 2 + b) / 2)];
   const widths: number[] = [];
+  // đo trên ảnh ngưỡng chặt hơn: nét mảnh in mờ, phóng to thì viền xám làm nét to ra
   for (let y = ya; y <= yb; y++) {
-    if (!img.get(x, y)) continue;
+    if (!strict.get(x, y)) continue;
     let l = x, r = x;
-    while (img.get(l - 1, y)) l--;
-    while (img.get(r + 1, y)) r++;
+    while (strict.get(l - 1, y)) l--;
+    while (strict.get(r + 1, y)) r++;
     widths.push(r - l + 1);
   }
   if (widths.length && median(widths) > 0.48 * s) return null;
@@ -410,18 +494,62 @@ function findStem(img: Bits, o: Box, s: number): Stem | null {
 }
 
 /** Đếm móc / vạch nối ở đoạn 1.8 khe gần đầu thân (không chạm đầu nốt) */
-function countFlags(img: Bits, st: Stem, s: number) {
+function countFlags(img: Bits, st: Stem, s: number, dk?: (x: number, y: number) => number): number {
   let best = 0;
+  const [y0, y1] = st.up ? [st.a, Math.min(st.a + Math.trunc(1.8 * s), img.h)] : [Math.max(st.b - Math.trunc(1.8 * s), 0), st.b + 1];
+  /** các đoạn mực dọc ở cột x trong vùng đầu thân: [đầu, cuối] */
+  const runsAt = (x: number) => {
+    const out: [number, number][] = [];
+    let a = -1;
+    for (let y = y0; y <= y1; y++) {
+      const on = y < y1 && img.get(x, y);
+      if (on && a < 0) a = y;
+      if (!on && a >= 0) { out.push([a, y - 1]); a = -1; }
+    }
+    return out;
+  };
+  if (dk) {
+    // theo độ đậm (ảnh xám): móc / vạch nối sát nhau chỉ cách bởi khe hơi sáng hơn, ngưỡng nhị phân
+    // làm dính lại; đếm đỉnh đậm tách nhau bởi chỗ trũng rõ (bỏ dòng kẻ: chỉ lấy điểm còn mực sau khi xoá)
+    for (const side of [1, -1]) {
+      const counts: number[] = [];
+      for (const f of [0.6, 0.75, 0.9]) {
+      const x = st.x + side * Math.round(f * s);
+      if (x < 0 || x >= img.w) continue;
+      const prof: number[] = [];
+      for (let y = y0; y < y1; y++) prof.push(img.get(x, y) ? dk(x, y) : 0);
+      let n = 0, peak = 0, valley = 1, inPeak = false;
+      for (const v of prof) {
+        if (!inPeak) {
+          if (v >= 0.45 && (n === 0 || v - valley >= 0.2)) { inPeak = true; peak = v; n++; }
+          else valley = Math.min(valley, v);
+        } else if (v > peak) peak = v;
+        else if (peak - v >= 0.2) { inPeak = false; valley = v; }
+      }
+      counts.push(n);
+      }
+      // móc cong có thể cắt cột hai lần: lấy số đếm trung vị của các cột
+      if (counts.length) best = Math.max(best, median(counts));
+    }
+    // móc mảnh in nhạt có thể không đủ đậm: lấy thêm cách đếm trên ảnh nhị phân
+    return Math.min(Math.max(Math.round(best), countFlags(img, st, s)), 3);
+  }
   for (const side of [1, -1]) {
     const x = st.x + side * Math.round(0.7 * s);
     if (x < 0 || x >= img.w) continue;
-    const [y0, y1] = st.up ? [st.a, Math.min(st.a + Math.trunc(1.8 * s), img.h)] : [Math.max(st.b - Math.trunc(1.8 * s), 0), st.b + 1];
     // chỉ tính nét dày ≥ 2 px, cách nhau ≥ 2 px (bỏ hạt nhiễu của ảnh chụp)
-    let runs = 0, len = 0, gap = 2;
-    for (let y = y0; y <= y1; y++) {
-      if (y < y1 && img.get(x, y)) { len++; continue; }
-      if (len >= 2) { if (gap >= 2) runs++; gap = 0; } else if (len === 0) gap++;
-      len = 0;
+    const rs = runsAt(x).filter(([a, b]) => b - a + 1 >= 2);
+    const next = runsAt(x + side * 3);
+    let runs = 0, lastEnd = -Infinity;
+    for (const [a, b] of rs) {
+      if (a - lastEnd - 1 < 2) { lastEnd = b; continue; }
+      lastEnd = b;
+      // ảnh nhỏ phóng to: hai vạch nối sát nhau nhoè thành một vạch dày → tính theo bề dày thật
+      // (vuông góc với nét: móc cờ dốc thì đoạn cắt dọc dài hơn bề dày), mỗi vạch ~0.5 khe, hở ~0.25 khe
+      const m = next.find(([c, d]) => c <= b + 1 && a <= d + 1);
+      const slope = m ? ((m[0] + m[1]) / 2 - (a + b) / 2) / 3 : 0;
+      const thick = (b - a + 1) / Math.sqrt(1 + slope * slope);
+      runs += Math.max(1, Math.round((thick + 0.25 * s) / (0.8 * s)));
     }
     best = Math.max(best, runs);
   }
@@ -431,7 +559,7 @@ function countFlags(img: Bits, st: Stem, s: number) {
 /** Chấm dôi: đốm nhỏ, tròn bên phải đầu nốt (ngang đầu nốt hoặc khe ngay trên) */
 function hasDot(img: Bits, o: Box, s: number) {
   const c = cy(o);
-  const x0 = o.x1 + Math.trunc(0.15 * s), x1 = o.x1 + Math.trunc(1.6 * s);
+  const x0 = o.x1 + 1, x1 = o.x1 + Math.trunc(1.6 * s);
   const y0 = Math.max(Math.trunc(c - 0.9 * s), 0), y1 = Math.trunc(c + 0.5 * s);
   const win = img.crop(y0, y1, x0, x1);
   const { boxes } = label(win);
@@ -439,7 +567,8 @@ function hasDot(img: Bits, o: Box, s: number) {
     const hh = bh(b), ww = bw(b);
     let area = 0;
     for (let y = b.y0; y < b.y1; y++) for (let x = b.x0; x < b.x1; x++) area += win.d[y * win.w + x];
-    if (0.3 * s <= hh && hh <= 0.75 * s && 0.3 * s <= ww && ww <= 0.75 * s && Math.abs(hh - ww) <= 0.3 * s && area >= 0.55 * hh * ww
+    // chấm nhỏ (ảnh độ phân giải thấp phóng to: chỉ còn ~0.25 khe), tròn, đặc, tách khỏi đầu nốt
+    if (0.22 * s <= hh && hh <= 0.75 * s && 0.22 * s <= ww && ww <= 0.75 * s && Math.abs(hh - ww) <= 0.3 * s && area >= 0.5 * hh * ww
       && b.x0 > 0 && b.x1 < win.w && b.y0 > 0 && b.y1 < win.h) return true;
   }
   return false;
@@ -453,59 +582,57 @@ function clefEnd(img: Bits, top: number, bottom: number, s: number, xLeft: numbe
   return xLeft + (best || Math.trunc(3.6 * s));
 }
 
-/** Hoá biểu: dấu thăng (2 nét dọc) / giáng (1 nét dọc + bụng) giữa khoá nhạc và nốt đầu */
-/**
- * Khối các dấu hoá dính nhau (ảnh nhỏ, in sát): cắt tại các nét dọc rồi phân loại từng phần.
- * Mỗi dấu giáng có 1 nét dọc, mỗi dấu thăng 2 nét. Trả [số dấu (+thăng / −giáng), hoặc 0 nếu không chắc].
- */
-function splitAccidentals(lab: Int32Array, w: number, o: Box, id: number, s: number): number {
-  const cols: number[] = [];
-  for (let x = o.x0; x < o.x1; x++) {
-    let best = 0, run = 0;
-    for (let y = o.y0; y < o.y1; y++) { if (lab[y * w + x] === id) { run++; best = Math.max(best, run); } else run = 0; }
-    if (best >= 1.4 * s) cols.push(x);
-  }
-  const strokes = cols.filter((x, i) => i === 0 || x !== cols[i - 1] + 1);
-  const part = (x0: number, x1: number): Box | null => {
-    let y0 = Infinity, y1 = -1;
-    for (let y = o.y0; y < o.y1; y++) for (let x = x0; x < x1; x++) if (lab[y * w + x] === id) { y0 = Math.min(y0, y); y1 = Math.max(y1, y + 1); }
-    return y1 > y0 ? { x0, x1, y0, y1 } : null;
-  };
-  for (const per of [1, 2]) {
-    if (strokes.length < 2 || strokes.length % per) continue;
-    const cuts = strokes.filter((_, i) => i % per === 0).concat(o.x1);
-    const kinds = cuts.slice(0, -1).map((x, i) => {
-      const b = part(i === 0 ? o.x0 : x, cuts[i + 1]);
-      return b ? classifyAccidental(lab, w, b, id, s) : null;
-    });
-    if (per === 1 && kinds.every((k) => k === -1)) return -kinds.length;
-    if (per === 2 && kinds.every((k) => k === 1)) return kinds.length;
-  }
-  return 0;
-}
+const SHARP_STEPS = [8, 5, 9, 6, 3, 7, 4]; // F♯5 C♯5 G♯5 D♯5 A♯4 E♯5 B♯4
+const FLAT_STEPS = [4, 7, 3, 6, 2, 5, 1]; // B♭4 E♭5 A♭4 D♭5 G♭4 C♭5 F♭4
 
-function keySignature(img: Bits, top: number, bottom: number, s: number, xFrom: number): [number, number] {
-  const y0 = Math.trunc(top - 1.5 * s);
-  const band = img.crop(y0, Math.trunc(bottom + s), xFrom, xFrom + Math.trunc(9 * s));
-  const { lab, boxes } = label(band);
-  let sharps = 0, flats = 0, end = 0;
-  for (const { o, id } of boxes.map((o, i) => ({ o, id: i + 1 })).sort((a, b) => a.o.x0 - b.o.x0)) {
-    if (bh(o) < 0.5 * s) continue; // hạt nhiễu
-    if (o.x0 - end > (end ? 1.2 : 2.5) * s) break; // dấu hoá trong hoá biểu đứng sát nhau
+/**
+ * Hoá biểu theo vị trí chuẩn: dấu thăng / giáng luôn nằm ở các bậc cố định theo thứ tự cố định
+ * (thăng: Fa Đô Sol Rê La Mi Si, giáng: Si Mi La Rê Sol Đô Fa), cách đều nhau ngay sau khoá nhạc.
+ * Thử mọi vị trí bắt đầu / khoảng cách, đếm số dấu liên tiếp có mực đúng chỗ — không cần tách từng
+ * dấu (ảnh nhỏ: các dấu dính nhau, dòng kẻ xoá xong thì vỡ vụn).
+ * Mỗi dấu: hộp quanh vị trí phải có mực, phần khuông còn lại cùng cột phải trống
+ * (chữ số chỉ nhịp, thân nốt phủ cả chiều cao khuông thì không đạt).
+ */
+function keySignatureByPosition(img: Bits, top: number, bottom: number, s: number, xFrom: number): { key: number; ends: Map<number, number> } {
+  const frac = (x0: number, x1: number, y0: number, y1: number) => {
+    x0 = Math.max(0, Math.round(x0)); x1 = Math.min(img.w, Math.round(x1)); y0 = Math.max(0, Math.round(y0)); y1 = Math.min(img.h, Math.round(y1));
+    if (x1 <= x0 || y1 <= y0) return 0;
     let n = 0;
-    if (1.8 * s <= bh(o) && bh(o) <= 3.6 * s && 0.45 * s <= bw(o) && bw(o) <= 1.4 * s) {
-      const kind = classifyAccidental(lab, band.w, o, id, s);
-      n = kind === 1 ? 1 : kind === -1 ? -1 : 0;
-    } else if (1.8 * s <= bh(o) && bh(o) <= 4.8 * s && 1.4 * s < bw(o) && bw(o) <= 6 * s) {
-      n = splitAccidentals(lab, band.w, o, id, s); // nhiều dấu dính nhau
+    for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) n += img.d[y * img.w + x];
+    return n / ((x1 - x0) * (y1 - y0));
+  };
+  const ct = top - 0.5 * s, cb = bottom + 0.5 * s;
+  const glyph = (kind: number, x: number, step: number) => {
+    const y = bottom - (step * s) / 2;
+    // thăng: cao ~2.6 khe, tâm ở bậc; giáng: thân nhô lên ~2 khe, bụng ở bậc
+    const [gy0, gy1] = kind > 0 ? [y - 1.25 * s, y + 1.25 * s] : [y - 1.9 * s, y + 0.6 * s];
+    const gx0 = x - 0.4 * s, gx1 = x + 0.4 * s;
+    const f = Math.min(frac(gx0, gx1, gy0, (gy0 + gy1) / 2), frac(gx0, gx1, (gy0 + gy1) / 2, gy1));
+    let fc = 0;
+    if (gy0 - 0.3 * s > ct) fc = Math.max(fc, frac(gx0, gx1, ct, gy0 - 0.3 * s));
+    if (gy1 + 0.3 * s < cb) fc = Math.max(fc, frac(gx0, gx1, gy1 + 0.3 * s, cb));
+    return f >= 0.12 && fc <= 0.06 ? f : 0;
+  };
+  let best = { n: 0, kind: 0, score: 0 };
+  // mép phải của hoá biểu cho từng số dấu (dùng khi số dấu được sửa theo các khuông khác)
+  const ends = new Map<number, number>([[0, xFrom]]);
+  const endScore = new Map<number, number>();
+  for (const kind of [1, -1]) {
+    const steps = kind > 0 ? SHARP_STEPS : FLAT_STEPS;
+    for (let x1 = xFrom + 0.4 * s; x1 <= xFrom + 2.4 * s; x1++) {
+      for (let dx = 0.65 * s; dx <= 1.45 * s; dx += 0.5) {
+        let n = 0, sc = 0;
+        for (let i = 0; i < 7; i++) {
+          const g = glyph(kind, x1 + i * dx, steps[i]);
+          if (!g) break;
+          n++; sc += g;
+          if (sc / n > (endScore.get(kind * n) ?? 0)) { endScore.set(kind * n, sc / n); ends.set(kind * n, Math.round(x1 + i * dx + 0.5 * s)); }
+        }
+        if (n > best.n || (n === best.n && n > 0 && sc > best.score)) best = { n, kind, score: sc };
+      }
     }
-    if (!n) break;
-    if (n > 0) sharps += n; else flats -= n;
-    end = o.x1;
   }
-  if (sharps && !flats) return [Math.min(sharps, 7), xFrom + end];
-  if (flats && !sharps) return [-Math.min(flats, 7), xFrom + end];
-  return [0, xFrom];
+  return { key: best.kind * best.n, ends };
 }
 
 /** Cụm chữ số chỉ nhịp ngay sau khoá/hoá biểu: trả [x đầu, x cuối] */
@@ -518,14 +645,23 @@ function timeSigSpan(img: Bits, top: number, bottom: number, s: number, xFrom: n
   const near = boxes.filter((b) => bh(b) >= 0.5 * s && bh(b) <= 3 * s && b.x0 < 3 * s);
   if (near.length) {
     const u = { x0: Math.min(...near.map((b) => b.x0)), x1: Math.max(...near.map((b) => b.x1)), y0: Math.min(...near.map((b) => b.y0)), y1: Math.max(...near.map((b) => b.y1)) };
-    if (Math.abs(cy(u) + y0 - (top + bottom) / 2) <= 0.6 * s && 1.5 * s <= bh(u) && bh(u) <= 2.6 * s && 1.1 * s <= bw(u) && bw(u) <= 2.4 * s) {
+    if (Math.abs(cy(u) + y0 - (top + bottom) / 2) <= 0.6 * s && 1.1 * s <= bh(u) && bh(u) <= 2.6 * s && 1.1 * s <= bw(u) && bw(u) <= 2.4 * s) {
       return [xFrom + u.x0 - 1, xFrom + u.x1 + 1];
     }
   }
-  for (const a of boxes) {
+  const { lab } = label(band);
+  for (const [i, a] of boxes.entries()) {
     // hai chữ số dính nhau: khối cao gần bằng khuông, rộng (nốt + thân thì hẹp và thò ra ngoài khuông)
     const inside = a.y0 > 0 && a.y1 < band.h;
-    if (3.4 * s <= bh(a) && bh(a) <= 4.8 * s && 1.7 * s <= bw(a) && bw(a) <= 3 * s && inside) return [xFrom + a.x0 - 1, xFrom + a.x1 + 1];
+    if (!(3.0 * s <= bh(a) && bh(a) <= 4.8 * s && 1.2 * s <= bw(a) && bw(a) <= 3 * s && inside && a.x0 < 3 * s)) continue;
+    // chữ số rộng đều từ trên xuống; nốt + thân thì phần lớn các hàng chỉ còn nét thân mảnh
+    let wide = 0;
+    for (let y = a.y0; y < a.y1; y++) {
+      let l = Infinity, r = -1;
+      for (let x = a.x0; x < a.x1; x++) if (lab[y * band.w + x] === i + 1) { l = Math.min(l, x); r = x; }
+      if (r - l + 1 >= 0.45 * bw(a)) wide++;
+    }
+    if (wide >= 0.6 * bh(a)) return [xFrom + a.x0 - 1, xFrom + a.x1 + 1];
   }
   for (const a of boxes) for (const b of boxes) {
     if (a === b || !(1.3 * s <= bh(a) && bh(a) <= 2.6 * s && 1.3 * s <= bh(b) && bh(b) <= 2.6 * s)) continue;
@@ -549,7 +685,8 @@ function barlines(img: Bits, top: number, bottom: number, s: number, xFrom: numb
   return groups.map(mean);
 }
 
-interface Accidental { box: Box; kind: -1 | 0 | 1 }
+/** kind 2: thăng hoặc bình (ảnh mờ không phân biệt được) — quyết theo ngữ cảnh: nốt đang bị hoá thì là bình */
+interface Accidental { box: Box; kind: -1 | 0 | 1 | 2 }
 
 /**
  * Phân loại ký hiệu dấu hoá theo hình dạng của chính nó (so các phần với nhau, đơn vị = khe):
@@ -589,13 +726,45 @@ function findAccidentals(img: Bits, heads: Box[], s: number, xFrom: number): Acc
   boxes.forEach((o, i) => {
     if (o.x0 < xFrom || !(1.8 * s <= bh(o) && bh(o) <= 3.6 * s && 0.45 * s <= bw(o) && bw(o) <= 1.4 * s)) return;
     // phải đứng ngay bên trái một đầu nốt (không phải chính nó), ngang tầm đầu nốt
-    const near = heads.some((h) => cx(h) > o.x1 && h.x0 - 1.8 * s <= o.x1 && o.x1 <= h.x0 + 0.4 * s && Math.abs(cy(h) - cy(o)) <= 1.3 * s);
-    if (!near) return;
-    const kind = classifyAccidental(lab, img.w, o, i + 1, s);
+    const head = heads.find((h) => cx(h) > o.x1 && h.x0 - 1.8 * s <= o.x1 && o.x1 <= h.x0 + 0.4 * s && Math.abs(cy(h) - cy(o)) <= 1.3 * s);
+    if (!head || heads.some((h) => overlaps(h, o))) return;
+    let kind: Accidental['kind'] | null = classifyAccidental(lab, img.w, o, i + 1, s);
+    if (kind === null && bw(o) >= 0.6 * s) {
+      // ảnh mờ: dựa vào dáng theo chiều dọc so với đầu nốt — giáng nhô hẳn lên trên (thân ~2 khe, bụng
+      // ngang đầu nốt), thăng / bình cân hai phía
+      const up = cy(head) - o.y0, down = o.y1 - cy(head);
+      if (up > 1.6 * down && down <= 0.9 * s) kind = -1;
+      else if (Math.abs(up - down) <= 0.6 * s) kind = 2;
+    }
     if (kind === null) return;
     out.push({ box: o, kind });
   });
   return out;
+}
+
+/**
+ * Dấu hoá dính vào đầu nốt (ảnh nhỏ: không tách được thành khối riêng): xét các cột ngay bên trái
+ * đầu nốt, mỗi cột lấy đoạn mực dọc đi qua ngang tầm đầu nốt; dấu hoá là các nét dọc dài 1.8–3.4 khe
+ * (thân nốt bên cạnh dài hơn, vạch nhịp phủ cả khuông). Giáng nhô hẳn lên trên, thăng / bình cân hai phía.
+ */
+function accidentalBefore(img: Bits, hx: number, hy: number, s: number, xFrom: number): -1 | 2 | null {
+  const right = Math.round(hx - 0.62 * s), left = Math.max(xFrom, Math.round(hx - 2.0 * s));
+  const tops: number[] = [], bots: number[] = [];
+  for (let x = left; x < right; x++) {
+    let best: [number, number] | null = null;
+    for (let y = Math.round(hy - 0.5 * s); y <= Math.round(hy + 0.5 * s); y++) {
+      const r = verticalRun(img, x, y);
+      if (r && (!best || r[1] - r[0] > best[1] - best[0])) best = r;
+    }
+    if (!best) continue;
+    const len = best[1] - best[0] + 1;
+    if (len >= 1.8 * s && len <= 3.4 * s) { tops.push(hy - best[0]); bots.push(best[1] - hy); }
+  }
+  if (tops.length < 2) return null;
+  const up = median(tops), down = median(bots);
+  if (up > 1.6 * down && down <= 0.9 * s) return -1;
+  if (Math.abs(up - down) <= 0.6 * s) return 2;
+  return null;
 }
 
 const overlaps = (a: Box, b: Box) => a.x0 < b.x1 && b.x0 < a.x1 && a.y0 < b.y1 && b.y0 < a.y1;
@@ -613,9 +782,23 @@ function findRests(img: Bits, dotImg: Bits, top: number, bottom: number, s: numb
     for (let y = b.y0; y < b.y1; y++) for (let x = b.x0; x < b.x1; x++) if (lab[y * band.w + x] === i + 1) area++;
     const h = bh(box), w = bw(box), c = cy(box), dens = area / (h * w);
     let beats = 0;
-    if (0.3 * s <= h && h <= 0.85 * s && 0.8 * s <= w && w <= 2.4 * s && dens >= 0.6) beats = c < top + 1.5 * s ? 4 : 2;
+    // lặng tròn treo dưới dòng kẻ 4, lặng trắng đặt trên dòng kẻ 3
+    if (0.2 * s <= h && h <= 0.85 * s && 0.8 * s <= w && w <= 2.4 * s && dens >= 0.6) {
+      if (Math.abs(box.y0 - (top + s)) <= 0.35 * s) beats = 4;
+      else if (Math.abs(box.y1 - (top + 2 * s)) <= 0.35 * s) beats = 2;
+    }
     else if (1.2 * s <= h && h <= 2.2 * s && 0.55 * s <= w && w <= 1.3 * s && c > top + 0.8 * s && c < bottom - 0.3 * s) beats = 0.5;
-    else if (2.2 * s < h && h <= 3.4 * s && 0.55 * s <= w && w <= 1.4 * s && c > top + s && c < bottom - s) beats = 1;
+    else if (2.2 * s < h && h <= 3.4 * s && 0.55 * s <= w && w <= 1.4 * s && c > top + s && c < bottom - s) {
+      // lặng đen là nét gấp khúc: tâm mực từng hàng lệch qua lại; vạch nhịp kép mờ thì thẳng đứng
+      const cs: number[] = [];
+      for (let y = b.y0; y < b.y1; y++) {
+        let n = 0, t = 0;
+        for (let x = b.x0; x < b.x1; x++) if (lab[y * band.w + x] === i + 1) { n++; t += x; }
+        if (n) cs.push(t / n);
+      }
+      const m = mean(cs), sd = Math.sqrt(mean(cs.map((v) => (v - m) ** 2)));
+      if (sd >= 0.045 * s) beats = 1;
+    }
     if (!beats) return;
     if (hasDot(dotImg, box, s)) beats *= 1.5;
     out.push({ x: cx(box), y: c, beats });
@@ -722,6 +905,173 @@ function headAtStem(img: Bits, inkWithLines: Bits, st: Stem, s: number, lineRow:
   return best && { box: best.box, hollow: best.hollow, up: best.up };
 }
 
+// ───────────────────────── đầu nốt theo mẫu ─────────────────────────
+
+type Pt = [number, number];
+/** Các điểm trong vành elip (bán trục a, b, nghiêng góc t) có bán kính chuẩn hoá trong [r0, r1] */
+function ellipsePts(a: number, b: number, t: number, r0: number, r1: number): Pt[] {
+  const out: Pt[] = [];
+  const R = Math.ceil(Math.max(a, b) * r1) + 1;
+  const c = Math.cos(t), sn = Math.sin(t);
+  for (let dy = -R; dy <= R; dy++) for (let dx = -R; dx <= R; dx++) {
+    const u = (dx * c + dy * sn) / a, v = (-dx * sn + dy * c) / b;
+    const r = Math.sqrt(u * u + v * v);
+    if (r >= r0 && r <= r1) out.push([dx, dy]);
+  }
+  return out;
+}
+
+interface HeadHit { x: number; y: number; step: number; hollow: boolean; wide: boolean; score: number }
+
+/**
+ * Tìm đầu nốt bằng khớp mẫu bầu dục, chỉ ở các bậc cao độ (dòng kẻ / khe, cả dòng kẻ phụ) của khuông:
+ * vị trí dọc đã biết trước nên chỉ cần quét ngang. Đo trên độ đậm (ảnh xám còn dòng kẻ) nên không bị
+ * bước xoá dòng kẻ làm vỡ vành nốt trắng nhỏ.
+ *  - nốt đen: lòng elip đậm, vòng bên ngoài không đậm kín (không phải vạch nối đôi / khối mực)
+ *  - nốt trắng / nốt tròn: vành đậm, lõi (bỏ các hàng dòng kẻ) sáng
+ */
+function templateHeads(dark: Float32Array, w: number, h: number, top: number, bottom: number, s: number, xFrom: number, xTo: number, lineHalf: number): HeadHit[] {
+  const tilt = -0.35;
+  const fill = ellipsePts(0.6 * s, 0.43 * s, tilt, 0, 1);
+  const around = ellipsePts(0.6 * s, 0.43 * s, tilt, 1.45, 1.65);
+  const ring = ellipsePts(0.62 * s, 0.45 * s, tilt, 0.72, 1.05);
+  const inner = ellipsePts(0.62 * s, 0.45 * s, tilt, 0, 0.6);
+  const wRing = ellipsePts(0.78 * s, 0.47 * s, 0, 0.72, 1.05);
+  const wInner = ellipsePts(0.78 * s, 0.47 * s, 0, 0, 0.6);
+  const seed = ellipsePts(0.62 * s, 0.45 * s, tilt, 0, 0.8), wSeed = ellipsePts(0.78 * s, 0.47 * s, 0, 0, 0.8);
+  const rOut = ellipsePts(0.62 * s, 0.45 * s, tilt, 1.4, 1.65), wOut = ellipsePts(0.78 * s, 0.47 * s, 0, 1.35, 1.6);
+  // hàng thuộc dòng kẻ (cả dòng kẻ phụ trên/dưới khuông)
+  const onLine = (y: number) => { const f = (y - top) / s; return Math.abs(f - Math.round(f)) * s <= lineHalf; };
+  const left = around.filter(([dx]) => dx < -0.45 * s), right = around.filter(([dx]) => dx > 0.45 * s);
+  const at = (x: number, y: number) => (x >= 0 && y >= 0 && x < w && y < h ? dark[y * w + x] : 0);
+  // độ lệch chỉ số (dy*w+dx) của từng mẫu, dùng khi cả mẫu nằm trong ảnh (nhanh, không kiểm tra biên)
+  const R0 = Math.ceil(2 * s);
+  const offs = new Map<Pt[], Int32Array>();
+  const offOf = (pts: Pt[]) => { let o = offs.get(pts); if (!o) { o = Int32Array.from(pts, ([dx, dy]) => dy * w + dx); offs.set(pts, o); } return o; };
+  const avg = (pts: Pt[], x: number, y: number, skipLines: boolean) => {
+    if (!skipLines && x >= R0 && y >= R0 && x < w - R0 && y < h - R0) {
+      const o = offOf(pts), c = y * w + x;
+      let t = 0;
+      for (let i = 0; i < o.length; i++) t += dark[c + o[i]];
+      return o.length ? t / o.length : -1;
+    }
+    let t = 0, n = 0;
+    for (const [dx, dy] of pts) { if (skipLines && onLine(y + dy)) continue; t += at(x + dx, y + dy); n++; }
+    return n ? t / n : -1;
+  };
+  /** lòng nốt trắng: phần sáng nhất của lõi (lòng nốt trắng là khe nghiêng hẹp, không phủ hết lõi) */
+  const light = (pts: Pt[], x: number, y: number) => {
+    const v: number[] = [];
+    // hàng dòng kẻ: trừ đi độ đậm của chính dòng kẻ (đo hai bên, lấy bên nhạt hơn để tránh nốt bên cạnh)
+    // → lòng nốt trắng nằm trên dòng kẻ vẫn "sáng", nốt đen thì vẫn đậm
+    const side = Math.round(1.6 * s);
+    for (const [dx, dy] of pts) {
+      const d = at(x + dx, y + dy);
+      if (!onLine(y + dy)) { v.push(d); continue; }
+      const L = Math.min(at(x - side, y + dy), at(x + side, y + dy), 0.9);
+      v.push(Math.max(0, (d - L) / (1 - L)));
+    }
+    if (v.length < 3) return -1;
+    v.sort((a, b) => a - b);
+    return v[Math.floor(v.length * 0.3)];
+  };
+  /**
+   * Lòng nốt trắng là vùng sáng nhỏ bị mực bao kín: loang từ các điểm sáng trong lõi, không được chạm
+   * mép cửa sổ và không cao quá ~0.65 khe (ô trống giữa hai dòng kẻ + thân + móc thì cao cả khe).
+   */
+  const enclosed = (x: number, y: number, inn: Pt[]) => {
+    const rx = Math.round(1.0 * s), ry = Math.round(0.8 * s);
+    const W = 2 * rx + 1, H = 2 * ry + 1;
+    const seen = new Uint8Array(W * H);
+    const wall = (qx: number, qy: number) => at(x - rx + qx, y - ry + qy) >= 0.25 || onLine(y - ry + qy);
+    let parts = 0;
+    for (const [dx, dy] of inn) {
+      const i0 = (dy + ry) * W + dx + rx;
+      if (seen[i0] || wall(dx + rx, dy + ry)) continue;
+      // mỗi mảnh lòng (dòng kẻ chia lòng nốt làm hai) phải nhỏ và kín
+      seen[i0] = 1;
+      const stack = [i0];
+      let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+      while (stack.length) {
+        const i = stack.pop()!;
+        const px = i % W, py = (i - px) / W;
+        if (px === 0 || py === 0 || px === W - 1 || py === H - 1) return false;
+        x0 = Math.min(x0, px); x1 = Math.max(x1, px); y0 = Math.min(y0, py); y1 = Math.max(y1, py);
+        for (const j of [i - 1, i + 1, i - W, i + W]) {
+          const qx = j % W, qy = (j - qx) / W;
+          if (seen[j] || wall(qx, qy)) continue;
+          seen[j] = 1; stack.push(j);
+        }
+      }
+      if (y1 - y0 + 1 > 0.6 * s || x1 - x0 + 1 > 1.15 * s) return false;
+      parts++;
+    }
+    return parts > 0;
+  };
+  const barCols: number[] = [];
+  for (let x = Math.max(0, Math.round(xFrom)); x < Math.min(w, xTo); x++) {
+    let n = 0, m = 0;
+    for (let y = Math.round(top); y <= Math.round(bottom); y++) { m++; if (at(x, y) >= 0.5) n++; }
+    if (n >= 0.92 * m) barCols.push(x);
+  }
+  const hits: HeadHit[] = [];
+  const quadsOf = (rg: Pt[]) => [rg.filter(([dx, dy]) => dx > Math.abs(dy)), rg.filter(([dx, dy]) => -dx > Math.abs(dy)), rg.filter(([dx, dy]) => dy > Math.abs(dx)), rg.filter(([dx, dy]) => -dy > Math.abs(dx))];
+  const shapes = [
+    { rg: ring, inn: inner, out: rOut, sd: seed, quads: quadsOf(ring), wide: false },
+    { rg: wRing, inn: wInner, out: wOut, sd: wSeed, quads: quadsOf(wRing), wide: true },
+  ];
+  // vài điểm thưa để loại nhanh nền trắng trước khi đo kỹ
+  const sparse = (pts: Pt[]) => pts.filter((_, i, a) => i % Math.max(1, Math.floor(a.length / 12)) === 0);
+  const probeRing = sparse(ellipsePts(0.62 * s, 0.45 * s, tilt, 0.85, 0.95)), probeWide = sparse(ellipsePts(0.78 * s, 0.47 * s, 0, 0.85, 0.95));
+  const probeCore = ellipsePts(0.62 * s, 0.45 * s, tilt, 0, 0.35);
+  for (let step = -7; step <= 15; step++) {
+    const y = Math.round(bottom - (step * s) / 2);
+    if (y < 0 || y >= h) continue;
+    const off = (pts: Pt[]) => pts.filter(([, dy]) => !onLine(y + dy));
+    const per = shapes.map((sh) => ({ ...sh, outOff: off(sh.out), quadsOff: sh.quads.map(off) }));
+    for (let x = Math.max(0, Math.round(xFrom)); x < Math.min(w, xTo); x++) {
+      const pr = Math.max(avg(probeRing, x, y, false), avg(probeWide, x, y, false)), pc = avg(probeCore, x, y, false);
+      if (pr < 0.3 && pc < 0.5) continue;
+      let hollowHit = false;
+      for (const sh of per) {
+        const R = avg(sh.rg, x, y, false);
+        if (R < 0.42) continue;
+        const N = light(sh.inn, x, y);
+        if (!(N >= 0 && N <= 0.3 && R - N >= 0.3)) continue;
+        // vành phải khép kín: cả bốn phía đều có mực (dấu lặng đen zig-zag chỉ có giữa); bỏ hàng dòng kẻ
+        // (dòng kẻ ngang trên/dưới tự tạo "vành"), phía nào toàn dòng kẻ thì bỏ qua
+        if (sh.quadsOff.some((q) => q.length >= 3 && avg(q, x, y, false) < 0.3)) continue;
+        // vạch nhịp (đơn/kép) đi xuyên vành: nét dọc phủ gần hết chiều cao khuông
+        if (barCols.some((bx) => Math.abs(bx - x) <= 0.8 * s)) continue;
+        // xung quanh vành phải trống (bỏ dòng kẻ): dấu nối / vạch nhịp kép + dòng kẻ tạo "vòng" giả
+        if (sh.outOff.length && avg(sh.outOff, x, y, false) > 0.2) continue;
+        if (!enclosed(x, y, sh.sd)) continue;
+        hits.push({ x, y, step, hollow: true, wide: sh.wide, score: R - N * 0.5 });
+        hollowHit = true;
+        break;
+      }
+      if (hollowHit || pc < 0.5) continue;
+      // vạch nối (beam) dày cũng đậm kín elip nhưng kéo dài sang hai bên
+      const F = avg(fill, x, y, false);
+      if (F >= 0.6 && avg(around, x, y, false) <= 0.5 && Math.min(avg(left, x, y, false), avg(right, x, y, false)) < 0.45) {
+        hits.push({ x, y, step, hollow: false, wide: false, score: F });
+      }
+    }
+  }
+  // giữ cực đại: mỗi đầu nốt chỉ một vị trí (bỏ vị trí lệch ngang và lệch nửa khe)
+  const nms = (list: HeadHit[]) => {
+    const kept: HeadHit[] = [];
+    for (const c of [...list].sort((a, b) => b.score - a.score)) if (!kept.some((k) => Math.abs(k.x - c.x) < 0.9 * s && Math.abs(k.step - c.step) <= 1)) kept.push(c);
+    return kept;
+  };
+  // ngưỡng nốt đen theo chính bản in: đầu nốt thật đậm gần bằng nhau (~0.9), vạch nối / chữ / dấu lặng
+  // khớp một phần thì thấp hẳn (≤ 0.75). Lọc trước khi giữ cực đại để vị trí nốt đen yếu không che nốt trắng
+  const filled = nms(hits.filter((k) => !k.hollow)).map((k) => k.score).sort((a, b) => a - b);
+  const q = filled.length >= 4 ? filled[Math.floor(filled.length * 0.75)] : 0.95;
+  const thr = Math.min(0.8, Math.max(0.6, 0.83 * q));
+  return nms(hits.filter((k) => k.hollow || k.score >= thr));
+}
+
 // ───────────────────────── đọc một trang ─────────────────────────
 
 let noteSeq = 0;
@@ -729,91 +1079,134 @@ let noteSeq = 0;
 /** Đọc một trang (ảnh xám gốc). Trả null nếu không thấy khuông nhạc. */
 export function readPage(input: Gray, page = 0): OmrPage | null {
   const original = flattenBackground(input);
-  const s0 = staffSpacing(original);
-  if (!s0) return null;
+  const s0 = runSpacing(threshold(original, 210));
+  if (!s0 || s0 < 3) return null;
   const f = TARGET_SPACE / s0;
-  const gray = Math.abs(f - 1) < 0.02 ? original : resizeGray(original, Math.round(original.width * f), Math.round(original.height * f));
+  const scaled = Math.abs(f - 1) < 0.02 ? original : resizeGray(original, Math.round(original.width * f), Math.round(original.height * f));
+  const geo = findStaves(threshold(scaled, 225), TARGET_SPACE);
+  if (!geo.length) return null;
+  const gray = straighten(scaled, geo);
   const ink = threshold(gray, 200);
   const lineInk = threshold(gray, 225);
-  const lines = lineRows(lineInk);
-  const staves = groupStaves(lines);
-  if (!staves.length) return null;
+  const staves = geo.map((st) => ({ st, lines: staffLines(lineInk, st) }));
+  const lines = staves.flatMap((st) => st.lines);
   const clean = removeLines(ink, lines, 0); // tìm đầu nốt
+  // chấm dôi sát thân nốt: viền xám nhoè dính chấm vào thân → xét thêm trên ngưỡng đậm hơn
+  const dotInk = removeLines(threshold(gray, 140), lines, 0);
   const thin = removeLines(lineInk, lines, 1); // thân nốt, móc: xoá cả viền xám của dòng kẻ
-  const k = Math.max(3, Math.round(0.55 * TARGET_SPACE)) | 1;
+  const dark = new Float32Array(gray.data.length);
+  for (let i = 0; i < dark.length; i++) dark[i] = (255 - gray.data[i]) / 255;
 
   let keySig = 0;
   const outStaves: OmrStaff[] = [];
   const notes: OmrNote[] = [];
 
-  staves.forEach(({ centers }, si) => {
-    const s = spaceOf(centers);
-    const top = centers[0], bottom = centers[4];
-    const y0 = Math.max(Math.trunc(top - 3.5 * s), 0), y1 = Math.trunc(bottom + 2.2 * s);
+  // khung từng khuông: bề ngang, khoá nhạc, hoá biểu
+  const frames = staves.map(({ st }) => {
+    const s = st.sp;
+    const top = st.center - 2 * s, bottom = st.center + 2 * s;
     let xLeft = Infinity, xRight = -1;
     for (let x = 0; x < ink.w; x++) {
       let n = 0;
       for (let y = Math.trunc(top); y <= Math.trunc(bottom); y++) n += ink.d[y * ink.w + x];
       if (n >= 4) { xLeft = Math.min(xLeft, x); xRight = x; }
     }
-    if (xRight < 0) return;
+    if (xRight < 0) return null;
     const ce = clefEnd(thin, top, bottom, s, xLeft);
+    return { s, top, bottom, xLeft, xRight, ce, ks: keySignatureByPosition(thin, top, bottom, s, ce + 1) };
+  });
+  // hoá biểu in lại ở mọi khuông, chỉ đổi khi chuyển giọng (từ đó về sau): khuông lệch hẳn với hai khuông
+  // kề bên (hoặc hai khuông kế tiếp ở đầu/cuối bài) là đọc nhầm
+  const keys = frames.map((f) => f?.ks.key ?? 0);
+  const fixedKeys = keys.map((k, i) => {
+    const p = keys[i - 1], n = keys[i + 1];
+    if (p !== undefined && n !== undefined) return p === n && p !== k ? p : k;
+    const [a, b] = p === undefined ? [keys[i + 1], keys[i + 2]] : [keys[i - 1], keys[i - 2]];
+    return a !== undefined && a === b && a !== k ? a : k;
+  });
+
+  staves.forEach((_, si) => {
+    const fr = frames[si];
+    if (!fr) return;
+    const { s, top, bottom, xRight, ce } = fr;
+    const y0 = Math.max(Math.trunc(top - 3.5 * s), 0), y1 = Math.trunc(bottom + 2.2 * s);
     const roi = clean.rows(y0, y1); roi.clearLeft(ce);
     const thinRoi = thin.rows(y0, y1);
-    const headLike = (o: Box) => 0.5 * s <= bh(o) && bh(o) <= 1.6 * s && 0.7 * s <= bw(o) && bw(o) <= 2 * s;
+    const strictRoi = clean.rows(y0, y1);
+    const dotRoi = dotInk.rows(y0, y1);
+    const dk = (x: number, y: number) => (x >= 0 && x < gray.width && y + y0 >= 0 && y + y0 < gray.height ? dark[(y + y0) * gray.width + x] : 0);
 
-    // lượt 1: lấp lỗ nhỏ cỡ lòng đầu nốt, và khe 3 px (ảnh nhỏ: dòng kẻ xẻ nốt trắng thành nhiều mảnh mỏng)
-    const bridged = roi.or(closingV(roi, 3));
-    const small = keepHeadHoles(fillHoles(bridged).andNot(bridged), s, 0);
-    const heads = opening(closing(roi.or(small), 3), k);
-    // hàng thuộc dòng kẻ (toạ độ trong roi) — bỏ qua khi đo độ đặc của lõi đầu nốt
     const inkRoi = ink.rows(y0, y1); inkRoi.clearLeft(ce); // còn dòng kẻ
+    // hàng thuộc dòng kẻ (toạ độ trong roi) — bỏ qua khi đo độ đặc của lõi đầu nốt
     const lineRow = new Uint8Array(roi.h);
     for (const [a, b] of lines) for (let y = a - 1; y <= b + 1; y++) if (y >= y0 && y - y0 < roi.h) lineRow[y - y0] = 1;
-    /** nốt trắng nếu có lòng rỗng, hoặc lõi đầu nốt (nửa giữa của hộp) thưa mực so với chính nó */
-    const isHollow = (o: Box) => {
-      if (anyIn(small, o)) return true;
-      if (enclosedWhite(inkRoi, o) >= Math.max(3, 0.02 * s * s)) return true;
-      let n = 0, ink = 0;
-      for (let y = o.y0 + Math.floor(bh(o) / 4); y < o.y1 - Math.floor(bh(o) / 4); y++) {
-        if (lineRow[y]) continue;
-        for (let x = o.x0 + Math.floor(bw(o) / 4); x < o.x1 - Math.floor(bw(o) / 4); x++) { n++; ink += roi.d[y * roi.w + x]; }
+    // đầu nốt: khớp mẫu bầu dục ở từng bậc cao độ (xem templateHeads)
+    const lineHalf = Math.max(1, mean(staves[si].lines.map(([a, b]) => (b - a + 1) / 2)));
+    const objs: { o: Box; hollow: boolean }[] = templateHeads(dark, gray.width, gray.height, top, bottom, s, ce, xRight + 1, lineHalf).map((t) => {
+      const ax = (t.wide ? 0.78 : 0.62) * s, ay = 0.45 * s;
+      // hộp bao theo mực thật quanh mẫu (đầu nốt có thể to/nhỏ hơn mẫu), trên ảnh đã xoá dòng kẻ
+      let bx0 = Infinity, bx1 = -1, by0 = Infinity, by1 = -1;
+      for (const [dx, dy] of ellipsePts(ax * 1.2, ay * 1.25, -0.35, 0, 1)) {
+        const x = t.x + dx, y = t.y - y0 + dy;
+        if (!roi.get(x, y)) continue;
+        bx0 = Math.min(bx0, x); bx1 = Math.max(bx1, x + 1); by0 = Math.min(by0, y); by1 = Math.max(by1, y + 1);
       }
-      return n >= 4 && ink / n < 0.75;
-    };
-    const objs: { o: Box; hollow: boolean }[] = label(heads).boxes.filter(headLike).map((o) => ({ o, hollow: isHollow(o) }));
-
-    // lượt 2: nốt trắng nằm ở khe — vòng nốt + hai dòng kẻ bao thành ô kín
-    const wl = lineInk.rows(y0, y1); wl.clearLeft(ce);
-    const small2 = keepHeadHoles(fillHoles(wl).andNot(wl), s, 0.6 * s);
-    for (const o of label(small2).boxes) {
-      if (objs.some((p) => Math.abs(cx(o) - cx(p.o)) < 1.2 * s && Math.abs(cy(o) - cy(p.o)) < 1.2 * s)) continue;
-      if (ringSides(roi, o, s)) objs.push({ o: { y0: Math.max(o.y0 - 1, 0), y1: o.y1 + 1, x0: Math.max(o.x0 - 2, 0), x1: o.x1 + 2 }, hollow: true });
-    }
+      const tb = { x0: Math.round(t.x - ax), x1: Math.round(t.x + ax) + 1, y0: Math.round(t.y - y0 - ay), y1: Math.round(t.y - y0 + ay) + 1 };
+      const o = bx1 - bx0 >= 0.6 * s && by1 - by0 >= 0.4 * s ? { x0: bx0, x1: bx1, y0: Math.min(by0, tb.y0), y1: Math.max(by1, tb.y1) } : tb;
+      return { o, hollow: t.hollow };
+    });
 
     // dấu hoá giữa bài (♯ ♭ ♮) đứng ngay trước nốt: tách riêng để không nhầm thành đầu nốt
     const accs = findAccidentals(thinRoi, objs.map((p) => p.o), s, ce);
     const inAcc = (o: Box) => accs.some((a) => a.box.x0 - 1 <= cx(o) && cx(o) <= a.box.x1 + 1 && a.box.y0 - 1 <= cy(o) && cy(o) <= a.box.y1 + 1);
     const cand = objs.filter((p) => !inAcc(p.o));
 
-    const [ks, ksEnd] = keySignature(thin, top, bottom, s, ce + 1);
+    const ks = fixedKeys[si], ksEnd = fr.ks.ends.get(ks) ?? ce + 1;
     if (si === 0) keySig = ks;
     const ts = timeSigSpan(thin, top, bottom, s, Math.max(ce, ksEnd) + 1);
     const contentFrom = Math.max(ce, ksEnd, ts ? ts[1] : 0);
 
+    /** nốt ngoài khuông từ La5 / Đô4 trở ra phải có dòng kẻ phụ (chữ, logo in đè thì không) */
+    const ledgerOk = (o: Box) => {
+      const stepOf = Math.round((bottom - (cy(o) + y0)) / (s / 2));
+      if (stepOf < 10 && stepOf > -2) return true;
+      const ly = Math.round((stepOf >= 10 ? top - s : bottom + s) - y0);
+      let best = 0;
+      for (const yy of [ly - 1, ly, ly + 1]) {
+        let l = Math.round(cx(o)), r = l;
+        if (!inkRoi.get(l, yy)) continue;
+        while (inkRoi.get(l - 1, yy)) l--;
+        while (inkRoi.get(r + 1, yy)) r++;
+        best = Math.max(best, r - l + 1);
+      }
+      return best >= 1.3 * s;
+    };
     // xác minh từng đốm là nốt thật (có thân, hoặc nốt tròn trong khuông) TRƯỚC khi xét hợp âm:
     // chữ hợp âm "Gm" phía trên khuông có vòng giống đầu nốt rỗng
     const valid: { o: Box; hollow: boolean; stem: Stem | null; beats: number }[] = [];
     for (const { o, hollow } of cand) {
       if (cx(o) <= contentFrom) continue;
-      const stem = findStem(thinRoi, o, s);
+      // vạch nối dày (hai vạch nối 16 dính nhau) khớp mẫu nốt đen: nhưng kéo dài ngang qua nhiều hàng
+      if (!hollow) {
+        const run = (y: number) => {
+          y = Math.round(y);
+          let l = Math.round(cx(o)), r = l;
+          if (!strictRoi.get(l, y)) return 0;
+          while (strictRoi.get(l - 1, y)) l--;
+          while (strictRoi.get(r + 1, y)) r++;
+          return r - l + 1;
+        };
+        if (Math.min(run(cy(o) - 0.15 * s), run(cy(o)), run(cy(o) + 0.15 * s)) >= 2.0 * s) continue;
+      }
+      if (!ledgerOk(o)) continue;
+      const stem = findStem(thinRoi, o, s, strictRoi);
       if (!stem) {
         // nốt tròn: rỗng, không thân, nằm trong khuông ± 0.7 khe (tránh ♭ của chữ hợp âm "B♭") (hộp tìm qua lòng rỗng hẹp hơn cả nốt → 0.8 khe)
         if (!hollow || bw(o) < 0.8 * s || cy(o) + y0 < top - 0.7 * s || cy(o) + y0 > bottom + 0.7 * s) continue;
         valid.push({ o, hollow, stem, beats: 4 });
       } else {
         if (hollow && stem.b - stem.a + 1 < 3 * s) continue; // dấu lặng γ có nét chéo ngắn
-        valid.push({ o, hollow, stem, beats: hollow ? 2 : 1 / 2 ** countFlags(thinRoi, stem, s) });
+        valid.push({ o, hollow, stem, beats: hollow ? 2 : 1 / 2 ** countFlags(thinRoi, stem, s, dk) });
       }
     }
     // hai nốt cùng cột: giữ nốt đặc (bỏ vòng móc rỗng); cùng loại = hợp âm → giữ nốt cao nhất (giai điệu)
@@ -833,12 +1226,13 @@ export function readPage(input: Gray, page = 0): OmrPage | null {
       // thân nốt + vùng móc bên phải → không tính là dấu lặng / dấu nối
       if (stem) occupied.push({ x0: stem.x - 2, x1: stem.x + Math.ceil(1.4 * s), y0: stem.a - 1, y1: stem.b + 2 });
       occupied.push({ x0: o.x0 - 1, x1: o.x1 + 1, y0: o.y0 - 1, y1: o.y1 + 1 });
-      const dot = hasDot(roi, o, s);
-      const acc = accs.find((a) => o.x0 - 1.8 * s <= a.box.x1 && a.box.x1 <= o.x0 + 0.4 * s && Math.abs(cy(a.box) - cy(o)) <= 1.3 * s);
+      const dot = hasDot(roi, o, s) || hasDot(dotRoi, o, s);
+      const acc = accs.find((a) => o.x0 - 1.8 * s <= a.box.x1 && a.box.x1 <= o.x0 + 0.4 * s && Math.abs(cy(a.box) - cy(o)) <= 1.3 * s)
+        ?? (() => { const k = accidentalBefore(thinRoi, cx(o), cy(o), s, contentFrom); return k === null ? undefined : { box: o, kind: k }; })();
       const y = cy(o) + y0;
       staffNotes.push({
         id: `n${++noteSeq}`, page, staff: outStaves.length, x, y,
-        step: Math.round((bottom - y) / (s / 2)), accidental: acc ? acc.kind : null,
+        step: Math.round((bottom - y) / (s / 2)), accidental: acc ? (acc.kind as OmrNote['accidental']) : null,
         beats: beats * (dot ? 1.5 : 1), hollow, dot, rest: false,
       });
     }
@@ -856,18 +1250,19 @@ export function readPage(input: Gray, page = 0): OmrPage | null {
       const spansStaff = Math.abs(st.a - (top - y0)) <= 0.5 * s && Math.abs(st.b - (bottom - y0)) <= 0.5 * s;
       if (spansStaff && !head.hollow) continue;
       const o = head.box;
-      if (occupied.some((z) => overlaps(z, o))) continue;
+      if (occupied.some((z) => overlaps(z, o)) || !ledgerOk(o)) continue;
       if (staffNotes.some((n) => Math.abs(n.x - cx(o)) < 0.8 * s && Math.abs(n.y - (cy(o) + y0)) < s)) continue;
       const stem: Stem = { ...st, up: head.up };
-      const beats = head.hollow ? 2 : 1 / 2 ** countFlags(thinRoi, stem, s);
-      const dot = hasDot(roi, o, s);
+      const beats = head.hollow ? 2 : 1 / 2 ** countFlags(thinRoi, stem, s, dk);
+      const dot = hasDot(roi, o, s) || hasDot(dotRoi, o, s);
       usedStems.push(st.x);
       occupied.push({ x0: st.x - 2, x1: st.x + Math.ceil(1.4 * s), y0: st.a - 1, y1: st.b + 2 }, { x0: o.x0 - 1, x1: o.x1 + 1, y0: o.y0 - 1, y1: o.y1 + 1 });
-      const acc = accs.find((a) => o.x0 - 1.8 * s <= a.box.x1 && a.box.x1 <= o.x0 + 0.4 * s && Math.abs(cy(a.box) - cy(o)) <= 1.3 * s);
+      const acc = accs.find((a) => o.x0 - 1.8 * s <= a.box.x1 && a.box.x1 <= o.x0 + 0.4 * s && Math.abs(cy(a.box) - cy(o)) <= 1.3 * s)
+        ?? (() => { const k = accidentalBefore(thinRoi, cx(o), cy(o), s, contentFrom); return k === null ? undefined : { box: o, kind: k }; })();
       const y = cy(o) + y0;
       staffNotes.push({
         id: `n${++noteSeq}`, page, staff: outStaves.length, x: cx(o), y,
-        step: Math.round((bottom - y) / (s / 2)), accidental: acc ? acc.kind : null,
+        step: Math.round((bottom - y) / (s / 2)), accidental: acc ? (acc.kind as OmrNote['accidental']) : null,
         beats: beats * (dot ? 1.5 : 1), hollow: head.hollow, dot, rest: false,
       });
     }
@@ -880,7 +1275,7 @@ export function readPage(input: Gray, page = 0): OmrPage | null {
     }
     staffNotes.sort((a, b) => a.x - b.x);
     const first = staffNotes.length ? staffNotes[0].x : xRight;
-    const bars = barlines(thin, top, bottom, s, Math.trunc(first + s), xRight + 1, staffNotes.map((n) => n.x));
+    const bars = barlines(thin, top, bottom, s, Math.trunc(first + s), xRight + 1, staffNotes.filter((n) => !n.rest).map((n) => n.x));
 
     // dấu hoá giữ hiệu lực đến hết ô nhịp cho các nốt cùng vị trí
     let held = new Map<number, -1 | 0 | 1>();
@@ -888,6 +1283,10 @@ export function readPage(input: Gray, page = 0): OmrPage | null {
     for (const n of staffNotes) {
       while (bi < bars.length && bars[bi] < n.x) { bi++; held = new Map(); }
       if (n.rest) continue;
+      if ((n.accidental as number) === 2) {
+        const cur = held.has(n.step) ? held.get(n.step)! : alterOf(n.step, ks);
+        n.accidental = cur !== 0 ? 0 : 1;
+      }
       if (n.accidental !== null) held.set(n.step, n.accidental);
       else if (held.has(n.step)) n.accidental = held.get(n.step)!;
     }
@@ -898,6 +1297,12 @@ export function readPage(input: Gray, page = 0): OmrPage | null {
       const p = pitched[i - 1], q = pitched[i];
       if (p.step !== q.step) continue;
       if (ties.some((t) => p.x - 0.3 * s <= t.x0 && t.x0 <= p.x + 1.6 * s && q.x - 1.6 * s <= t.x1 && t.x1 <= q.x + 0.3 * s)) q.tied = true;
+    }
+    // chuyển giọng giữa bài (hoá biểu khác khuông đầu): ghi dấu hoá riêng cho nốt bị ảnh hưởng
+    if (ks !== keySig) for (const n of staffNotes) {
+      if (n.rest || n.accidental !== null) continue;
+      const want = alterOf(n.step, ks);
+      if (want !== alterOf(n.step, keySig)) n.accidental = want;
     }
     outStaves.push({ page, top, bottom, space: s, bars, xRight });
     notes.push(...staffNotes);
@@ -943,9 +1348,22 @@ export function fillRests(pages: OmrPage[]): number {
   return meter;
 }
 
-export function guessTimeSig(meter: number, notes: OmrNote[]) {
+/**
+ * 3 phách đen mỗi ô: 3/4 hay 6/8? 6/8 chia ô làm hai nửa 1.5 phách, nốt hầu như không vắt qua giữa ô;
+ * 3/4 thì nốt đen / nốt trắng vắt qua giữa ô là thường. `measures`: các ô đủ phách (danh sách trường độ).
+ */
+export function guessTimeSig(meter: number, notes: OmrNote[], measures: number[][] = []) {
   const eighthish = notes.filter((n) => n.beats === 0.5 || n.beats === 1.5).length;
-  if (Math.abs(meter - 3) < 0.01) return eighthish / Math.max(1, notes.length) > 0.4 ? '6/8' : '3/4';
+  if (Math.abs(meter - 3) < 0.01) {
+    if (measures.length >= 2) {
+      const crossing = measures.filter((m) => {
+        let t = 0;
+        return m.some((b) => { const hit = t < 1.5 - 0.01 && t + b > 1.5 + 0.01; t += b; return hit; });
+      }).length;
+      if (crossing / measures.length >= 0.2) return '3/4';
+    }
+    return eighthish / Math.max(1, notes.length) > 0.4 ? '6/8' : '3/4';
+  }
   return ({ 4: '4/4', 2: '2/4', 1.5: '3/8', 6: '6/4' } as Record<number, string>)[meter] ?? '4/4';
 }
 
@@ -954,7 +1372,16 @@ export function readSheet(pages: Gray[]): OmrResult {
   const read = pages.map((g, i) => readPage(g, i)).filter((p): p is OmrPage => !!p);
   const meter = fillRests(read);
   const all = read.flatMap((p) => p.notes);
-  return { pages: read, keySig: read[0]?.keySig ?? 0, meter, timeSig: guessTimeSig(meter, all.filter((n) => !n.rest)) };
+  // các ô đủ phách (sau khi chèn dấu lặng) — để phân biệt 3/4 với 6/8
+  const full: number[][] = [];
+  for (const p of read) p.staves.forEach((st, si) => {
+    const edges = [-Infinity, ...st.bars, Infinity];
+    for (let i = 0; i + 1 < edges.length; i++) {
+      const bs = p.notes.filter((n) => n.staff === si && edges[i] < n.x && n.x < edges[i + 1]).map((n) => n.beats);
+      if (bs.length && Math.abs(bs.reduce((t, b) => t + b, 0) - meter) < 0.01) full.push(bs);
+    }
+  });
+  return { pages: read, keySig: read[0]?.keySig ?? 0, meter, timeSig: guessTimeSig(meter, all.filter((n) => !n.rest), full) };
 }
 
 // ───────────────────────── cao độ & xuất ─────────────────────────
@@ -962,6 +1389,14 @@ export function readSheet(pages: Gray[]): OmrResult {
 const LETTERS = 'CDEFGAB';
 const SHARP_ORDER = 'FCGDAEB';
 const FLAT_ORDER = 'BEADGCF';
+
+/** Dấu hoá hoá biểu áp cho bậc (0 = E4): 1 thăng, -1 giáng, 0 không */
+function alterOf(step: number, keySig: number): -1 | 0 | 1 {
+  const letter = LETTERS[(((2 + step) % 7) + 7) % 7];
+  if (keySig > 0 && SHARP_ORDER.slice(0, keySig).includes(letter)) return 1;
+  if (keySig < 0 && FLAT_ORDER.slice(0, -keySig).includes(letter)) return -1;
+  return 0;
+}
 
 /** Tên nốt (vd "F#4") theo bậc, hoá biểu và dấu hoá riêng; dấu lặng → "R" */
 export function notePitch(n: Pick<OmrNote, 'step' | 'accidental' | 'rest'>, keySig: number): string {

@@ -130,6 +130,23 @@ describe('đọc khuông nhạc (OMR)', () => {
     ]);
   });
 
+  it('ảnh chụp hơi nghiêng vẫn đọc đúng cao độ', () => {
+    const flat = render([N(2), N(3, 0.5), N(4, 0.5), N(5, 2), BAR, N(4, 1.5), N(3, 0.5), N(2, 2), BAR, N(0), N(1), N(7), N(8)]);
+    // nghiêng ~1°: cột bên phải tụt xuống dần
+    const { width, height } = flat;
+    const data = new Uint8Array(width * height).fill(255);
+    for (let x = 0; x < width; x++) {
+      const dy = Math.round(x * 0.018);
+      for (let y = 0; y + dy < height; y++) data[(y + dy) * width + x] = flat.data[y * width + x];
+    }
+    const r = readSheet([{ width, height, data }]);
+    expect(r.pages[0].notes.filter((n) => !n.rest).map((n) => `${notePitch(n, 0)}:${n.beats}`)).toEqual([
+      'G4:1', 'A4:0.5', 'B4:0.5', 'C5:2',
+      'B4:1.5', 'A4:0.5', 'G4:2',
+      'E4:1', 'F4:1', 'E5:1', 'F5:1',
+    ]);
+  });
+
   it('không thấy khuông nhạc thì không bịa nốt', () => {
     const blank: Gray = { width: 200, height: 100, data: new Uint8Array(200 * 100).fill(255) };
     const r = readSheet([blank]);
