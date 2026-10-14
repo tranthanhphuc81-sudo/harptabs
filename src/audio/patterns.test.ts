@@ -107,6 +107,14 @@ describe('beat mẫu', () => {
     expect(on(p.bassLine!)).toEqual([0, 3, 6, 9]);
   });
 
+  it('reggae one drop: kick + gõ vành chỉ ở phách 3, skank ở 2 & 4', () => {
+    const p = PATTERNS.reggae;
+    const on = (s: string) => [...s.slice(0, 16)].map((ch, i) => (ch !== '.' ? i : -1)).filter((i) => i >= 0);
+    expect(on(p.kick!)).toEqual([8]);
+    expect(on(p.rim!)).toEqual([8]);
+    expect(on(p.comp!)).toEqual([4, 12]);
+  });
+
   it('rumba: clave rumba 3-2 (1, 1a, 2&… 3&, 4)', () => {
     const c = PATTERNS.rumba.clave!.slice(0, 16);
     expect([...c].map((ch, i) => (ch !== '.' ? i : -1)).filter((i) => i >= 0)).toEqual([0, 3, 7, 10, 12]);
