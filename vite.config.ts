@@ -30,6 +30,9 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
+        // bộ đọc chữ tên bài (~5 MB): không tải sẵn khi cài; lần đầu dùng mới tải rồi giữ lại để chạy offline
+        globIgnores: ['ocr/**'],
+        runtimeCaching: [{ urlPattern: ({ url }: { url: URL }) => url.pathname.includes('/ocr/'), handler: 'CacheFirst', options: { cacheName: 'ocr', expiration: { maxEntries: 10 } } }],
         navigateFallback: 'index.html'
       }
     })

@@ -3,9 +3,12 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
-  "description": "S\u1ed5 tab harmonica diatonic 10 l\u1ed7 \u2014 ch\u1ea1y offline, AI ch\u1ec9 khi c\u1ea7n",
+  "description": "Sổ tab harmonica diatonic 10 lỗ — chạy offline, AI chỉ khi cần",
   "scripts": {
+    "postinstall": "node scripts/copy-ocr.mjs",
+    "predev": "node scripts/copy-ocr.mjs",
     "dev": "vite",
+    "prebuild": "node scripts/copy-ocr.mjs",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "test": "vitest run",
@@ -14,11 +17,13 @@
   "dependencies": {
     "@fontsource/barlow": "^5.1.0",
     "@fontsource/barlow-condensed": "^5.1.0",
+    "@tesseract.js-data/vie": "^1.0.0",
     "dexie": "^4.0.10",
     "dexie-react-hooks": "^1.1.7",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "react-router-dom": "^6.28.0"
+    "react-router-dom": "^6.28.0",
+    "tesseract.js": "^7.0.0"
   },
   "devDependencies": {
     "@types/react": "^18.3.12",

@@ -1497,6 +1497,103 @@ export function guessTimeSig(meter: number, notes: OmrNote[], measures: number[]
   return ({ 4: '4/4', 2: '2/4', 1.5: '3/8', 6: '6/4' } as Record<number, string>)[meter] ?? '4/4';
 }
 
+export interface TitleBox { x0: number; y0: number; x1: number; y1: number }
+
+/**
+ * Vùng tên bài và tên tác giả trên trang (toạ độ trên page.image), phía trên khuông đầu tiên.
+ *  - tên bài: dòng chữ to nhất (cụm chữ lớn nhất trong dòng)
+ *  - tác giả: dòng chữ dưới tên bài, canh phải theo khuông ("Nhạc và lời …", "Trịnh Công Sơn")
+ * Bỏ logo / khung (khối mực quá to, hoặc chứa hình bên trong), nốt nhạc và hợp âm sát khuông.
+ */
+export function findHeaderBoxes(page: Pick<OmrPage, 'image' | 'staves'>): { title: TitleBox | null; artist: TitleBox | null } {
+  const none = { title: null, artist: null };
+  const st = page.staves[0];
+  if (!st) return none;
+  const s = st.space;
+  // tên bài: cao hơn khuông ≥ 3 khe (nốt cao, hợp âm, ngoặc liên ba nằm sát khuông); tác giả có khi sát hơn
+  const yTitle = Math.round(st.top - 3 * s), yEnd = Math.round(st.top - 1.5 * s);
+  if (yTitle < s) return none;
+  const img = threshold(page.image, 160).rows(0, yEnd);
+  const { lab, boxes } = label(img);
+  // chữ: không quá to (logo, khung ảnh), không là hạt bụi
+  const keep = new Uint8Array(boxes.length + 1);
+  // (bỏ cả đường kẻ ngang mảnh: ngoặc liên ba, ngoặc lặp, gạch chân — không phải chữ)
+  const cand = boxes.map((b) => bh(b) <= 8 * s && bw(b) <= 12 * s && Math.max(bh(b), bw(b)) >= 0.3 * s && !(bw(b) >= 3 * bh(b) && bh(b) <= 0.6 * s));
+  // logo / hình vẽ: cao vượt hẳn cỡ chữ thường gặp trên trang
+  const hs = boxes.filter((_, i) => cand[i] && bh(boxes[i]) >= 0.6 * s).map(bh);
+  const typical = hs.length ? median(hs) : s;
+  // logo vòng tròn có hình bên trong: khối to chứa trọn vài khối khác
+  const inside = (o: Box, b: Box) => b !== o && b.x0 >= o.x0 && b.x1 <= o.x1 && b.y0 >= o.y0 && b.y1 <= o.y1;
+  const drop = new Set<Box>();
+  boxes.forEach((o, i) => {
+    if (bh(o) <= 2.5 * typical) return;
+    const inner = boxes.filter((b, j) => cand[j] && inside(o, b));
+    // khối quá to (khung, vòng logo) thì mọi thứ bên trong cũng là hình, không phải chữ
+    if (inner.length >= (cand[i] ? 2 : 1)) { drop.add(o); inner.forEach((b) => drop.add(b)); }
+  });
+  boxes.forEach((b, i) => { if (cand[i] && !drop.has(b) && bh(b) <= Math.max(6 * typical, 2 * s)) keep[i + 1] = 1; });
+  const { w, h } = img;
+  const rowN = new Int32Array(h);
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (keep[lab[y * w + x]]) rowN[y]++;
+  // các dải dòng chữ (khe trống ≤ 0.25 khe vẫn tính cùng dòng: dấu tiếng Việt tách khỏi thân chữ)
+  const bands: [number, number][] = [];
+  let a = -1, lastInk = -1;
+  for (let y = 0; y <= h; y++) {
+    const ink = y < h && rowN[y] > 0;
+    if (ink) { if (a < 0) a = y; lastInk = y; continue; }
+    if (a >= 0 && (y === h || y - lastInk > 0.25 * s)) { bands.push([a, lastInk + 1]); a = -1; }
+  }
+  type Line = { y0: number; y1: number; size: number; groups: [number, number, number][] };
+  const lines: Line[] = [];
+  for (const [y0, y1] of bands) {
+    // cỡ chữ: số hàng có mực đáng kể (≥ 30% đỉnh) — không tính phần dấu, chân chữ thưa
+    let peak = 0;
+    for (let y = y0; y < y1; y++) peak = Math.max(peak, rowN[y]);
+    let size = 0;
+    for (let y = y0; y < y1; y++) if (rowN[y] >= 0.3 * peak) size++;
+    if (size < 0.4 * s) continue;
+    // cột có mực trong dải → tách cụm theo khe ngang > 4 lần cỡ chữ (giữa các từ thì hẹp hơn)
+    const colInk = new Uint8Array(w);
+    for (let y = y0; y < y1; y++) for (let x = 0; x < w; x++) if (keep[lab[y * w + x]]) colInk[x] = 1;
+    const groups: [number, number, number][] = [];
+    let gx = -1, last = -1, mass = 0;
+    for (let x = 0; x <= w; x++) {
+      if (x < w && colInk[x]) { if (gx < 0) { gx = x; mass = 0; } last = x; mass++; continue; }
+      if (gx >= 0 && (x === w || x - last > 4 * size)) { groups.push([gx, last + 1, mass]); gx = -1; }
+    }
+    lines.push({ y0, y1, size, groups });
+  }
+  const boxOf = (l: Line, x0: number, x1: number): TitleBox => {
+    const pad = Math.round(0.4 * l.size);
+    return { x0: Math.max(0, x0 - pad), y0: Math.max(0, l.y0 - pad), x1: Math.min(w, x1 + pad), y1: Math.min(h, l.y1 + pad) };
+  };
+  let title: { line: Line; box: TitleBox } | null = null;
+  for (const l of lines) {
+    if (l.y1 > yTitle || l.size < 0.6 * s) continue;
+    const g = [...l.groups].sort((p, q) => q[2] - p[2])[0];
+    if (!g || g[1] - g[0] < 2 * l.size) continue;
+    if (!title || l.size > title.line.size * 1.1) title = { line: l, box: boxOf(l, g[0], g[1]) };
+  }
+  // tác giả: dòng đầu tiên dưới tên bài có cụm chữ canh phải theo khuông, chữ nhỏ hơn tên bài
+  let artist: TitleBox | null = null;
+  if (title) {
+    for (const l of lines) {
+      if (l.y0 < title.line.y1 || l.size > title.line.size) continue;
+      const right = [...l.groups].sort((p, q) => q[1] - p[1]);
+      if (!right.length || right[0][1] < st.xRight - 6 * s || right[0][0] < w / 3) continue;
+      // gộp các cụm sát bên trái ("Nhạc và lời" + "Giáng Son")
+      let x0 = right[0][0];
+      for (const g of right.slice(1)) if (x0 - g[1] <= 6 * l.size) x0 = Math.min(x0, g[0]);
+      if (right[0][1] - x0 < 3 * l.size) continue; // hợp âm / ký hiệu lẻ
+      artist = boxOf(l, x0, right[0][1]);
+      break;
+    }
+  }
+  return { title: title?.box ?? null, artist };
+}
+
+export const findTitleBox = (page: Pick<OmrPage, 'image' | 'staves'>) => findHeaderBoxes(page).title;
+
 /** Đọc nhiều trang theo thứ tự */
 export function readSheet(pages: Gray[]): OmrResult {
   const read = pages.map((g, i) => readPage(g, i)).filter((p): p is OmrPage => !!p);

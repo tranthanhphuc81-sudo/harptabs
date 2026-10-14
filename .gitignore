@@ -9,3 +9,4 @@ worker/.wrangler
 .env
 .env.*
 .dev.vars
+public/ocr

@@ -4,7 +4,8 @@ import { MAX_IMAGES } from '../../shared/ai';
 import { aiToTab } from '../lib/ai';
 import { blankSong, db } from '../lib/db';
 import { HarpKey } from '../lib/harp';
-import { Gray, OmrNote, OmrPage, keyName, notePitch, readSheet, toGray, toTranscription } from '../lib/omr';
+import { Gray, OmrNote, OmrPage, findHeaderBoxes, keyName, notePitch, readSheet, toGray, toTranscription } from '../lib/omr';
+import { MIN_CONFIDENCE, cleanArtist, cleanTitle, cropToCanvas, hasDiacritics, looksLikeTitle, readLine, titleFromFilename } from '../lib/titleOcr';
 import { loadScanPages, saveScan } from '../lib/scanStore';
 import { flatten, parseTab } from '../lib/tabText';
 import { beatsPerBar } from '../lib/types';
@@ -45,6 +46,23 @@ const barBeats = (ts: string) => {
   return n && d ? (n * 4) / d : 4;
 };
 
+/** Ảnh vùng chữ cắt từ bản nhạc + kết quả máy đọc */
+type Shot = { url: string; status: 'reading' | 'ok' | 'unclear' | 'fail'; text?: string };
+
+function ShotHint({ shot, what, value, onUse }: { shot: Shot; what: string; value: string; onUse: (t: string) => void }) {
+  return (
+    <span className="title-shot">
+      <img src={shot.url} alt={`Vùng ${what} trên ảnh`} />
+      <span className="muted small">
+        {shot.status === 'reading' ? `Đang đọc ${what}…`
+          : shot.status === 'ok' ? <>Máy đọc: <strong>{shot.text}</strong>{value !== shot.text && <> · <button type="button" className="link-btn" onClick={() => onUse(shot.text!)}>Dùng</button></>}</>
+          : shot.status === 'unclear' ? 'Kiểu chữ này máy chưa đọc được — gõ theo ảnh trên'
+          : 'Chưa đọc được chữ (lần đầu cần mạng để tải bộ đọc) — gõ theo ảnh trên'}
+      </span>
+    </span>
+  );
+}
+
 const durIndex = (b: number) => DURATIONS.findIndex((d) => Math.abs(d.beats - b) < 0.01);
 
 const keySigLabel = (k: number) => (k === 0 ? 'Không dấu hoá' : `${Math.abs(k)} dấu ${k > 0 ? 'thăng ♯' : 'giáng ♭'}`) + ` (${keyName(k)} trưởng)`;
@@ -68,6 +86,13 @@ export default function ScanImport({ editSongId }: { editSongId?: string }) {
   const [allowTranspose, setAllowTranspose] = useState(true);
   const [zoom, setZoom] = useState(1);
   const [fromStore, setFromStore] = useState(false);
+  /** tên bài tự điền (từ tên file / máy đọc chữ): người dùng sửa ô tên bài thì thôi không ghi đè */
+  const autoTitle = useRef('');
+  const fileTitle = useRef('');
+  const [titleShot, setTitleShot] = useState<Shot | null>(null);
+  const [artist, setArtist] = useState('');
+  const autoArtist = useRef('');
+  const [artistShot, setArtistShot] = useState<Shot | null>(null);
 
   // mở lại bài đã quét
   useEffect(() => {
@@ -84,6 +109,7 @@ export default function ScanImport({ editSongId }: { editSongId?: string }) {
         setPages(ps);
         setFromStore(true);
         setTitle(song.title);
+        setArtist(song.artist ?? '');
         setKeySig(scan.keySig);
         setTimeSig(scan.timeSig);
         setTempo(scan.tempo);
@@ -122,8 +148,15 @@ export default function ScanImport({ editSongId }: { editSongId?: string }) {
     }, 30);
   };
 
+  const setAutoTitle = (t: string) => { autoTitle.current = t; setTitle(t); };
+
   const addFiles = async (files: FileList | null) => {
     if (!files?.length) return;
+    if (!grays.length && !editSongId) {
+      // tên file đặt có nghĩa (vd "nang-thuy-tinh.jpg") → điền ngay, máy đọc chữ có thể thay sau
+      fileTitle.current = titleFromFilename(files[0].name);
+      if (fileTitle.current && (!title || title === autoTitle.current)) setAutoTitle(fileTitle.current);
+    }
     const room = MAX_IMAGES - grays.length;
     if (files.length > room) toast(`Tối đa ${MAX_IMAGES} trang mỗi lần`);
     try {
@@ -138,7 +171,48 @@ export default function ScanImport({ editSongId }: { editSongId?: string }) {
     if (galRef.current) galRef.current.value = '';
   };
 
-  const reset = () => { setGrays([]); setPages([]); setSelected(null); setError(null); setFromStore(false); };
+  const reset = () => {
+    setGrays([]); setPages([]); setSelected(null); setError(null); setFromStore(false); setTitleShot(null); setArtistShot(null);
+    if (title === autoTitle.current) setTitle('');
+    if (artist === autoArtist.current) setArtist('');
+    autoTitle.current = ''; fileTitle.current = ''; autoArtist.current = '';
+  };
+
+  // tên bài, tác giả: cắt vùng chữ phía trên khuông đầu, đọc chữ ngay trên máy
+  const firstPage = pages[0];
+  useEffect(() => {
+    setTitleShot(null); setArtistShot(null);
+    if (!firstPage || fromStore) return;
+    const boxes = findHeaderBoxes(firstPage);
+    let alive = true;
+    const run = async (box: typeof boxes.title, setShot: (f: (s: Shot | null) => Shot | null) => void, clean: (t: string) => string, apply: (t: string) => void) => {
+      if (!box) return;
+      const canvas = cropToCanvas(firstPage.image, box);
+      setShot(() => ({ url: canvas.toDataURL('image/png'), status: 'reading' }));
+      const r = await readLine(canvas);
+      if (!alive) return;
+      if (!r) { setShot((t) => t && { ...t, status: 'fail' }); return; }
+      const text = clean(r.text);
+      const good = r.confidence >= MIN_CONFIDENCE && looksLikeTitle(text);
+      setShot((t) => t && { ...t, status: good ? 'ok' : 'unclear', text });
+      if (good) apply(text);
+    };
+    (async () => {
+      // không ghi đè chữ người dùng gõ, hay tên file có dấu (người đặt tên đàng hoàng)
+      await run(boxes.title, setTitleShot, cleanTitle, (text) => setTitle((cur) => {
+        if (cur && cur !== autoTitle.current) return cur;
+        if (cur && cur === fileTitle.current && hasDiacritics(cur)) return cur;
+        autoTitle.current = text;
+        return text;
+      }));
+      await run(boxes.artist, setArtistShot, cleanArtist, (text) => setArtist((cur) => {
+        if (cur && cur !== autoArtist.current) return cur;
+        autoArtist.current = text;
+        return text;
+      }));
+    })();
+    return () => { alive = false; };
+  }, [firstPage, fromStore]);
 
   // ───── sửa nốt ─────
   const allNotes = useMemo(() => pages.flatMap((p) => p.notes), [pages]);
@@ -234,6 +308,7 @@ export default function ScanImport({ editSongId }: { editSongId?: string }) {
     if (!converted) return;
     const fields = {
       title: title.trim() || 'Bài quét',
+      artist: artist.trim() || undefined,
       harpKey: converted.harpKey,
       songKey: converted.fit.shift % 12 === 0 ? keyName(keySig) : undefined,
       bpm: tempo,
@@ -354,6 +429,12 @@ export default function ScanImport({ editSongId }: { editSongId?: string }) {
             <label className="field grow">
               <span className="field-label">Tên bài</span>
               <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Ví dụ: Làng tôi" />
+              {titleShot && <ShotHint shot={titleShot} what="tên bài" value={title} onUse={setAutoTitle} />}
+            </label>
+            <label className="field grow">
+              <span className="field-label">Tác giả</span>
+              <input value={artist} onChange={(e) => setArtist(e.target.value)} placeholder="Ví dụ: Trịnh Công Sơn" />
+              {artistShot && <ShotHint shot={artistShot} what="tên tác giả" value={artist} onUse={(t) => { autoArtist.current = t; setArtist(t); }} />}
             </label>
             <label className="field">
               <span className="field-label">Hoá biểu</span>
