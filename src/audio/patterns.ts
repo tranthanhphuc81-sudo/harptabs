@@ -1,6 +1,10 @@
 /**
  * Beat mẫu. Mỗi track là chuỗi ký tự trên lưới (beats × subdiv):
  *   x = đánh, X = đánh mạnh, . = nghỉ
+ * Track có thể dài 2 ô nhịp (ô thứ hai là biến tấu), lặp lại theo chu kỳ.
+ * Bộ gõ La-tinh dùng ký hiệu riêng:
+ *   bongo / conga: f = ngón nhẹ, t = gót tay (trầm, tắt), s = vỗ (slap), h = mở cao, o = mở trầm
+ *   guiro: X = cạo dài, x = cạo ngắn
  */
 export type BeatStyle =
   | 'none' | 'metronome' | 'rock' | 'ballad' | 'shuffle' | 'slowrock'
@@ -17,6 +21,9 @@ export interface BeatPattern {
   openHat?: string;
   rim?: string;
   shaker?: string;
+  bongo?: string;
+  conga?: string;
+  guiro?: string;
 }
 
 export const PATTERNS: Record<Exclude<BeatStyle, 'none' | 'metronome'>, BeatPattern> = {
@@ -41,8 +48,14 @@ export const PATTERNS: Record<Exclude<BeatStyle, 'none' | 'metronome'>, BeatPatt
     kick: 'X.......x.......', snare: 'xxXxxxXxxxXxxxXx',
   },
   bolero: {
+    // bass "bùm… bùm bùm" (1, 2&, 3), bongo martillo, conga nền, güiro + maracas
     label: 'Bolero', hint: 'Bolero Việt', beats: 4, subdiv: 4,
-    kick: 'X.......x.x.....', rim: '....x.x.....x...', shaker: 'x.x.x.x.x.x.x.x.',
+    kick:   'X.....x.X.......' + 'X.....x.X.....x.',
+    rim:    '....x.......x...' + '....x.......x.x.',
+    bongo:  'f.t.f.s.f.t.f.o.' + 'f.t.f.s.f.t.s.oo',
+    conga:  '......o.t...o.o.' + '......o.t...oo..',
+    guiro:  'X.......X.x.....' + 'X.......X.x.x...',
+    shaker: 'X.x.x.x.X.x.x.x.',
   },
   chacha: {
     label: 'Cha cha', hint: 'Cha-cha-cha ở phách 4', beats: 4, subdiv: 2,

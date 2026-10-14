@@ -583,6 +583,69 @@ export function rim(when: number, vel = 1) {
   noiseHit(when, 'bandpass', 2600, 0.012, 0.12 * vel, 2);
 }
 
+/** mặt da trống tay: tần số chính + hoạ âm lệch (màng tròn), trượt cao độ nhẹ */
+function handDrum(when: number, f: number, decay: number, gain: number, bright: number) {
+  osc('sine', when, f * 1.12, f, 0.02, gain, decay);
+  osc('sine', when, f * 1.59, f * 1.5, 0.02, gain * 0.35, decay * 0.6);
+  noiseHit(when, 'bandpass', bright, 0.012, gain * 0.5, 1.5);
+}
+
+/** bongo; kind: f = ngón nhẹ, t = gót tay, s = vỗ, h = mở cao, o = mở trầm */
+export function bongo(when: number, kind: string, vel = 1) {
+  vel = vary(vel) * (kit === 'soft' ? 0.75 : 1);
+  const hi = 520, lo = 360;
+  switch (kind) {
+    case 'f': handDrum(when, hi, 0.07, 0.14 * vel, 3500); break;
+    case 't': osc('sine', when, lo * 0.9, lo * 0.8, 0.02, 0.12 * vel, 0.05); break;
+    case 's':
+      // vỗ: tiếng da căng, chát, tắt rất nhanh
+      noiseHit(when, 'bandpass', 2600, 0.05, 0.32 * vel, 1.4);
+      osc('triangle', when, hi * 1.3, hi * 1.1, 0.02, 0.18 * vel, 0.06);
+      break;
+    case 'h': handDrum(when, hi, 0.16, 0.26 * vel, 3800); break;
+    case 'o': handDrum(when, lo, 0.2, 0.3 * vel, 3000); break;
+  }
+}
+
+/** conga (tumbadora); kind: o = mở, t = bàn tay úp (tắt), s = vỗ, l = tumba trầm */
+export function conga(when: number, kind: string, vel = 1) {
+  vel = vary(vel) * (kit === 'soft' ? 0.75 : 1);
+  switch (kind) {
+    case 'o': handDrum(when, 245, 0.28, 0.3 * vel, 2200); break;
+    case 'l': handDrum(when, 185, 0.34, 0.32 * vel, 1800); break;
+    case 't': osc('sine', when, 230, 200, 0.02, 0.12 * vel, 0.05); noiseHit(when, 'lowpass', 1200, 0.02, 0.08 * vel); break;
+    case 's':
+      noiseHit(when, 'bandpass', 2000, 0.06, 0.28 * vel, 1.2);
+      osc('triangle', when, 340, 300, 0.02, 0.15 * vel, 0.07);
+      break;
+  }
+}
+
+/** güiro: tiếng cạo răng cưa — nhiễu được ngắt quãng nhanh */
+export function guiro(when: number, long: boolean, vel = 1) {
+  const c = audio();
+  vel = vary(vel) * (kit === 'soft' ? 0.7 : 1);
+  const dur = long ? 0.22 : 0.07;
+  const src = c.createBufferSource();
+  src.buffer = noise;
+  const bp = c.createBiquadFilter();
+  bp.type = 'bandpass';
+  bp.frequency.value = 3600;
+  bp.Q.value = 2.5;
+  const g = c.createGain();
+  g.gain.setValueAtTime(0.0001, when);
+  // mỗi răng ~22ms, tăng dần rồi nhả
+  const ridge = 0.022;
+  for (let x = 0; x < dur; x += ridge) {
+    const amp = 0.16 * vel * (0.6 + 0.4 * (x / dur));
+    g.gain.setValueAtTime(amp, when + x);
+    g.gain.exponentialRampToValueAtTime(0.0005, when + x + ridge * 0.85);
+  }
+  src.connect(bp).connect(g).connect(drumBus);
+  src.start(when, Math.random() * 0.5);
+  src.stop(when + dur + 0.03);
+}
+
 export function shaker(when: number, vel = 1) {
   vel = vary(vel);
   noiseHit(when, 'bandpass', kit === 'soft' ? 4200 : 5200, 0.06, 0.14 * vel, 1.2, kit === 'electronic' ? 0 : 0.012);

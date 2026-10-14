@@ -4,7 +4,7 @@
  */
 import { FlatEvent } from '../lib/tabText';
 import { getBeatPrefs } from './beatPrefs';
-import { audio, bass, click, crash, hat, kick, playTone, rim, setHumanVelocity, shaker, snare, tom } from './engine';
+import { audio, bass, bongo, click, conga, crash, guiro, hat, kick, playTone, rim, setHumanVelocity, shaker, snare, tom } from './engine';
 import { bassMidi, Chord, chordAt, ChordOverrides, ChordSpan, harmonize, parseTonality } from './harmony';
 import { BeatPattern, BeatStyle, resolvePattern } from './patterns';
 
@@ -139,21 +139,23 @@ export class Player {
   }
 
   /** Bass đánh theo trống bass: gốc ở đầu ô nhịp / khi đổi hợp âm, quãng 5 ở nửa sau ô nhịp */
-  private bassHit(pattern: BeatPattern, stepIdx: number, beat: number, t: number, spb: number, style: BeatStyle, force = false) {
+  private bassHit(pattern: BeatPattern, stepIdx: number, bar: number, beat: number, t: number, spb: number, style: BeatStyle, force = false) {
     const track = pattern.kick ?? '';
-    const ch = track[stepIdx];
+    const barLen = pattern.beats * pattern.subdiv;
+    const cyc = (track.length > barLen ? (Math.max(0, bar) % Math.round(track.length / barLen)) * barLen : 0) + stepIdx;
+    const ch = track[cyc];
     if (!force && ch !== 'x' && ch !== 'X') return;
     const chord = this.chordAt(beat + 1e-3);
     if (!chord || chord.root < 0) return;
     const len = track.length;
     let gap = 1;
-    while (gap < len && track[(stepIdx + gap) % len] === '.') gap++;
+    while (gap < len && track[(cyc + gap) % len] === '.') gap++;
     const stepBeats = 1 / pattern.subdiv;
     const span = this.chords.find((c) => beat >= c.start - 1e-6 && beat < c.end - 1e-6);
     const untilChange = span ? span.end - beat : gap * stepBeats;
     const durBeats = Math.min(gap * stepBeats, untilChange, 2) * 0.88;
     const changed = !!span && Math.abs(span.start - beat) < 1e-6;
-    const half = Math.floor(len / 2);
+    const half = Math.floor(barLen / 2);
     const altFifth = style !== 'rock' && style !== 'ballad' && stepIdx >= half && !changed;
     bass(bassMidi(chord, altFifth), t, durBeats * spb, ch === 'X' || stepIdx === 0 ? 1 : 0.8);
   }
@@ -202,24 +204,34 @@ export class Player {
           const k = stepIdx - (o.beatsPerBar - 1) * subdiv;
           if (k === 0) {
             kick(t, 0.9);
-            if (bp.bass) this.bassHit(pattern, stepIdx, b0, t, spb, o.style, true);
+            if (bp.bass) this.bassHit(pattern, stepIdx, bar, b0, t, spb, o.style, true);
           }
           if (k % 2 === 0) snare(t, 0.55 + 0.1 * k);
           tom(t, 0.6 + 0.1 * k, subdiv > 1 ? k / (subdiv - 1) : 0);
         } else {
           if (bp.fills && bar > 0 && bar % 4 === 0 && stepIdx === 0) crash(t, 0.9);
+          const barLen = o.beatsPerBar * subdiv;
+          // track dài nhiều ô nhịp: lấy ô theo chu kỳ (ô lấy đà dùng ô đầu)
+          const at = (track: string | undefined) => track?.[(track.length > barLen ? (Math.max(0, bar) % Math.round(track.length / barLen)) * barLen : 0) + stepIdx];
+          const perc = (track: string | undefined, fn: (t: number, ch: string) => void) => {
+            const ch = at(track);
+            if (ch && ch !== '.') fn(t, ch);
+          };
           const hit = (track: string | undefined, fn: (t: number, v: number) => void) => {
-            const ch = track?.[stepIdx];
+            const ch = at(track);
             if (ch === 'x') fn(t, 0.7);
             else if (ch === 'X') fn(t, 1);
           };
           hit(pattern.kick, kick);
-          if (bp.bass) this.bassHit(pattern, stepIdx, b0, t, spb, o.style);
+          if (bp.bass) this.bassHit(pattern, stepIdx, bar, b0, t, spb, o.style);
           hit(pattern.snare, snare);
           hit(pattern.hat, (t, v) => hat(t, v * accent));
           hit(pattern.openHat, (t, v) => hat(t, v, true));
           hit(pattern.rim, rim);
           hit(pattern.shaker, (t, v) => shaker(t, v * accent));
+          perc(pattern.bongo, (t, ch) => bongo(t, ch));
+          perc(pattern.conga, (t, ch) => conga(t, ch));
+          perc(pattern.guiro, (t, ch) => guiro(t, ch === 'X'));
         }
       }
       const onBeat = Math.abs(posInBar - Math.round(posInBar)) < 1e-3;
