@@ -8,6 +8,8 @@ export interface PlayerState {
   active: number | null;
   /** đang đếm vào: số phách còn lại */
   countIn: number | null;
+  /** hợp âm đệm đang vang (khi bật bass) */
+  chord: string | null;
   opts: PlayerOptions;
   setOpts: (p: Partial<PlayerOptions>) => void;
   play: (fromIndex?: number) => void;
@@ -30,6 +32,7 @@ export function usePlayer(flat: FlatEvent[], init: Omit<PlayerOptions, 'loop'> &
   const [playing, setPlaying] = useState(false);
   const [active, setActive] = useState<number | null>(null);
   const [countIn, setCountIn] = useState<number | null>(null);
+  const [chord, setChord] = useState<string | null>(null);
   const raf = useRef(0);
   const flatRef = useRef(flat);
   flatRef.current = flat;
@@ -41,8 +44,8 @@ export function usePlayer(flat: FlatEvent[], init: Omit<PlayerOptions, 'loop'> &
 
   // đồng bộ khi bài thay đổi tempo/nhịp gốc
   useEffect(() => {
-    setOptsState((o) => ({ ...o, bpm: init.bpm, beatsPerBar: init.beatsPerBar, pickupBeats: init.pickupBeats, style: init.style }));
-  }, [init.bpm, init.beatsPerBar, init.pickupBeats, init.style]);
+    setOptsState((o) => ({ ...o, bpm: init.bpm, beatsPerBar: init.beatsPerBar, pickupBeats: init.pickupBeats, style: init.style, songKey: init.songKey }));
+  }, [init.bpm, init.beatsPerBar, init.pickupBeats, init.style, init.songKey]);
 
   useEffect(() => {
     const prevStyle = player.options.style;
@@ -63,6 +66,8 @@ export function usePlayer(flat: FlatEvent[], init: Omit<PlayerOptions, 'loop'> &
     } else setCountIn(null);
     const idx = findIndex(f, b);
     setActive((prev) => (prev === idx ? prev : idx));
+    const ch = player.chordAt(Math.max(0, b))?.name ?? null;
+    setChord((prev) => (prev === ch ? prev : ch));
     raf.current = requestAnimationFrame(loop);
   }, [player]);
 
@@ -71,6 +76,7 @@ export function usePlayer(flat: FlatEvent[], init: Omit<PlayerOptions, 'loop'> &
     cancelAnimationFrame(raf.current);
     setPlaying(false);
     setCountIn(null);
+    setChord(null);
   }, [player]);
 
   const play = useCallback((fromIndex?: number) => {
@@ -78,7 +84,7 @@ export function usePlayer(flat: FlatEvent[], init: Omit<PlayerOptions, 'loop'> &
     const f = flatRef.current;
     if (!f.length) return;
     const from = fromIndex != null && f[fromIndex] ? f[fromIndex].start : player.options.loop?.start ?? 0;
-    player.onEnd = () => { cancelAnimationFrame(raf.current); setPlaying(false); setActive(null); setCountIn(null); };
+    player.onEnd = () => { cancelAnimationFrame(raf.current); setPlaying(false); setActive(null); setCountIn(null); setChord(null); };
     player.start(from);
     setPlaying(true);
     cancelAnimationFrame(raf.current);
@@ -91,5 +97,5 @@ export function usePlayer(flat: FlatEvent[], init: Omit<PlayerOptions, 'loop'> &
 
   const setOpts = useCallback((p: Partial<PlayerOptions>) => setOptsState((o) => ({ ...o, ...p })), []);
 
-  return { playing, active, countIn, opts, setOpts, play, stop, toggle };
+  return { playing, active, countIn, chord, opts, setOpts, play, stop, toggle };
 }

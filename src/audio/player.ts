@@ -4,8 +4,9 @@
  */
 import { FlatEvent } from '../lib/tabText';
 import { getBeatPrefs } from './beatPrefs';
-import { audio, click, crash, hat, kick, playTone, rim, setHumanVelocity, shaker, snare, tom } from './engine';
-import { BeatStyle, resolvePattern } from './patterns';
+import { audio, bass, click, crash, hat, kick, playTone, rim, setHumanVelocity, shaker, snare, tom } from './engine';
+import { bassMidi, Chord, chordAt, ChordSpan, harmonize, parseTonality } from './harmony';
+import { BeatPattern, BeatStyle, resolvePattern } from './patterns';
 
 export interface PlayerOptions {
   bpm: number;
@@ -17,6 +18,8 @@ export interface PlayerOptions {
   beat: boolean;
   click: boolean;
   countIn: boolean;
+  /** tông bài ("G", "Dm") để đệm hợp âm; bỏ trống thì tự đoán từ giai điệu */
+  songKey?: string;
   loop: { start: number; end: number } | null;
 }
 
@@ -35,6 +38,8 @@ export class Player {
   private cursorTime = 0;
   private markers: Marker[] = [];
   private finished = false;
+  private chords: ChordSpan[] = [];
+  private chordKey = '';
   playing = false;
   onEnd?: () => void;
 
@@ -46,6 +51,21 @@ export class Player {
     this.events = events;
     const last = events[events.length - 1];
     this.endBeat = last ? last.start + last.beats : 0;
+    this.chordKey = '';
+    this.updateChords();
+  }
+
+  private updateChords() {
+    const o = this.opts;
+    const k = `${o.beatsPerBar}|${o.pickupBeats}|${o.songKey ?? ''}`;
+    if (k === this.chordKey) return;
+    this.chordKey = k;
+    this.chords = harmonize(this.events, o.beatsPerBar, o.pickupBeats, parseTonality(o.songKey));
+  }
+
+  /** Hợp âm đệm tại vị trí (phách) */
+  chordAt(beat: number): Chord | null {
+    return chordAt(this.chords, beat);
   }
 
   get options(): PlayerOptions {
@@ -54,6 +74,7 @@ export class Player {
 
   setOptions(p: Partial<PlayerOptions>) {
     this.opts = { ...this.opts, ...p };
+    this.updateChords();
   }
 
   private spb() {
@@ -115,6 +136,26 @@ export class Player {
     return m.beat + (now - m.time) / m.spb;
   }
 
+  /** Bass đánh theo trống bass: gốc ở đầu ô nhịp / khi đổi hợp âm, quãng 5 ở nửa sau ô nhịp */
+  private bassHit(pattern: BeatPattern, stepIdx: number, beat: number, t: number, spb: number, style: BeatStyle, force = false) {
+    const track = pattern.kick ?? '';
+    const ch = track[stepIdx];
+    if (!force && ch !== 'x' && ch !== 'X') return;
+    const chord = this.chordAt(beat + 1e-3);
+    if (!chord) return;
+    const len = track.length;
+    let gap = 1;
+    while (gap < len && track[(stepIdx + gap) % len] === '.') gap++;
+    const stepBeats = 1 / pattern.subdiv;
+    const span = this.chords.find((c) => beat >= c.start - 1e-6 && beat < c.end - 1e-6);
+    const untilChange = span ? span.end - beat : gap * stepBeats;
+    const durBeats = Math.min(gap * stepBeats, untilChange, 2) * 0.88;
+    const changed = !!span && Math.abs(span.start - beat) < 1e-6;
+    const half = Math.floor(len / 2);
+    const altFifth = style !== 'rock' && style !== 'ballad' && stepIdx >= half && !changed;
+    bass(bassMidi(chord, altFifth), t, durBeats * spb, ch === 'X' || stepIdx === 0 ? 1 : 0.8);
+  }
+
   private tick() {
     if (this.finished) return;
     const c = audio();
@@ -157,7 +198,10 @@ export class Player {
         if (fillBeat) {
           // dồn trống ở phách cuối mỗi câu 4 ô nhịp: tom từ cao xuống trầm
           const k = stepIdx - (o.beatsPerBar - 1) * subdiv;
-          if (k === 0) kick(t, 0.9);
+          if (k === 0) {
+            kick(t, 0.9);
+            if (bp.bass) this.bassHit(pattern, stepIdx, b0, t, spb, o.style, true);
+          }
           if (k % 2 === 0) snare(t, 0.55 + 0.1 * k);
           tom(t, 0.6 + 0.1 * k, subdiv > 1 ? k / (subdiv - 1) : 0);
         } else {
@@ -168,6 +212,7 @@ export class Player {
             else if (ch === 'X') fn(t, 1);
           };
           hit(pattern.kick, kick);
+          if (bp.bass) this.bassHit(pattern, stepIdx, b0, t, spb, o.style);
           hit(pattern.snare, snare);
           hit(pattern.hat, (t, v) => hat(t, v * accent));
           hit(pattern.openHat, (t, v) => hat(t, v, true));

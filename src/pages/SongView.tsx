@@ -2,7 +2,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { db, deleteSongs, downloadJson, exportOne, newId, slugify } from '../lib/db';
-import { HARP_KEYS, HarpKey, midiToName } from '../lib/harp';
+import { HARP_KEYS, HarpKey, midiToName, songTonality } from '../lib/harp';
 import { countTechniques, flatten, parseTab } from '../lib/tabText';
 import { rekeyBody } from '../lib/converter';
 import { beatsPerBar, Song } from '../lib/types';
@@ -37,6 +37,7 @@ function SongPlayerView({ song }: { song: Song }) {
   const p = usePlayer(flat, {
     bpm: song.bpm, tempoScale: 1, beatsPerBar: bpb, pickupBeats: song.pickupBeats,
     style: song.style, melody: true, beat: song.style !== 'none', click: false, countIn: true,
+    songKey: song.songKey || songTonality(song.harpKey, song.position),
   });
 
   const [focus, setFocus] = useState<number | null>(null);

@@ -12,15 +12,18 @@ export interface BeatPrefs {
   humanize: boolean;
   /** dồn trống mỗi 4 ô nhịp, chũm chọe mở câu mới */
   fills: boolean;
+  /** bass đệm theo hợp âm tự đoán từ giai điệu */
+  bass: boolean;
   /** 0…1 */
   beatVol: number;
   melodyVol: number;
+  bassVol: number;
   reverb: number;
 }
 
 export const DEFAULT_BEAT_PREFS: BeatPrefs = {
-  kit: 'acoustic', swing: 0, humanize: true, fills: false,
-  beatVol: 0.6, melodyVol: 0.55, reverb: 0.25,
+  kit: 'acoustic', swing: 0, humanize: true, fills: false, bass: true,
+  beatVol: 0.6, melodyVol: 0.55, bassVol: 0.7, reverb: 0.25,
 };
 
 export const KIT_OPTIONS: { value: DrumKit; label: string }[] = [

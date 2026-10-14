@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { blankSong, db, deleteSongs } from '../lib/db';
-import { HarpKey, normalizeKey } from '../lib/harp';
+import { HarpKey, normalizeKey, songTonality } from '../lib/harp';
 import { flatten, parseTab } from '../lib/tabText';
 import { beatsPerBar, Song } from '../lib/types';
 import { STYLE_OPTIONS, BeatStyle } from '../audio/patterns';
@@ -49,6 +49,7 @@ function Editor({ initial, isNew }: { initial: Song; isNew: boolean }) {
   const preview = usePlayer(flat, {
     bpm: s.bpm, tempoScale: 1, beatsPerBar: beatsPerBar(s.timeSig), pickupBeats: s.pickupBeats,
     style: s.style, melody: true, beat: true, click: false, countIn: false,
+    songKey: s.songKey || songTonality(s.harpKey, s.position),
   });
 
   const set = <K extends keyof Song>(k: K, v: Song[K]) => setS((prev) => ({ ...prev, [k]: v }));

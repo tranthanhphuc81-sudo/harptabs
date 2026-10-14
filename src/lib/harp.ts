@@ -192,3 +192,8 @@ export function harpForSongKey(songKey: string, position: 1 | 2 | 3): HarpKey | 
   const pc = (((KEY_OFFSET[k] - shift) % 12) + 12) % 12;
   return HARP_KEYS.find((h) => ((KEY_OFFSET[h] % 12) + 12) % 12 === pc) ?? null;
 }
+
+/** Tông để đệm hợp âm khi bài không ghi tông: vị trí 3 (Dorian) nghe như giọng thứ */
+export function songTonality(harp: HarpKey, position: 1 | 2 | 3 = 1): string {
+  return positionKey(harp, position) + (position === 3 ? 'm' : '');
+}

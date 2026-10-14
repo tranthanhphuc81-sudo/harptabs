@@ -47,10 +47,12 @@ function BeatTuner() {
         </div>
       </div>
       <div className="bt-row bt-seg">
+        <Toggle on={b.bass} onClick={() => setBeatPrefs({ bass: !b.bass })}>Bass theo hợp âm</Toggle>
         <Toggle on={b.humanize} onClick={() => setBeatPrefs({ humanize: !b.humanize })}>Đánh như người thật</Toggle>
         <Toggle on={b.fills} onClick={() => setBeatPrefs({ fills: !b.fills })}>Dồn trống cuối câu</Toggle>
       </div>
       <Slider label="Âm lượng beat" value={b.beatVol} onChange={(v) => setBeatPrefs({ beatVol: v })} />
+      {b.bass && <Slider label="Âm lượng bass" value={b.bassVol} onChange={(v) => setBeatPrefs({ bassVol: v })} />}
       <Slider label="Âm lượng giai điệu" value={b.melodyVol} onChange={(v) => setBeatPrefs({ melodyVol: v })} />
       <Slider label="Độ vang" value={b.reverb} onChange={(v) => setBeatPrefs({ reverb: v })} />
       <button type="button" className="btn btn-ghost bt-reset" onClick={resetBeatPrefs}>Về mặc định</button>
@@ -61,6 +63,7 @@ function BeatTuner() {
 export function PlayerBar({ p, loopLabel, onToggleLoop, extra }: Props) {
   const { opts, setOpts } = p;
   const [tuner, setTuner] = useState(false);
+  const prefs = useBeatPrefs();
   const eff = Math.round(opts.bpm * opts.tempoScale);
   const step = (d: number) => setOpts({ tempoScale: Math.min(1.6, Math.max(0.4, Math.round((opts.tempoScale + d) * 100) / 100)) });
   return (
@@ -78,12 +81,16 @@ export function PlayerBar({ p, loopLabel, onToggleLoop, extra }: Props) {
           <button type="button" className="icon-btn" onClick={() => step(0.05)} aria-label="Nhanh lên"><Icon name="plus" size={18} /></button>
         </div>
         {p.countIn != null && <div className="pb-countin" aria-live="assertive">{p.countIn}</div>}
+        {p.countIn == null && p.chord && opts.beat && prefs.bass && <div className="pb-chord" title="Hợp âm đệm">{p.chord}</div>}
         <label className="pb-style">
           <span className="sr-only">Kiểu beat</span>
           <select value={opts.style} onChange={(e) => setOpts({ style: e.target.value as BeatStyle })}>
             {STYLE_OPTIONS.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
           </select>
         </label>
+        <button type="button" className={`icon-btn pb-tune${tuner ? ' on' : ''}`} aria-pressed={tuner} aria-label="Chỉnh beat" title="Chỉnh beat" onClick={() => setTuner(!tuner)}>
+          <Icon name="sliders" size={20} />
+        </button>
       </div>
       <div className="pb-chips">
         <Toggle on={opts.melody} onClick={() => setOpts({ melody: !opts.melody })}>Giai điệu</Toggle>
@@ -95,7 +102,6 @@ export function PlayerBar({ p, loopLabel, onToggleLoop, extra }: Props) {
             <Icon name="loop" size={15} /> {opts.loop ? `Lặp: ${loopLabel ?? 'đoạn'}` : 'Lặp đoạn'}
           </Toggle>
         )}
-        <Toggle on={tuner} onClick={() => setTuner(!tuner)}><Icon name="sliders" size={15} /> Chỉnh beat</Toggle>
         {extra}
       </div>
       {tuner && <BeatTuner />}

@@ -6,6 +6,7 @@ let master: GainNode;
 export let melodyBus: GainNode;
 export let drumBus: GainNode;
 export let clickBus: GainNode;
+let bassBus: GainNode;
 let drumSend: GainNode;
 let melodySend: GainNode;
 let noise: AudioBuffer;
@@ -35,6 +36,8 @@ export function audio(): AudioContext {
     drumBus = ctx.createGain();
     clickBus = ctx.createGain();
     clickBus.gain.value = 0.5;
+    bassBus = ctx.createGain();
+    bassBus.connect(drumBus);
     melodyBus.connect(master);
     drumBus.connect(master);
     clickBus.connect(master);
@@ -122,17 +125,18 @@ export type DrumKit = 'acoustic' | 'electronic' | 'soft';
 let kit: DrumKit = 'acoustic';
 let humanVel = 0;
 
-export interface MixSettings { kit: DrumKit; beatVol: number; melodyVol: number; reverb: number }
-let mix: MixSettings = { kit: 'acoustic', beatVol: 0.6, melodyVol: 0.55, reverb: 0.25 };
+export interface MixSettings { kit: DrumKit; beatVol: number; melodyVol: number; bassVol: number; reverb: number }
+let mix: MixSettings = { kit: 'acoustic', beatVol: 0.6, melodyVol: 0.55, bassVol: 0.7, reverb: 0.25 };
 
 /** Áp âm lượng / bộ trống / độ vang; chưa có AudioContext thì để dành áp lúc khởi tạo */
 export function applyMix(m: MixSettings) {
-  mix = { kit: m.kit, beatVol: m.beatVol, melodyVol: m.melodyVol, reverb: m.reverb };
+  mix = { kit: m.kit, beatVol: m.beatVol, melodyVol: m.melodyVol, bassVol: m.bassVol, reverb: m.reverb };
   kit = m.kit;
   if (!ctx) return;
   const t = ctx.currentTime;
   drumBus.gain.setTargetAtTime(m.beatVol, t, 0.02);
   melodyBus.gain.setTargetAtTime(m.melodyVol, t, 0.02);
+  bassBus.gain.setTargetAtTime(m.bassVol, t, 0.02);
   drumSend.gain.setTargetAtTime(m.reverb * 0.7, t, 0.02);
   melodySend.gain.setTargetAtTime(m.reverb * 0.45, t, 0.02);
 }
@@ -282,6 +286,63 @@ export function rim(when: number, vel = 1) {
 export function shaker(when: number, vel = 1) {
   vel = vary(vel);
   noiseHit(when, 'bandpass', kit === 'soft' ? 4200 : 5200, 0.06, 0.14 * vel, 1.2, kit === 'electronic' ? 0 : 0.012);
+}
+
+/**
+ * Tiếng bass đệm theo bộ trống: trống thật → bass ngón, nhẹ → contrabass gảy,
+ * điện tử → synth bass có lọc quét.
+ */
+export function bass(midi: number, when: number, dur: number, vel = 1) {
+  const c = audio();
+  vel = vary(vel);
+  const f = midiToHz(midi);
+  const end = when + Math.max(0.08, dur);
+  const filter = c.createBiquadFilter();
+  filter.type = 'lowpass';
+  const env = c.createGain();
+  const peak = 0.5 * vel;
+  env.gain.setValueAtTime(0.0001, when);
+  env.gain.exponentialRampToValueAtTime(peak, when + (kit === 'soft' ? 0.012 : 0.006));
+
+  const oscs: OscillatorNode[] = [];
+  const add = (type: OscillatorType, mult: number, gain: number) => {
+    const o = c.createOscillator();
+    const g = c.createGain();
+    o.type = type;
+    o.frequency.value = f * mult;
+    g.gain.value = gain;
+    o.connect(g).connect(filter);
+    oscs.push(o);
+  };
+
+  if (kit === 'electronic') {
+    add('sawtooth', 1, 0.6);
+    add('square', 0.5, 0.35);
+    filter.Q.value = 6;
+    filter.frequency.setValueAtTime(f * 12, when);
+    filter.frequency.exponentialRampToValueAtTime(f * 2.5, when + 0.18);
+    env.gain.exponentialRampToValueAtTime(peak * 0.7, when + 0.1);
+    env.gain.setValueAtTime(peak * 0.7, Math.max(when + 0.1, end - 0.04));
+  } else if (kit === 'soft') {
+    // gảy dây: tắt dần tự nhiên, không ngân đều
+    add('sine', 1, 0.9);
+    add('triangle', 2, 0.25);
+    filter.Q.value = 0.7;
+    filter.frequency.value = f * 5;
+    env.gain.exponentialRampToValueAtTime(peak * 0.35, when + Math.min(0.5, dur));
+  } else {
+    add('triangle', 1, 0.8);
+    add('sawtooth', 1, 0.22);
+    add('sine', 2, 0.15);
+    filter.Q.value = 1.2;
+    filter.frequency.setValueAtTime(f * 7, when);
+    filter.frequency.exponentialRampToValueAtTime(f * 3.5, when + 0.12);
+    env.gain.exponentialRampToValueAtTime(peak * 0.6, when + 0.15);
+    env.gain.setValueAtTime(peak * 0.6, Math.max(when + 0.15, end - 0.05));
+  }
+  env.gain.exponentialRampToValueAtTime(0.0001, end);
+  filter.connect(env).connect(bassBus);
+  for (const o of oscs) { o.start(when); o.stop(end + 0.02); }
 }
 
 export function click(when: number, accent = false) {

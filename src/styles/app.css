@@ -427,7 +427,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
   gap: 8px;
 }
 @media (min-width: 900px) { .playerbar { bottom: 16px; } }
-.pb-main { display: flex; align-items: center; gap: 10px; }
+.pb-main { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; }
 .pb-play {
   flex: none;
   width: 54px;
@@ -446,7 +446,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .pb-tempo-val strong { font: 600 1.45rem/1 var(--font-cond); }
 .pb-tempo-val span { font-size: 0.72rem; color: var(--ink-2); }
 .pb-countin { font: 600 2rem/1 var(--font-cond); color: var(--blow); min-width: 1ch; }
-.pb-style { margin-left: auto; min-width: 0; flex: 0 1 9.5rem; }
+.pb-style { margin-left: auto; min-width: 8rem; flex: 1 1 8rem; max-width: 12rem; }
 .pb-style select { width: 100%; min-height: 38px; border-radius: var(--r-s); border: 1px solid var(--line); background: var(--surface); padding: 0 8px; }
 .pb-chips { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; padding-bottom: 1px; }
 .pb-chips::-webkit-scrollbar { display: none; }
@@ -736,3 +736,6 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .bt-slider input { width: 100%; accent-color: var(--ink); }
 .bt-slider output { text-align: right; font-variant-numeric: tabular-nums; color: var(--ink-2); }
 .bt-reset { align-self: flex-start; }
+.pb-tune { flex: none; width: 38px; height: 38px; border: 1px solid var(--line); }
+.pb-tune.on { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.pb-chord { font: 600 1.35rem/1 var(--font-cond); min-width: 2.2ch; color: var(--ink-2); }
