@@ -71,6 +71,17 @@ describe('beat mẫu', () => {
     }
   });
 
+  it('rock, shuffle, train: nhấn hợp âm ở phách 2 và 4', () => {
+    for (const name of ['rock', 'shuffle', 'train'] as const) {
+      const p = PATTERNS[name];
+      for (const beat of [1, 3]) expect(p.comp![beat * p.subdiv], `${name} phách ${beat + 1}`).toBe('X');
+    }
+  });
+
+  it('mọi kiểu nhịp đều có tiếng đệm hợp âm', () => {
+    for (const [name, p] of Object.entries(PATTERNS)) expect(p.comp, name).toBeTruthy();
+  });
+
   it('rumba: clave rumba 3-2 (1, 1a, 2&… 3&, 4)', () => {
     const c = PATTERNS.rumba.clave!.slice(0, 16);
     expect([...c].map((ch, i) => (ch !== '.' ? i : -1)).filter((i) => i >= 0)).toEqual([0, 3, 7, 10, 12]);

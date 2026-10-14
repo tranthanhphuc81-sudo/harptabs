@@ -36,6 +36,8 @@ export const PATTERNS: Record<Exclude<BeatStyle, 'none' | 'metronome'>, BeatPatt
   rock: {
     label: 'Rock / Pop', hint: 'Nhịp 4/4 phổ thông', beats: 4, subdiv: 2,
     kick: 'X...xx..', snare: '..X...X.', hat: 'xxxxxxxx',
+    // guitar dằn ở 2, 4, xen tiếng đẩy nửa phách
+    comp: 'x.Xxx.Xx' + 'x.Xxx.XX',
   },
   ballad: {
     label: 'Ballad', hint: 'Chậm, nhẹ nhàng', beats: 4, subdiv: 2,
@@ -46,6 +48,8 @@ export const PATTERNS: Record<Exclude<BeatStyle, 'none' | 'metronome'>, BeatPatt
   shuffle: {
     label: 'Blues shuffle', hint: 'Nhịp chỏi chuẩn blues', beats: 4, subdiv: 3,
     kick: 'X.....x.....', snare: '...X.....X..', hat: 'x.xx.xx.xx.x',
+    // nhịp lắc "dài – ngắn", nhấn 2 và 4
+    comp: 'x.xX.xx.xX.x',
   },
   slowrock: {
     label: 'Slow rock', hint: 'Chùm ba, hợp nhạc trữ tình', beats: 4, subdiv: 3,
@@ -56,6 +60,8 @@ export const PATTERNS: Record<Exclude<BeatStyle, 'none' | 'metronome'>, BeatPatt
   train: {
     label: 'Train (tàu hoả)', hint: 'Nhịp đồng quê kinh điển cho harp', beats: 4, subdiv: 4,
     kick: 'X.......x.......', snare: 'xxXxxxXxxxXxxxXx',
+    // đồng quê "bùm – chíc chíc": hợp âm ở 2, 2&, 4, 4&
+    comp: '....X.x.....X.x.',
   },
   bolero: {
     // bass "bùm… bùm bùm" (1, 2&, 3), bongo martillo, conga nền, güiro + maracas
