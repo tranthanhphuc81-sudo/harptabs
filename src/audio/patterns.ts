@@ -16,7 +16,7 @@
  */
 export type BeatStyle =
   | 'none' | 'metronome' | 'rock' | 'ballad' | 'shuffle' | 'slowrock'
-  | 'train' | 'bolero' | 'rumba' | 'chacha' | 'tango' | 'bossa' | 'disco' | 'jazz' | 'reggae' | 'ska' | 'country' | 'waltz';
+  | 'train' | 'bolero' | 'rumba' | 'chacha' | 'tango' | 'bossa' | 'disco' | 'jazz' | 'reggae' | 'ska' | 'country' | 'march' | 'waltz';
 
 export interface BeatPattern {
   label: string;
@@ -174,6 +174,15 @@ export const PATTERNS: Record<Exclude<BeatStyle, 'none' | 'metronome'>, BeatPatt
     comp:     '....X.......X...' + '....X.......X.x.',
     bassLine: 'r.......f.......' + 'r.......f...t.a.',
   },
+  march: {
+    // oom-pah: bass gốc (1) ↔ quãng 5 (3), hợp âm "pah" 2 & 4, chũm chọe 2 & 4, snare dồn nhà binh
+    label: 'March (hành khúc)', hint: 'Oom-pah, snare dồn kiểu nhà binh', beats: 4, subdiv: 4,
+    kick:     'X.......X.......',
+    openHat:  '....X.......X...',
+    snare:    '..x.X..x..x.X...' + '..x.X..x..x.Xxxx',
+    comp:     '....X.......X...',
+    bassLine: 'r.......f.......',
+  },
   waltz: {
     // "um" = bass phách 1 (gốc / quãng 5 xen kẽ từng ô), "pa pa" = hợp âm đệm phách 2, 3
     label: 'Valse 3/4', hint: 'Um-pa-pa', beats: 3, subdiv: 2,
@@ -196,7 +205,8 @@ const BO_PATTERNS: Record<string, string> = {
 };
 
 export function boPattern(p: BeatPattern): string | undefined {
-  return p.bongo ?? BO_PATTERNS[`${p.beats}/${p.subdiv}`];
+  // 2/4 dùng chung lớp bo của 4/4 (chuỗi được chia đôi ô như các track khác)
+  return p.bongo ?? BO_PATTERNS[`${p.beats === 2 ? 4 : p.beats}/${p.subdiv}`];
 }
 
 export const BO_PATTERN_LIST = BO_PATTERNS;
@@ -208,11 +218,20 @@ export const STYLE_OPTIONS: { value: BeatStyle; label: string }[] = [
 ];
 
 /** Pattern dùng thực tế, tự lùi về đếm nhịp nếu số phách/ô nhịp không khớp */
+const halves = new Map<BeatPattern, BeatPattern>();
+
 export function resolvePattern(style: BeatStyle, beatsPerBar: number): BeatPattern | null {
   if (style === 'none' || style === 'metronome') return null;
   const p = PATTERNS[style];
   if (p.beats === beatsPerBar) return p;
+  // nhịp 2/4: mỗi ô 4/4 thành hai ô 2/4 (chuỗi track giữ nguyên, chỉ chia đôi độ dài ô)
+  if (beatsPerBar === 2 && p.beats === 4) {
+    let h = halves.get(p);
+    if (!h) { h = { ...p, beats: 2 }; halves.set(p, h); }
+    return h;
+  }
   if (beatsPerBar === 3) return PATTERNS.waltz;
   if (beatsPerBar === 4) return PATTERNS.rock;
+  if (beatsPerBar === 2) return resolvePattern('rock', 2);
   return null;
 }

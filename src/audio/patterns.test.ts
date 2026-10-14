@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BO_PATTERN_LIST, boPattern, PATTERNS } from './patterns';
+import { BO_PATTERN_LIST, boPattern, PATTERNS, resolvePattern } from './patterns';
 
 const ALLOWED: Record<string, RegExp> = {
   bongo: /^[.ftsho]+$/,
@@ -128,6 +128,22 @@ describe('beat mẫu', () => {
     expect(p.bassLine![8]).toBe('f');
     const on = (s: string) => [...s.slice(0, 16)].map((ch, i) => (ch !== '.' ? i : -1)).filter((i) => i >= 0);
     expect(on(p.comp!)).toEqual([4, 12]);
+  });
+
+  it('march: oom-pah — bass gốc 1, quãng 5 phách 3, hợp âm và chũm chọe 2 & 4', () => {
+    const p = PATTERNS.march;
+    expect(p.bassLine![0]).toBe('r');
+    expect(p.bassLine![8]).toBe('f');
+    expect([4, 12].every((i) => p.comp![i] === 'X' && p.openHat![i] === 'X')).toBe(true);
+  });
+
+  it('nhịp 2/4 vẫn có beat: dùng nửa ô 4/4 của kiểu đã chọn', () => {
+    const m = resolvePattern('march', 2)!;
+    expect(m.beats).toBe(2);
+    expect(m.kick).toBe(PATTERNS.march.kick);
+    expect(resolvePattern('march', 2)).toBe(m);
+    expect(resolvePattern('waltz', 2)?.beats).toBe(2);
+    expect(resolvePattern('march', 4)).toBe(PATTERNS.march);
   });
 
   it('rumba: clave rumba 3-2 (1, 1a, 2&… 3&, 4)', () => {
