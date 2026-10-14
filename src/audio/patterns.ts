@@ -5,10 +5,11 @@
  * Bộ gõ La-tinh dùng ký hiệu riêng:
  *   bongo / conga: f = ngón nhẹ, t = gót tay (trầm, tắt), s = vỗ (slap), h = mở cao, o = mở trầm
  *   guiro: X = cạo dài, x = cạo ngắn
+ *   clave: x/X = gõ hai thanh gỗ
  */
 export type BeatStyle =
   | 'none' | 'metronome' | 'rock' | 'ballad' | 'shuffle' | 'slowrock'
-  | 'train' | 'bolero' | 'chacha' | 'waltz';
+  | 'train' | 'bolero' | 'rumba' | 'chacha' | 'waltz';
 
 export interface BeatPattern {
   label: string;
@@ -24,6 +25,7 @@ export interface BeatPattern {
   bongo?: string;
   conga?: string;
   guiro?: string;
+  clave?: string;
 }
 
 export const PATTERNS: Record<Exclude<BeatStyle, 'none' | 'metronome'>, BeatPattern> = {
@@ -57,6 +59,16 @@ export const PATTERNS: Record<Exclude<BeatStyle, 'none' | 'metronome'>, BeatPatt
     guiro:  'X.......X.x.....' + 'X.......X.x.x...',
     shaker: 'X.x.x.x.X.x.x.x.',
   },
+  rumba: {
+    // rumba chậm: clave rumba 3-2, conga tumbao (úp–vỗ–mở mở), bass đảo phách ở 2& và 4&
+    label: 'Rumba', hint: 'Chậm, lả lơi, hợp nhạc trữ tình', beats: 4, subdiv: 4,
+    kick:   'X.....x.X.....x.' + 'X.....x.X..x..x.',
+    clave:  'X..x...x..x.x...' + 'X..x...x..x.x...',
+    conga:  't.t.s.t.t.t.o.o.' + 't.t.s.t.t.t.o.oo',
+    rim:    '............x...' + '..........x.x...',
+    shaker: 'X.x.x.x.X.x.x.x.',
+    hat:    '..x...x...x...x.',
+  },
   chacha: {
     label: 'Cha cha', hint: 'Cha-cha-cha ở phách 4', beats: 4, subdiv: 2,
     kick: 'X...x...', snare: '......xx', hat: 'x.x.x.x.', rim: '..x.....',
@@ -66,6 +78,23 @@ export const PATTERNS: Record<Exclude<BeatStyle, 'none' | 'metronome'>, BeatPatt
     kick: 'X.....', hat: '..x.x.', rim: '..x.x.',
   },
 };
+
+/**
+ * "Gõ bo": lớp bongo đệm thêm cho kiểu nhịp chưa có sẵn bongo, chọn theo số phách × độ chia.
+ * Nhịp 4/4 dùng martillo (ngón–gót–ngón–vỗ… mở trầm cuối ô), ô thứ hai dồn nhẹ.
+ */
+const BO_PATTERNS: Record<string, string> = {
+  '4/4': 'f.t.f.s.f.t.f.o.' + 'f.t.f.s.f.t.s.oo',
+  '4/2': 'ftfsftfo' + 'ftfsftso',
+  '4/3': 'f.tf.sf.tf.o' + 'f.tf.sf.ts.o',
+  '3/2': 'f.s.s.' + 'f.s.so',
+};
+
+export function boPattern(p: BeatPattern): string | undefined {
+  return p.bongo ?? BO_PATTERNS[`${p.beats}/${p.subdiv}`];
+}
+
+export const BO_PATTERN_LIST = BO_PATTERNS;
 
 export const STYLE_OPTIONS: { value: BeatStyle; label: string }[] = [
   { value: 'none', label: 'Không beat' },

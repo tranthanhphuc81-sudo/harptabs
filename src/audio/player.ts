@@ -4,9 +4,9 @@
  */
 import { FlatEvent } from '../lib/tabText';
 import { getBeatPrefs } from './beatPrefs';
-import { audio, bass, bongo, click, conga, crash, guiro, hat, kick, playTone, rim, setHumanVelocity, shaker, snare, tom } from './engine';
+import { audio, bass, bongo, clave, click, conga, crash, guiro, hat, kick, playTone, rim, setHumanVelocity, shaker, snare, tom } from './engine';
 import { bassMidi, Chord, chordAt, ChordOverrides, ChordSpan, harmonize, parseTonality } from './harmony';
-import { BeatPattern, BeatStyle, resolvePattern } from './patterns';
+import { BeatPattern, BeatStyle, boPattern, resolvePattern } from './patterns';
 
 export interface PlayerOptions {
   bpm: number;
@@ -229,9 +229,10 @@ export class Player {
           hit(pattern.openHat, (t, v) => hat(t, v, true));
           hit(pattern.rim, rim);
           hit(pattern.shaker, (t, v) => shaker(t, v * accent));
-          perc(pattern.bongo, (t, ch) => bongo(t, ch));
+          perc(bp.bo ? boPattern(pattern) : pattern.bongo, (t, ch) => bongo(t, ch));
           perc(pattern.conga, (t, ch) => conga(t, ch));
           perc(pattern.guiro, (t, ch) => guiro(t, ch === 'X'));
+          hit(pattern.clave, clave);
         }
       }
       const onBeat = Math.abs(posInBar - Math.round(posInBar)) < 1e-3;

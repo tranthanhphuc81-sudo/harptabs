@@ -646,6 +646,14 @@ export function guiro(when: number, long: boolean, vel = 1) {
   src.stop(when + dur + 0.03);
 }
 
+/** clave: hai thanh gỗ cứng gõ vào nhau — tiếng "cách" cao, ngân ngắn */
+export function clave(when: number, vel = 1) {
+  vel = vary(vel) * (kit === 'soft' ? 0.7 : 1);
+  osc('sine', when, 2500, 2450, 0.02, 0.28 * vel, 0.07);
+  osc('sine', when, 5100, 5000, 0.01, 0.06 * vel, 0.03);
+  noiseHit(when, 'bandpass', 3000, 0.008, 0.08 * vel, 3);
+}
+
 export function shaker(when: number, vel = 1) {
   vel = vary(vel);
   noiseHit(when, 'bandpass', kit === 'soft' ? 4200 : 5200, 0.06, 0.14 * vel, 1.2, kit === 'electronic' ? 0 : 0.012);

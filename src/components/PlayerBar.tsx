@@ -58,6 +58,7 @@ function BeatTuner() {
       </div>
       <div className="bt-row bt-seg">
         <Toggle on={b.bass} onClick={() => setBeatPrefs({ bass: !b.bass })}>Bass theo hợp âm</Toggle>
+        <Toggle on={b.bo} onClick={() => setBeatPrefs({ bo: !b.bo })}>Gõ bo</Toggle>
         <Toggle on={b.humanize} onClick={() => setBeatPrefs({ humanize: !b.humanize })}>Đánh như người thật</Toggle>
         <Toggle on={b.fills} onClick={() => setBeatPrefs({ fills: !b.fills })}>Dồn trống cuối câu</Toggle>
       </div>
