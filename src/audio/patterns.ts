@@ -7,7 +7,7 @@
  *   guiro: X = cạo dài, x = cạo ngắn
  *   clave: x/X = gõ hai thanh gỗ
  *   cowbell: x/X = chuông bò (cencerro)
- *   comp: x/X = gõ hợp âm đệm (theo hợp âm đang dùng, đi cùng công tắc bass)
+ *   comp: x/X = gõ hợp âm đệm (theo hợp âm đang dùng, công tắc "Đệm hợp âm")
  */
 export type BeatStyle =
   | 'none' | 'metronome' | 'rock' | 'ballad' | 'shuffle' | 'slowrock'

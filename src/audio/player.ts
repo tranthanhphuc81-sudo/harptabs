@@ -236,7 +236,7 @@ export class Player {
           perc(pattern.guiro, (t, ch) => guiro(t, ch === 'X'));
           hit(pattern.clave, clave);
           hit(pattern.cowbell, cowbell);
-          if (bp.bass) {
+          if (bp.comp) {
             hit(pattern.comp, (t, v) => {
               const ch = this.chordAt(b0 + 1e-3);
               if (ch && ch.root >= 0) chordStab(chordVoicing(ch), t, Math.min(0.9, step * 1.6) * spb, v);

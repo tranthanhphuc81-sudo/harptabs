@@ -57,14 +57,15 @@ function BeatTuner() {
         </div>
       </div>
       <div className="bt-row bt-seg">
-        <Toggle on={b.bass} onClick={() => setBeatPrefs({ bass: !b.bass })}>Bass + đệm hợp âm</Toggle>
+        <Toggle on={b.bass} onClick={() => setBeatPrefs({ bass: !b.bass })}>Bass</Toggle>
+        <Toggle on={b.comp} onClick={() => setBeatPrefs({ comp: !b.comp })}>Đệm hợp âm</Toggle>
         <Toggle on={b.bo} onClick={() => setBeatPrefs({ bo: !b.bo })}>Gõ bo</Toggle>
         <Toggle on={b.humanize} onClick={() => setBeatPrefs({ humanize: !b.humanize })}>Đánh như người thật</Toggle>
         <Toggle on={b.fills} onClick={() => setBeatPrefs({ fills: !b.fills })}>Dồn trống cuối câu</Toggle>
       </div>
       <Slider label="Âm lượng beat" value={b.beatVol} onChange={(v) => setBeatPrefs({ beatVol: v })} />
       {b.bass && <Slider label="Âm lượng bass" value={b.bassVol} onChange={(v) => setBeatPrefs({ bassVol: v })} />}
-      {b.bass && <Slider label="Âm lượng đệm hợp âm" value={b.compVol} onChange={(v) => setBeatPrefs({ compVol: v })} />}
+      {b.comp && <Slider label="Âm lượng đệm hợp âm" value={b.compVol} onChange={(v) => setBeatPrefs({ compVol: v })} />}
       <Slider label="Âm lượng bo" value={b.boVol} onChange={(v) => setBeatPrefs({ boVol: v })} />
       <Slider label="Âm lượng cowbell" value={b.bellVol} onChange={(v) => setBeatPrefs({ bellVol: v })} />
       <Slider label="Âm lượng giai điệu" value={b.melodyVol} onChange={(v) => setBeatPrefs({ melodyVol: v })} />
@@ -95,7 +96,7 @@ export function PlayerBar({ p, loopLabel, onToggleLoop, extra }: Props) {
           <button type="button" className="icon-btn" onClick={() => step(0.05)} aria-label="Nhanh lên"><Icon name="plus" size={18} /></button>
         </div>
         {p.countIn != null && <div className="pb-countin" aria-live="assertive">{p.countIn}</div>}
-        {p.countIn == null && p.chord && opts.beat && prefs.bass && <div className="pb-chord" title="Hợp âm đệm">{p.chord}</div>}
+        {p.countIn == null && p.chord && opts.beat && (prefs.bass || prefs.comp) && <div className="pb-chord" title="Hợp âm đệm">{p.chord}</div>}
         <label className="pb-style">
           <span className="sr-only">Kiểu beat</span>
           <select value={opts.style} onChange={(e) => setOpts({ style: e.target.value as BeatStyle })}>

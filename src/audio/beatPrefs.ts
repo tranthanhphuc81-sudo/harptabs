@@ -16,6 +16,8 @@ export interface BeatPrefs {
   fills: boolean;
   /** bass đệm theo hợp âm tự đoán từ giai điệu */
   bass: boolean;
+  /** gõ hợp âm đệm theo kiểu nhịp */
+  comp: boolean;
   /** gõ bo: thêm lớp bongo đệm cho mọi kiểu nhịp */
   bo: boolean;
   /** 0…1 */
@@ -32,7 +34,7 @@ export interface BeatPrefs {
 }
 
 export const DEFAULT_BEAT_PREFS: BeatPrefs = {
-  instrument: 'harmonica', kit: 'acoustic', swing: 0, humanize: true, fills: false, bass: true, bo: false,
+  instrument: 'harmonica', kit: 'acoustic', swing: 0, humanize: true, fills: false, bass: true, comp: true, bo: false,
   beatVol: 0.6, melodyVol: 0.55, bassVol: 0.7, boVol: 0.8, bellVol: 0.8, compVol: 0.7, reverb: 0.25, showChords: false,
 };
 
