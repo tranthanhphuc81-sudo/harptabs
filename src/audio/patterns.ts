@@ -16,7 +16,7 @@
  */
 export type BeatStyle =
   | 'none' | 'metronome' | 'rock' | 'ballad' | 'shuffle' | 'slowrock'
-  | 'train' | 'bolero' | 'rumba' | 'chacha' | 'tango' | 'bossa' | 'disco' | 'jazz' | 'reggae' | 'ska' | 'country' | 'march' | 'waltz';
+  | 'train' | 'bolero' | 'rumba' | 'chacha' | 'tango' | 'bossa' | 'disco' | 'jazz' | 'reggae' | 'ska' | 'country' | 'march' | 'polka' | 'waltz';
 
 export interface BeatPattern {
   label: string;
@@ -182,6 +182,14 @@ export const PATTERNS: Record<Exclude<BeatStyle, 'none' | 'metronome'>, BeatPatt
     snare:    '..x.X..x..x.X...' + '..x.X..x..x.Xxxx',
     comp:     '....X.......X...',
     bassLine: 'r.......f.......',
+  },
+  polka: {
+    // oom-pah nhanh: bass mọi phách gốc ↔ quãng 5, hợp âm "pah" nửa sau mỗi phách (tay phải accordion)
+    label: 'Polka', hint: 'Oom-pah nhanh, hợp âm nửa sau mỗi phách', beats: 4, subdiv: 2,
+    kick:     'X.x.X.x.',
+    snare:    '.x.x.x.x',
+    comp:     '.X.X.X.X',
+    bassLine: 'r.f.r.f.' + 'r.f.r.ta',
   },
   waltz: {
     // "um" = bass phách 1 (gốc / quãng 5 xen kẽ từng ô), "pa pa" = hợp âm đệm phách 2, 3

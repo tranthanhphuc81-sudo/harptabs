@@ -62,6 +62,12 @@ describe('bộ phát beat', () => {
     expect(c.kick).toBeLessThanOrEqual(5);
   });
 
+  it('polka 2/4: bass mỗi phách một nốt, hợp âm nửa sau mỗi phách', () => {
+    const c = run('polka', 2, 4);
+    expect(c.bass).toBeGreaterThanOrEqual(8);
+    expect(c.comp).toBeGreaterThanOrEqual(8);
+  });
+
   it('jazz: bass walking mỗi phách một nốt', () => {
     const c = run('jazz', 4, 4);
     expect(c.bass).toBeGreaterThanOrEqual(8);

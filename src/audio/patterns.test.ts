@@ -146,6 +146,13 @@ describe('beat mẫu', () => {
     expect(resolvePattern('march', 4)).toBe(PATTERNS.march);
   });
 
+  it('polka: bass mọi phách gốc ↔ quãng 5, hợp âm nửa sau mỗi phách', () => {
+    const p = PATTERNS.polka;
+    expect(p.bassLine!.slice(0, 8)).toBe('r.f.r.f.');
+    const on = (s: string) => [...s].map((ch, i) => (ch !== '.' ? i : -1)).filter((i) => i >= 0);
+    expect(on(p.comp!)).toEqual([1, 3, 5, 7]);
+  });
+
   it('rumba: clave rumba 3-2 (1, 1a, 2&… 3&, 4)', () => {
     const c = PATTERNS.rumba.clave!.slice(0, 16);
     expect([...c].map((ch, i) => (ch !== '.' ? i : -1)).filter((i) => i >= 0)).toEqual([0, 3, 7, 10, 12]);
