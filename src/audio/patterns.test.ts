@@ -63,6 +63,14 @@ describe('beat mẫu', () => {
     expect([0, 3, 6, 9].every((i) => c[i] === 'X')).toBe(true);
   });
 
+  it('ballad và tango có tiếng đệm hợp âm ở mỗi phách', () => {
+    for (const name of ['ballad', 'tango'] as const) {
+      const p = PATTERNS[name];
+      const per = p.subdiv;
+      for (let b = 0; b < p.beats; b++) expect(p.comp![b * per], `${name} phách ${b + 1}`).not.toBe('.');
+    }
+  });
+
   it('rumba: clave rumba 3-2 (1, 1a, 2&… 3&, 4)', () => {
     const c = PATTERNS.rumba.clave!.slice(0, 16);
     expect([...c].map((ch, i) => (ch !== '.' ? i : -1)).filter((i) => i >= 0)).toEqual([0, 3, 7, 10, 12]);

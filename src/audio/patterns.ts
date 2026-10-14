@@ -40,6 +40,8 @@ export const PATTERNS: Record<Exclude<BeatStyle, 'none' | 'metronome'>, BeatPatt
   ballad: {
     label: 'Ballad', hint: 'Chậm, nhẹ nhàng', beats: 4, subdiv: 2,
     kick: 'X....x..', snare: '..x...x.', shaker: 'xxxxxxxx',
+    // gõ nhẹ đều từng phách giữ nền hợp âm; ô hai thêm 4& dẫn câu
+    comp: 'x.x.x.x.' + 'x.x.x.xx',
   },
   shuffle: {
     label: 'Blues shuffle', hint: 'Nhịp chỏi chuẩn blues', beats: 4, subdiv: 3,
@@ -97,6 +99,8 @@ export const PATTERNS: Record<Exclude<BeatStyle, 'none' | 'metronome'>, BeatPatt
     kick:  'X..xX.x.X...X...' + 'X..xX.x.X..xX.x.',
     snare: '....X.......X.xx' + '....X.......Xxxx',
     hat:   'x...x...x...x...',
+    // marcato đều 4 phách (nhấn 1, 3); ô hai thêm síncopa ở 3a, 4&
+    comp:  'X...x...X...x...' + 'X...x...X..x..x.',
   },
   waltz: {
     // "um" = bass phách 1 (gốc / quãng 5 xen kẽ từng ô), "pa pa" = hợp âm đệm phách 2, 3
