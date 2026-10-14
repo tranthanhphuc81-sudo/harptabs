@@ -6,6 +6,7 @@
  *   bongo / conga: f = ngón nhẹ, t = gót tay (trầm, tắt), s = vỗ (slap), h = mở cao, o = mở trầm
  *   guiro: X = cạo dài, x = cạo ngắn
  *   clave: x/X = gõ hai thanh gỗ
+ *   cowbell: x/X = chuông bò (cencerro)
  */
 export type BeatStyle =
   | 'none' | 'metronome' | 'rock' | 'ballad' | 'shuffle' | 'slowrock'
@@ -26,6 +27,7 @@ export interface BeatPattern {
   conga?: string;
   guiro?: string;
   clave?: string;
+  cowbell?: string;
 }
 
 export const PATTERNS: Record<Exclude<BeatStyle, 'none' | 'metronome'>, BeatPattern> = {
@@ -70,8 +72,14 @@ export const PATTERNS: Record<Exclude<BeatStyle, 'none' | 'metronome'>, BeatPatt
     hat:    '..x...x...x...x.',
   },
   chacha: {
-    label: 'Cha cha', hint: 'Cha-cha-cha ở phách 4', beats: 4, subdiv: 2,
-    kick: 'X...x...', snare: '......xx', hat: 'x.x.x.x.', rim: '..x.....',
+    // chuông cowbell đều 4 phách, güiro dài–ngắn–ngắn, conga mở ở 4 và 4&, gõ vành nhấn "cha-cha" ở 4, 4&
+    label: 'Cha cha', hint: 'Cha-cha-cha ở phách 4', beats: 4, subdiv: 4,
+    kick:    'X.......X.......' + 'X.......X.....x.',
+    cowbell: 'X...x...X...x...',
+    guiro:   'X...x.x.X...x.x.',
+    conga:   't.t.s.t.t.t.o.o.' + 't.t.s.t.t.t.o.oo',
+    rim:     '............x.x.' + '........x...x.x.',
+    shaker:  '..x...x...x...x.',
   },
   waltz: {
     label: 'Valse 3/4', hint: 'Um-pa-pa', beats: 3, subdiv: 2,

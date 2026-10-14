@@ -10,7 +10,7 @@ describe('beat mẫu', () => {
   for (const [name, p] of Object.entries(PATTERNS)) {
     it(`${name}: mỗi track dài đúng bội số ô nhịp, ký hiệu hợp lệ`, () => {
       const bar = p.beats * p.subdiv;
-      for (const key of ['kick', 'snare', 'hat', 'openHat', 'rim', 'shaker', 'bongo', 'conga', 'guiro', 'clave'] as const) {
+      for (const key of ['kick', 'snare', 'hat', 'openHat', 'rim', 'shaker', 'bongo', 'conga', 'guiro', 'clave', 'cowbell'] as const) {
         const tr = p[key];
         if (!tr) continue;
         expect(tr.length % bar, `${name}.${key}`).toBe(0);
@@ -26,6 +26,15 @@ describe('beat mẫu', () => {
       expect(tr, meter).toMatch(/^[.ftsho]+$/);
     }
     for (const [name, p] of Object.entries(PATTERNS)) expect(boPattern(p), name).toBeTruthy();
+  });
+
+  it('cha cha: nhấn "cha-cha" ở phách 4 và 4&, chuông đều 4 phách', () => {
+    const p = PATTERNS.chacha;
+    expect(p.rim![12]).not.toBe('.');
+    expect(p.rim![14]).not.toBe('.');
+    expect(p.conga![12]).toBe('o');
+    expect(p.conga![14]).toBe('o');
+    expect([0, 4, 8, 12].every((i) => p.cowbell![i] !== '.')).toBe(true);
   });
 
   it('rumba: clave rumba 3-2 (1, 1a, 2&… 3&, 4)', () => {

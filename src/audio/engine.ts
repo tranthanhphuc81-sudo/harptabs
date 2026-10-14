@@ -657,6 +657,31 @@ export function guiro(when: number, long: boolean, vel = 1) {
   src.stop(when + dur + 0.03);
 }
 
+/** chuông bò (cencerro): hai sóng vuông lệch tần qua lọc dải — tiếng "keng" kim loại */
+export function cowbell(when: number, vel = 1) {
+  const c = audio();
+  vel = vary(vel) * (kit === 'soft' ? 0.6 : 1);
+  const bp = c.createBiquadFilter();
+  bp.type = 'bandpass';
+  bp.frequency.value = 2400;
+  bp.Q.value = 1.6;
+  const g = c.createGain();
+  const decay = kit === 'electronic' ? 0.25 : 0.14;
+  g.gain.setValueAtTime(0.0001, when);
+  g.gain.exponentialRampToValueAtTime(0.22 * vel, when + 0.002);
+  g.gain.exponentialRampToValueAtTime(0.06 * vel, when + 0.03);
+  g.gain.exponentialRampToValueAtTime(0.001, when + decay);
+  bp.connect(g).connect(drumBus);
+  for (const f of [562, 845]) {
+    const o = c.createOscillator();
+    o.type = 'square';
+    o.frequency.value = f;
+    o.connect(bp);
+    o.start(when);
+    o.stop(when + decay + 0.02);
+  }
+}
+
 /** clave: hai thanh gỗ cứng gõ vào nhau — tiếng "cách" cao, ngân ngắn */
 export function clave(when: number, vel = 1) {
   vel = vary(vel) * (kit === 'soft' ? 0.7 : 1);
