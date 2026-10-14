@@ -3,7 +3,7 @@ import { SAMPLE_SONGS } from '../data/samples';
 import { flatten, parseTab } from '../lib/tabText';
 import { beatsPerBar } from '../lib/types';
 import { songTonality } from '../lib/harp';
-import { bassMidi, chordAt, estimateTonality, harmonize, harmonizeSegments, parseChord, parseTonality, transposeChords } from './harmony';
+import { bassMidi, chordAt, chordVoicing, estimateTonality, harmonize, harmonizeSegments, parseChord, parseTonality, transposeChords } from './harmony';
 
 const song = (id: string) => {
   const s = SAMPLE_SONGS.find((x) => x.sampleId === id)!;
@@ -47,6 +47,12 @@ describe('đệm hợp âm', () => {
         expect(m).toBeLessThan(52);
       }
     }
+  });
+
+  it('thế bấm hợp âm đệm nằm gọn quanh G3–F#4', () => {
+    expect(chordVoicing({ root: 0, minor: false, name: 'C' })).toEqual([60, 64, 67]);
+    expect(chordVoicing({ root: 9, minor: true, name: 'Am' })).toEqual([57, 60, 64]);
+    expect(chordVoicing({ root: 7, minor: false, name: 'G' })).toEqual([55, 59, 62]);
   });
 
   it('bài trống không có hợp âm', () => {

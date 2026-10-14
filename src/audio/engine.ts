@@ -661,6 +661,38 @@ export function guiro(when: number, long: boolean, vel = 1) {
   src.stop(when + dur + 0.03);
 }
 
+/** Gõ hợp âm đệm ngắn ("pa" của valse): tiếng gảy mềm, đi chung kênh với bass */
+export function chordStab(midis: number[], when: number, dur: number, vel = 1) {
+  const c = audio();
+  vel = vary(vel);
+  const end = when + Math.max(0.08, dur);
+  const lp = c.createBiquadFilter();
+  lp.type = 'lowpass';
+  lp.frequency.setValueAtTime(kit === 'electronic' ? 3500 : 2600, when);
+  lp.frequency.exponentialRampToValueAtTime(900, end);
+  const env = c.createGain();
+  const peak = (kit === 'soft' ? 0.1 : 0.13) * vel;
+  env.gain.setValueAtTime(0.0001, when);
+  env.gain.exponentialRampToValueAtTime(peak, when + 0.008);
+  env.gain.exponentialRampToValueAtTime(peak * 0.4, when + 0.12);
+  env.gain.exponentialRampToValueAtTime(0.0001, end);
+  lp.connect(env).connect(bassBus);
+  midis.forEach((m, i) => {
+    const f = midiToHz(m);
+    for (const [type, mult, g] of [['triangle', 1, 0.6], ['sawtooth', 1, 0.15], ['sine', 2, 0.15]] as [OscillatorType, number, number][]) {
+      const o = c.createOscillator();
+      const og = c.createGain();
+      o.type = type;
+      o.frequency.value = f * mult;
+      og.gain.value = g;
+      o.connect(og).connect(lp);
+      // rải nhẹ như quạt dây
+      o.start(when + i * 0.008);
+      o.stop(end + 0.02);
+    }
+  });
+}
+
 /** chuông bò (cencerro): hai sóng vuông lệch tần qua lọc dải — tiếng "keng" kim loại */
 export function cowbell(when: number, vel = 1) {
   const c = audio();

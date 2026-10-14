@@ -237,6 +237,12 @@ export function chordAt(spans: ChordSpan[], beat: number): Chord | null {
 }
 
 /** Nốt bass (MIDI) cho gốc hoặc quãng 5, nằm trong khoảng E2–D#3 (loa điện thoại vẫn nghe rõ) */
+/** Hợp âm ba thế đóng quanh G3–F#4 để gõ đệm */
+export function chordVoicing(chord: Chord): number[] {
+  const root = 55 + mod12(chord.root - 7);
+  return [root, root + (chord.minor ? 3 : 4), root + 7];
+}
+
 export function bassMidi(chord: Chord, fifth = false): number {
   const pc = mod12(chord.root + (fifth ? 7 : 0));
   return 40 + mod12(pc - 4);

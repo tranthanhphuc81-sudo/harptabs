@@ -7,6 +7,7 @@
  *   guiro: X = cạo dài, x = cạo ngắn
  *   clave: x/X = gõ hai thanh gỗ
  *   cowbell: x/X = chuông bò (cencerro)
+ *   comp: x/X = gõ hợp âm đệm (theo hợp âm đang dùng, đi cùng công tắc bass)
  */
 export type BeatStyle =
   | 'none' | 'metronome' | 'rock' | 'ballad' | 'shuffle' | 'slowrock'
@@ -28,6 +29,7 @@ export interface BeatPattern {
   guiro?: string;
   clave?: string;
   cowbell?: string;
+  comp?: string;
 }
 
 export const PATTERNS: Record<Exclude<BeatStyle, 'none' | 'metronome'>, BeatPattern> = {
@@ -89,8 +91,12 @@ export const PATTERNS: Record<Exclude<BeatStyle, 'none' | 'metronome'>, BeatPatt
     hat:   'x...x...x...x...',
   },
   waltz: {
+    // "um" = bass phách 1 (gốc / quãng 5 xen kẽ từng ô), "pa pa" = hợp âm đệm phách 2, 3
     label: 'Valse 3/4', hint: 'Um-pa-pa', beats: 3, subdiv: 2,
-    kick: 'X.....', hat: '..x.x.', rim: '..x.x.',
+    kick:   'X.....' + 'X.....',
+    comp:   '..x.x.' + '..x.x.',
+    hat:    '..x.x.' + '..x.xx',
+    shaker: 'x.x.x.',
   },
 };
 

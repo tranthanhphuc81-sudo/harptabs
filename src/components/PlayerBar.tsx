@@ -57,13 +57,13 @@ function BeatTuner() {
         </div>
       </div>
       <div className="bt-row bt-seg">
-        <Toggle on={b.bass} onClick={() => setBeatPrefs({ bass: !b.bass })}>Bass theo hợp âm</Toggle>
+        <Toggle on={b.bass} onClick={() => setBeatPrefs({ bass: !b.bass })}>Bass + đệm hợp âm</Toggle>
         <Toggle on={b.bo} onClick={() => setBeatPrefs({ bo: !b.bo })}>Gõ bo</Toggle>
         <Toggle on={b.humanize} onClick={() => setBeatPrefs({ humanize: !b.humanize })}>Đánh như người thật</Toggle>
         <Toggle on={b.fills} onClick={() => setBeatPrefs({ fills: !b.fills })}>Dồn trống cuối câu</Toggle>
       </div>
       <Slider label="Âm lượng beat" value={b.beatVol} onChange={(v) => setBeatPrefs({ beatVol: v })} />
-      {b.bass && <Slider label="Âm lượng bass" value={b.bassVol} onChange={(v) => setBeatPrefs({ bassVol: v })} />}
+      {b.bass && <Slider label="Âm lượng bass + đệm" value={b.bassVol} onChange={(v) => setBeatPrefs({ bassVol: v })} />}
       <Slider label="Âm lượng bo" value={b.boVol} onChange={(v) => setBeatPrefs({ boVol: v })} />
       <Slider label="Âm lượng cowbell" value={b.bellVol} onChange={(v) => setBeatPrefs({ bellVol: v })} />
       <Slider label="Âm lượng giai điệu" value={b.melodyVol} onChange={(v) => setBeatPrefs({ melodyVol: v })} />

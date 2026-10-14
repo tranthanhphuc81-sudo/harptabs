@@ -4,8 +4,8 @@
  */
 import { FlatEvent } from '../lib/tabText';
 import { getBeatPrefs } from './beatPrefs';
-import { audio, bass, bongo, clave, click, cowbell, conga, crash, guiro, hat, kick, playTone, rim, setHumanVelocity, shaker, snare, tom } from './engine';
-import { bassMidi, Chord, chordAt, ChordOverrides, ChordSpan, harmonize, parseTonality } from './harmony';
+import { audio, bass, bongo, chordStab, clave, click, cowbell, conga, crash, guiro, hat, kick, playTone, rim, setHumanVelocity, shaker, snare, tom } from './engine';
+import { bassMidi, Chord, chordAt, chordVoicing, ChordOverrides, ChordSpan, harmonize, parseTonality } from './harmony';
 import { BeatPattern, BeatStyle, boPattern, resolvePattern } from './patterns';
 
 export interface PlayerOptions {
@@ -153,10 +153,12 @@ export class Player {
     const stepBeats = 1 / pattern.subdiv;
     const span = this.chords.find((c) => beat >= c.start - 1e-6 && beat < c.end - 1e-6);
     const untilChange = span ? span.end - beat : gap * stepBeats;
-    const durBeats = Math.min(gap * stepBeats, untilChange, 2) * 0.88;
+    // valse: "um" ngắn gọn để chừa chỗ cho "pa pa"
+    const durBeats = Math.min(gap * stepBeats, untilChange, style === 'waltz' ? 0.9 : 2) * 0.88;
     const changed = !!span && Math.abs(span.start - beat) < 1e-6;
     const half = Math.floor(barLen / 2);
-    const altFifth = style !== 'rock' && style !== 'ballad' && stepIdx >= half && !changed;
+    // valse đổi gốc / quãng 5 xen kẽ từng ô nhịp; kiểu khác dùng quãng 5 ở nửa sau ô
+    const altFifth = !changed && (style === 'waltz' ? bar % 2 === 1 : style !== 'rock' && style !== 'ballad' && stepIdx >= half);
     bass(bassMidi(chord, altFifth), t, durBeats * spb, ch === 'X' || stepIdx === 0 ? 1 : 0.8);
   }
 
@@ -234,6 +236,12 @@ export class Player {
           perc(pattern.guiro, (t, ch) => guiro(t, ch === 'X'));
           hit(pattern.clave, clave);
           hit(pattern.cowbell, cowbell);
+          if (bp.bass) {
+            hit(pattern.comp, (t, v) => {
+              const ch = this.chordAt(b0 + 1e-3);
+              if (ch && ch.root >= 0) chordStab(chordVoicing(ch), t, Math.min(0.9, step * 1.6) * spb, v);
+            });
+          }
         }
       }
       const onBeat = Math.abs(posInBar - Math.round(posInBar)) < 1e-3;
