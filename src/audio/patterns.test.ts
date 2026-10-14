@@ -10,15 +10,15 @@ describe('beat mẫu', () => {
   for (const [name, p] of Object.entries(PATTERNS)) {
     it(`${name}: mỗi track dài đúng bội số ô nhịp, ký hiệu hợp lệ`, () => {
       const bar = p.beats * p.subdiv;
-      for (const key of ['kick', 'snare', 'hat', 'openHat', 'rim', 'shaker', 'bongo', 'conga', 'guiro', 'clave', 'cowbell', 'comp', 'clap'] as const) {
+      for (const key of ['kick', 'snare', 'hat', 'openHat', 'rim', 'shaker', 'bongo', 'conga', 'guiro', 'clave', 'cowbell', 'comp', 'clap', 'ride'] as const) {
         const tr = p[key];
         if (!tr) continue;
         expect(tr.length % bar, `${name}.${key}`).toBe(0);
-        expect(tr, `${name}.${key}`).toMatch(ALLOWED[key] ?? /^[.xX]+$/);
+        expect(tr, `${name}.${key}`).toMatch(ALLOWED[key] ?? /^[.xXg]+$/);
       }
       if (p.bassLine) {
         expect(p.bassLine.length % bar, `${name}.bassLine`).toBe(0);
-        expect(p.bassLine, `${name}.bassLine`).toMatch(/^[.rof]+$/);
+        expect(p.bassLine, `${name}.bassLine`).toMatch(/^[.rofta]+$/);
       }
     });
   }
@@ -97,6 +97,14 @@ describe('beat mẫu', () => {
     expect([0, 4, 8, 12].every((i) => p.kick![i] === 'X')).toBe(true);
     expect([2, 6, 10, 14].every((i) => p.openHat![i] === 'X')).toBe(true);
     expect(p.bassLine!.slice(0, 4)).toBe('r.o.');
+  });
+
+  it('jazz swing: ride "ding – ding-a", hi-hat chân 2 & 4, bass walking mỗi phách', () => {
+    const p = PATTERNS.jazz;
+    const on = (s: string) => [...s.slice(0, 12)].map((ch, i) => (ch !== '.' ? i : -1)).filter((i) => i >= 0);
+    expect(on(p.ride!)).toEqual([0, 3, 5, 6, 9, 11]);
+    expect(on(p.hat!)).toEqual([3, 9]);
+    expect(on(p.bassLine!)).toEqual([0, 3, 6, 9]);
   });
 
   it('rumba: clave rumba 3-2 (1, 1a, 2&… 3&, 4)', () => {

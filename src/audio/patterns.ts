@@ -1,6 +1,6 @@
 /**
  * Beat mẫu. Mỗi track là chuỗi ký tự trên lưới (beats × subdiv):
- *   x = đánh, X = đánh mạnh, . = nghỉ
+ *   x = đánh, X = đánh mạnh, g = gõ rất khẽ (ghost), . = nghỉ
  * Track có thể dài 2 ô nhịp (ô thứ hai là biến tấu), lặp lại theo chu kỳ.
  * Bộ gõ La-tinh dùng ký hiệu riêng:
  *   bongo / conga: f = ngón nhẹ, t = gót tay (trầm, tắt), s = vỗ (slap), h = mở cao, o = mở trầm
@@ -8,12 +8,14 @@
  *   clave: x/X = gõ hai thanh gỗ
  *   cowbell: x/X = chuông bò (cencerro)
  *   clap: x/X = vỗ tay
- *   bassLine: đường bass riêng thay cho bass theo trống — r = gốc, o = gốc quãng tám trên, f = quãng 5
+ *   ride: x/X = chũm chọe ride
+ *   bassLine: đường bass riêng thay cho bass theo trống — r = gốc, o = gốc quãng tám trên, f = quãng 5,
+ *             t = quãng 3, a = nốt dẫn nửa cung vào gốc hợp âm kế tiếp
  *   comp: x/X = gõ hợp âm đệm (theo hợp âm đang dùng, công tắc "Đệm hợp âm")
  */
 export type BeatStyle =
   | 'none' | 'metronome' | 'rock' | 'ballad' | 'shuffle' | 'slowrock'
-  | 'train' | 'bolero' | 'rumba' | 'chacha' | 'tango' | 'bossa' | 'disco' | 'waltz';
+  | 'train' | 'bolero' | 'rumba' | 'chacha' | 'tango' | 'bossa' | 'disco' | 'jazz' | 'waltz';
 
 export interface BeatPattern {
   label: string;
@@ -34,6 +36,7 @@ export interface BeatPattern {
   comp?: string;
   clap?: string;
   bassLine?: string;
+  ride?: string;
 }
 
 export const PATTERNS: Record<Exclude<BeatStyle, 'none' | 'metronome'>, BeatPattern> = {
@@ -131,6 +134,16 @@ export const PATTERNS: Record<Exclude<BeatStyle, 'none' | 'metronome'>, BeatPatt
     shaker:   '.xx..xx..xx..xx.',
     bassLine: 'r.o.r.o.r.o.r.o.' + 'r.o.r.o.r.o.f.o.',
     comp:     '..x...x...x...x.' + '..x...x...x.x.x.',
+  },
+  jazz: {
+    // ride "ding – ding-a", hi-hat chân 2 & 4, kick dậm khẽ, bass walking, piano Charleston
+    label: 'Jazz swing', hint: 'Ride "ding ding-a", bass walking', beats: 4, subdiv: 3,
+    ride:     'x..X.xx..X.x',
+    hat:      '...x.....x..',
+    kick:     'g..g..g..g..',
+    snare:    '........g...' + '.....g....gx',
+    bassLine: 'r..t..f..a..' + 'r..f..o..a..',
+    comp:     'X....x......' + '...x.....x..',
   },
   waltz: {
     // "um" = bass phách 1 (gốc / quãng 5 xen kẽ từng ô), "pa pa" = hợp âm đệm phách 2, 3

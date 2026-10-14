@@ -736,6 +736,14 @@ export function clap(when: number, vel = 1) {
   } finally { hitOut = null; }
 }
 
+/** chũm chọe ride: tiếng kim loại ngân dài + "ping" của mũ chũm */
+export function ride(when: number, vel = 1) {
+  vel = vary(vel) * (kit === 'soft' ? 0.6 : 1);
+  metal(when, kit === 'electronic' ? 0.5 : 0.8, 0.11 * vel);
+  osc('sine', when, 3150, 3150, 0, 0.04 * vel, 0.5);
+  noiseHit(when, 'highpass', 8000, 0.25, 0.04 * vel, 0.5);
+}
+
 /** clave: hai thanh gỗ cứng gõ vào nhau — tiếng "cách" cao, ngân ngắn */
 export function clave(when: number, vel = 1) {
   vel = vary(vel) * (kit === 'soft' ? 0.7 : 1);
