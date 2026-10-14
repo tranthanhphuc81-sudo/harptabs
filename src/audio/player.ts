@@ -3,7 +3,8 @@
  * (look-ahead scheduling), hỗ trợ đổi tempo trực tiếp, lặp đoạn, đếm vào.
  */
 import { FlatEvent } from '../lib/tabText';
-import { audio, click, hat, kick, playTone, rim, shaker, snare } from './engine';
+import { getBeatPrefs } from './beatPrefs';
+import { audio, click, crash, hat, kick, playTone, rim, setHumanVelocity, shaker, snare, tom } from './engine';
 import { BeatStyle, resolvePattern } from './patterns';
 
 export interface PlayerOptions {
@@ -142,17 +143,37 @@ export class Player {
       const stepIdx = Math.round(posInBar * subdiv);
       const onGrid = Math.abs(posInBar * subdiv - stepIdx) < 1e-3;
       if (onGrid && o.beat && pattern) {
-        const hit = (track: string | undefined, fn: (t: number, v: number) => void) => {
-          const ch = track?.[stepIdx];
-          if (ch === 'x') fn(t0, 0.7);
-          else if (ch === 'X') fn(t0, 1);
-        };
-        hit(pattern.kick, kick);
-        hit(pattern.snare, snare);
-        hit(pattern.hat, (t, v) => hat(t, v));
-        hit(pattern.openHat, (t, v) => hat(t, v, true));
-        hit(pattern.rim, rim);
-        hit(pattern.shaker, shaker);
+        const bp = getBeatPrefs();
+        setHumanVelocity(bp.humanize ? 0.12 : 0);
+        // lắc (swing): đẩy trễ các ô lẻ; nhịp chùm ba vốn đã lắc nên bỏ qua
+        const swing = subdiv !== 3 && stepIdx % 2 === 1 ? bp.swing * step * spb : 0;
+        const jitter = bp.humanize ? (Math.random() - 0.5) * 0.012 : 0;
+        const t = Math.max(c.currentTime, t0 + swing + jitter);
+        // phách chính đậm hơn phách phụ cho có nhún
+        const accent = bp.humanize && stepIdx % subdiv !== 0 ? 0.78 : 1;
+
+        const bar = Math.floor((b0 - o.pickupBeats) / o.beatsPerBar + EPS);
+        const fillBeat = bp.fills && bar >= 0 && (bar + 1) % 4 === 0 && posInBar >= o.beatsPerBar - 1 - EPS;
+        if (fillBeat) {
+          // dồn trống ở phách cuối mỗi câu 4 ô nhịp: tom từ cao xuống trầm
+          const k = stepIdx - (o.beatsPerBar - 1) * subdiv;
+          if (k === 0) kick(t, 0.9);
+          if (k % 2 === 0) snare(t, 0.55 + 0.1 * k);
+          tom(t, 0.6 + 0.1 * k, subdiv > 1 ? k / (subdiv - 1) : 0);
+        } else {
+          if (bp.fills && bar > 0 && bar % 4 === 0 && stepIdx === 0) crash(t, 0.9);
+          const hit = (track: string | undefined, fn: (t: number, v: number) => void) => {
+            const ch = track?.[stepIdx];
+            if (ch === 'x') fn(t, 0.7);
+            else if (ch === 'X') fn(t, 1);
+          };
+          hit(pattern.kick, kick);
+          hit(pattern.snare, snare);
+          hit(pattern.hat, (t, v) => hat(t, v * accent));
+          hit(pattern.openHat, (t, v) => hat(t, v, true));
+          hit(pattern.rim, rim);
+          hit(pattern.shaker, (t, v) => shaker(t, v * accent));
+        }
       }
       const onBeat = Math.abs(posInBar - Math.round(posInBar)) < 1e-3;
       if (onBeat && (o.click || (o.beat && o.style === 'metronome'))) {

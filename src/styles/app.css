@@ -726,3 +726,13 @@ button, input, select, textarea { font: inherit; color: inherit; }
   .nav-theme { display: flex; margin-top: auto; padding: 8px 10px; }
   .head-actions .theme-btn { display: none; } /* máy tính: nút nằm ở thanh bên */
 }
+
+/* ===== Tuỳ chỉnh beat ===== */
+.beat-tuner { display: flex; flex-direction: column; gap: 10px; padding-top: 8px; border-top: 1px solid var(--line); }
+.bt-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+.bt-label { font-size: 0.8rem; color: var(--ink-2); min-width: 5.5rem; }
+.bt-seg { display: flex; flex-wrap: wrap; gap: 6px; }
+.bt-slider { display: grid; grid-template-columns: minmax(7rem, auto) 1fr 2.2rem; align-items: center; gap: 10px; font-size: 0.85rem; }
+.bt-slider input { width: 100%; accent-color: var(--ink); }
+.bt-slider output { text-align: right; font-variant-numeric: tabular-nums; color: var(--ink-2); }
+.bt-reset { align-self: flex-start; }

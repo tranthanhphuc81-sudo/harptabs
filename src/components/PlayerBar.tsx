@@ -1,5 +1,6 @@
-import { ReactNode } from 'react';
+import { ReactNode, useState } from 'react';
 import { STYLE_OPTIONS, BeatStyle } from '../audio/patterns';
+import { KIT_OPTIONS, resetBeatPrefs, setBeatPrefs, SWING_OPTIONS, useBeatPrefs } from '../audio/beatPrefs';
 import { Icon } from './Icon';
 import { PlayerState } from './usePlayer';
 
@@ -18,8 +19,48 @@ function Toggle({ on, onClick, children }: { on: boolean; onClick: () => void; c
   );
 }
 
+function Slider({ label, value, onChange }: { label: string; value: number; onChange: (v: number) => void }) {
+  return (
+    <label className="bt-slider">
+      <span>{label}</span>
+      <input type="range" min={0} max={100} step={5} value={Math.round(value * 100)} onChange={(e) => onChange(Number(e.target.value) / 100)} />
+      <output>{Math.round(value * 100)}</output>
+    </label>
+  );
+}
+
+/** Bảng chỉnh âm beat: bộ trống, lắc, dồn trống, âm lượng, độ vang */
+function BeatTuner() {
+  const b = useBeatPrefs();
+  return (
+    <div className="beat-tuner" role="group" aria-label="Tuỳ chỉnh beat">
+      <div className="bt-row">
+        <span className="bt-label">Bộ trống</span>
+        <div className="bt-seg">
+          {KIT_OPTIONS.map((k) => <Toggle key={k.value} on={b.kit === k.value} onClick={() => setBeatPrefs({ kit: k.value })}>{k.label}</Toggle>)}
+        </div>
+      </div>
+      <div className="bt-row">
+        <span className="bt-label">Độ lắc</span>
+        <div className="bt-seg">
+          {SWING_OPTIONS.map((s) => <Toggle key={s.value} on={Math.abs(b.swing - s.value) < 1e-3} onClick={() => setBeatPrefs({ swing: s.value })}>{s.label}</Toggle>)}
+        </div>
+      </div>
+      <div className="bt-row bt-seg">
+        <Toggle on={b.humanize} onClick={() => setBeatPrefs({ humanize: !b.humanize })}>Đánh như người thật</Toggle>
+        <Toggle on={b.fills} onClick={() => setBeatPrefs({ fills: !b.fills })}>Dồn trống cuối câu</Toggle>
+      </div>
+      <Slider label="Âm lượng beat" value={b.beatVol} onChange={(v) => setBeatPrefs({ beatVol: v })} />
+      <Slider label="Âm lượng giai điệu" value={b.melodyVol} onChange={(v) => setBeatPrefs({ melodyVol: v })} />
+      <Slider label="Độ vang" value={b.reverb} onChange={(v) => setBeatPrefs({ reverb: v })} />
+      <button type="button" className="btn btn-ghost bt-reset" onClick={resetBeatPrefs}>Về mặc định</button>
+    </div>
+  );
+}
+
 export function PlayerBar({ p, loopLabel, onToggleLoop, extra }: Props) {
   const { opts, setOpts } = p;
+  const [tuner, setTuner] = useState(false);
   const eff = Math.round(opts.bpm * opts.tempoScale);
   const step = (d: number) => setOpts({ tempoScale: Math.min(1.6, Math.max(0.4, Math.round((opts.tempoScale + d) * 100) / 100)) });
   return (
@@ -54,8 +95,10 @@ export function PlayerBar({ p, loopLabel, onToggleLoop, extra }: Props) {
             <Icon name="loop" size={15} /> {opts.loop ? `Lặp: ${loopLabel ?? 'đoạn'}` : 'Lặp đoạn'}
           </Toggle>
         )}
+        <Toggle on={tuner} onClick={() => setTuner(!tuner)}><Icon name="sliders" size={15} /> Chỉnh beat</Toggle>
         {extra}
       </div>
+      {tuner && <BeatTuner />}
     </div>
   );
 }

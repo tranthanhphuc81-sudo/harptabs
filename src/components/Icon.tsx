@@ -23,6 +23,7 @@ const PATHS: Record<string, string> = {
   close: 'M6 6l12 12M18 6L6 18',
   image: 'M4 5h16v14H4zM4 16l5-5 4 4 2-2 5 5M15.5 9.5a1 1 0 1 0 0-.01',
   check: 'M5 12.5l4.5 4.5L19 7',
+  sliders: 'M4 6h9M17 6h3M15 4v4M4 12h3M11 12h9M9 10v4M4 18h11M19 18h1M17 16v4',
   wave: 'M2 12h2l2-6 3 12 3-14 3 16 3-10 2 2h2',
 };
 
