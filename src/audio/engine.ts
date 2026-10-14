@@ -10,6 +10,7 @@ let bassBus: GainNode;
 let boBus: GainNode;
 let bellBus: GainNode;
 let compBus: GainNode;
+let clapBus: GainNode;
 /** kênh ra hiện tại của tiếng trống (bongo tạm chuyển sang kênh bo) */
 let hitOut: AudioNode | null = null;
 let drumSend: GainNode;
@@ -49,6 +50,8 @@ export function audio(): AudioContext {
     bellBus.connect(drumBus);
     compBus = ctx.createGain();
     compBus.connect(drumBus);
+    clapBus = ctx.createGain();
+    clapBus.connect(drumBus);
     melodyBus.connect(master);
     drumBus.connect(master);
     clickBus.connect(master);
@@ -435,12 +438,12 @@ export type DrumKit = 'acoustic' | 'electronic' | 'soft';
 let kit: DrumKit = 'acoustic';
 let humanVel = 0;
 
-export interface MixSettings { kit: DrumKit; instrument: Instrument; beatVol: number; melodyVol: number; bassVol: number; boVol: number; bellVol: number; compVol: number; reverb: number }
-let mix: MixSettings = { kit: 'acoustic', instrument: 'harmonica', beatVol: 0.6, melodyVol: 0.55, bassVol: 0.7, boVol: 0.8, bellVol: 0.8, compVol: 0.7, reverb: 0.25 };
+export interface MixSettings { kit: DrumKit; instrument: Instrument; beatVol: number; melodyVol: number; bassVol: number; boVol: number; bellVol: number; compVol: number; clapVol: number; reverb: number }
+let mix: MixSettings = { kit: 'acoustic', instrument: 'harmonica', beatVol: 0.6, melodyVol: 0.55, bassVol: 0.7, boVol: 0.8, bellVol: 0.8, compVol: 0.7, clapVol: 0.8, reverb: 0.25 };
 
 /** Áp âm lượng / bộ trống / độ vang; chưa có AudioContext thì để dành áp lúc khởi tạo */
 export function applyMix(m: MixSettings) {
-  mix = { kit: m.kit, instrument: m.instrument, beatVol: m.beatVol, melodyVol: m.melodyVol, bassVol: m.bassVol, boVol: m.boVol ?? 0.8, bellVol: m.bellVol ?? 0.8, compVol: m.compVol ?? 0.7, reverb: m.reverb };
+  mix = { kit: m.kit, instrument: m.instrument, beatVol: m.beatVol, melodyVol: m.melodyVol, bassVol: m.bassVol, boVol: m.boVol ?? 0.8, bellVol: m.bellVol ?? 0.8, compVol: m.compVol ?? 0.7, clapVol: m.clapVol ?? 0.8, reverb: m.reverb };
   kit = m.kit;
   instrument = INSTRUMENT_OPTIONS.some((o) => o.value === m.instrument) ? m.instrument : 'harmonica';
   if (!ctx) return;
@@ -451,6 +454,7 @@ export function applyMix(m: MixSettings) {
   boBus.gain.setTargetAtTime(mix.boVol, t, 0.02);
   bellBus.gain.setTargetAtTime(mix.bellVol, t, 0.02);
   compBus.gain.setTargetAtTime(mix.compVol, t, 0.02);
+  clapBus.gain.setTargetAtTime(mix.clapVol, t, 0.02);
   drumSend.gain.setTargetAtTime(m.reverb * 0.7, t, 0.02);
   melodySend.gain.setTargetAtTime(m.reverb * 0.45, t, 0.02);
 }
@@ -725,8 +729,11 @@ export function cowbell(when: number, vel = 1) {
 /** vỗ tay: ba tiếng nhiễu sát nhau (nhiều người vỗ) rồi một đuôi ngắn */
 export function clap(when: number, vel = 1) {
   vel = vary(vel) * (kit === 'soft' ? 0.6 : 1);
-  for (const [dt, g] of [[0, 0.3], [0.011, 0.26], [0.022, 0.22]]) noiseHit(when + dt, 'bandpass', 1200, 0.012, g * vel, 1.1);
-  noiseHit(when + 0.03, 'bandpass', 1100, kit === 'electronic' ? 0.18 : 0.12, 0.25 * vel, 0.9);
+  hitOut = clapBus;
+  try {
+    for (const [dt, g] of [[0, 0.3], [0.011, 0.26], [0.022, 0.22]]) noiseHit(when + dt, 'bandpass', 1200, 0.012, g * vel, 1.1);
+    noiseHit(when + 0.03, 'bandpass', 1100, kit === 'electronic' ? 0.18 : 0.12, 0.25 * vel, 0.9);
+  } finally { hitOut = null; }
 }
 
 /** clave: hai thanh gỗ cứng gõ vào nhau — tiếng "cách" cao, ngân ngắn */

@@ -68,6 +68,7 @@ function BeatTuner() {
       {b.comp && <Slider label="Âm lượng đệm hợp âm" value={b.compVol} onChange={(v) => setBeatPrefs({ compVol: v })} />}
       <Slider label="Âm lượng bo" value={b.boVol} onChange={(v) => setBeatPrefs({ boVol: v })} />
       <Slider label="Âm lượng cowbell" value={b.bellVol} onChange={(v) => setBeatPrefs({ bellVol: v })} />
+      <Slider label="Âm lượng clap" value={b.clapVol} onChange={(v) => setBeatPrefs({ clapVol: v })} />
       <Slider label="Âm lượng giai điệu" value={b.melodyVol} onChange={(v) => setBeatPrefs({ melodyVol: v })} />
       <Slider label="Độ vang" value={b.reverb} onChange={(v) => setBeatPrefs({ reverb: v })} />
       <button type="button" className="btn btn-ghost bt-reset" onClick={resetBeatPrefs}>Về mặc định</button>
