@@ -49,12 +49,18 @@ describe('beat mẫu', () => {
     expect([2, 4].every((i) => p.comp![i] !== '.')).toBe(true);
   });
 
-  it('bolero và rumba có tiếng đệm hợp âm, không đè lên phách 1', () => {
-    for (const name of ['bolero', 'rumba'] as const) {
+  it('bolero, rumba, cha cha có tiếng đệm hợp âm, không đè lên phách 1', () => {
+    for (const name of ['bolero', 'rumba', 'chacha'] as const) {
       const c = PATTERNS[name].comp!;
       expect(c, name).toMatch(/x/);
       expect(c[0], name).toBe('.');
     }
+  });
+
+  it('slow rock: đệm hợp âm đủ 12 chùm ba, nhấn đầu phách', () => {
+    const c = PATTERNS.slowrock.comp!;
+    expect(c).toHaveLength(12);
+    expect([0, 3, 6, 9].every((i) => c[i] === 'X')).toBe(true);
   });
 
   it('rumba: clave rumba 3-2 (1, 1a, 2&… 3&, 4)', () => {

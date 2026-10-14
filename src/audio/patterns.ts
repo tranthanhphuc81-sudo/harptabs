@@ -48,6 +48,8 @@ export const PATTERNS: Record<Exclude<BeatStyle, 'none' | 'metronome'>, BeatPatt
   slowrock: {
     label: 'Slow rock', hint: 'Chùm ba, hợp nhạc trữ tình', beats: 4, subdiv: 3,
     kick: 'X.....x.x...', snare: '...X.....X..', hat: 'xxxxxxxxxxxx',
+    // piano chùm ba "ta-ta-ta" suốt ô nhịp, nhấn đầu phách
+    comp: 'XxxXxxXxxXxx',
   },
   train: {
     label: 'Train (tàu hoả)', hint: 'Nhịp đồng quê kinh điển cho harp', beats: 4, subdiv: 4,
@@ -86,6 +88,8 @@ export const PATTERNS: Record<Exclude<BeatStyle, 'none' | 'metronome'>, BeatPatt
     conga:   't.t.s.t.t.t.o.o.' + 't.t.s.t.t.t.o.oo',
     rim:     '............x.x.' + '........x...x.x.',
     shaker:  '..x...x...x...x.',
+    // gõ hợp âm ở 2, 3, 4 và 4& ("cha-cha"); ô hai thêm 1& lệch nhịp
+    comp:    '....x...x...x.x.' + '..x.x...x...x.x.',
   },
   tango: {
     // bass habanera "bùm — bum bùm bùm" rồi marcato; snare dằn 2, 4 và dồn (arrastre) vào phách 1
