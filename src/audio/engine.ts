@@ -7,6 +7,9 @@ export let melodyBus: GainNode;
 export let drumBus: GainNode;
 export let clickBus: GainNode;
 let bassBus: GainNode;
+let boBus: GainNode;
+/** kênh ra hiện tại của tiếng trống (bongo tạm chuyển sang kênh bo) */
+let hitOut: AudioNode | null = null;
 let drumSend: GainNode;
 let melodySend: GainNode;
 let noise: AudioBuffer;
@@ -38,6 +41,8 @@ export function audio(): AudioContext {
     clickBus.gain.value = 0.5;
     bassBus = ctx.createGain();
     bassBus.connect(drumBus);
+    boBus = ctx.createGain();
+    boBus.connect(drumBus);
     melodyBus.connect(master);
     drumBus.connect(master);
     clickBus.connect(master);
@@ -424,12 +429,12 @@ export type DrumKit = 'acoustic' | 'electronic' | 'soft';
 let kit: DrumKit = 'acoustic';
 let humanVel = 0;
 
-export interface MixSettings { kit: DrumKit; instrument: Instrument; beatVol: number; melodyVol: number; bassVol: number; reverb: number }
-let mix: MixSettings = { kit: 'acoustic', instrument: 'harmonica', beatVol: 0.6, melodyVol: 0.55, bassVol: 0.7, reverb: 0.25 };
+export interface MixSettings { kit: DrumKit; instrument: Instrument; beatVol: number; melodyVol: number; bassVol: number; boVol: number; reverb: number }
+let mix: MixSettings = { kit: 'acoustic', instrument: 'harmonica', beatVol: 0.6, melodyVol: 0.55, bassVol: 0.7, boVol: 0.8, reverb: 0.25 };
 
 /** Áp âm lượng / bộ trống / độ vang; chưa có AudioContext thì để dành áp lúc khởi tạo */
 export function applyMix(m: MixSettings) {
-  mix = { kit: m.kit, instrument: m.instrument, beatVol: m.beatVol, melodyVol: m.melodyVol, bassVol: m.bassVol, reverb: m.reverb };
+  mix = { kit: m.kit, instrument: m.instrument, beatVol: m.beatVol, melodyVol: m.melodyVol, bassVol: m.bassVol, boVol: m.boVol ?? 0.8, reverb: m.reverb };
   kit = m.kit;
   instrument = INSTRUMENT_OPTIONS.some((o) => o.value === m.instrument) ? m.instrument : 'harmonica';
   if (!ctx) return;
@@ -437,6 +442,7 @@ export function applyMix(m: MixSettings) {
   drumBus.gain.setTargetAtTime(m.beatVol, t, 0.02);
   melodyBus.gain.setTargetAtTime(m.melodyVol, t, 0.02);
   bassBus.gain.setTargetAtTime(m.bassVol, t, 0.02);
+  boBus.gain.setTargetAtTime(mix.boVol, t, 0.02);
   drumSend.gain.setTargetAtTime(m.reverb * 0.7, t, 0.02);
   melodySend.gain.setTargetAtTime(m.reverb * 0.45, t, 0.02);
 }
@@ -458,7 +464,7 @@ function osc(type: OscillatorType, when: number, f0: number, f1: number, fall: n
   g.gain.setValueAtTime(0.0001, when);
   g.gain.exponentialRampToValueAtTime(gain, when + 0.003);
   g.gain.exponentialRampToValueAtTime(0.001, when + decay);
-  o.connect(g).connect(drumBus);
+  o.connect(g).connect(hitOut ?? drumBus);
   o.start(when);
   o.stop(when + decay + 0.02);
 }
@@ -477,7 +483,7 @@ function noiseHit(when: number, type: BiquadFilterType, freq: number, decay: num
     g.gain.exponentialRampToValueAtTime(gain, when + attack);
   } else g.gain.setValueAtTime(gain, when);
   g.gain.exponentialRampToValueAtTime(0.001, when + attack + decay);
-  src.connect(f).connect(g).connect(drumBus);
+  src.connect(f).connect(g).connect(hitOut ?? drumBus);
   src.start(when, Math.random() * 0.8);
   src.stop(when + attack + decay + 0.02);
 }
@@ -592,6 +598,11 @@ function handDrum(when: number, f: number, decay: number, gain: number, bright: 
 
 /** bongo; kind: f = ngón nhẹ, t = gót tay, s = vỗ, h = mở cao, o = mở trầm */
 export function bongo(when: number, kind: string, vel = 1) {
+  hitOut = boBus;
+  try { bongoHit(when, kind, vel); } finally { hitOut = null; }
+}
+
+function bongoHit(when: number, kind: string, vel: number) {
   vel = vary(vel) * (kit === 'soft' ? 0.75 : 1);
   const hi = 520, lo = 360;
   switch (kind) {
