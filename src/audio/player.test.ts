@@ -4,12 +4,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const clock = { t: 0 };
 const calls: Record<string, number> = {};
 const count = (name: string) => () => { calls[name] = (calls[name] ?? 0) + 1; };
+const bassNotes: { midi: number; when: number }[] = [];
 vi.mock('./engine', () => ({
   audio: () => ({ currentTime: clock.t }),
   applyMix: () => {},
   setHumanVelocity: () => {},
   playTone: count('melody'),
-  bass: count('bass'),
+  bass: (midi: number, when: number) => { count('bass')(); bassNotes.push({ midi, when }); },
   chordStab: count('comp'),
   kick: count('kick'),
   snare: count('snare'),
@@ -32,10 +33,11 @@ vi.mock('./engine', () => ({
 const { Player } = await import('./player');
 
 /** chạy bộ phát `seconds` giây (đồng hồ giả), trả về số tiếng mỗi loại */
-function run(style: string, beatsPerBar: number, seconds = 4) {
+function run(style: string, beatsPerBar: number, seconds = 4, chordOverrides?: Record<string, string>) {
   for (const k of Object.keys(calls)) delete calls[k];
+  bassNotes.length = 0;
   clock.t = 0;
-  const p = new Player({ bpm: 120, tempoScale: 1, beatsPerBar, pickupBeats: 0, style: style as never, melody: true, beat: true, click: false, countIn: false, loop: null, songKey: 'C' });
+  const p = new Player({ bpm: 120, tempoScale: 1, beatsPerBar, pickupBeats: 0, style: style as never, melody: true, beat: true, click: false, countIn: false, loop: null, songKey: 'C', chordOverrides });
   // giai điệu C E G C lặp lại, mỗi nốt 1 phách
   p.load(Array.from({ length: 32 }, (_, i) => ({ token: '4', midi: [60, 64, 67, 72][i % 4], beats: 1, start: i, sectionIndex: 0, lineIndex: 0, eventIndex: i })));
   p.start(0);
@@ -67,6 +69,15 @@ describe('bộ phát beat', () => {
     const c = run('polka', 2, 4);
     expect(c.bass).toBeGreaterThanOrEqual(8);
     expect(c.comp).toBeGreaterThanOrEqual(8);
+  });
+
+  it('salsa: bass tumbao đón gốc hợp âm ô sau ở phách 4', () => {
+    // ô 1 = C, ô 2 = F (mỗi khúc nửa ô chọn tay); 120 bpm → phách = 0.5 giây
+    run('salsa', 4, 4, { '0': 'C', '2': 'C', '4': 'F', '6': 'F' });
+    const start = bassNotes[0].when - 1.5 * 0.5; // nốt đầu là 2& (phách 1.5)
+    const at = (beat: number) => bassNotes.find((n) => Math.abs(n.when - start - beat * 0.5) < 0.02)?.midi;
+    expect(((at(1.5)! % 12) + 12) % 12).toBe(7); // quãng 5 của C = G
+    expect(((at(3)! % 12) + 12) % 12).toBe(5); // phách 4: gốc của F (ô sau)
   });
 
   it('jazz: bass walking mỗi phách một nốt', () => {

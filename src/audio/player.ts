@@ -177,6 +177,11 @@ export class Player {
       if (ch === 'f') midi = bassMidi(chord, true);
       else if (ch === 'o') midi = root + 12;
       else if (ch === 't') midi = root + (chord.minor ? 3 : 4);
+      else if (ch === 'n') {
+        // tumbao đón nhịp: gốc của hợp âm ở đầu ô kế tiếp
+        const next = this.chordAt(beat - stepIdx / pattern.subdiv + pattern.beats + 1e-3);
+        midi = next && next.root >= 0 ? bassMidi(next) : root;
+      }
       else if (ch === 'a') {
         // nốt dẫn nửa cung từ dưới lên gốc hợp âm của phách kế tiếp
         const next = this.chordAt(beat + gap * stepBeats + 1e-3);

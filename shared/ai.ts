@@ -4,7 +4,7 @@
  * Không phụ thuộc DOM hay Node — chạy được ở cả hai nơi.
  */
 
-export const BEAT_STYLES = ['metronome', 'rock', 'ballad', 'shuffle', 'slowrock', 'train', 'bolero', 'rumba', 'chacha', 'tango', 'bossa', 'disco', 'jazz', 'reggae', 'ska', 'country', 'march', 'polka', 'samba', 'waltz'] as const;
+export const BEAT_STYLES = ['metronome', 'rock', 'ballad', 'shuffle', 'slowrock', 'train', 'bolero', 'rumba', 'chacha', 'tango', 'bossa', 'disco', 'jazz', 'reggae', 'ska', 'country', 'march', 'polka', 'samba', 'salsa', 'waltz'] as const;
 
 export interface AiImage { mimeType: string; data: string /* base64, không có tiền tố data: */ }
 

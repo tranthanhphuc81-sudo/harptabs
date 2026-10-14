@@ -18,7 +18,7 @@ describe('beat mẫu', () => {
       }
       if (p.bassLine) {
         expect(p.bassLine.length % bar, `${name}.bassLine`).toBe(0);
-        expect(p.bassLine, `${name}.bassLine`).toMatch(/^[.roftaw]+$/);
+        expect(p.bassLine, `${name}.bassLine`).toMatch(/^[.roftawn]+$/);
       }
     });
   }
@@ -158,6 +158,14 @@ describe('beat mẫu', () => {
     expect([4, 12].every((i) => p.surdo![i] === 'X')).toBe(true);
     expect([0, 8].every((i) => p.surdo![i] === 'x')).toBe(true);
     expect(p.shaker).not.toMatch(/\./);
+  });
+
+  it('salsa: clave son 3-2, bass tumbao không đánh phách 1', () => {
+    const p = PATTERNS.salsa;
+    const on = (s: string) => [...s].map((ch, i) => (ch !== '.' ? i : -1)).filter((i) => i >= 0);
+    expect(on(p.clave!)).toEqual([0, 6, 12, 20, 24]);
+    expect(p.bassLine![0]).toBe('.');
+    expect(on(p.bassLine!)).toEqual([6, 12]);
   });
 
   it('rumba: clave rumba 3-2 (1, 1a, 2&… 3&, 4)', () => {

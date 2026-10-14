@@ -12,12 +12,12 @@
  *   surdo: x/X = trống cái trầm samba
  *   bassLine: đường bass riêng thay cho bass theo trống — r = gốc, o = gốc quãng tám trên, f = quãng 5,
  *             t = quãng 3, a = nốt dẫn nửa cung vào gốc hợp âm kế tiếp,
- *             w = bass walking tự dẫn theo hợp âm kế tiếp
+ *             w = bass walking tự dẫn theo hợp âm kế tiếp, n = gốc hợp âm của ô sau (đón nhịp)
  *   comp: x/X = gõ hợp âm đệm (theo hợp âm đang dùng, công tắc "Đệm hợp âm")
  */
 export type BeatStyle =
   | 'none' | 'metronome' | 'rock' | 'ballad' | 'shuffle' | 'slowrock'
-  | 'train' | 'bolero' | 'rumba' | 'chacha' | 'tango' | 'bossa' | 'disco' | 'jazz' | 'reggae' | 'ska' | 'country' | 'march' | 'polka' | 'samba' | 'waltz';
+  | 'train' | 'bolero' | 'rumba' | 'chacha' | 'tango' | 'bossa' | 'disco' | 'jazz' | 'reggae' | 'ska' | 'country' | 'march' | 'polka' | 'samba' | 'salsa' | 'waltz';
 
 export interface BeatPattern {
   label: string;
@@ -202,6 +202,16 @@ export const PATTERNS: Record<Exclude<BeatStyle, 'none' | 'metronome'>, BeatPatt
     rim:      'x.x..x.x.x..x...' + 'x.x..x.x.x..x.x.',
     comp:     '..x.x..x..x.x..x',
     bassLine: 'r..rf...r..rf...',
+  },
+  salsa: {
+    // clave son 3-2, conga tumbao, cowbell 4 phách, bass tumbao đón nhịp (5 ở 2&, gốc hợp âm ô sau ở 4), piano montuno
+    label: 'Salsa', hint: 'Clave 3-2, conga tumbao, bass đón nhịp', beats: 4, subdiv: 4,
+    clave:    'X.....X.....X...' + '....X...X.......',
+    conga:    't.t.s.t.t.t.o.o.' + 't.t.s.t.t.t.o.oo',
+    cowbell:  'X...x...X...x...',
+    kick:     '......g.....x...',
+    bassLine: '......f.....n...',
+    comp:     '..x..x.x..x..x.x' + 'x..x.x..x..x.x..',
   },
   waltz: {
     // "um" = bass phách 1 (gốc / quãng 5 xen kẽ từng ô), "pa pa" = hợp âm đệm phách 2, 3
