@@ -10,7 +10,7 @@ describe('beat mẫu', () => {
   for (const [name, p] of Object.entries(PATTERNS)) {
     it(`${name}: mỗi track dài đúng bội số ô nhịp, ký hiệu hợp lệ`, () => {
       const bar = p.beats * p.subdiv;
-      for (const key of ['kick', 'snare', 'hat', 'openHat', 'rim', 'shaker', 'bongo', 'conga', 'guiro', 'clave', 'cowbell', 'comp', 'clap', 'ride'] as const) {
+      for (const key of ['kick', 'snare', 'hat', 'openHat', 'rim', 'shaker', 'bongo', 'conga', 'guiro', 'clave', 'cowbell', 'comp', 'clap', 'ride', 'surdo'] as const) {
         const tr = p[key];
         if (!tr) continue;
         expect(tr.length % bar, `${name}.${key}`).toBe(0);
@@ -151,6 +151,13 @@ describe('beat mẫu', () => {
     expect(p.bassLine!.slice(0, 8)).toBe('r.f.r.f.');
     const on = (s: string) => [...s].map((ch, i) => (ch !== '.' ? i : -1)).filter((i) => i >= 0);
     expect(on(p.comp!)).toEqual([1, 3, 5, 7]);
+  });
+
+  it('samba: surdo nện phách 2 & 4, ganzá đủ ¼ phách', () => {
+    const p = PATTERNS.samba;
+    expect([4, 12].every((i) => p.surdo![i] === 'X')).toBe(true);
+    expect([0, 8].every((i) => p.surdo![i] === 'x')).toBe(true);
+    expect(p.shaker).not.toMatch(/\./);
   });
 
   it('rumba: clave rumba 3-2 (1, 1a, 2&… 3&, 4)', () => {

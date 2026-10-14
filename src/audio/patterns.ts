@@ -9,6 +9,7 @@
  *   cowbell: x/X = chuông bò (cencerro)
  *   clap: x/X = vỗ tay
  *   ride: x/X = chũm chọe ride
+ *   surdo: x/X = trống cái trầm samba
  *   bassLine: đường bass riêng thay cho bass theo trống — r = gốc, o = gốc quãng tám trên, f = quãng 5,
  *             t = quãng 3, a = nốt dẫn nửa cung vào gốc hợp âm kế tiếp,
  *             w = bass walking tự dẫn theo hợp âm kế tiếp
@@ -16,7 +17,7 @@
  */
 export type BeatStyle =
   | 'none' | 'metronome' | 'rock' | 'ballad' | 'shuffle' | 'slowrock'
-  | 'train' | 'bolero' | 'rumba' | 'chacha' | 'tango' | 'bossa' | 'disco' | 'jazz' | 'reggae' | 'ska' | 'country' | 'march' | 'polka' | 'waltz';
+  | 'train' | 'bolero' | 'rumba' | 'chacha' | 'tango' | 'bossa' | 'disco' | 'jazz' | 'reggae' | 'ska' | 'country' | 'march' | 'polka' | 'samba' | 'waltz';
 
 export interface BeatPattern {
   label: string;
@@ -38,6 +39,7 @@ export interface BeatPattern {
   clap?: string;
   bassLine?: string;
   ride?: string;
+  surdo?: string;
 }
 
 export const PATTERNS: Record<Exclude<BeatStyle, 'none' | 'metronome'>, BeatPattern> = {
@@ -190,6 +192,16 @@ export const PATTERNS: Record<Exclude<BeatStyle, 'none' | 'metronome'>, BeatPatt
     snare:    '.x.x.x.x',
     comp:     '.X.X.X.X',
     bassLine: 'r.f.r.f.' + 'r.f.r.ta',
+  },
+  samba: {
+    // surdo nhẹ 1, 3 – nện 2, 4; ganzá rắc ¼ phách nhấn cuối phách; tamborim teleco-teco; bass "bùm… ba-bùm"
+    label: 'Samba', hint: 'Rộn ràng Brazil: surdo, ganzá, tamborim', beats: 4, subdiv: 4,
+    surdo:    'x...X...x...X...',
+    kick:     'x..x....x..x....',
+    shaker:   'xxxXxxxXxxxXxxxX',
+    rim:      'x.x..x.x.x..x...' + 'x.x..x.x.x..x.x.',
+    comp:     '..x.x..x..x.x..x',
+    bassLine: 'r..rf...r..rf...',
   },
   waltz: {
     // "um" = bass phách 1 (gốc / quãng 5 xen kẽ từng ô), "pa pa" = hợp âm đệm phách 2, 3

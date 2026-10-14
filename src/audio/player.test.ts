@@ -23,6 +23,7 @@ vi.mock('./engine', () => ({
   cowbell: count('cowbell'),
   clap: count('clap'),
   ride: count('ride'),
+  surdo: count('surdo'),
   crash: count('crash'),
   tom: count('tom'),
   click: count('click'),

@@ -4,7 +4,7 @@
  */
 import { FlatEvent } from '../lib/tabText';
 import { getBeatPrefs } from './beatPrefs';
-import { audio, bass, bongo, chordStab, clap, clave, click, cowbell, conga, crash, guiro, hat, kick, playTone, ride, rim, setHumanVelocity, shaker, snare, tom } from './engine';
+import { audio, bass, bongo, chordStab, clap, clave, click, cowbell, conga, crash, guiro, hat, kick, playTone, ride, rim, setHumanVelocity, shaker, snare, surdo, tom } from './engine';
 import { bassMidi, Chord, chordAt, chordVoicing, ChordOverrides, ChordSpan, harmonize, parseTonality, walkingNote } from './harmony';
 import { BeatPattern, BeatStyle, boPattern, resolvePattern } from './patterns';
 
@@ -265,6 +265,7 @@ export class Player {
           hit(pattern.cowbell, cowbell);
           hit(pattern.clap, clap);
           hit(pattern.ride, ride);
+          hit(pattern.surdo, surdo);
           if (bp.comp) {
             hit(pattern.comp, (t, v) => {
               const ch = this.chordAt(b0 + 1e-3);

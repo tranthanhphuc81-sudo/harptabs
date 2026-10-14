@@ -744,6 +744,14 @@ export function ride(when: number, vel = 1) {
   noiseHit(when, 'highpass', 8000, 0.25, 0.04 * vel, 0.5);
 }
 
+/** surdo: trống cái samba — thân rất trầm ngân dài + tiếng dùi bông */
+export function surdo(when: number, vel = 1) {
+  vel = vary(vel) * (kit === 'soft' ? 0.75 : 1);
+  osc('sine', when, 95, 62, 0.12, 0.85 * vel, kit === 'electronic' ? 0.7 : 0.55);
+  osc('sine', when, 150, 120, 0.05, 0.2 * vel, 0.15);
+  noiseHit(when, 'lowpass', 900, 0.03, 0.18 * vel, 0.7);
+}
+
 /** clave: hai thanh gỗ cứng gõ vào nhau — tiếng "cách" cao, ngân ngắn */
 export function clave(when: number, vel = 1) {
   vel = vary(vel) * (kit === 'soft' ? 0.7 : 1);
