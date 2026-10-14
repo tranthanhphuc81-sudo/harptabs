@@ -10,7 +10,7 @@
  */
 export type BeatStyle =
   | 'none' | 'metronome' | 'rock' | 'ballad' | 'shuffle' | 'slowrock'
-  | 'train' | 'bolero' | 'rumba' | 'chacha' | 'waltz';
+  | 'train' | 'bolero' | 'rumba' | 'chacha' | 'tango' | 'waltz';
 
 export interface BeatPattern {
   label: string;
@@ -80,6 +80,13 @@ export const PATTERNS: Record<Exclude<BeatStyle, 'none' | 'metronome'>, BeatPatt
     conga:   't.t.s.t.t.t.o.o.' + 't.t.s.t.t.t.o.oo',
     rim:     '............x.x.' + '........x...x.x.',
     shaker:  '..x...x...x...x.',
+  },
+  tango: {
+    // bass habanera "bùm — bum bùm bùm" rồi marcato; snare dằn 2, 4 và dồn (arrastre) vào phách 1
+    label: 'Tango', hint: 'Dằn từng phách, dồn trống vào đầu ô', beats: 4, subdiv: 4,
+    kick:  'X..xX.x.X...X...' + 'X..xX.x.X..xX.x.',
+    snare: '....X.......X.xx' + '....X.......Xxxx',
+    hat:   'x...x...x...x...',
   },
   waltz: {
     label: 'Valse 3/4', hint: 'Um-pa-pa', beats: 3, subdiv: 2,
