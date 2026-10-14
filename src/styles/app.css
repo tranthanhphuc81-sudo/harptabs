@@ -739,3 +739,15 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .pb-tune { flex: none; width: 38px; height: 38px; border: 1px solid var(--line); }
 .pb-tune.on { background: var(--ink); color: var(--bg); border-color: var(--ink); }
 .pb-chord { font: 600 1.35rem/1 var(--font-cond); min-width: 2.2ch; color: var(--ink-2); }
+
+/* ===== Hợp âm trên tab ===== */
+.nt-cell { display: inline-flex; flex-direction: column; align-items: stretch; }
+.nt-chords { display: flex; gap: 2px; height: 1.7rem; align-items: flex-end; }
+.nt-chord {
+  min-height: 1.55rem; padding: 0 6px; border-radius: 6px;
+  border: 1px dashed var(--line); background: var(--surface);
+  font: 600 0.85rem/1 var(--font-cond); color: var(--ink-2); cursor: pointer;
+}
+.nt-chord.manual { border-style: solid; border-color: var(--ink); color: var(--ink); }
+.chord-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(3.4rem, 1fr)); gap: 6px; }
+.chord-grid .chip { justify-content: center; }

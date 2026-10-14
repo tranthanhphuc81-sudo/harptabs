@@ -57,11 +57,310 @@ export function audio(): AudioContext {
   return ctx;
 }
 
-/** Âm sắc gần giống harmonica: sóng răng cưa + vuông qua lọc thông thấp, có rung nhẹ */
+export type Instrument = 'harmonica' | 'piano' | 'guitar' | 'flute' | 'violin' | 'accordion' | 'organ' | 'sax';
+
+export const INSTRUMENT_OPTIONS: { value: Instrument; label: string }[] = [
+  { value: 'harmonica', label: 'Kèn harmonica' },
+  { value: 'piano', label: 'Piano' },
+  { value: 'guitar', label: 'Guitar' },
+  { value: 'flute', label: 'Sáo trúc' },
+  { value: 'violin', label: 'Violin' },
+  { value: 'accordion', label: 'Accordion' },
+  { value: 'organ', label: 'Organ' },
+  { value: 'sax', label: 'Saxophone' },
+];
+
+let instrument: Instrument = 'harmonica';
+
+/** Phát một nốt giai điệu bằng nhạc cụ đang chọn */
 export function playTone(midi: number, when: number, dur: number, velocity = 1, out?: AudioNode): void {
   const c = audio();
-  const f = midiToHz(midi);
   const t = Math.max(when, c.currentTime);
+  const dest = out ?? melodyBus;
+  switch (instrument) {
+    case 'piano': return pianoTone(c, midi, t, dur, velocity, dest);
+    case 'guitar': return guitarTone(c, midi, t, dur, velocity, dest);
+    case 'flute': return fluteTone(c, midi, t, dur, velocity, dest);
+    case 'violin': return bowedTone(c, midi, t, dur, velocity, dest);
+    case 'accordion': return reedTone(c, midi, t, dur, velocity, dest);
+    case 'organ': return organTone(c, midi, t, dur, velocity, dest);
+    case 'sax': return saxTone(c, midi, t, dur, velocity, dest);
+    default: return harmonicaTone(c, midi, t, dur, velocity, dest);
+  }
+}
+
+/** sóng sin cộng hưởng: mỗi hoạ âm [bội số, biên độ, thời gian tắt] */
+function additive(c: AudioContext, f: number, t: number, partials: [number, number, number][], out: AudioNode, stopAt: number, stretch = 0) {
+  for (const [n, amp, decay] of partials) {
+    const o = c.createOscillator();
+    const g = c.createGain();
+    o.frequency.value = f * n * Math.sqrt(1 + stretch * n * n);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(amp, t + 0.004);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + decay);
+    o.connect(g).connect(out);
+    o.start(t);
+    o.stop(Math.min(stopAt, t + decay) + 0.02);
+  }
+}
+
+function releaseEnv(c: AudioContext, t: number, end: number, peak: number, out: AudioNode, release = 0.12): GainNode {
+  const g = c.createGain();
+  g.gain.setValueAtTime(peak, t);
+  g.gain.setValueAtTime(peak, end);
+  g.gain.exponentialRampToValueAtTime(0.0001, end + release);
+  g.connect(out);
+  return g;
+}
+
+function pianoTone(c: AudioContext, midi: number, t: number, dur: number, vel: number, out: AudioNode) {
+  const f = midiToHz(midi);
+  const end = t + Math.max(0.15, dur);
+  const life = Math.min(3.5, 2.2 * Math.pow(261 / f, 0.5));
+  const env = releaseEnv(c, t, end, 0.38 * vel, out, 0.18);
+  const lp = c.createBiquadFilter();
+  lp.type = 'lowpass';
+  lp.frequency.setValueAtTime(Math.min(16000, f * (6 + 6 * vel)), t);
+  lp.frequency.exponentialRampToValueAtTime(Math.min(8000, f * 3), t + life * 0.6);
+  lp.connect(env);
+  additive(c, f, t, [[1, 0.6, life], [2, 0.32, life * 0.7], [3, 0.16, life * 0.5], [4, 0.1, life * 0.35], [5, 0.06, life * 0.25], [6, 0.035, life * 0.2]], lp, end + 0.2, 0.0004);
+  // tiếng búa gõ
+  hammer(c, t, f, 0.05 * vel, out);
+}
+
+function hammer(c: AudioContext, t: number, f: number, gain: number, out: AudioNode) {
+  const src = c.createBufferSource();
+  src.buffer = noise;
+  const bp = c.createBiquadFilter();
+  bp.type = 'bandpass';
+  bp.frequency.value = Math.min(6000, f * 4);
+  bp.Q.value = 1;
+  const g = c.createGain();
+  g.gain.setValueAtTime(gain, t);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + 0.03);
+  src.connect(bp).connect(g).connect(out);
+  src.start(t, Math.random() * 0.5);
+  src.stop(t + 0.05);
+}
+
+/** dây gảy Karplus–Strong, tạo sẵn rồi giữ lại theo từng cao độ */
+const plucked = new Map<number, AudioBuffer>();
+function pluckBuffer(c: AudioContext, midi: number): AudioBuffer {
+  const hit = plucked.get(midi);
+  if (hit) return hit;
+  const sr = c.sampleRate;
+  const len = Math.floor(sr * 2.2);
+  const buf = c.createBuffer(1, len, sr);
+  const d = buf.getChannelData(0);
+  const period = sr / midiToHz(midi);
+  const p = Math.max(2, Math.round(period));
+  const ring = new Float32Array(p);
+  for (let i = 0; i < p; i++) ring[i] = Math.random() * 2 - 1;
+  // lọc nhẹ chuỗi khởi đầu cho tiếng ngón tay (bớt chói)
+  for (let i = 1; i < p; i++) ring[i] = 0.6 * ring[i] + 0.4 * ring[i - 1];
+  const damp = 0.996 - Math.min(0.01, midi / 12000);
+  let idx = 0;
+  for (let i = 0; i < len; i++) {
+    const next = (idx + 1) % p;
+    const v = ring[idx];
+    ring[idx] = damp * 0.5 * (v + ring[next]);
+    d[i] = v;
+    idx = next;
+  }
+  plucked.set(midi, buf);
+  return buf;
+}
+
+function guitarTone(c: AudioContext, midi: number, t: number, dur: number, vel: number, out: AudioNode) {
+  const src = c.createBufferSource();
+  src.buffer = pluckBuffer(c, midi);
+  // bù sai số do làm tròn chu kỳ dây (nốt cao lệch tới vài chục cent)
+  src.playbackRate.value = Math.max(2, Math.round(c.sampleRate / midiToHz(midi))) / (c.sampleRate / midiToHz(midi));
+  const body = c.createBiquadFilter();
+  body.type = 'peaking';
+  body.frequency.value = 220;
+  body.gain.value = 5;
+  const lp = c.createBiquadFilter();
+  lp.type = 'lowpass';
+  lp.frequency.value = 5000;
+  const end = t + Math.max(0.2, dur) + 0.25;
+  const env = releaseEnv(c, t, end - 0.1, 0.5 * vel, out, 0.1);
+  src.connect(body).connect(lp).connect(env);
+  src.start(t);
+  src.stop(end + 0.05);
+}
+
+function vibrato(c: AudioContext, t: number, rate: number, depthHz: number, delay: number, targets: AudioParam[], stopAt: number) {
+  const lfo = c.createOscillator();
+  const g = c.createGain();
+  lfo.frequency.value = rate;
+  g.gain.setValueAtTime(0, t);
+  g.gain.setValueAtTime(0, t + delay);
+  g.gain.linearRampToValueAtTime(depthHz, t + delay + 0.3);
+  lfo.connect(g);
+  targets.forEach((p) => g.connect(p));
+  lfo.start(t);
+  lfo.stop(stopAt);
+}
+
+function breath(c: AudioContext, t: number, end: number, freq: number, q: number, attackGain: number, sustainGain: number, out: AudioNode) {
+  const src = c.createBufferSource();
+  src.buffer = noise;
+  src.loop = true;
+  const bp = c.createBiquadFilter();
+  bp.type = 'bandpass';
+  bp.frequency.value = freq;
+  bp.Q.value = q;
+  const g = c.createGain();
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(attackGain, t + 0.03);
+  g.gain.exponentialRampToValueAtTime(Math.max(0.0002, sustainGain), t + 0.15);
+  g.gain.setValueAtTime(Math.max(0.0002, sustainGain), end);
+  g.gain.exponentialRampToValueAtTime(0.0001, end + 0.08);
+  src.connect(bp).connect(g).connect(out);
+  src.start(t, Math.random() * 0.5);
+  src.stop(end + 0.1);
+}
+
+function fluteTone(c: AudioContext, midi: number, t: number, dur: number, vel: number, out: AudioNode) {
+  const f = midiToHz(midi);
+  const end = t + Math.max(0.1, dur);
+  const env = c.createGain();
+  const peak = 0.36 * vel;
+  env.gain.setValueAtTime(0.0001, t);
+  env.gain.exponentialRampToValueAtTime(peak * 1.15, t + 0.05);
+  env.gain.exponentialRampToValueAtTime(peak, t + 0.15);
+  env.gain.setValueAtTime(peak, end);
+  env.gain.exponentialRampToValueAtTime(0.0001, end + 0.1);
+  env.connect(out);
+  const o1 = c.createOscillator();
+  const o2 = c.createOscillator();
+  const g2 = c.createGain();
+  o1.type = 'sine';
+  o2.type = 'triangle';
+  o1.frequency.value = f;
+  o2.frequency.value = f * 2;
+  g2.gain.value = 0.12;
+  o1.connect(env);
+  o2.connect(g2).connect(env);
+  vibrato(c, t, 5.5, f * 0.006, 0.18, [o1.frequency, o2.frequency], end + 0.15);
+  for (const o of [o1, o2]) { o.start(t); o.stop(end + 0.12); }
+  // tiếng hơi qua lỗ sáo
+  breath(c, t, end, f * 2, 2, 0.09 * vel, 0.025 * vel, out);
+}
+
+/** nguồn răng cưa/vuông qua lọc cộng hưởng (formant) — dùng cho violin, kèn sax */
+function shaped(c: AudioContext, f: number, t: number, end: number, type: OscillatorType, formants: [number, number, number][], detune: number[]): { env: GainNode; oscs: OscillatorNode[] } {
+  const mix = c.createGain();
+  const env = c.createGain();
+  for (const [freq, q, gain] of formants) {
+    const bp = c.createBiquadFilter();
+    bp.type = 'bandpass';
+    bp.frequency.value = freq;
+    bp.Q.value = q;
+    const g = c.createGain();
+    g.gain.value = gain;
+    mix.connect(bp).connect(g).connect(env);
+  }
+  const oscs = detune.map((dt) => {
+    const o = c.createOscillator();
+    o.type = type;
+    o.frequency.value = f;
+    o.detune.value = dt;
+    o.connect(mix);
+    o.start(t);
+    o.stop(end + 0.2);
+    return o;
+  });
+  return { env, oscs };
+}
+
+function bowedTone(c: AudioContext, midi: number, t: number, dur: number, vel: number, out: AudioNode) {
+  const f = midiToHz(midi);
+  const end = t + Math.max(0.12, dur);
+  const { env, oscs } = shaped(c, f, t, end, 'sawtooth', [[f * 1.5, 0.7, 0.9], [2800, 1.2, 0.5], [4500, 2, 0.25]], [-4, 5]);
+  const peak = 0.3 * vel;
+  env.gain.setValueAtTime(0.0001, t);
+  env.gain.exponentialRampToValueAtTime(peak, t + 0.09);
+  env.gain.setValueAtTime(peak, end);
+  env.gain.exponentialRampToValueAtTime(0.0001, end + 0.15);
+  env.connect(out);
+  vibrato(c, t, 5.8, f * 0.007, 0.22, oscs.map((o) => o.frequency), end + 0.2);
+  breath(c, t, end, 3500, 0.8, 0.03 * vel, 0.008 * vel, out);
+}
+
+function saxTone(c: AudioContext, midi: number, t: number, dur: number, vel: number, out: AudioNode) {
+  const f = midiToHz(midi);
+  const end = t + Math.max(0.1, dur);
+  const { env, oscs } = shaped(c, f, t, end, 'square', [[f * 2, 0.9, 0.8], [1500, 1.5, 0.6], [2700, 2.5, 0.35]], [0, 7]);
+  const peak = 0.3 * vel;
+  env.gain.setValueAtTime(0.0001, t);
+  env.gain.exponentialRampToValueAtTime(peak * 1.2, t + 0.04);
+  env.gain.exponentialRampToValueAtTime(peak, t + 0.14);
+  env.gain.setValueAtTime(peak, end);
+  env.gain.exponentialRampToValueAtTime(0.0001, end + 0.09);
+  env.connect(out);
+  // trượt nhẹ lên cao độ như người thổi
+  oscs.forEach((o) => { o.frequency.setValueAtTime(f * 0.97, t); o.frequency.exponentialRampToValueAtTime(f, t + 0.06); });
+  vibrato(c, t, 5, f * 0.008, 0.3, oscs.map((o) => o.frequency), end + 0.2);
+  breath(c, t, end, 2000, 1, 0.05 * vel, 0.015 * vel, out);
+}
+
+function reedTone(c: AudioContext, midi: number, t: number, dur: number, vel: number, out: AudioNode) {
+  // accordion: hai lưỡi gà lệch tần (tiếng "musette") + lưỡi thấp một quãng tám
+  const f = midiToHz(midi);
+  const end = t + Math.max(0.1, dur);
+  const lp = c.createBiquadFilter();
+  lp.type = 'lowpass';
+  lp.frequency.value = Math.min(7000, f * 6);
+  lp.Q.value = 0.8;
+  const env = c.createGain();
+  const peak = 0.2 * vel;
+  env.gain.setValueAtTime(0.0001, t);
+  env.gain.exponentialRampToValueAtTime(peak, t + 0.04);
+  env.gain.setValueAtTime(peak, end);
+  env.gain.exponentialRampToValueAtTime(0.0001, end + 0.08);
+  lp.connect(env).connect(out);
+  for (const [mult, dt, type, g] of [[1, -9, 'sawtooth', 0.5], [1, 9, 'sawtooth', 0.5], [0.5, 0, 'square', 0.35]] as [number, number, OscillatorType, number][]) {
+    const o = c.createOscillator();
+    const og = c.createGain();
+    o.type = type;
+    o.frequency.value = f * mult;
+    o.detune.value = dt;
+    og.gain.value = g;
+    o.connect(og).connect(lp);
+    o.start(t);
+    o.stop(end + 0.1);
+  }
+}
+
+function organTone(c: AudioContext, midi: number, t: number, dur: number, vel: number, out: AudioNode) {
+  // tay kéo kiểu organ điện: 16' 8' 4' 2 2/3' 2'
+  const f = midiToHz(midi);
+  const end = t + Math.max(0.1, dur);
+  const env = c.createGain();
+  const peak = 0.16 * vel;
+  env.gain.setValueAtTime(0.0001, t);
+  env.gain.exponentialRampToValueAtTime(peak, t + 0.01);
+  env.gain.setValueAtTime(peak, end);
+  env.gain.exponentialRampToValueAtTime(0.0001, end + 0.05);
+  env.connect(out);
+  for (const [mult, g] of [[0.5, 0.5], [1, 0.8], [2, 0.5], [3, 0.3], [4, 0.25]]) {
+    const o = c.createOscillator();
+    const og = c.createGain();
+    o.frequency.value = f * mult;
+    og.gain.value = g;
+    o.connect(og).connect(env);
+    o.start(t);
+    o.stop(end + 0.08);
+  }
+  // tiếng "click" phím organ
+  hammer(c, t, 2000, 0.03 * vel, out);
+}
+
+/** Âm sắc gần giống harmonica: sóng răng cưa + vuông qua lọc thông thấp, có rung nhẹ */
+function harmonicaTone(c: AudioContext, midi: number, t: number, dur: number, velocity: number, out: AudioNode): void {
+  const f = midiToHz(midi);
   const end = t + Math.max(0.06, dur);
 
   const o1 = c.createOscillator();
@@ -101,7 +400,7 @@ export function playTone(midi: number, when: number, dur: number, velocity = 1, 
 
   o1.connect(filter);
   o2.connect(mix2).connect(filter);
-  filter.connect(env).connect(out ?? melodyBus);
+  filter.connect(env).connect(out);
 
   // tiếng hơi thở nhẹ lúc bắt đầu
   const br = c.createBufferSource();
@@ -113,7 +412,7 @@ export function playTone(midi: number, when: number, dur: number, velocity = 1, 
   const brG = c.createGain();
   brG.gain.setValueAtTime(0.05 * velocity, t);
   brG.gain.exponentialRampToValueAtTime(0.0001, t + 0.08);
-  br.connect(brF).connect(brG).connect(out ?? melodyBus);
+  br.connect(brF).connect(brG).connect(out);
 
   for (const o of [o1, o2, lfo]) { o.start(t); o.stop(end + 0.02); }
   br.start(t, Math.random() * 0.5);
@@ -125,13 +424,14 @@ export type DrumKit = 'acoustic' | 'electronic' | 'soft';
 let kit: DrumKit = 'acoustic';
 let humanVel = 0;
 
-export interface MixSettings { kit: DrumKit; beatVol: number; melodyVol: number; bassVol: number; reverb: number }
-let mix: MixSettings = { kit: 'acoustic', beatVol: 0.6, melodyVol: 0.55, bassVol: 0.7, reverb: 0.25 };
+export interface MixSettings { kit: DrumKit; instrument: Instrument; beatVol: number; melodyVol: number; bassVol: number; reverb: number }
+let mix: MixSettings = { kit: 'acoustic', instrument: 'harmonica', beatVol: 0.6, melodyVol: 0.55, bassVol: 0.7, reverb: 0.25 };
 
 /** Áp âm lượng / bộ trống / độ vang; chưa có AudioContext thì để dành áp lúc khởi tạo */
 export function applyMix(m: MixSettings) {
-  mix = { kit: m.kit, beatVol: m.beatVol, melodyVol: m.melodyVol, bassVol: m.bassVol, reverb: m.reverb };
+  mix = { kit: m.kit, instrument: m.instrument, beatVol: m.beatVol, melodyVol: m.melodyVol, bassVol: m.bassVol, reverb: m.reverb };
   kit = m.kit;
+  instrument = INSTRUMENT_OPTIONS.some((o) => o.value === m.instrument) ? m.instrument : 'harmonica';
   if (!ctx) return;
   const t = ctx.currentTime;
   drumBus.gain.setTargetAtTime(m.beatVol, t, 0.02);

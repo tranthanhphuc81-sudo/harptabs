@@ -15,6 +15,27 @@ export interface Chord {
 
 export interface ChordSpan { start: number; end: number; chord: Chord }
 
+/** Một khúc hợp âm (nửa ô nhịp hoặc cả ô nhịp); manual = người dùng tự chọn */
+export interface ChordSegment extends ChordSpan { manual: boolean }
+
+/** Hợp âm chọn tay của bài: khoá = phách bắt đầu khúc, giá trị = tên hợp âm ("G", "Am", "N.C.") */
+export type ChordOverrides = Record<string, string>;
+
+export const NO_CHORD = 'N.C.';
+
+export const segKey = (beat: number) => String(Math.round(beat * 1000) / 1000);
+
+/** "G", "F#m", "Bbm", "N.C." → hợp âm; null nếu không đọc được. N.C. = không đệm (root = -1) */
+export function parseChord(name: string): Chord | null {
+  const t = name.trim();
+  if (t.toUpperCase() === NO_CHORD) return { root: -1, minor: false, name: NO_CHORD };
+  const m = /^([A-G])([#b]?)(m?)$/.exec(t);
+  if (!m) return null;
+  const midi = nameToMidi(m[1] + m[2] + '4');
+  if (midi === null) return null;
+  return { root: mod12(midi), minor: !!m[3], name: m[1] + m[2] + m[3] };
+}
+
 export interface Tonality { tonic: number; minor: boolean }
 
 interface NoteLike { start: number; beats: number; midi: number | null }
@@ -92,15 +113,50 @@ function segmentBeats(beatsPerBar: number): number {
   return beatsPerBar;
 }
 
-export function harmonize(notes: NoteLike[], beatsPerBar: number, pickupBeats: number, tonality?: Tonality | null): ChordSpan[] {
+/** Các hợp âm hay dùng trong tông (để gợi ý khi chọn tay) */
+export function diatonicChords(key: Tonality): Chord[] {
+  return (key.minor ? MINOR_CANDS : MAJOR_CANDS).map((c) => {
+    const root = mod12(key.tonic + c.deg);
+    return { root, minor: c.minor, name: chordName(root, c.minor, usesFlats(key)) };
+  });
+}
+
+export function keyUsesFlats(key: Tonality): boolean {
+  return usesFlats(key);
+}
+
+export function harmonize(notes: NoteLike[], beatsPerBar: number, pickupBeats: number, tonality?: Tonality | null, overrides?: ChordOverrides): ChordSpan[] {
+  // gộp các khúc liền nhau cùng hợp âm
+  const out: ChordSpan[] = [];
+  for (const s of harmonizeSegments(notes, beatsPerBar, pickupBeats, tonality, overrides)) {
+    const prev = out[out.length - 1];
+    if (prev && prev.chord.name === s.chord.name) prev.end = s.end;
+    else out.push({ start: s.start, end: s.end, chord: s.chord });
+  }
+  return out;
+}
+
+export function harmonizeSegments(notes: NoteLike[], beatsPerBar: number, pickupBeats: number, tonality?: Tonality | null, overrides?: ChordOverrides): ChordSegment[] {
   const played = notes.filter((n) => n.midi !== null);
   if (!played.length) return [];
   const end = Math.max(...notes.map((n) => n.start + n.beats));
   const key = tonality ?? estimateTonality(notes);
-  const cands = (key.minor ? MINOR_CANDS : MAJOR_CANDS).map((c) => {
+  const cands: (Candidate & { chord: Chord })[] = (key.minor ? MINOR_CANDS : MAJOR_CANDS).map((c) => {
     const root = mod12(key.tonic + c.deg);
     return { ...c, chord: { root, minor: c.minor, name: chordName(root, c.minor, usesFlats(key)) } };
   });
+  // hợp âm chọn tay ngoài tông: thêm vào danh sách nhưng không bao giờ tự chọn
+  const forced = new Map<string, number>();
+  for (const [b, name] of Object.entries(overrides ?? {})) {
+    const ch = parseChord(name);
+    if (!ch) continue;
+    let idx = cands.findIndex((c) => c.chord.root === ch.root && c.chord.minor === ch.minor && ch.root >= 0);
+    if (idx < 0) {
+      idx = cands.length;
+      cands.push({ deg: ch.root < 0 ? -1 : mod12(ch.root - key.tonic), minor: ch.minor, prior: -20, chord: ch });
+    }
+    forced.set(b, idx);
+  }
 
   const seg = segmentBeats(beatsPerBar);
   const bounds: number[] = [0];
@@ -120,7 +176,10 @@ export function harmonize(notes: NoteLike[], beatsPerBar: number, pickupBeats: n
       w[mod12(n.midi!)] += wt;
       total += wt;
     }
-    return cands.map((c) => {
+    const f = forced.get(segKey(start));
+    return cands.map((c, ci) => {
+      if (f !== undefined) return ci === f ? 0 : -1e6;
+      if (c.chord.root < 0) return -1e6;
       if (total === 0) return c.prior * 0.3;
       const r = c.chord.root;
       const third = mod12(r + (c.minor ? 3 : 4));
@@ -159,15 +218,7 @@ export function harmonize(notes: NoteLike[], beatsPerBar: number, pickupBeats: n
   const pick: number[] = new Array(n);
   for (let i = n - 1; i >= 0; i--) { pick[i] = j; j = from[i][j]; }
 
-  // gộp các khúc liền nhau cùng hợp âm
-  const out: ChordSpan[] = [];
-  segs.forEach((s, i) => {
-    const chord = cands[pick[i]].chord;
-    const prev = out[out.length - 1];
-    if (prev && prev.chord.name === chord.name) prev.end = s.end;
-    else out.push({ start: s.start, end: s.end, chord });
-  });
-  return out;
+  return segs.map((s, i) => ({ ...s, chord: cands[pick[i]].chord, manual: forced.has(segKey(s.start)) }));
 }
 
 function mod(a: number, n: number) {
@@ -189,4 +240,16 @@ export function chordAt(spans: ChordSpan[], beat: number): Chord | null {
 export function bassMidi(chord: Chord, fifth = false): number {
   const pc = mod12(chord.root + (fifth ? 7 : 0));
   return 40 + mod12(pc - 4);
+}
+
+/** Dịch hợp âm chọn tay khi bài bị dịch giọng `semitones` nửa cung */
+export function transposeChords(chords: ChordOverrides | undefined, semitones: number, flats = false): ChordOverrides | undefined {
+  if (!chords || semitones % 12 === 0) return chords;
+  const out: ChordOverrides = {};
+  for (const [b, name] of Object.entries(chords)) {
+    const c = parseChord(name);
+    if (!c) continue;
+    out[b] = c.root < 0 ? NO_CHORD : chordName(c.root + semitones, c.minor, flats);
+  }
+  return out;
 }

@@ -126,7 +126,14 @@ function sanitize(raw: Record<string, unknown>): Song | null {
     bpm: Math.min(300, Math.max(20, Number(raw.bpm) || 90)),
     tags: Array.isArray(raw.tags) ? raw.tags.filter((t): t is string => typeof t === 'string') : [],
     favorite: !!raw.favorite,
+    chords: sanitizeChords(raw.chords),
   };
+}
+
+function sanitizeChords(v: unknown): Record<string, string> | undefined {
+  if (!v || typeof v !== 'object') return undefined;
+  const out = Object.fromEntries(Object.entries(v).filter(([k, c]) => Number.isFinite(Number(k)) && typeof c === 'string' && c.length <= 8));
+  return Object.keys(out).length ? out : undefined;
 }
 
 /** Nhập file sao lưu. Bài trùng id: giữ bản mới hơn. Trả về số bài đã thêm/cập nhật. */

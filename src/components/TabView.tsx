@@ -1,6 +1,7 @@
 import { memo, useEffect, useMemo, useRef } from 'react';
 import { midiToName, NoteNameStyle } from '../lib/harp';
 import { FlatEvent, ParsedTab } from '../lib/tabText';
+import type { ChordSegment } from '../audio/harmony';
 
 interface Props {
   parsed: ParsedTab;
@@ -11,6 +12,9 @@ interface Props {
   nameStyle?: NoteNameStyle;
   size?: 's' | 'm' | 'l';
   compact?: boolean;
+  /** hiện hợp âm đệm trên nốt; chạm vào để chọn hợp âm khác */
+  chords?: ChordSegment[] | null;
+  onChordClick?: (seg: ChordSegment) => void;
 }
 
 export function TokenText({ token }: { token: string }) {
@@ -26,7 +30,7 @@ export function TokenText({ token }: { token: string }) {
   );
 }
 
-function TabViewInner({ parsed, flat, active, onNoteClick, showNames, nameStyle = 'letter', size = 'm', compact }: Props) {
+function TabViewInner({ parsed, flat, active, onNoteClick, showNames, nameStyle = 'letter', size = 'm', compact, chords, onChordClick }: Props) {
   const ref = useRef<HTMLDivElement>(null);
   const lastLine = useRef<string>('');
 
@@ -35,6 +39,20 @@ function TabViewInner({ parsed, flat, active, onNoteClick, showNames, nameStyle 
     flat.forEach((f, i) => m.set(`${f.sectionIndex}.${f.lineIndex}.${f.eventIndex}`, i));
     return m;
   }, [flat]);
+
+  // khúc hợp âm gắn vào nốt đang vang ở đầu khúc
+  const chordsAt = useMemo(() => {
+    const m = new Map<number, ChordSegment[]>();
+    if (!chords) return m;
+    let i = 0;
+    for (const seg of chords) {
+      while (i < flat.length - 1 && flat[i].start + flat[i].beats <= seg.start + 1e-6) i++;
+      const list = m.get(i) ?? [];
+      list.push(seg);
+      m.set(i, list);
+    }
+    return m;
+  }, [chords, flat]);
 
   useEffect(() => {
     if (active == null || !ref.current) return;
@@ -70,7 +88,7 @@ function TabViewInner({ parsed, flat, active, onNoteClick, showNames, nameStyle 
                   const cls = ['nt', isRest ? 'rest' : draw ? 'draw' : 'blow', bad ? 'bad' : '', fi === active ? 'is-active' : '']
                     .filter(Boolean).join(' ');
                   const label = isRest ? `nghỉ ${ev.beats} phách` : `${draw ? 'hút' : 'thổi'} lỗ ${ev.token!.replace('-', '')}${ev.lyric ? `, ${ev.lyric}` : ''}`;
-                  return (
+                  const note = (
                     <button
                       type="button"
                       key={ei}
@@ -85,6 +103,22 @@ function TabViewInner({ parsed, flat, active, onNoteClick, showNames, nameStyle 
                       <span className="nt-hole">{isRest ? '–' : <TokenText token={ev.token!} />}</span>
                       <span className="nt-lyric">{ev.lyric ? ev.lyric + (ev.hyphen ? '-' : '') : ' '}</span>
                     </button>
+                  );
+                  if (!chords) return note;
+                  const segs = chordsAt.get(fi);
+                  return (
+                    <span key={ei} className="nt-cell">
+                      <span className="nt-chords">
+                        {segs?.map((seg) => (
+                          <button key={seg.start} type="button" className={`nt-chord${seg.manual ? ' manual' : ''}`}
+                            onClick={onChordClick ? () => onChordClick(seg) : undefined}
+                            aria-label={`Hợp âm ${seg.chord.name}${seg.manual ? ' (chọn tay)' : ' (tự đoán)'}, chạm để đổi`}>
+                            {seg.chord.name}
+                          </button>
+                        ))}
+                      </span>
+                      {note}
+                    </span>
                   );
                 })}
               </div>

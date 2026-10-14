@@ -3,7 +3,7 @@ import { SAMPLE_SONGS } from '../data/samples';
 import { flatten, parseTab } from '../lib/tabText';
 import { beatsPerBar } from '../lib/types';
 import { songTonality } from '../lib/harp';
-import { bassMidi, chordAt, estimateTonality, harmonize, parseTonality } from './harmony';
+import { bassMidi, chordAt, estimateTonality, harmonize, harmonizeSegments, parseChord, parseTonality, transposeChords } from './harmony';
 
 const song = (id: string) => {
   const s = SAMPLE_SONGS.find((x) => x.sampleId === id)!;
@@ -51,5 +51,27 @@ describe('đệm hợp âm', () => {
 
   it('bài trống không có hợp âm', () => {
     expect(harmonize([], 4, 0)).toEqual([]);
+  });
+
+  it('hợp âm chọn tay ghi đè hợp âm tự đoán, kể cả ngoài giọng', () => {
+    const { s: sg, flat } = song('twinkle');
+    const key = parseTonality('C');
+    const segs = harmonizeSegments(flat, beatsPerBar(sg.timeSig), sg.pickupBeats, key, { '4': 'Am', '6': 'E', '8': 'N.C.' });
+    const at = (b: number) => segs.find((x) => x.start === b)!;
+    expect(at(4).chord.name).toBe('Am');
+    expect(at(4).manual).toBe(true);
+    expect(at(6).chord.name).toBe('E');
+    expect(at(8).chord.root).toBe(-1);
+    expect(at(0).manual).toBe(false);
+    // khúc khác vẫn tự đoán bình thường, không bị hợp âm ngoài giọng lan sang
+    expect(segs.filter((x) => !x.manual).every((x) => x.chord.name !== 'E' && x.chord.root >= 0)).toBe(true);
+  });
+
+  it('đọc tên hợp âm và dịch giọng', () => {
+    expect(parseChord('F#m')).toEqual({ root: 6, minor: true, name: 'F#m' });
+    expect(parseChord('Bb')?.root).toBe(10);
+    expect(parseChord('xyz')).toBeNull();
+    expect(transposeChords({ '0': 'C', '2': 'Am', '4': 'N.C.' }, 7)).toEqual({ '0': 'G', '2': 'Em', '4': 'N.C.' });
+    expect(transposeChords({ '0': 'C' }, 12)).toEqual({ '0': 'C' });
   });
 });

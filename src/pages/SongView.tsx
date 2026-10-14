@@ -17,6 +17,9 @@ import type { SongScan } from '../lib/scanStore';
 import { useAppState } from '../state';
 import { MicPitch, PitchReading } from '../audio/pitch';
 import { previewNote } from '../audio/engine';
+import { ChordSegment, harmonizeSegments, parseTonality, segKey, transposeChords } from '../audio/harmony';
+import { setBeatPrefs, useBeatPrefs } from '../audio/beatPrefs';
+import { ChordPicker } from '../components/ChordPicker';
 
 export default function SongView() {
   const { id } = useParams();
@@ -38,7 +41,30 @@ function SongPlayerView({ song }: { song: Song }) {
     bpm: song.bpm, tempoScale: 1, beatsPerBar: bpb, pickupBeats: song.pickupBeats,
     style: song.style, melody: true, beat: song.style !== 'none', click: false, countIn: true,
     songKey: song.songKey || songTonality(song.harpKey, song.position),
+    chordOverrides: song.chords,
   });
+
+  // ----- hợp âm đệm: hiện trên tab, chọn tay khi máy đoán sai -----
+  const beatPrefs = useBeatPrefs();
+  const tonality = useMemo(() => parseTonality(song.songKey || songTonality(song.harpKey, song.position))!, [song.songKey, song.harpKey, song.position]);
+  const chordSegs = useMemo(
+    () => (beatPrefs.showChords ? harmonizeSegments(flat, bpb, song.pickupBeats, tonality, song.chords) : null),
+    [beatPrefs.showChords, flat, bpb, song.pickupBeats, tonality, song.chords],
+  );
+  const [chordEdit, setChordEdit] = useState<ChordSegment | null>(null);
+  const pickChord = (seg: ChordSegment, name: string | null) => {
+    const next = { ...(song.chords ?? {}) };
+    if (name === null) delete next[segKey(seg.start)];
+    else next[segKey(seg.start)] = name;
+    void db.songs.update(song.id, { chords: Object.keys(next).length ? next : undefined, updatedAt: Date.now() });
+  };
+  const chordWhere = (seg: ChordSegment) => {
+    if (seg.start < song.pickupBeats - 1e-6) return 'ở ô lấy đà';
+    const bar = Math.floor((seg.start - song.pickupBeats) / bpb + 1e-6) + 1;
+    const half = Math.abs(((seg.start - song.pickupBeats) % bpb)) > 1e-6;
+    return `ô nhịp ${bar}${half ? ' (nửa sau)' : ''}`;
+  };
+  const manualCount = Object.keys(song.chords ?? {}).length;
 
   const [focus, setFocus] = useState<number | null>(null);
   const [showDiagram, setShowDiagram] = useState(false);
@@ -201,7 +227,12 @@ function SongPlayerView({ song }: { song: Song }) {
         <span className="lg draw">−4</span> hút
         <span className="lg bend">′</span> bend nửa cung
         <span className="muted">Chạm vào nốt để nghe, hoặc chọn chỗ bắt đầu phát.</span>
+        <button type="button" className={`chip legend-chords${beatPrefs.showChords ? ' on' : ''}`} aria-pressed={beatPrefs.showChords}
+          onClick={() => setBeatPrefs({ showChords: !beatPrefs.showChords })}>
+          Hợp âm{manualCount > 0 ? ` (${manualCount} chọn tay)` : ''}
+        </button>
       </p>
+      {beatPrefs.showChords && <p className="small muted">Chạm vào tên hợp âm trên nốt để đổi. Viền đậm là hợp âm bạn đã chọn tay.</p>}
 
       {waitMode && (
         <div className="wait-banner" role="status">
@@ -223,6 +254,8 @@ function SongPlayerView({ song }: { song: Song }) {
         showNames={settings.showNoteNames}
         nameStyle={settings.noteNames}
         size={settings.tabSize}
+        chords={chordSegs}
+        onChordClick={setChordEdit}
       />
 
       <div className="below-tab">
@@ -244,6 +277,16 @@ function SongPlayerView({ song }: { song: Song }) {
           </button>
         }
       />
+
+      {chordEdit && (
+        <ChordPicker
+          seg={chordEdit}
+          tonality={tonality}
+          where={chordWhere(chordEdit)}
+          onPick={(name) => pickChord(chordEdit, name)}
+          onClose={() => setChordEdit(null)}
+        />
+      )}
 
       {rekeyOpen && (
         <RekeyDialog
@@ -270,11 +313,11 @@ function RekeyDialog({ song, onClose, onDone }: { song: Song; onClose: () => voi
     const shiftNote = preview.fit.shift % 12 !== 0 ? ` Đã dịch giọng ${preview.fit.shift > 0 ? '+' : ''}${preview.fit.shift} nửa cung.` : '';
     if (asNew) {
       const id = newId();
-      await db.songs.put({ ...song, id, title: `${song.title} (kèn ${target})`, harpKey: target, body: preview.body, songKey: undefined, source: 'user', createdAt: now, updatedAt: now, favorite: false });
+      await db.songs.put({ ...song, id, title: `${song.title} (kèn ${target})`, harpKey: target, body: preview.body, songKey: undefined, chords: transposeChords(song.chords, preview.fit.shift), source: 'user', createdAt: now, updatedAt: now, favorite: false });
       toast(`Đã tạo bản cho kèn ${target}.${shiftNote}`);
       onDone(id);
     } else {
-      await db.songs.update(song.id, { harpKey: target, body: preview.body, songKey: mode === 'octave' ? song.songKey : undefined, updatedAt: now });
+      await db.songs.update(song.id, { harpKey: target, body: preview.body, songKey: mode === 'octave' ? song.songKey : undefined, chords: transposeChords(song.chords, preview.fit.shift), updatedAt: now });
       toast(`Đã chuyển sang kèn ${target}.${shiftNote}`);
       onDone(song.id);
     }

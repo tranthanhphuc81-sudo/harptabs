@@ -11,6 +11,8 @@ export interface Song {
   /** vị trí chơi (1 = thẳng, 2 = cross harp, 3 = slant) */
   position?: 1 | 2 | 3;
   songKey?: string;
+  /** hợp âm chọn tay: phách bắt đầu khúc → tên hợp âm (xem audio/harmony.ts) */
+  chords?: Record<string, string>;
   bpm: number;
   /** ví dụ "4/4", "3/4" */
   timeSig: string;

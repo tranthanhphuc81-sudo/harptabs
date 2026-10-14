@@ -44,8 +44,8 @@ export function usePlayer(flat: FlatEvent[], init: Omit<PlayerOptions, 'loop'> &
 
   // đồng bộ khi bài thay đổi tempo/nhịp gốc
   useEffect(() => {
-    setOptsState((o) => ({ ...o, bpm: init.bpm, beatsPerBar: init.beatsPerBar, pickupBeats: init.pickupBeats, style: init.style, songKey: init.songKey }));
-  }, [init.bpm, init.beatsPerBar, init.pickupBeats, init.style, init.songKey]);
+    setOptsState((o) => ({ ...o, bpm: init.bpm, beatsPerBar: init.beatsPerBar, pickupBeats: init.pickupBeats, style: init.style, songKey: init.songKey, chordOverrides: init.chordOverrides }));
+  }, [init.bpm, init.beatsPerBar, init.pickupBeats, init.style, init.songKey, init.chordOverrides]);
 
   useEffect(() => {
     const prevStyle = player.options.style;

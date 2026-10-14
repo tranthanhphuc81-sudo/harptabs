@@ -1,5 +1,6 @@
 import { ReactNode, useState } from 'react';
 import { STYLE_OPTIONS, BeatStyle } from '../audio/patterns';
+import { INSTRUMENT_OPTIONS, Instrument, previewNote } from '../audio/engine';
 import { KIT_OPTIONS, resetBeatPrefs, setBeatPrefs, SWING_OPTIONS, useBeatPrefs } from '../audio/beatPrefs';
 import { Icon } from './Icon';
 import { PlayerState } from './usePlayer';
@@ -33,7 +34,16 @@ function Slider({ label, value, onChange }: { label: string; value: number; onCh
 function BeatTuner() {
   const b = useBeatPrefs();
   return (
-    <div className="beat-tuner" role="group" aria-label="Tuỳ chỉnh beat">
+    <div className="beat-tuner" role="group" aria-label="Tuỳ chỉnh âm thanh">
+      <label className="bt-row">
+        <span className="bt-label">Nhạc cụ</span>
+        <select className="chip-select" value={b.instrument} onChange={(e) => {
+          setBeatPrefs({ instrument: e.target.value as Instrument });
+          previewNote(67, 0.5);
+        }}>
+          {INSTRUMENT_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+        </select>
+      </label>
       <div className="bt-row">
         <span className="bt-label">Bộ trống</span>
         <div className="bt-seg">
@@ -88,7 +98,7 @@ export function PlayerBar({ p, loopLabel, onToggleLoop, extra }: Props) {
             {STYLE_OPTIONS.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
           </select>
         </label>
-        <button type="button" className={`icon-btn pb-tune${tuner ? ' on' : ''}`} aria-pressed={tuner} aria-label="Chỉnh beat" title="Chỉnh beat" onClick={() => setTuner(!tuner)}>
+        <button type="button" className={`icon-btn pb-tune${tuner ? ' on' : ''}`} aria-pressed={tuner} aria-label="Chỉnh âm thanh: nhạc cụ, beat, bass" title="Chỉnh âm thanh" onClick={() => setTuner(!tuner)}>
           <Icon name="sliders" size={20} />
         </button>
       </div>

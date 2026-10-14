@@ -5,7 +5,7 @@
 import { FlatEvent } from '../lib/tabText';
 import { getBeatPrefs } from './beatPrefs';
 import { audio, bass, click, crash, hat, kick, playTone, rim, setHumanVelocity, shaker, snare, tom } from './engine';
-import { bassMidi, Chord, chordAt, ChordSpan, harmonize, parseTonality } from './harmony';
+import { bassMidi, Chord, chordAt, ChordOverrides, ChordSpan, harmonize, parseTonality } from './harmony';
 import { BeatPattern, BeatStyle, resolvePattern } from './patterns';
 
 export interface PlayerOptions {
@@ -20,6 +20,8 @@ export interface PlayerOptions {
   countIn: boolean;
   /** tông bài ("G", "Dm") để đệm hợp âm; bỏ trống thì tự đoán từ giai điệu */
   songKey?: string;
+  /** hợp âm chọn tay (ghi đè hợp âm tự đoán) */
+  chordOverrides?: ChordOverrides;
   loop: { start: number; end: number } | null;
 }
 
@@ -57,10 +59,10 @@ export class Player {
 
   private updateChords() {
     const o = this.opts;
-    const k = `${o.beatsPerBar}|${o.pickupBeats}|${o.songKey ?? ''}`;
+    const k = `${o.beatsPerBar}|${o.pickupBeats}|${o.songKey ?? ''}|${JSON.stringify(o.chordOverrides ?? {})}`;
     if (k === this.chordKey) return;
     this.chordKey = k;
-    this.chords = harmonize(this.events, o.beatsPerBar, o.pickupBeats, parseTonality(o.songKey));
+    this.chords = harmonize(this.events, o.beatsPerBar, o.pickupBeats, parseTonality(o.songKey), o.chordOverrides);
   }
 
   /** Hợp âm đệm tại vị trí (phách) */
@@ -142,7 +144,7 @@ export class Player {
     const ch = track[stepIdx];
     if (!force && ch !== 'x' && ch !== 'X') return;
     const chord = this.chordAt(beat + 1e-3);
-    if (!chord) return;
+    if (!chord || chord.root < 0) return;
     const len = track.length;
     let gap = 1;
     while (gap < len && track[(stepIdx + gap) % len] === '.') gap++;

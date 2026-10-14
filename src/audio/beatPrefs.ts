@@ -2,9 +2,11 @@
  * Tuỳ chỉnh âm thanh beat (dùng chung cho mọi trang phát, lưu trên máy).
  */
 import { useSyncExternalStore } from 'react';
-import { applyMix, DrumKit } from './engine';
+import { applyMix, DrumKit, Instrument } from './engine';
 
 export interface BeatPrefs {
+  /** nhạc cụ phát giai điệu */
+  instrument: Instrument;
   kit: DrumKit;
   /** độ lắc phách lẻ: 0 = thẳng … 0.33 = chùm ba */
   swing: number;
@@ -19,11 +21,13 @@ export interface BeatPrefs {
   melodyVol: number;
   bassVol: number;
   reverb: number;
+  /** hiện hợp âm đệm trên tab */
+  showChords: boolean;
 }
 
 export const DEFAULT_BEAT_PREFS: BeatPrefs = {
-  kit: 'acoustic', swing: 0, humanize: true, fills: false, bass: true,
-  beatVol: 0.6, melodyVol: 0.55, bassVol: 0.7, reverb: 0.25,
+  instrument: 'harmonica', kit: 'acoustic', swing: 0, humanize: true, fills: false, bass: true,
+  beatVol: 0.6, melodyVol: 0.55, bassVol: 0.7, reverb: 0.25, showChords: false,
 };
 
 export const KIT_OPTIONS: { value: DrumKit; label: string }[] = [
@@ -64,7 +68,7 @@ export function setBeatPrefs(p: Partial<BeatPrefs>) {
 }
 
 export function resetBeatPrefs() {
-  setBeatPrefs({ ...DEFAULT_BEAT_PREFS });
+  setBeatPrefs({ ...DEFAULT_BEAT_PREFS, showChords: prefs.showChords });
 }
 
 export function useBeatPrefs(): BeatPrefs {
