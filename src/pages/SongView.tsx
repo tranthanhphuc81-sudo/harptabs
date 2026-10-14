@@ -20,6 +20,7 @@ import { previewNote } from '../audio/engine';
 import { ChordSegment, harmonizeSegments, parseTonality, segKey, transposeChords } from '../audio/harmony';
 import { setBeatPrefs, useBeatPrefs } from '../audio/beatPrefs';
 import { ChordPicker } from '../components/ChordPicker';
+import { suggestStyle } from '../audio/suggest';
 
 export default function SongView() {
   const { id } = useParams();
@@ -65,6 +66,7 @@ function SongPlayerView({ song }: { song: Song }) {
     return `ô nhịp ${bar}${half ? ' (nửa sau)' : ''}`;
   };
   const manualCount = Object.keys(song.chords ?? {}).length;
+  const autoStyle = useMemo(() => suggestStyle(song, flat), [song, flat]);
 
   const [focus, setFocus] = useState<number | null>(null);
   const [showDiagram, setShowDiagram] = useState(false);
@@ -271,6 +273,7 @@ function SongPlayerView({ song }: { song: Song }) {
         p={player}
         loopLabel={loopInfo?.label}
         onToggleLoop={toggleLoop}
+        autoStyle={autoStyle}
         extra={
           <button type="button" className={`chip${waitMode ? ' on' : ''}`} aria-pressed={waitMode} onClick={() => (waitMode ? stopWait() : startWait())}>
             <Icon name="mic" size={15} /> Chờ nốt

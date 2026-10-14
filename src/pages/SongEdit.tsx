@@ -5,6 +5,7 @@ import { HarpKey, normalizeKey, songTonality } from '../lib/harp';
 import { flatten, parseTab } from '../lib/tabText';
 import { beatsPerBar, Song } from '../lib/types';
 import { STYLE_OPTIONS, BeatStyle } from '../audio/patterns';
+import { suggestStyle } from '../audio/suggest';
 import { KeySelect } from '../components/KeySelect';
 import { TabView } from '../components/TabView';
 import { Icon } from '../components/Icon';
@@ -149,12 +150,19 @@ function Editor({ initial, isNew }: { initial: Song; isNew: boolean }) {
             <span className="field-label">Phách lấy đà</span>
             <input type="number" min={0} max={8} step={0.5} value={s.pickupBeats} onChange={(e) => set('pickupBeats', Math.max(0, Number(e.target.value) || 0))} />
           </label>
-          <label className="field">
-            <span className="field-label">Beat mẫu</span>
-            <select value={s.style} onChange={(e) => set('style', e.target.value as BeatStyle)}>
-              {STYLE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-            </select>
-          </label>
+          <div className="field">
+            <label className="field-label" htmlFor="song-style">Beat mẫu</label>
+            <div className="row gap">
+              <select id="song-style" value={s.style} onChange={(e) => set('style', e.target.value as BeatStyle)}>
+                {STYLE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+              </select>
+              <button type="button" className="btn btn-ghost" title="Chọn kiểu nhịp hợp với bài" onClick={() => {
+                const g = suggestStyle({ ...s, tags: tagText.split(',').map((t) => t.trim()).filter(Boolean) }, flat);
+                set('style', g.style);
+                toast(`Tự chọn: ${STYLE_OPTIONS.find((o) => o.value === g.style)?.label} — ${g.reason}`);
+              }}>✨ Tự chọn</button>
+            </div>
+          </div>
           <label className="field">
             <span className="field-label">Độ khó</span>
             <select value={s.difficulty} onChange={(e) => set('difficulty', Number(e.target.value) as 1 | 2 | 3)}>

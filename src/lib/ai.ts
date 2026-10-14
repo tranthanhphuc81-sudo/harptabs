@@ -7,6 +7,7 @@ import { fitToHarp, rankHarpKeys, TabFit } from './converter';
 import { TabEvent, TabSection, serializeTab } from './tabText';
 import type { Settings } from './types';
 import type { BeatStyle } from '../audio/patterns';
+import { suggestStyle } from '../audio/suggest';
 
 export async function transcribe(input: AiInput, s: Settings, signal?: AbortSignal): Promise<AiResponse> {
   const err = validateInput(input);
@@ -115,8 +116,16 @@ export function aiToTab(r: AiTranscription, targetKey: HarpKey | 'auto', allowTr
     });
   }));
 
-  const beats = Number((r.timeSignature ?? '4/4').split('/')[0]) || 4;
-  const style: BeatStyle = r.style ?? (beats === 3 ? 'waltz' : 'ballad');
+  // AI / máy quét không cho kiểu nhịp thì tự chọn theo giai điệu, nhịp, tốc độ, tên bài
+  let style: BeatStyle | undefined = r.style;
+  if (!style) {
+    const notes: { start: number; beats: number; midi: number | null; lyric?: string }[] = [];
+    let t = 0;
+    sections.forEach((s) => s.lines.forEach((l) => {
+      if (l.kind === 'tab') l.events.forEach((e) => { notes.push({ start: t, beats: e.beats, midi: e.midi, lyric: e.lyric }); t += e.beats; });
+    }));
+    style = suggestStyle({ title: r.title, timeSig: r.timeSignature ?? '4/4', bpm: r.tempo ?? 90, pickupBeats: r.pickupBeats, songKey: r.songKey }, notes).style;
+  }
   return {
     body: serializeTab(sections),
     harpKey: fit.key,

@@ -1,5 +1,6 @@
 import { ReactNode, useState } from 'react';
 import { STYLE_OPTIONS, BeatStyle } from '../audio/patterns';
+import type { StyleSuggestion } from '../audio/suggest';
 import { INSTRUMENT_OPTIONS, Instrument, previewNote } from '../audio/engine';
 import { KIT_OPTIONS, resetBeatPrefs, setBeatPrefs, SWING_OPTIONS, useBeatPrefs } from '../audio/beatPrefs';
 import { Icon } from './Icon';
@@ -10,6 +11,8 @@ interface Props {
   loopLabel?: string | null;
   onToggleLoop?: () => void;
   extra?: ReactNode;
+  /** kiểu nhịp app tự chọn cho bài (hiện lựa chọn "Tự chọn theo bài") */
+  autoStyle?: StyleSuggestion | null;
 }
 
 function Toggle({ on, onClick, children }: { on: boolean; onClick: () => void; children: ReactNode }) {
@@ -93,9 +96,11 @@ function BeatTuner() {
   );
 }
 
-export function PlayerBar({ p, loopLabel, onToggleLoop, extra }: Props) {
+export function PlayerBar({ p, loopLabel, onToggleLoop, extra, autoStyle }: Props) {
   const { opts, setOpts } = p;
   const [tuner, setTuner] = useState(false);
+  const [autoPicked, setAutoPicked] = useState(false);
+  const styleLabel = (v: BeatStyle) => STYLE_OPTIONS.find((s) => s.value === v)?.label ?? v;
   const prefs = useBeatPrefs();
   const eff = Math.round(opts.bpm * opts.tempoScale);
   const step = (d: number) => setOpts({ tempoScale: Math.min(1.6, Math.max(0.4, Math.round((opts.tempoScale + d) * 100) / 100)) });
@@ -117,7 +122,16 @@ export function PlayerBar({ p, loopLabel, onToggleLoop, extra }: Props) {
         {p.countIn == null && p.chord && opts.beat && (prefs.bass || prefs.comp) && <div className="pb-chord" title="Hợp âm đệm">{p.chord}</div>}
         <label className="pb-style">
           <span className="sr-only">Kiểu beat</span>
-          <select value={opts.style} onChange={(e) => setOpts({ style: e.target.value as BeatStyle })}>
+          <select value={opts.style} onChange={(e) => {
+            if (e.target.value === '__auto' && autoStyle) {
+              setOpts({ style: autoStyle.style, beat: true });
+              setAutoPicked(true);
+            } else {
+              setOpts({ style: e.target.value as BeatStyle });
+              setAutoPicked(false);
+            }
+          }}>
+            {autoStyle && <option value="__auto">✨ Tự chọn theo bài ({styleLabel(autoStyle.style)})</option>}
             {STYLE_OPTIONS.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
           </select>
         </label>
@@ -125,6 +139,9 @@ export function PlayerBar({ p, loopLabel, onToggleLoop, extra }: Props) {
           <Icon name="sliders" size={20} />
         </button>
       </div>
+      {autoPicked && autoStyle && opts.style === autoStyle.style && (
+        <p className="pb-auto" role="status">✨ Tự chọn: <strong>{styleLabel(autoStyle.style)}</strong> — {autoStyle.reason}</p>
+      )}
       <div className="pb-chips">
         <Toggle on={opts.melody} onClick={() => setOpts({ melody: !opts.melody })}>Giai điệu</Toggle>
         <Toggle on={opts.beat} onClick={() => setOpts({ beat: !opts.beat })}>Beat</Toggle>

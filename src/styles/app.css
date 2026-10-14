@@ -759,3 +759,4 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .bt-group summary::-webkit-details-marker { display: none; }
 .bt-group summary::before { content: '▸'; color: var(--ink-2); width: 1ch; }
 .bt-group[open] summary::before { content: '▾'; }
+.pb-auto { margin: 0; font-size: 0.8rem; color: var(--ink-2); }
