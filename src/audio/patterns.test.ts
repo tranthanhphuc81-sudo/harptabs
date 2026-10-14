@@ -122,6 +122,14 @@ describe('beat mẫu', () => {
     expect(p.bassLine).toBe('w.w.w.w.');
   });
 
+  it('country: bass gốc ở phách 1, quãng 5 ở phách 3, hợp âm ở 2 & 4', () => {
+    const p = PATTERNS.country;
+    expect(p.bassLine![0]).toBe('r');
+    expect(p.bassLine![8]).toBe('f');
+    const on = (s: string) => [...s.slice(0, 16)].map((ch, i) => (ch !== '.' ? i : -1)).filter((i) => i >= 0);
+    expect(on(p.comp!)).toEqual([4, 12]);
+  });
+
   it('rumba: clave rumba 3-2 (1, 1a, 2&… 3&, 4)', () => {
     const c = PATTERNS.rumba.clave!.slice(0, 16);
     expect([...c].map((ch, i) => (ch !== '.' ? i : -1)).filter((i) => i >= 0)).toEqual([0, 3, 7, 10, 12]);
