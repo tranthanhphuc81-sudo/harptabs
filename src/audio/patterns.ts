@@ -16,7 +16,7 @@
  */
 export type BeatStyle =
   | 'none' | 'metronome' | 'rock' | 'ballad' | 'shuffle' | 'slowrock'
-  | 'train' | 'bolero' | 'rumba' | 'chacha' | 'tango' | 'bossa' | 'disco' | 'jazz' | 'reggae' | 'waltz';
+  | 'train' | 'bolero' | 'rumba' | 'chacha' | 'tango' | 'bossa' | 'disco' | 'jazz' | 'reggae' | 'ska' | 'waltz';
 
 export interface BeatPattern {
   label: string;
@@ -155,6 +155,15 @@ export const PATTERNS: Record<Exclude<BeatStyle, 'none' | 'metronome'>, BeatPatt
     openHat:  '................' + '..............x.',
     comp:     '....X.......X...' + '....X.......X.x.',
     bassLine: 'r.....r.f.....t.' + 'r.....r.f..f.a..',
+  },
+  ska: {
+    // guitar chặt hợp âm ở mọi nửa sau phách, snare 2 & 4, bass walking mỗi phách
+    label: 'Ska', hint: 'Nhanh, guitar chặt mọi nửa phách, bass walking', beats: 4, subdiv: 2,
+    kick:     'X...X...',
+    snare:    '..X...X.',
+    hat:      'xxxxxxxx',
+    comp:     '.X.X.X.X',
+    bassLine: 'w.w.w.w.',
   },
   waltz: {
     // "um" = bass phách 1 (gốc / quãng 5 xen kẽ từng ô), "pa pa" = hợp âm đệm phách 2, 3

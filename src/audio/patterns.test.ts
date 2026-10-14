@@ -115,6 +115,13 @@ describe('beat mẫu', () => {
     expect(on(p.comp!)).toEqual([4, 12]);
   });
 
+  it('ska: guitar chặt ở mọi nửa sau phách, bass walking mỗi phách', () => {
+    const p = PATTERNS.ska;
+    const on = (s: string) => [...s].map((ch, i) => (ch !== '.' ? i : -1)).filter((i) => i >= 0);
+    expect(on(p.comp!)).toEqual([1, 3, 5, 7]);
+    expect(p.bassLine).toBe('w.w.w.w.');
+  });
+
   it('rumba: clave rumba 3-2 (1, 1a, 2&… 3&, 4)', () => {
     const c = PATTERNS.rumba.clave!.slice(0, 16);
     expect([...c].map((ch, i) => (ch !== '.' ? i : -1)).filter((i) => i >= 0)).toEqual([0, 3, 7, 10, 12]);
