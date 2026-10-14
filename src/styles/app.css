@@ -751,3 +751,11 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .nt-chord.manual { border-style: solid; border-color: var(--ink); color: var(--ink); }
 .chord-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(3.4rem, 1fr)); gap: 6px; }
 .chord-grid .chip { justify-content: center; }
+.bt-group { border-top: 1px dashed var(--line); padding-top: 8px; }
+.bt-group summary { cursor: pointer; font-size: 0.9rem; font-weight: 600; min-height: 32px; display: flex; align-items: center; gap: 8px; }
+.bt-group summary .muted { font-weight: 400; font-size: 0.8rem; }
+.bt-group-body { display: flex; flex-direction: column; gap: 10px; padding-top: 8px; }
+.bt-group summary { list-style: none; }
+.bt-group summary::-webkit-details-marker { display: none; }
+.bt-group summary::before { content: '▸'; color: var(--ink-2); width: 1ch; }
+.bt-group[open] summary::before { content: '▾'; }

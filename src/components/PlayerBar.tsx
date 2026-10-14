@@ -31,8 +31,18 @@ function Slider({ label, value, onChange }: { label: string; value: number; onCh
 }
 
 /** Bảng chỉnh âm beat: bộ trống, lắc, dồn trống, âm lượng, độ vang */
+const PERC_OPEN_KEY = 'harptabs.percOpen';
+
 function BeatTuner() {
   const b = useBeatPrefs();
+  // nhớ mục "Bộ gõ" đang mở hay đóng (chỉ là tiện lợi trên máy này)
+  const [percOpen, setPercOpen] = useState(() => {
+    try { return localStorage.getItem(PERC_OPEN_KEY) === '1'; } catch { return false; }
+  });
+  const rememberPercOpen = (open: boolean) => {
+    setPercOpen(open);
+    try { localStorage.setItem(PERC_OPEN_KEY, open ? '1' : '0'); } catch { /* bỏ qua */ }
+  };
   return (
     <div className="beat-tuner" role="group" aria-label="Tuỳ chỉnh âm thanh">
       <label className="bt-row">
@@ -59,18 +69,25 @@ function BeatTuner() {
       <div className="bt-row bt-seg">
         <Toggle on={b.bass} onClick={() => setBeatPrefs({ bass: !b.bass })}>Bass</Toggle>
         <Toggle on={b.comp} onClick={() => setBeatPrefs({ comp: !b.comp })}>Đệm hợp âm</Toggle>
-        <Toggle on={b.bo} onClick={() => setBeatPrefs({ bo: !b.bo })}>Gõ bo</Toggle>
         <Toggle on={b.humanize} onClick={() => setBeatPrefs({ humanize: !b.humanize })}>Đánh như người thật</Toggle>
         <Toggle on={b.fills} onClick={() => setBeatPrefs({ fills: !b.fills })}>Dồn trống cuối câu</Toggle>
       </div>
       <Slider label="Âm lượng beat" value={b.beatVol} onChange={(v) => setBeatPrefs({ beatVol: v })} />
       {b.bass && <Slider label="Âm lượng bass" value={b.bassVol} onChange={(v) => setBeatPrefs({ bassVol: v })} />}
       {b.comp && <Slider label="Âm lượng đệm hợp âm" value={b.compVol} onChange={(v) => setBeatPrefs({ compVol: v })} />}
-      <Slider label="Âm lượng bo" value={b.boVol} onChange={(v) => setBeatPrefs({ boVol: v })} />
-      <Slider label="Âm lượng cowbell" value={b.bellVol} onChange={(v) => setBeatPrefs({ bellVol: v })} />
-      <Slider label="Âm lượng clap" value={b.clapVol} onChange={(v) => setBeatPrefs({ clapVol: v })} />
       <Slider label="Âm lượng giai điệu" value={b.melodyVol} onChange={(v) => setBeatPrefs({ melodyVol: v })} />
       <Slider label="Độ vang" value={b.reverb} onChange={(v) => setBeatPrefs({ reverb: v })} />
+      <details className="bt-group" open={percOpen} onToggle={(e) => rememberPercOpen((e.target as HTMLDetailsElement).open)}>
+        <summary>Bộ gõ <span className="muted">bo, cowbell, clap{b.bo ? ' · đang gõ bo' : ''}</span></summary>
+        <div className="bt-group-body">
+          <div className="bt-seg">
+            <Toggle on={b.bo} onClick={() => setBeatPrefs({ bo: !b.bo })}>Gõ bo</Toggle>
+          </div>
+          <Slider label="Âm lượng bo" value={b.boVol} onChange={(v) => setBeatPrefs({ boVol: v })} />
+          <Slider label="Âm lượng cowbell" value={b.bellVol} onChange={(v) => setBeatPrefs({ bellVol: v })} />
+          <Slider label="Âm lượng clap" value={b.clapVol} onChange={(v) => setBeatPrefs({ clapVol: v })} />
+        </div>
+      </details>
       <button type="button" className="btn btn-ghost bt-reset" onClick={resetBeatPrefs}>Về mặc định</button>
     </div>
   );
