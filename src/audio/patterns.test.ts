@@ -82,6 +82,12 @@ describe('beat mẫu', () => {
     for (const [name, p] of Object.entries(PATTERNS)) expect(p.comp, name).toBeTruthy();
   });
 
+  it('bossa nova: bass 1, 2&, 3, 4& và clave bossa', () => {
+    const on = (s: string) => [...s.slice(0, 16)].map((ch, i) => (ch !== '.' ? i : -1)).filter((i) => i >= 0);
+    expect(on(PATTERNS.bossa.kick!)).toEqual([0, 6, 8, 14]);
+    expect(on(PATTERNS.bossa.rim!)).toEqual([0, 3, 6, 10, 13]);
+  });
+
   it('rumba: clave rumba 3-2 (1, 1a, 2&… 3&, 4)', () => {
     const c = PATTERNS.rumba.clave!.slice(0, 16);
     expect([...c].map((ch, i) => (ch !== '.' ? i : -1)).filter((i) => i >= 0)).toEqual([0, 3, 7, 10, 12]);
