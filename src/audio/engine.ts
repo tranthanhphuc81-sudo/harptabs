@@ -722,6 +722,13 @@ export function cowbell(when: number, vel = 1) {
   }
 }
 
+/** vỗ tay: ba tiếng nhiễu sát nhau (nhiều người vỗ) rồi một đuôi ngắn */
+export function clap(when: number, vel = 1) {
+  vel = vary(vel) * (kit === 'soft' ? 0.6 : 1);
+  for (const [dt, g] of [[0, 0.3], [0.011, 0.26], [0.022, 0.22]]) noiseHit(when + dt, 'bandpass', 1200, 0.012, g * vel, 1.1);
+  noiseHit(when + 0.03, 'bandpass', 1100, kit === 'electronic' ? 0.18 : 0.12, 0.25 * vel, 0.9);
+}
+
 /** clave: hai thanh gỗ cứng gõ vào nhau — tiếng "cách" cao, ngân ngắn */
 export function clave(when: number, vel = 1) {
   vel = vary(vel) * (kit === 'soft' ? 0.7 : 1);

@@ -7,11 +7,13 @@
  *   guiro: X = cạo dài, x = cạo ngắn
  *   clave: x/X = gõ hai thanh gỗ
  *   cowbell: x/X = chuông bò (cencerro)
+ *   clap: x/X = vỗ tay
+ *   bassLine: đường bass riêng thay cho bass theo trống — r = gốc, o = gốc quãng tám trên, f = quãng 5
  *   comp: x/X = gõ hợp âm đệm (theo hợp âm đang dùng, công tắc "Đệm hợp âm")
  */
 export type BeatStyle =
   | 'none' | 'metronome' | 'rock' | 'ballad' | 'shuffle' | 'slowrock'
-  | 'train' | 'bolero' | 'rumba' | 'chacha' | 'tango' | 'bossa' | 'waltz';
+  | 'train' | 'bolero' | 'rumba' | 'chacha' | 'tango' | 'bossa' | 'disco' | 'waltz';
 
 export interface BeatPattern {
   label: string;
@@ -30,6 +32,8 @@ export interface BeatPattern {
   clave?: string;
   cowbell?: string;
   comp?: string;
+  clap?: string;
+  bassLine?: string;
 }
 
 export const PATTERNS: Record<Exclude<BeatStyle, 'none' | 'metronome'>, BeatPattern> = {
@@ -115,6 +119,18 @@ export const PATTERNS: Record<Exclude<BeatStyle, 'none' | 'metronome'>, BeatPatt
     rim:  'x..x..x...x..x..' + 'x..x..x...x..x..',
     hat:  'x.x.x.x.x.x.x.x.',
     comp: 'x..x..x...x..x..' + '..x..x..x...x..x',
+  },
+  disco: {
+    // trống bass dậm đều 4 phách, hi-hat mở "xì" nửa sau phách, clap 2 & 4, bass nhảy quãng tám
+    label: 'Disco', hint: 'Dậm đều 4 phách, bass nhảy quãng tám', beats: 4, subdiv: 4,
+    kick:     'X...X...X...X...',
+    snare:    '....x.......x...',
+    clap:     '....X.......X...',
+    hat:      'x...x...x...x...',
+    openHat:  '..X...X...X...X.',
+    shaker:   '.xx..xx..xx..xx.',
+    bassLine: 'r.o.r.o.r.o.r.o.' + 'r.o.r.o.r.o.f.o.',
+    comp:     '..x...x...x...x.' + '..x...x...x.x.x.',
   },
   waltz: {
     // "um" = bass phách 1 (gốc / quãng 5 xen kẽ từng ô), "pa pa" = hợp âm đệm phách 2, 3

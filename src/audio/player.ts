@@ -4,7 +4,7 @@
  */
 import { FlatEvent } from '../lib/tabText';
 import { getBeatPrefs } from './beatPrefs';
-import { audio, bass, bongo, chordStab, clave, click, cowbell, conga, crash, guiro, hat, kick, playTone, rim, setHumanVelocity, shaker, snare, tom } from './engine';
+import { audio, bass, bongo, chordStab, clap, clave, click, cowbell, conga, crash, guiro, hat, kick, playTone, rim, setHumanVelocity, shaker, snare, tom } from './engine';
 import { bassMidi, Chord, chordAt, chordVoicing, ChordOverrides, ChordSpan, harmonize, parseTonality } from './harmony';
 import { BeatPattern, BeatStyle, boPattern, resolvePattern } from './patterns';
 
@@ -140,11 +140,13 @@ export class Player {
 
   /** Bass đánh theo trống bass: gốc ở đầu ô nhịp / khi đổi hợp âm, quãng 5 ở nửa sau ô nhịp */
   private bassHit(pattern: BeatPattern, stepIdx: number, bar: number, beat: number, t: number, spb: number, style: BeatStyle, force = false) {
-    const track = pattern.kick ?? '';
+    // kiểu nhịp có đường bass riêng (r = gốc, o = gốc quãng tám trên, f = quãng 5); còn lại đánh theo trống bass
+    const line = pattern.bassLine;
+    const track = line ?? pattern.kick ?? '';
     const barLen = pattern.beats * pattern.subdiv;
     const cyc = (track.length > barLen ? (Math.max(0, bar) % Math.round(track.length / barLen)) * barLen : 0) + stepIdx;
     const ch = track[cyc];
-    if (!force && ch !== 'x' && ch !== 'X') return;
+    if (!force && (line ? !ch || ch === '.' : ch !== 'x' && ch !== 'X')) return;
     const chord = this.chordAt(beat + 1e-3);
     if (!chord || chord.root < 0) return;
     const len = track.length;
@@ -159,6 +161,11 @@ export class Player {
     const half = Math.floor(barLen / 2);
     // valse đổi gốc / quãng 5 xen kẽ từng ô nhịp; kiểu khác dùng quãng 5 ở nửa sau ô
     const altFifth = !changed && (style === 'waltz' ? bar % 2 === 1 : style !== 'rock' && style !== 'ballad' && stepIdx >= half);
+    if (line) {
+      const midi = bassMidi(chord, ch === 'f') + (ch === 'o' ? 12 : 0);
+      bass(midi, t, Math.min(gap * stepBeats, untilChange) * 0.8 * spb, ch === 'o' ? 0.85 : 1);
+      return;
+    }
     bass(bassMidi(chord, altFifth), t, durBeats * spb, ch === 'X' || stepIdx === 0 ? 1 : 0.8);
   }
 
@@ -236,6 +243,7 @@ export class Player {
           perc(pattern.guiro, (t, ch) => guiro(t, ch === 'X'));
           hit(pattern.clave, clave);
           hit(pattern.cowbell, cowbell);
+          hit(pattern.clap, clap);
           if (bp.comp) {
             hit(pattern.comp, (t, v) => {
               const ch = this.chordAt(b0 + 1e-3);
