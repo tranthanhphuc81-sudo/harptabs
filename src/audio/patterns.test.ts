@@ -18,7 +18,7 @@ describe('beat mẫu', () => {
       }
       if (p.bassLine) {
         expect(p.bassLine.length % bar, `${name}.bassLine`).toBe(0);
-        expect(p.bassLine, `${name}.bassLine`).toMatch(/^[.rofta]+$/);
+        expect(p.bassLine, `${name}.bassLine`).toMatch(/^[.roftaw]+$/);
       }
     });
   }

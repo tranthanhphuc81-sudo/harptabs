@@ -5,7 +5,7 @@
 import { FlatEvent } from '../lib/tabText';
 import { getBeatPrefs } from './beatPrefs';
 import { audio, bass, bongo, chordStab, clap, clave, click, cowbell, conga, crash, guiro, hat, kick, playTone, ride, rim, setHumanVelocity, shaker, snare, tom } from './engine';
-import { bassMidi, Chord, chordAt, chordVoicing, ChordOverrides, ChordSpan, harmonize, parseTonality } from './harmony';
+import { bassMidi, Chord, chordAt, chordVoicing, ChordOverrides, ChordSpan, harmonize, parseTonality, walkingNote } from './harmony';
 import { BeatPattern, BeatStyle, boPattern, resolvePattern } from './patterns';
 
 export interface PlayerOptions {
@@ -42,6 +42,8 @@ export class Player {
   private finished = false;
   private chords: ChordSpan[] = [];
   private chordKey = '';
+  /** nốt bass walking vừa đánh (để nốt sau đi liền mạch) */
+  private walkPrev: number | null = null;
   playing = false;
   onEnd?: () => void;
 
@@ -108,6 +110,7 @@ export class Player {
       }
       t += n * spb;
     }
+    this.walkPrev = null;
     this.cursorBeat = from;
     this.cursorTime = t;
     this.finished = false;
@@ -161,6 +164,13 @@ export class Player {
     const half = Math.floor(barLen / 2);
     // valse đổi gốc / quãng 5 xen kẽ từng ô nhịp; kiểu khác dùng quãng 5 ở nửa sau ô
     const altFifth = !changed && (style === 'waltz' ? bar % 2 === 1 : style !== 'rock' && style !== 'ballad' && stepIdx >= half);
+    if (line && ch === 'w') {
+      const midi = walkingNote(this.chords, beat + 1e-3, this.walkPrev);
+      if (midi === null) return;
+      this.walkPrev = midi;
+      bass(midi, t, Math.min(gap * stepBeats, 1) * 0.9 * spb, stepIdx === 0 ? 1 : 0.85);
+      return;
+    }
     if (line) {
       const root = bassMidi(chord);
       let midi = root;

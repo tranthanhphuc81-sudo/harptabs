@@ -10,7 +10,8 @@
  *   clap: x/X = vỗ tay
  *   ride: x/X = chũm chọe ride
  *   bassLine: đường bass riêng thay cho bass theo trống — r = gốc, o = gốc quãng tám trên, f = quãng 5,
- *             t = quãng 3, a = nốt dẫn nửa cung vào gốc hợp âm kế tiếp
+ *             t = quãng 3, a = nốt dẫn nửa cung vào gốc hợp âm kế tiếp,
+ *             w = bass walking tự dẫn theo hợp âm kế tiếp
  *   comp: x/X = gõ hợp âm đệm (theo hợp âm đang dùng, công tắc "Đệm hợp âm")
  */
 export type BeatStyle =
@@ -136,13 +137,13 @@ export const PATTERNS: Record<Exclude<BeatStyle, 'none' | 'metronome'>, BeatPatt
     comp:     '..x...x...x...x.' + '..x...x...x.x.x.',
   },
   jazz: {
-    // ride "ding – ding-a", hi-hat chân 2 & 4, kick dậm khẽ, bass walking, piano Charleston
+    // ride "ding – ding-a", hi-hat chân 2 & 4, kick dậm khẽ, bass walking dẫn theo hợp âm sau, piano Charleston
     label: 'Jazz swing', hint: 'Ride "ding ding-a", bass walking', beats: 4, subdiv: 3,
     ride:     'x..X.xx..X.x',
     hat:      '...x.....x..',
     kick:     'g..g..g..g..',
     snare:    '........g...' + '.....g....gx',
-    bassLine: 'r..t..f..a..' + 'r..f..o..a..',
+    bassLine: 'w..w..w..w..',
     comp:     'X....x......' + '...x.....x..',
   },
   waltz: {

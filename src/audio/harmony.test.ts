@@ -3,7 +3,7 @@ import { SAMPLE_SONGS } from '../data/samples';
 import { flatten, parseTab } from '../lib/tabText';
 import { beatsPerBar } from '../lib/types';
 import { songTonality } from '../lib/harp';
-import { bassMidi, chordAt, chordVoicing, estimateTonality, harmonize, harmonizeSegments, parseChord, parseTonality, transposeChords } from './harmony';
+import { bassMidi, chordAt, chordVoicing, walkingNote, estimateTonality, harmonize, harmonizeSegments, parseChord, parseTonality, transposeChords } from './harmony';
 
 const song = (id: string) => {
   const s = SAMPLE_SONGS.find((x) => x.sampleId === id)!;
@@ -53,6 +53,34 @@ describe('đệm hợp âm', () => {
     expect(chordVoicing({ root: 0, minor: false, name: 'C' })).toEqual([60, 64, 67]);
     expect(chordVoicing({ root: 9, minor: true, name: 'Am' })).toEqual([57, 60, 64]);
     expect(chordVoicing({ root: 7, minor: false, name: 'G' })).toEqual([55, 59, 62]);
+  });
+
+  it('bass walking dẫn theo hợp âm kế tiếp', () => {
+    const C = parseChord('C')!, F = parseChord('F')!, G = parseChord('G')!;
+    const spans = [
+      { start: 0, end: 4, chord: C },
+      { start: 4, end: 6, chord: F },
+      { start: 6, end: 8, chord: G },
+      { start: 8, end: 12, chord: C },
+    ];
+    const notes: number[] = [];
+    let prev: number | null = null;
+    for (let b = 0; b < 12; b++) { prev = walkingNote(spans, b, prev); notes.push(prev!); }
+    const pc = (m: number) => ((m % 12) + 12) % 12;
+    // phách đổi hợp âm đánh đúng gốc
+    expect([0, 4, 6, 8].map((b) => pc(notes[b]))).toEqual([0, 5, 7, 0]);
+    // phách ngay trước khi đổi là nốt dẫn nửa cung vào gốc hợp âm sau
+    for (const [b, root] of [[3, 5], [5, 7], [7, 0]] as const) {
+      expect(Math.abs(notes[b] - notes[b + 1]), `phách ${b}`).toBe(1);
+      expect(pc(notes[b + 1])).toBe(root);
+    }
+    // không lặp nốt liền nhau, không nhảy quá một quãng 8, nằm trong tầm bass
+    for (let b = 1; b < notes.length; b++) {
+      expect(notes[b]).not.toBe(notes[b - 1]);
+      expect(Math.abs(notes[b] - notes[b - 1])).toBeLessThanOrEqual(12);
+    }
+    expect(notes.every((m) => m >= 36 && m <= 55)).toBe(true);
+    expect(walkingNote([{ start: 0, end: 4, chord: parseChord('N.C.')! }], 0, null)).toBeNull();
   });
 
   it('bài trống không có hợp âm', () => {

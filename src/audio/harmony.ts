@@ -259,3 +259,75 @@ export function transposeChords(chords: ChordOverrides | undefined, semitones: n
   }
   return out;
 }
+
+const WALK_LO = 36; // C2
+const WALK_HI = 55; // G3
+
+/** Nốt có lớp cao độ `pc` trong tầm bass walking, gần `near` nhất */
+function placeNear(pc: number, near: number): number {
+  let best = WALK_LO + mod12(pc - WALK_LO);
+  for (let m = best; m <= WALK_HI; m += 12) if (Math.abs(m - near) < Math.abs(best - near)) best = m;
+  return best;
+}
+
+/**
+ * Bass walking "nhìn trước": phách đổi hợp âm đánh gốc (gần nốt trước), phách ngay trước khi đổi
+ * đánh nốt dẫn nửa cung vào gốc hợp âm sau, các phách giữa đi qua nốt trong hợp âm về phía đích.
+ * `prev` = nốt bass vừa đánh (null nếu mới bắt đầu). Trả về null nếu khúc này không đệm.
+ */
+export function walkingNote(spans: ChordSpan[], beat: number, prev: number | null): number | null {
+  const i = spans.findIndex((s) => beat >= s.start - 1e-6 && beat < s.end - 1e-6);
+  if (i < 0) return null;
+  const span = spans[i];
+  const cur = span.chord;
+  if (cur.root < 0) return null;
+  const near = prev ?? 43;
+  // vào hợp âm mới (hoặc mới bắt đầu): đánh gốc
+  if (prev === null || Math.abs(beat - span.start) < 1e-6) return placeNear(cur.root, near);
+
+  const next = spans[i + 1]?.chord;
+  const targetPc = next && next.root >= 0 ? next.root : cur.root;
+  const target = placeNear(targetPc, near);
+  const remaining = span.end - beat;
+
+  if (remaining <= 1 + 1e-6) {
+    // nốt dẫn nửa cung theo hướng đang đi; trùng nốt trước thì dẫn phía kia
+    let approach = prev <= target ? target - 1 : target + 1;
+    if (approach === prev) approach = prev <= target ? target + 1 : target - 1;
+    return Math.min(WALK_HI, Math.max(WALK_LO, approach));
+  }
+
+  // phách giữa: đi theo thang âm của hợp âm (ưu tiên nốt trong hợp âm), không lặp nốt
+  const third = cur.minor ? 3 : 4;
+  const chordPcs = [0, third, 7, cur.minor ? 10 : 9].map((d) => mod12(cur.root + d));
+  const scalePcs = (cur.minor ? [0, 2, 3, 5, 7, 9, 10] : [0, 2, 4, 5, 7, 9, 10]).map((d) => mod12(cur.root + d));
+  const inScale = (m: number) => scalePcs.includes(mod12(m));
+  const isChord = (m: number) => chordPcs.includes(mod12(m));
+
+  if (remaining <= 2 + 1e-6) {
+    // còn 2 phách: đứng cách đích 2–3 nửa cung để nốt dẫn nối liền vào đích;
+    // nếu đã sát đích thì vòng sang phía bên kia (tránh lắc qua lại cùng hai nốt)
+    const above = prev > target;
+    const close = Math.abs(prev - target) <= 3;
+    const side = (above !== close) ? 1 : -1;
+    const want = target + side * (close ? 3 : 2.5);
+    let best: number | null = null;
+    for (let m = WALK_LO; m <= WALK_HI; m++) {
+      if (m === prev || !inScale(m) || Math.abs(m - target) < 2) continue;
+      const cost = Math.abs(m - want) + (isChord(m) ? 0 : 0.4);
+      if (best === null || cost < Math.abs(best - want) + (isChord(best) ? 0 : 0.4)) best = m;
+    }
+    return best ?? placeNear(cur.root, near);
+  }
+
+  // hợp âm còn dài: đi từng bậc theo một hướng, đổi hướng mỗi ô nhịp hoặc khi chạm mép tầm
+  let dir = Math.floor(beat / 4 + 1e-6) % 2 === 0 ? 1 : -1;
+  if (prev <= WALK_LO + 4) dir = 1;
+  else if (prev >= WALK_HI - 4) dir = -1;
+  for (let d = 1; d <= 5; d++) {
+    const m = prev + dir * d;
+    // bước liền bậc trong thang; nhảy tới nốt hợp âm nếu bậc kế không có
+    if (inScale(m) && (d <= 2 || isChord(m))) return m;
+  }
+  return placeNear(cur.root, near);
+}
