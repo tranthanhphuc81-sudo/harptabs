@@ -62,6 +62,8 @@ export const PATTERNS: Record<Exclude<BeatStyle, 'none' | 'metronome'>, BeatPatt
     conga:  '......o.t...o.o.' + '......o.t...oo..',
     guiro:  'X.......X.x.....' + 'X.......X.x.x...',
     shaker: 'X.x.x.x.X.x.x.x.',
+    // guitar "bùm – chát chát": hợp âm ở 2, 2& và 4, 4&
+    comp:   '....x.x.....x.x.' + '....x.x.....x...',
   },
   rumba: {
     // rumba chậm: clave rumba 3-2, conga tumbao (úp–vỗ–mở mở), bass đảo phách ở 2& và 4&
@@ -72,6 +74,8 @@ export const PATTERNS: Record<Exclude<BeatStyle, 'none' | 'metronome'>, BeatPatt
     rim:    '............x...' + '..........x.x...',
     shaker: 'X.x.x.x.X.x.x.x.',
     hat:    '..x...x...x...x.',
+    // gõ hợp âm lệch nhịp ở 2, 3&, 4 (ô hai thêm 4e dẫn câu)
+    comp:   '....x.....x.x...' + '....x.....x.xx..',
   },
   chacha: {
     // chuông cowbell đều 4 phách, güiro dài–ngắn–ngắn, conga mở ở 4 và 4&, gõ vành nhấn "cha-cha" ở 4, 4&

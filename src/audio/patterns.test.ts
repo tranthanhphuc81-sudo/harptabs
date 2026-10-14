@@ -49,6 +49,14 @@ describe('beat mẫu', () => {
     expect([2, 4].every((i) => p.comp![i] !== '.')).toBe(true);
   });
 
+  it('bolero và rumba có tiếng đệm hợp âm, không đè lên phách 1', () => {
+    for (const name of ['bolero', 'rumba'] as const) {
+      const c = PATTERNS[name].comp!;
+      expect(c, name).toMatch(/x/);
+      expect(c[0], name).toBe('.');
+    }
+  });
+
   it('rumba: clave rumba 3-2 (1, 1a, 2&… 3&, 4)', () => {
     const c = PATTERNS.rumba.clave!.slice(0, 16);
     expect([...c].map((ch, i) => (ch !== '.' ? i : -1)).filter((i) => i >= 0)).toEqual([0, 3, 7, 10, 12]);
