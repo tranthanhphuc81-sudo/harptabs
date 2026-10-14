@@ -38,7 +38,11 @@ export interface OmrNote {
   guess?: boolean;
 }
 
-export interface OmrStaff { page: number; top: number; bottom: number; space: number; bars: number[]; xRight: number }
+export interface OmrStaff {
+  page: number; top: number; bottom: number; space: number; bars: number[]; xRight: number;
+  /** ngoặc liên ba "⌐3¬" (khoảng x) — trường độ các nốt bên dưới được sửa ở fillRests */
+  tuplets?: [number, number][];
+}
 
 export interface OmrPage {
   image: Gray;
@@ -642,10 +646,11 @@ function timeSigSpan(img: Bits, top: number, bottom: number, s: number, xFrom: n
   const { boxes } = label(band);
   const mid = (bottom - top) / 2 + 0.5 * s;
   // chữ "C" (nhịp 4/4): một khối ở giữa khuông, cao ~2 khe — có thể vỡ thành vài mảnh khi xoá dòng kẻ
-  const near = boxes.filter((b) => bh(b) >= 0.5 * s && bh(b) <= 3 * s && b.x0 < 3 * s);
+  // (chữ "¢" — nhịp 2/2 — có thêm nét dọc nhô ra trên dưới)
+  const near = boxes.filter((b) => bh(b) >= 0.5 * s && bh(b) <= 4 * s && b.x0 < 3 * s);
   if (near.length) {
     const u = { x0: Math.min(...near.map((b) => b.x0)), x1: Math.max(...near.map((b) => b.x1)), y0: Math.min(...near.map((b) => b.y0)), y1: Math.max(...near.map((b) => b.y1)) };
-    if (Math.abs(cy(u) + y0 - (top + bottom) / 2) <= 0.6 * s && 1.1 * s <= bh(u) && bh(u) <= 2.6 * s && 1.1 * s <= bw(u) && bw(u) <= 2.4 * s) {
+    if (Math.abs(cy(u) + y0 - (top + bottom) / 2) <= 0.6 * s && 1.1 * s <= bh(u) && bh(u) <= 3.6 * s && 1.1 * s <= bw(u) && bw(u) <= 2.4 * s) {
       return [xFrom + u.x0 - 1, xFrom + u.x1 + 1];
     }
   }
@@ -670,6 +675,81 @@ function timeSigSpan(img: Bits, top: number, bottom: number, s: number, xFrom: n
     }
   }
   return null;
+}
+
+/**
+ * Ngoặc liên ba trên / dưới khuông: hai đoạn kẻ ngang mảnh cùng độ cao, giữa là con số nhỏ ("— 3 —",
+ * "⌐ 3 ¬"). Không cần đọc ra chữ số: ngoặc lặp (volta) là một đường liền, dấu nối là đường cong.
+ * Trả khoảng x của ngoặc.
+ */
+function findTuplets(img: Bits, top: number, bottom: number, s: number, xFrom: number, xTo: number): [number, number][] {
+  const out: [number, number][] = [];
+  for (const [ra, rb] of [[top - 4 * s, top - 0.4 * s], [bottom + 0.4 * s, bottom + 3.5 * s]]) {
+    const y0 = Math.max(0, Math.round(ra)), y1 = Math.min(img.h, Math.round(rb));
+    if (y1 - y0 < 3) continue;
+    const band = img.crop(y0, y1, Math.max(0, xFrom), Math.min(img.w, xTo));
+    // chỉ giữ mực thuộc đoạn ngang dài ≥ 0.8 khe
+    const hl = new Bits(band.w, band.h);
+    for (let y = 0; y < band.h; y++) {
+      let x = 0;
+      while (x < band.w) {
+        if (!band.d[y * band.w + x]) { x++; continue; }
+        const a = x;
+        while (x < band.w && band.d[y * band.w + x]) x++;
+        if (x - a >= 0.8 * s) hl.d.fill(1, y * band.w + a, y * band.w + x);
+      }
+    }
+    // đoạn kẻ: mảnh, dài, trên và dưới là nền trắng (nét chữ viết tay của lời bài hát thì dính chữ)
+    const clearAround = (b: Box) => {
+      let n = 0, t = 0;
+      for (const y of [b.y0 - Math.round(0.35 * s), b.y1 - 1 + Math.round(0.35 * s)]) {
+        if (y < 0 || y >= band.h) continue;
+        // bỏ hai đầu: ngoặc "⌐ ¬" có móc cong xuống / lên ở đầu
+        const m = Math.round(0.5 * s);
+        for (let x = b.x0 + m; x < b.x1 - m; x++) { t++; n += band.d[y * band.w + x]; }
+      }
+      return t > 0 && n / t <= 0.15;
+    };
+    const { lab: bandLab, boxes: allBlobs } = label(band);
+    /**
+     * Đoạn kẻ đứng riêng: phần mực dính liền với nó (trong khoảng ngang của đoạn, bỏ hai đầu) chỉ là chính
+     * đường kẻ — nét chữ viết tay của lời bài hát thì dính chữ cái cao thấp; đầu ngoặc chạm thân nốt thì không sao
+     */
+    const freeLine = (b: Box) => {
+      const y = Math.round(cy(b)), x = Math.round(cx(b));
+      let id = 0;
+      for (let dy = -1; dy <= 1 && !id; dy++) id = bandLab[(y + dy) * band.w + x] || 0;
+      if (!id) return false;
+      const m = Math.round(0.5 * s), r = Math.round(1.0 * s);
+      let on = 0, off = 0;
+      for (let yy = Math.max(0, b.y0 - r); yy < Math.min(band.h, b.y1 + r); yy++) {
+        for (let xx = b.x0 + m; xx < b.x1 - m; xx++) {
+          if (bandLab[yy * band.w + xx] !== id) continue;
+          if (yy >= b.y0 - 1 && yy <= b.y1) on++; else off++;
+        }
+      }
+      return on > 0 && off <= 0.15 * on;
+    };
+    const segs = label(hl).boxes.filter((b) => bh(b) <= 0.75 * s && bw(b) >= 1.4 * s && bw(b) >= 3 * bh(b) && clearAround(b) && freeLine(b)).sort((a, b) => a.x0 - b.x0);
+    const blobs = allBlobs.filter((b) => 0.45 * s <= bh(b) && bh(b) <= 2.0 * s && 0.25 * s <= bw(b) && bw(b) <= 1.6 * s);
+    const used = new Set<Box>();
+    for (const L of segs) for (const R of segs) {
+      // ngoặc có thể nghiêng theo hướng giai điệu
+      if (L === R || used.has(L) || used.has(R) || Math.abs(cy(L) - cy(R)) > 1.0 * s) continue;
+      const gap = R.x0 - L.x1;
+      if (gap < 0.3 * s || gap > 6 * s || R.x1 - L.x0 < 2.2 * s) continue;
+      // con số đứng một mình trong khe (chữ lời bài hát thì nhiều chữ cái sát nhau)
+      // (bỏ qua thân nốt thò xuống / lên và vạch nối của nhóm nốt ngay dưới ngoặc)
+      const inGap = allBlobs.filter((b) => b.x1 > L.x1 + 1 && b.x0 < R.x0 - 1 && Math.abs(cy(b) - (cy(L) + cy(R)) / 2) <= 1.2 * s && Math.max(bh(b), bw(b)) >= 0.35 * s
+        && !(bw(b) <= 0.35 * s && bh(b) >= 1.0 * s) && !(bw(b) >= 1.5 * s && bw(b) >= 2 * bh(b)));
+      // con số nằm giữa khe
+      const digit = inGap.length === 1 && blobs.includes(inGap[0]) && Math.abs(cx(inGap[0]) - (L.x1 + R.x0) / 2) <= 1.0 * s;
+      if (!digit) continue;
+      used.add(L); used.add(R);
+      out.push([L.x0 + xFrom, R.x1 + xFrom]);
+    }
+  }
+  return out;
 }
 
 /** Vạch nhịp: nét dọc phủ đúng từ dòng trên tới dòng dưới, không dính đầu nốt */
@@ -1092,7 +1172,8 @@ export function readPage(input: Gray, page = 0): OmrPage | null {
   const lines = staves.flatMap((st) => st.lines);
   const clean = removeLines(ink, lines, 0); // tìm đầu nốt
   // chấm dôi sát thân nốt: viền xám nhoè dính chấm vào thân → xét thêm trên ngưỡng đậm hơn
-  const dotInk = removeLines(threshold(gray, 140), lines, 0);
+  const darkInk = threshold(gray, 140);
+  const dotInk = removeLines(darkInk, lines, 0);
   const thin = removeLines(lineInk, lines, 1); // thân nốt, móc: xoá cả viền xám của dòng kẻ
   const dark = new Float32Array(gray.data.length);
   for (let i = 0; i < dark.length; i++) dark[i] = (255 - gray.data[i]) / 255;
@@ -1304,7 +1385,13 @@ export function readPage(input: Gray, page = 0): OmrPage | null {
       const want = alterOf(n.step, ks);
       if (want !== alterOf(n.step, keySig)) n.accidental = want;
     }
-    outStaves.push({ page, top, bottom, space: s, bars, xRight });
+    // ngưỡng đậm: ngoặc in đậm hay dính vào vạch nối / thân nốt qua viền xám
+    // ngưỡng nhạt: ngoặc kẻ mảnh, in mờ
+    const tuplets = findTuplets(darkInk, top, bottom, s, contentFrom, xRight + 1);
+    for (const t of findTuplets(lineInk, top, bottom, s, contentFrom, xRight + 1)) {
+      if (!tuplets.some(([a, b]) => a < t[1] && t[0] < b)) tuplets.push(t);
+    }
+    outStaves.push({ page, top, bottom, space: s, bars, xRight, ...(tuplets.length ? { tuplets } : {}) });
     notes.push(...staffNotes);
   });
 
@@ -1312,6 +1399,38 @@ export function readPage(input: Gray, page = 0): OmrPage | null {
 }
 
 // ───────────────────────── nhịp, dấu lặng ─────────────────────────
+
+/**
+ * Liên ba: các nốt dưới ngoặc "3" chỉ còn 2/3 trường độ in. Bản in thường vẽ ngoặc lệch / ngắn hơn nhóm
+ * nốt (thiếu nốt đầu), có khi đánh số "3" cho nhóm vốn đã đủ phách → chọn nhóm nốt liền nhau quanh ngoặc
+ * (thêm / bớt một nốt mỗi bên) sao cho tổng phách ô nhịp khớp số phách mỗi ô; không khớp hơn thì giữ nguyên.
+ */
+function applyTuplets(measures: { st: OmrStaff; ms: OmrNote[] }[], meter: number, dry = false) {
+  let fits = 0;
+  for (const m of measures) {
+    const s = m.st.space;
+    let total = m.ms.reduce((t, n) => t + n.beats, 0);
+    for (const [x0, x1] of m.st.tuplets ?? []) {
+      const ms = m.ms;
+      const inside = ms.map((n, i) => (n.x >= x0 - 0.4 * s && n.x <= x1 + 0.4 * s ? i : -1)).filter((i) => i >= 0);
+      if (!inside.length) continue;
+      const sum = total;
+      let best: [number, number] | null = null, bestErr = Math.abs(sum - meter) - 0.01;
+      for (const [da, db] of [[0, 0], [-1, 0], [0, 1], [1, 0], [0, -1], [-1, 1]]) {
+        const a = inside[0] + da, b = inside[inside.length - 1] + db;
+        if (a < 0 || b >= ms.length || b - a < 1 || b - a > 5) continue;
+        const g = ms.slice(a, b + 1).reduce((t, n) => t + n.beats, 0);
+        const err = Math.abs(sum - g / 3 - meter);
+        if (err < bestErr) { bestErr = err; best = [a, b]; }
+      }
+      if (!best) continue;
+      total -= ms.slice(best[0], best[1] + 1).reduce((t, n) => t + n.beats, 0) / 3;
+      if (!dry) for (let i = best[0]; i <= best[1]; i++) ms[i].beats = (ms[i].beats * 2) / 3;
+    }
+    if (Math.abs(total - meter) < 0.01) fits++;
+  }
+  return fits;
+}
 
 /**
  * Chia ô nhịp theo vạch nhịp; ô thiếu phách (trừ ô đầu = nhịp lấy đà, ô cuối) được chèn dấu lặng
@@ -1333,6 +1452,17 @@ export function fillRests(pages: OmrPage[]): number {
   const counts = new Map<number, number>();
   let meter = 4, bestN = 0;
   for (const v of sums) { const n = (counts.get(v) ?? 0) + 1; counts.set(v, n); if (n > bestN) { bestN = n; meter = v; } }
+  // bài nhiều liên ba: ô có liên ba (chưa sửa) dư phách nên có thể đông hơn → tính cả các ô khớp được
+  // sau khi sửa liên ba, chỉ xét các số phách thường gặp
+  if (measures.some((m) => m.st.tuplets?.length)) {
+    let best = -1;
+    const usual = [2, 3, 4, 6];
+    for (const M of usual.includes(meter) ? [meter, ...usual] : usual) {
+      const n = applyTuplets(measures, M, true);
+      if (n > best) { best = n; meter = M; }
+    }
+  }
+  applyTuplets(measures, meter);
   measures.forEach((m, idx) => {
     const missing = meter - m.ms.reduce((t, n) => t + n.beats, 0);
     if (missing <= 0.01 || idx === 0 || idx === measures.length - 1) return;

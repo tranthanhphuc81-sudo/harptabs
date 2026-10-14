@@ -169,6 +169,9 @@ export function parseTab(body: string, key: HarpKey): ParsedTab {
 
 function fmtBeats(b: number): string {
   if (b === 1) return '';
+  // liên ba: ghi dạng phân số (2/3) cho dễ đọc
+  const t = Math.round(b * 3);
+  if (Math.abs(b * 3 - t) < 1e-6 && t % 3 !== 0 && Math.abs(b * 4 - Math.round(b * 4)) > 1e-6) return `:${t}/3`;
   const r = Math.round(b * 1000) / 1000;
   return `:${r}`;
 }

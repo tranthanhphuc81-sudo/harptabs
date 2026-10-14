@@ -98,6 +98,14 @@ Ghi chú tự do`;
     expect(p.issues[0].level).toBe('error');
   });
 
+  it('liên ba ghi dạng phân số và đọc lại đúng', () => {
+    const p = parseTab('4:2/3 5:2/3 -5:2/3 6:1/3', 'C');
+    const text = serializeTab(p.sections);
+    expect(text).toContain('4:2/3');
+    expect(text).toContain('6:1/3');
+    expect(flatten(parseTab(text, 'C')).map((e) => +e.beats.toFixed(4))).toEqual([0.6667, 0.6667, 0.6667, 0.3333]);
+  });
+
   it('serialize rồi parse lại giữ nguyên', () => {
     const p = parseTab(body, 'C');
     const again = parseTab(serializeTab(p.sections), 'C');

@@ -20,8 +20,8 @@ import { useAppState } from '../state';
 const MAX_SIDE = 2600;
 const TIME_SIGS = ['2/4', '3/4', '4/4', '6/8', '3/8', '2/2'];
 const DURATIONS: { beats: number; label: string }[] = [
-  { beats: 0.25, label: 'Móc kép' }, { beats: 1 / 3, label: 'Liên ba' }, { beats: 0.5, label: 'Móc đơn' }, { beats: 0.75, label: 'Móc chấm' },
-  { beats: 1, label: 'Đen' }, { beats: 1.5, label: 'Đen chấm' }, { beats: 2, label: 'Trắng' },
+  { beats: 0.25, label: 'Móc kép' }, { beats: 1 / 3, label: 'Móc đơn liên ba' }, { beats: 0.5, label: 'Móc đơn' }, { beats: 2 / 3, label: 'Đen liên ba' },
+  { beats: 0.75, label: 'Móc chấm' }, { beats: 1, label: 'Đen' }, { beats: 1.5, label: 'Đen chấm' }, { beats: 2, label: 'Trắng' },
   { beats: 3, label: 'Trắng chấm' }, { beats: 4, label: 'Tròn' },
 ];
 

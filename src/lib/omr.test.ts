@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { Gray, keyName, notePitch, readSheet, toTranscription } from './omr';
+import { Gray, OmrNote, OmrPage, fillRests, keyName, notePitch, readSheet, toTranscription } from './omr';
 
 /** Vẽ một khuông nhạc giả lập: khoá (khối cao), nốt, vạch nhịp — đủ để kiểm tra các luật đọc */
 type Sym = { kind: 'note'; step: number; beats: 0.5 | 1 | 1.5 | 2 | 3 | 4; sharp?: boolean } | { kind: 'bar' };
@@ -145,6 +145,20 @@ describe('đọc khuông nhạc (OMR)', () => {
       'B4:1.5', 'A4:0.5', 'G4:2',
       'E4:1', 'F4:1', 'E5:1', 'F5:1',
     ]);
+  });
+
+  it('liên ba: chỉ sửa trường độ khi làm ô nhịp đủ phách', () => {
+    // ô 1: 4 nốt đen; ô 2: đen, đen + liên ba 3 nốt đen dưới ngoặc (in 5 phách → đúng 4);
+    // ô 3: ngoặc "3" trên nhóm vốn đã đủ phách (bản in ghi thừa) → giữ nguyên
+    const xs = [10, 20, 30, 40, 110, 120, 130, 140, 150, 210, 220, 230, 240, 250];
+    const beats = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0.5, 0.5, 1];
+    const notes: OmrNote[] = xs.map((x, i) => ({ id: `t${i}`, page: 0, staff: 0, x, y: 50, step: 2, accidental: null, beats: beats[i], hollow: false, dot: false, rest: false }));
+    const page: OmrPage = {
+      image: { width: 300, height: 100, data: new Uint8Array(300 * 100) }, scale: 1, keySig: 0, notes,
+      staves: [{ page: 0, top: 30, bottom: 70, space: 10, bars: [50, 160, 260], xRight: 280, tuplets: [[125, 155], [225, 255]] }],
+    };
+    expect(fillRests([page])).toBe(4);
+    expect(page.notes.map((n) => +n.beats.toFixed(3))).toEqual([1, 1, 1, 1, 1, 1, 0.667, 0.667, 0.667, 1, 1, 0.5, 0.5, 1]);
   });
 
   it('không thấy khuông nhạc thì không bịa nốt', () => {
