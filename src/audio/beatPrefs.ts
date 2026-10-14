@@ -23,6 +23,7 @@ export interface BeatPrefs {
   melodyVol: number;
   bassVol: number;
   boVol: number;
+  bellVol: number;
   reverb: number;
   /** hiện hợp âm đệm trên tab */
   showChords: boolean;
@@ -30,7 +31,7 @@ export interface BeatPrefs {
 
 export const DEFAULT_BEAT_PREFS: BeatPrefs = {
   instrument: 'harmonica', kit: 'acoustic', swing: 0, humanize: true, fills: false, bass: true, bo: false,
-  beatVol: 0.6, melodyVol: 0.55, bassVol: 0.7, boVol: 0.8, reverb: 0.25, showChords: false,
+  beatVol: 0.6, melodyVol: 0.55, bassVol: 0.7, boVol: 0.8, bellVol: 0.8, reverb: 0.25, showChords: false,
 };
 
 export const KIT_OPTIONS: { value: DrumKit; label: string }[] = [
