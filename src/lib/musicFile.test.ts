@@ -175,4 +175,23 @@ describe('nhập MIDI', () => {
     const f = await readMusicFile(file, 'bai-thu.mid');
     expect(f.kind).toBe('midi');
   });
+
+  it('file karaoke: đánh lại cùng phím, nốt nhả sớm, lời tách từng ký tự', () => {
+    // "Tuổi đời chân đơn côi": mỗi ký tự lời là một sự kiện; nốt 70 đánh lại khi chưa nhả;
+    // các nốt chỉ kêu 1/4 phách; chữ cuối câu nhả sớm rồi lặng 3 phách
+    const ev: [number, number[]][] = [[0, [0xff, 0x03, 6, ...text('Melody')]]];
+    // lùi 3 phách: sự kiện chữ ở tick 0 là phần đầu file (tên bài…), bị bỏ qua
+    const O = 3;
+    const note = (beat: number, len: number, n: number) => { ev.push([(beat + O) * Q, [0x90, n, 90]]); if (len) ev.push([(beat + O + len) * Q, [0x80, n, 0]]); };
+    note(0, 0.25, 67); note(1, 0.25, 69);
+    note(2, 0, 70); note(3, 0.25, 70); // nốt 70 bật lại ở phách 3 khi chưa nhả
+    note(4, 0.25, 72); note(8, 1, 74);
+    const chars = ['/T', 'u', 'ổ', 'i', ' ', 'đ', 'ờ', 'i', ' ', 'c', 'h', 'â', 'n', ' ', 'đ', 'ơ', 'n', ' ', 'c', 'ô', 'i', ' ', '/n', 'h', 'é'];
+    const at = [0, 0.1, 0.2, 0.3, 0.4, 1, 1.1, 1.2, 1.3, 2, 2.1, 2.2, 2.3, 2.5, 3, 3.1, 3.2, 3.3, 4, 4.1, 4.2, 4.3, 8, 8.2, 8.4];
+    chars.forEach((c, i) => ev.push([Math.round((at[i] + O) * Q), [0xff, 0x01, ...vlq(text(c).length), ...text(c)]]));
+    const f = parseMidi(midiFile([meta, track(ev)]));
+    expect(notesOf(f.transcribe(f.melodyPart))).toEqual([
+      'G4:1:Tuổi', 'A4:1:đời', 'Bb4:1:chân', 'Bb4:1:đơn', 'C5:3:côi', 'R:1', 'D5:1:nhé',
+    ]);
+  });
 });

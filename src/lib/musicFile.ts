@@ -357,7 +357,12 @@ function readMidi(buf: Uint8Array) {
       if (kind === 0xc0 || kind === 0xd0) { q += 1; continue; }
       const a = buf[q], b = buf[q + 1];
       q += 2;
-      if (kind === 0x90 && b > 0) on.set(ch * 128 + a, tick);
+      if (kind === 0x90 && b > 0) {
+        // đánh lại cùng phím khi nốt cũ chưa nhả (hay gặp ở file karaoke): nốt cũ dừng ở đây
+        const prev = on.get(ch * 128 + a);
+        if (prev !== undefined && tick > prev) tr.notes.push({ start: prev / tpq, end: tick / tpq, midi: a, ch });
+        on.set(ch * 128 + a, tick);
+      }
       else if (kind === 0x80 || (kind === 0x90 && b === 0)) {
         const s = on.get(ch * 128 + a);
         if (s !== undefined) { tr.notes.push({ start: s / tpq, end: tick / tpq, midi: a, ch }); on.delete(ch * 128 + a); }
@@ -367,6 +372,30 @@ function readMidi(buf: Uint8Array) {
     p = end;
   }
   return { tracks, tempo, timeSig, key, seqName };
+}
+
+/**
+ * Lời karaoke tách theo từng ký tự (Soft Karaoke kiểu Việt: "T" "u" "ổ" "i" " " "đ" "ờ" "i"…) → gom lại
+ * thành từng chữ: chữ mới bắt đầu sau dấu cách hoặc "/" "\\" (xuống dòng). File tách theo âm tiết thì giữ nguyên.
+ */
+function syllables(lyrics: { t: number; text: string }[]): { t: number; text: string }[] {
+  const body = lyrics.filter((l) => !l.text.startsWith('@'));
+  const core = (s: string) => s.replace(/^[/\\\s]+/, '').replace(/\s+$/, '');
+  const chars = body.map((l) => core(l.text)).filter(Boolean);
+  const short = chars.filter((c) => [...c].length <= 1).length;
+  if (chars.length < 8 || short / chars.length < 0.6) return lyrics;
+  const out: { t: number; text: string }[] = [];
+  let cur: { t: number; text: string } | null = null;
+  for (const l of body) {
+    // dấu cách / "/" / "\" đứng trước: chữ trước đã hết
+    if (/^[/\\\s]/.test(l.text) && cur) { out.push(cur); cur = null; }
+    const c = core(l.text);
+    // chữ mới tính giờ từ ký tự đầu tiên của nó
+    if (c) { if (cur) cur.text += c; else cur = { t: l.t, text: c }; }
+    if (/\s$/.test(l.text) && cur) { out.push(cur); cur = null; }
+  }
+  if (cur) out.push(cur);
+  return out;
 }
 
 /** Lượng tử hoá vị trí theo lưới móc kép (1/4 phách) hoặc móc đơn liên ba (1/3 phách), chọn lưới gần hơn */
@@ -434,10 +463,17 @@ export function parseMidi(buf: Uint8Array, fileTitle = ''): MusicFile {
         let e = Math.min(quant(n.end), next);
         if (e - s < 0.2 && next - s >= 0.25) e = Math.min(next, s + 0.25);
         if (e - s < 0.1) return;
+        // nốt nhả sớm (file karaoke / người chơi ngắt tiếng): nối liền tới nốt sau thay vì chèn dấu lặng,
+        // trừ chỗ nghỉ thật (nốt kêu gần đủ, hoặc lặng dài quá 1 phách)
+        const gap = next - e;
+        const ratio = (e - s) / (next - s);
+        if (next !== Infinity && gap > 0 && (gap < 0.25 || (ratio < 0.6 && gap <= 1))) e = next;
+        // chữ cuối câu bị nhả quá sớm: ngân tiếp, chừa nửa phách lấy hơi (tối đa 3 phách)
+        else if (next !== Infinity && gap > 1 && ratio < 0.4) e = Math.max(e, Math.min(next - 0.5, s + 3));
         notes.push({ start: s, beats: e - s, midi: n.midi });
       });
       // lời: gắn vào nốt bắt đầu gần nhất
-      const lyrics = g.lyrics.length ? g.lyrics : allLyrics;
+      const lyrics = syllables(g.lyrics.length ? g.lyrics : allLyrics);
       for (const l of lyrics) {
         const text = l.text.replace(/^[/\\@]+/, '').replace(/[\r\n]+/g, ' ').trim();
         if (!text || text.startsWith('@')) continue;
