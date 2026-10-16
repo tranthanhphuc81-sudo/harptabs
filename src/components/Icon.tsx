@@ -25,6 +25,7 @@ const PATHS: Record<string, string> = {
   check: 'M5 12.5l4.5 4.5L19 7',
   sliders: 'M4 6h9M17 6h3M15 4v4M4 12h3M11 12h9M9 10v4M4 18h11M19 18h1M17 16v4',
   wave: 'M2 12h2l2-6 3 12 3-14 3 16 3-10 2 2h2',
+  music: 'M9 18V5l11-2v13M9 18a3 3 0 1 1-6 0 3 3 0 0 1 6 0zM20 16a3 3 0 1 1-6 0 3 3 0 0 1 6 0z',
 };
 
 export function Icon({ name, size = 22, filled = false, label }: { name: keyof typeof PATHS | string; size?: number; filled?: boolean; label?: string }) {

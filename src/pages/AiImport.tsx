@@ -15,8 +15,9 @@ import { Icon } from '../components/Icon';
 import { useAppState, useOnline } from '../state';
 import ScanImport from './ScanImport';
 import PasteTab from './PasteTab';
+import FileImport from './FileImport';
 
-type Mode = 'scan' | 'paste' | 'image' | 'name';
+type Mode = 'scan' | 'file' | 'paste' | 'image' | 'name';
 interface Img { id: string; mimeType: string; data: string; preview: string }
 
 function vnd(usd: number) {
@@ -145,7 +146,7 @@ export default function AiImport() {
       <header className="page-head">
         <div>
           <h1>{editScan ? 'Sửa nốt trên ảnh' : 'Nhập bài'}</h1>
-          <p className="muted">Chụp khuông nhạc để máy tự đọc nốt, dán tab copy từ mạng, hoặc nhờ AI đọc ảnh / nhớ bài theo tên.</p>
+          <p className="muted">Chụp khuông nhạc để máy tự đọc nốt, mở file nhạc MIDI / MusicXML, dán tab copy từ mạng, hoặc nhờ AI đọc ảnh / nhớ bài theo tên.</p>
         </div>
       </header>
 
@@ -160,6 +161,9 @@ export default function AiImport() {
         <button type="button" role="tab" aria-selected={mode === 'scan'} className={mode === 'scan' ? 'on' : ''} onClick={() => setMode('scan')}>
           <Icon name="scan" size={18} /> Quét nhạc
         </button>
+        <button type="button" role="tab" aria-selected={mode === 'file'} className={mode === 'file' ? 'on' : ''} onClick={() => setMode('file')}>
+          <Icon name="music" size={18} /> File nhạc
+        </button>
         <button type="button" role="tab" aria-selected={mode === 'paste'} className={mode === 'paste' ? 'on' : ''} onClick={() => setMode('paste')}>
           <Icon name="edit" size={18} /> Dán tab
         </button>
@@ -171,7 +175,7 @@ export default function AiImport() {
         </button>
       </div>
 
-      {mode === 'scan' ? <ScanImport key={editScan ?? 'new'} editSongId={editScan} /> : mode === 'paste' ? <PasteTab /> : <>
+      {mode === 'scan' ? <ScanImport key={editScan ?? 'new'} editSongId={editScan} /> : mode === 'file' ? <FileImport /> : mode === 'paste' ? <PasteTab /> : <>
       <div className="ai-form">
         {mode === 'image' ? (
           <>
