@@ -11,6 +11,8 @@ let boBus: GainNode;
 let bellBus: GainNode;
 let compBus: GainNode;
 let clapBus: GainNode;
+/** kênh đệm hát (guitar / piano tự đệm) */
+let singBus: GainNode;
 /** kênh ra hiện tại của tiếng trống (bongo tạm chuyển sang kênh bo) */
 let hitOut: AudioNode | null = null;
 let drumSend: GainNode;
@@ -52,6 +54,8 @@ export function audio(): AudioContext {
     compBus.connect(drumBus);
     clapBus = ctx.createGain();
     clapBus.connect(drumBus);
+    singBus = ctx.createGain();
+    singBus.connect(master);
     melodyBus.connect(master);
     drumBus.connect(master);
     clickBus.connect(master);
@@ -61,6 +65,7 @@ export function audio(): AudioContext {
     melodySend = ctx.createGain();
     drumBus.connect(drumSend).connect(verb);
     melodyBus.connect(melodySend).connect(verb);
+    singBus.connect(melodySend);
     verb.connect(master);
     noise = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
     const d = noise.getChannelData(0);
@@ -469,12 +474,12 @@ export type DrumKit = 'acoustic' | 'electronic' | 'soft';
 let kit: DrumKit = 'acoustic';
 let humanVel = 0;
 
-export interface MixSettings { kit: DrumKit; instrument: Instrument; beatVol: number; melodyVol: number; bassVol: number; boVol: number; bellVol: number; compVol: number; clapVol: number; reverb: number }
-let mix: MixSettings = { kit: 'acoustic', instrument: 'harmonica', beatVol: 0.6, melodyVol: 0.55, bassVol: 0.7, boVol: 0.8, bellVol: 0.8, compVol: 0.7, clapVol: 0.8, reverb: 0.25 };
+export interface MixSettings { kit: DrumKit; instrument: Instrument; beatVol: number; melodyVol: number; bassVol: number; boVol: number; bellVol: number; compVol: number; clapVol: number; reverb: number; singVol?: number }
+let mix: MixSettings = { kit: 'acoustic', instrument: 'harmonica', beatVol: 0.6, melodyVol: 0.55, bassVol: 0.7, boVol: 0.8, bellVol: 0.8, compVol: 0.7, clapVol: 0.8, reverb: 0.25, singVol: 0.8 };
 
 /** Áp âm lượng / bộ trống / độ vang; chưa có AudioContext thì để dành áp lúc khởi tạo */
 export function applyMix(m: MixSettings) {
-  mix = { kit: m.kit, instrument: m.instrument, beatVol: m.beatVol, melodyVol: m.melodyVol, bassVol: m.bassVol, boVol: m.boVol ?? 0.8, bellVol: m.bellVol ?? 0.8, compVol: m.compVol ?? 0.7, clapVol: m.clapVol ?? 0.8, reverb: m.reverb };
+  mix = { kit: m.kit, instrument: m.instrument, beatVol: m.beatVol, melodyVol: m.melodyVol, bassVol: m.bassVol, boVol: m.boVol ?? 0.8, bellVol: m.bellVol ?? 0.8, compVol: m.compVol ?? 0.7, clapVol: m.clapVol ?? 0.8, reverb: m.reverb, singVol: m.singVol ?? 0.8 };
   kit = m.kit;
   instrument = INSTRUMENT_OPTIONS.some((o) => o.value === m.instrument) ? m.instrument : 'harmonica';
   if (!ctx) return;
@@ -486,6 +491,7 @@ export function applyMix(m: MixSettings) {
   bellBus.gain.setTargetAtTime(mix.bellVol, t, 0.02);
   compBus.gain.setTargetAtTime(mix.compVol, t, 0.02);
   clapBus.gain.setTargetAtTime(mix.clapVol, t, 0.02);
+  singBus.gain.setTargetAtTime(mix.singVol ?? 0.8, t, 0.02);
   drumSend.gain.setTargetAtTime(m.reverb * 0.7, t, 0.02);
   melodySend.gain.setTargetAtTime(m.reverb * 0.45, t, 0.02);
 }
@@ -870,4 +876,83 @@ export function click(when: number, accent = false) {
 export function previewNote(midi: number, dur = 0.6) {
   const c = audio();
   playTone(midi, c.currentTime + 0.01, dur);
+}
+
+/** Nhạc cụ đệm hát: guitar gõ bo / quạt chả, piano tự đệm (không trống), hoặc cả ban nhạc theo beat */
+export type Accomp = 'gobo' | 'strum' | 'piano' | 'band';
+
+export const ACCOMP_OPTIONS: { value: Accomp; label: string }[] = [
+  { value: 'gobo', label: 'Guitar gõ bo' },
+  { value: 'strum', label: 'Guitar quạt chả' },
+  { value: 'piano', label: 'Piano' },
+  { value: 'band', label: 'Ban nhạc' },
+];
+
+/** Hợp âm cần cho một nhát đệm: bass gốc / quãng 5 (E2–D#3) và hợp âm ba thế đóng cho piano */
+export interface AccompChord { bass: number; fifth: number; minor: boolean; triad: number[] }
+
+/** Thế bấm guitar: gốc ở dây trầm, rồi quãng 5, 8, 3, 5, 8 lên tới dây cao */
+function guitarShape(ch: AccompChord): number[] {
+  const r = ch.bass;
+  return [r, r + 7, r + 12, r + 12 + (ch.minor ? 3 : 4), r + 19, r + 24];
+}
+
+/** dây bị chặn ngay sau khi gảy: "tách" ngắn, không ngân */
+function mutedPluck(c: AudioContext, midi: number, t: number, vel: number, out: AudioNode) {
+  const src = c.createBufferSource();
+  src.buffer = pluckBuffer(c, midi);
+  const g = c.createGain();
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(0.4 * vel, t + 0.002);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + 0.05);
+  src.connect(g).connect(out);
+  src.start(t);
+  src.stop(t + 0.07);
+}
+
+/** quạt dây: xuống = dây trầm → cao (bỏ dây bass), lên = 4 dây cao, khẽ hơn */
+function strumGuitar(c: AudioContext, ch: AccompChord, t: number, dur: number, vel: number, up: boolean) {
+  const shape = guitarShape(ch).slice(1);
+  const strings = up ? shape.slice(-4).reverse() : shape;
+  const gap = up ? 0.009 : 0.013;
+  strings.forEach((m, i) => guitarTone(c, m, t + i * gap, dur, vel * 0.32 * (up ? 0.8 : 1 - i * 0.04), singBus));
+}
+
+/** gõ bo: lòng bàn tay chặn dây đập xuống thùng đàn — tiếng "bộp" trầm + dây kêu tách */
+function goboSlap(c: AudioContext, ch: AccompChord, t: number, vel: number) {
+  hitOut = singBus;
+  try {
+    osc('sine', t, 170, 85, 0.05, 0.42 * vel, 0.1);
+    noiseHit(t, 'lowpass', 700, 0.045, 0.32 * vel, 0.8);
+    noiseHit(t, 'bandpass', 2200, 0.035, 0.2 * vel, 1);
+  } finally { hitOut = null; }
+  guitarShape(ch).slice(1).forEach((m, i) => mutedPluck(c, m, t + i * 0.003, 0.22 * vel, singBus));
+}
+
+/**
+ * Một nhát đệm hát. kind theo điệu đệm (strumPattern): B/F bass, D/d/U quạt, X gõ bo.
+ * `dur` = thời gian tới nhát kế tiếp (giây), `bassDur` = tới nốt bass kế tiếp.
+ */
+export function accompHit(accomp: Accomp, kind: string, ch: AccompChord, when: number, dur: number, bassDur: number, vel = 1) {
+  if (accomp === 'band') return;
+  const c = audio();
+  const t = Math.max(when, c.currentTime);
+  vel = vary(vel);
+  if (accomp === 'piano') {
+    if (kind === 'B' || kind === 'F') pianoTone(c, kind === 'F' ? ch.fifth : ch.bass, t, bassDur * 0.95, 0.6 * vel, singBus);
+    else if (kind !== 'U') ch.triad.forEach((m) => pianoTone(c, m, t, dur * 0.9, (kind === 'd' ? 0.25 : kind === 'X' ? 0.42 : 0.36) * vel, singBus));
+    return;
+  }
+  switch (kind) {
+    case 'B': case 'F':
+      guitarTone(c, kind === 'F' ? ch.fifth : ch.bass, t, bassDur * 0.95, 0.5 * vel, singBus);
+      break;
+    case 'D': strumGuitar(c, ch, t, dur, vel, false); break;
+    case 'd': strumGuitar(c, ch, t, dur, 0.6 * vel, false); break;
+    case 'U': strumGuitar(c, ch, t, dur, vel, true); break;
+    case 'X':
+      if (accomp === 'gobo') goboSlap(c, ch, t, vel);
+      else strumGuitar(c, ch, t, dur, 1.1 * vel, false);
+      break;
+  }
 }

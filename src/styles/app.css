@@ -848,3 +848,9 @@ button, a, select { -webkit-tap-highlight-color: transparent; }
 .bt-group summary::before { content: '▸'; color: var(--ink-2); width: 1ch; }
 .bt-group[open] summary::before { content: '▾'; }
 .pb-auto { margin: 0; font-size: 0.8rem; color: var(--ink-2); }
+
+/* ===== Đệm hát ===== */
+.pb-sing { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.pb-sing .bt-label { min-width: auto; flex: none; }
+.pb-sing .pb-chips { min-width: 0; }
+.pb-chord.sing { color: var(--accent); font-size: 1.6rem; }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BO_PATTERN_LIST, boPattern, PATTERNS, resolvePattern } from './patterns';
+import { BO_PATTERN_LIST, boPattern, PATTERNS, resolvePattern, strumPattern } from './patterns';
 
 const ALLOWED: Record<string, RegExp> = {
   bongo: /^[.ftsho]+$/,
@@ -176,5 +176,29 @@ describe('beat mẫu', () => {
   it('bolero: trống bass đánh phách 1, nửa sau phách 2 và phách 3', () => {
     const k = PATTERNS.bolero.kick!;
     expect([0, 6, 8].every((i) => k[i] !== '.')).toBe(true);
+  });
+});
+
+describe('điệu đệm hát', () => {
+  const styles = [...Object.keys(PATTERNS), 'none', 'metronome'] as Parameters<typeof strumPattern>[0][];
+  for (const style of styles) {
+    for (const bpb of [2, 3, 4, 6]) {
+      it(`${style} ${bpb}/4: dài đúng bội số ô nhịp, mở bằng bass, ký hiệu hợp lệ`, () => {
+        const s = strumPattern(style, bpb);
+        expect(s.beats).toBe(bpb);
+        expect(s.strum.length % (s.beats * s.subdiv)).toBe(0);
+        expect(s.strum).toMatch(/^[BF][.BFDdUX]*$/);
+        // mỗi ô nhịp đều có tiếng đệm ngoài bass
+        const bar = s.beats * s.subdiv;
+        for (let i = 0; i < s.strum.length; i += bar) expect(s.strum.slice(i, i + bar)).toMatch(/[DdUX]/);
+      });
+    }
+  }
+
+  it('cùng lưới với beat mẫu khi số phách khớp', () => {
+    for (const [style, p] of Object.entries(PATTERNS)) {
+      const s = strumPattern(style as Parameters<typeof strumPattern>[0], p.beats);
+      expect(s.subdiv, style).toBe(p.subdiv);
+    }
   });
 });

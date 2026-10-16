@@ -1,7 +1,7 @@
 import { ReactNode, useEffect, useState } from 'react';
 import { STYLE_OPTIONS, BeatStyle } from '../audio/patterns';
 import type { InstrumentSuggestion, StyleSuggestion } from '../audio/suggest';
-import { INSTRUMENT_OPTIONS, Instrument, previewNote } from '../audio/engine';
+import { ACCOMP_OPTIONS, INSTRUMENT_OPTIONS, Instrument, previewNote } from '../audio/engine';
 import { effectivePrefs, setAutoPrefs, TEMPO_RANGES, KIT_OPTIONS, resetBeatPrefs, setBeatPrefs, SWING_OPTIONS, useBeatPrefs } from '../audio/beatPrefs';
 import { Icon } from './Icon';
 import { PlayerState } from './usePlayer';
@@ -56,7 +56,7 @@ function TempoHint({ style, bpm, tempoScale, auto, label, onSet }: { style: Beat
   );
 }
 
-function BeatTuner({ style, styleName, autoInstrument }: { style: BeatStyle; styleName: string; autoInstrument?: InstrumentSuggestion | null }) {
+function BeatTuner({ style, styleName, autoInstrument, sing }: { style: BeatStyle; styleName: string; autoInstrument?: InstrumentSuggestion | null; sing: boolean }) {
   const raw = useBeatPrefs();
   // giá trị thực đang dùng cho kiểu nhịp này (khi tự động)
   const b = effectivePrefs(raw, style, autoInstrument?.instrument ?? null);
@@ -110,7 +110,9 @@ function BeatTuner({ style, styleName, autoInstrument }: { style: BeatStyle; sty
       <Slider label="Âm lượng beat" value={b.beatVol} onChange={(v) => setBeatPrefs({ beatVol: v })} />
       {b.bass && <Slider label="Âm lượng bass" value={b.bassVol} onChange={(v) => setBeatPrefs({ bassVol: v })} />}
       {b.comp && <Slider label="Âm lượng đệm hợp âm" value={b.compVol} onChange={(v) => setBeatPrefs({ compVol: v })} />}
-      <Slider label="Âm lượng giai điệu" value={b.melodyVol} onChange={(v) => setBeatPrefs({ melodyVol: v })} />
+      {sing && b.accomp !== 'band'
+        ? <Slider label="Âm lượng đệm hát" value={b.singVol} onChange={(v) => setBeatPrefs({ singVol: v })} />
+        : <Slider label="Âm lượng giai điệu" value={b.melodyVol} onChange={(v) => setBeatPrefs({ melodyVol: v })} />}
       <Slider label="Độ vang" value={b.reverb} onChange={(v) => setBeatPrefs({ reverb: v })} />
       <details className="bt-group" open={percOpen} onToggle={(e) => rememberPercOpen((e.target as HTMLDetailsElement).open)}>
         <summary>Bộ gõ <span className="muted">bo, cowbell, clap{b.bo ? ' · đang gõ bo' : ''}</span></summary>
@@ -152,7 +154,7 @@ export function PlayerBar({ p, loopLabel, onToggleLoop, extra, autoStyle, autoAp
           <button type="button" className="icon-btn" onClick={() => step(0.05)} aria-label="Nhanh lên"><Icon name="plus" size={18} /></button>
         </div>
         {p.countIn != null && <div className="pb-countin" aria-live="assertive">{p.countIn}</div>}
-        {p.countIn == null && p.chord && opts.beat && (prefs.bass || prefs.comp) && <div className="pb-chord" title="Hợp âm đệm">{p.chord}</div>}
+        {p.countIn == null && p.chord && (opts.sing || (opts.beat && (prefs.bass || prefs.comp))) && <div className={`pb-chord${opts.sing ? ' sing' : ''}`} title="Hợp âm đệm">{p.chord}</div>}
         <label className="pb-style">
           <span className="sr-only">Kiểu beat</span>
           <select value={autoPicked && autoStyle && opts.style === autoStyle.style ? '__auto' : opts.style} onChange={(e) => {
@@ -178,8 +180,9 @@ export function PlayerBar({ p, loopLabel, onToggleLoop, extra, autoStyle, autoAp
       <TempoHint style={opts.style} bpm={opts.bpm} tempoScale={opts.tempoScale} auto={prefs.auto} label={styleLabel(opts.style)}
         onSet={(scale) => setOpts({ tempoScale: scale })} />
       <div className="pb-chips">
-        <Toggle on={opts.melody} onClick={() => setOpts({ melody: !opts.melody })}>Giai điệu</Toggle>
-        <Toggle on={opts.beat} onClick={() => setOpts({ beat: !opts.beat })}>Beat</Toggle>
+        <Toggle on={!!opts.sing} onClick={() => setOpts({ sing: !opts.sing })}>🎤 Đệm hát</Toggle>
+        <Toggle on={opts.melody && !opts.sing} onClick={() => setOpts(opts.sing ? { sing: false, melody: true } : { melody: !opts.melody })}>Giai điệu</Toggle>
+        {!opts.sing && <Toggle on={opts.beat} onClick={() => setOpts({ beat: !opts.beat })}>Beat</Toggle>}
         <Toggle on={opts.click} onClick={() => setOpts({ click: !opts.click })}>Tiếng đếm</Toggle>
         <Toggle on={opts.countIn} onClick={() => setOpts({ countIn: !opts.countIn })}>Đếm vào</Toggle>
         {onToggleLoop && (
@@ -189,7 +192,15 @@ export function PlayerBar({ p, loopLabel, onToggleLoop, extra, autoStyle, autoAp
         )}
         {extra}
       </div>
-      {tuner && <BeatTuner style={opts.style} styleName={styleLabel(opts.style)} autoInstrument={autoInstrument} />}
+      {opts.sing && (
+        <div className="pb-sing" role="group" aria-label="Nhạc cụ đệm hát">
+          <span className="bt-label">Đệm bằng</span>
+          <div className="pb-chips">
+            {ACCOMP_OPTIONS.map((a) => <Toggle key={a.value} on={prefs.accomp === a.value} onClick={() => setBeatPrefs({ accomp: a.value })}>{a.label}</Toggle>)}
+          </div>
+        </div>
+      )}
+      {tuner && <BeatTuner style={opts.style} styleName={styleLabel(opts.style)} autoInstrument={autoInstrument} sing={!!opts.sing} />}
     </div>
   );
 }

@@ -265,3 +265,47 @@ export function resolvePattern(style: BeatStyle, beatsPerBar: number): BeatPatte
   if (beatsPerBar === 2) return resolvePattern('rock', 2);
   return null;
 }
+
+/**
+ * Đệm hát (guitar / piano tự đệm, không trống). Mỗi ký tự là một ô trên lưới beats × subdiv,
+ * chuỗi dài 2 ô nhịp thì ô thứ hai là biến tấu:
+ *   B = bass gốc (ngón cái), F = bass quãng 5, D = quạt xuống, d = quạt xuống khẽ,
+ *   U = quạt lên (dây cao), X = gõ bo (chặn dây + vỗ thùng đàn; guitar quạt / piano: hợp âm dằn), . = nghỉ
+ */
+export interface StrumPattern { beats: number; subdiv: number; strum: string }
+
+const STRUM_PATTERNS: Record<Exclude<BeatStyle, 'none' | 'metronome'>, StrumPattern> = {
+  rock: { beats: 4, subdiv: 2, strum: 'BDXUDUXU' },
+  ballad: { beats: 4, subdiv: 2, strum: 'B.XUFUXU' },
+  shuffle: { beats: 4, subdiv: 3, strum: 'B.UX.UF.UX.U' },
+  slowrock: { beats: 4, subdiv: 3, strum: 'BUUXUUFUUXUU' },
+  train: { beats: 4, subdiv: 4, strum: 'B...X.U.F...X.U.' },
+  bolero: { beats: 4, subdiv: 4, strum: 'B...X.B.F...X.U.' },
+  rumba: { beats: 4, subdiv: 4, strum: 'B..U..X.F..U..X.' },
+  chacha: { beats: 4, subdiv: 4, strum: 'B...X...F...X.X.' },
+  tango: { beats: 4, subdiv: 4, strum: 'B...X...F...X.d.' },
+  bossa: { beats: 4, subdiv: 4, strum: 'B..d..d.F..d.d..' },
+  disco: { beats: 4, subdiv: 4, strum: 'B.U.X.U.F.U.X.U.' },
+  jazz: { beats: 4, subdiv: 3, strum: 'B..X..F..X..' },
+  reggae: { beats: 4, subdiv: 4, strum: 'B...X...F...X...' },
+  ska: { beats: 4, subdiv: 2, strum: 'BXFXBXFX' },
+  country: { beats: 4, subdiv: 4, strum: 'B...X.U.F...X.U.' },
+  march: { beats: 4, subdiv: 4, strum: 'B...D...F...D...' },
+  polka: { beats: 4, subdiv: 2, strum: 'BXFXBXFX' },
+  samba: { beats: 4, subdiv: 4, strum: 'B..U.UX.F..U.UX.' },
+  salsa: { beats: 4, subdiv: 4, strum: 'B..U..X.F.U...X.' },
+  waltz: { beats: 3, subdiv: 2, strum: 'B.XUXU' + 'F.XUXU' },
+};
+
+/** Điệu đệm hát cho kiểu nhịp + số phách (không beat / đếm nhịp: ballad hoặc valse) */
+export function strumPattern(style: BeatStyle, beatsPerBar: number): StrumPattern {
+  const base = style === 'none' || style === 'metronome' ? null : STRUM_PATTERNS[style];
+  if (base && base.beats === beatsPerBar) return base;
+  // 2/4: chuỗi 4/4 chia đôi thành hai ô
+  if (beatsPerBar === 2) return { ...(base && base.beats === 4 ? base : STRUM_PATTERNS.ballad), beats: 2 };
+  if (beatsPerBar === 3) return STRUM_PATTERNS.waltz;
+  if (beatsPerBar === 4) return STRUM_PATTERNS.ballad;
+  // nhịp lạ (5/4, 6/4…): bass đầu ô, gõ bo + quạt lên các phách sau
+  const n = Math.max(1, beatsPerBar);
+  return { beats: n, subdiv: 2, strum: 'B.' + 'XU'.repeat(n - 1) };
+}

@@ -7,7 +7,7 @@
  * cho tới khi bấm "Về tự động".
  */
 import { useSyncExternalStore } from 'react';
-import { applyMix, DrumKit, Instrument } from './engine';
+import { Accomp, applyMix, DrumKit, Instrument } from './engine';
 import type { BeatStyle } from './patterns';
 
 export interface BeatPrefs {
@@ -36,6 +36,10 @@ export interface BeatPrefs {
   compVol: number;
   clapVol: number;
   reverb: number;
+  /** nhạc cụ đệm khi bật "Đệm hát" (tắt giai điệu, chỉ đệm để hát theo) */
+  accomp: Accomp;
+  /** âm lượng đệm hát (guitar / piano tự đệm) */
+  singVol: number;
   /** hiện hợp âm đệm trên tab */
   showChords: boolean;
   /** tự chỉnh âm thanh theo kiểu nhịp */
@@ -46,7 +50,7 @@ export interface BeatPrefs {
 
 export const DEFAULT_BEAT_PREFS: BeatPrefs = {
   instrument: 'harmonica', kit: 'acoustic', swing: 0, humanize: true, fills: false, bass: true, comp: true, bo: false,
-  beatVol: 0.6, melodyVol: 0.55, bassVol: 0.7, boVol: 0.8, bellVol: 0.8, compVol: 0.7, clapVol: 0.8, reverb: 0.25, showChords: false,
+  beatVol: 0.6, melodyVol: 0.55, bassVol: 0.7, boVol: 0.8, bellVol: 0.8, compVol: 0.7, clapVol: 0.8, reverb: 0.25, accomp: 'gobo', singVol: 0.8, showChords: false,
   auto: true, manual: [],
 };
 

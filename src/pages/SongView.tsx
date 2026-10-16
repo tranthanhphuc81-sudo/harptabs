@@ -55,9 +55,11 @@ function SongPlayerView({ song }: { song: Song }) {
 
   // ----- hợp âm đệm: hiện trên tab, chọn tay khi máy đoán sai -----
   const tonality = useMemo(() => parseTonality(song.songKey || songTonality(song.harpKey, song.position))!, [song.songKey, song.harpKey, song.position]);
+  // đệm hát: luôn hiện hợp âm trên lời để hát theo
+  const showChords = beatPrefs.showChords || !!p.opts.sing;
   const chordSegs = useMemo(
-    () => (beatPrefs.showChords ? harmonizeSegments(flat, bpb, song.pickupBeats, tonality, song.chords) : null),
-    [beatPrefs.showChords, flat, bpb, song.pickupBeats, tonality, song.chords],
+    () => (showChords ? harmonizeSegments(flat, bpb, song.pickupBeats, tonality, song.chords) : null),
+    [showChords, flat, bpb, song.pickupBeats, tonality, song.chords],
   );
   const [chordEdit, setChordEdit] = useState<ChordSegment | null>(null);
   const pickChord = (seg: ChordSegment, name: string | null) => {
@@ -240,7 +242,7 @@ function SongPlayerView({ song }: { song: Song }) {
           Hợp âm{manualCount > 0 ? ` (${manualCount} chọn tay)` : ''}
         </button>
       </p>
-      {beatPrefs.showChords && <p className="small muted">Chạm vào tên hợp âm trên nốt để đổi. Viền đậm là hợp âm bạn đã chọn tay.</p>}
+      {showChords && <p className="small muted">Chạm vào tên hợp âm trên nốt để đổi. Viền đậm là hợp âm bạn đã chọn tay.</p>}
 
       {waitMode && (
         <div className="wait-banner" role="status">
