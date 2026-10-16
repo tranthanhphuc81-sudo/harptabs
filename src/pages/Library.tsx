@@ -2,6 +2,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { db, deleteSongs, fold, importBackup } from '../lib/db';
+import { compareTitle } from '../lib/songSort';
 import { HARP_KEYS } from '../lib/harp';
 import { Song } from '../lib/types';
 import { Icon } from '../components/Icon';
@@ -10,7 +11,17 @@ import { KeyPlate } from '../components/KeySelect';
 import { useAppState } from '../state';
 import { PATTERNS } from '../audio/patterns';
 
-type Sort = 'recent' | 'title' | 'practiced';
+type Sort = 'recent' | 'title' | 'title-desc' | 'practiced';
+const SORTS: Sort[] = ['recent', 'title', 'title-desc', 'practiced'];
+// nhớ cách sắp xếp đã chọn (chỉ là tiện lợi trên máy này)
+const SORT_KEY = 'harptabs.librarySort';
+
+function loadSort(): Sort {
+  try {
+    const v = localStorage.getItem(SORT_KEY) as Sort | null;
+    return v && SORTS.includes(v) ? v : 'recent';
+  } catch { return 'recent'; }
+}
 
 const DIFF = ['', 'Dễ', 'Vừa', 'Khó'];
 
@@ -26,7 +37,11 @@ export default function Library() {
   const [fav, setFav] = useState(false);
   const [key, setKey] = useState<string>('');
   const [diff, setDiff] = useState<number>(0);
-  const [sort, setSort] = useState<Sort>('recent');
+  const [sort, setSortState] = useState<Sort>(loadSort);
+  const setSort = (v: Sort) => {
+    setSortState(v);
+    try { localStorage.setItem(SORT_KEY, v); } catch { /* bỏ qua */ }
+  };
   const fileRef = useRef<HTMLInputElement>(null);
   const nav = useNavigate();
   const { toast } = useAppState();
@@ -54,7 +69,8 @@ export default function Library() {
       .filter((s) => !diff || s.difficulty === diff)
       .filter((s) => !fq || fold(`${s.title} ${s.artist ?? ''} ${s.tags.join(' ')}`).includes(fq))
       .sort((a, b) => {
-        if (sort === 'title') return a.title.localeCompare(b.title, 'vi');
+        if (sort === 'title') return compareTitle(a, b);
+        if (sort === 'title-desc') return compareTitle(a, b, -1);
         if (sort === 'practiced') return (b.lastPracticedAt ?? 0) - (a.lastPracticedAt ?? 0);
         return b.updatedAt - a.updatedAt;
       });
@@ -120,6 +136,7 @@ export default function Library() {
             <option value="recent">Mới sửa</option>
             <option value="practiced">Mới tập</option>
             <option value="title">Tên A–Z</option>
+            <option value="title-desc">Tên Z–A</option>
           </select>
         </div>
       </div>
