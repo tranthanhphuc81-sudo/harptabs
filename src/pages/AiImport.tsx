@@ -31,7 +31,8 @@ export default function AiImport() {
   const nav = useNavigate();
   const [params] = useSearchParams();
   const editScan = params.get('scan') ?? undefined;
-  const [mode, setMode] = useState<Mode>(params.get('paste') ? 'paste' : 'scan');
+  // mặc định mở "File nhạc" (MIDI / MusicXML: chính xác tuyệt đối); link sửa bản quét / dán tab mở thẳng chế độ đó
+  const [mode, setMode] = useState<Mode>(params.get('paste') ? 'paste' : editScan ? 'scan' : 'file');
   const [lastMode, setLastMode] = useState<Mode>('image'); // chế độ đã tạo ra kết quả đang hiện
   const [images, setImages] = useState<Img[]>([]);
   const [title, setTitle] = useState('');
@@ -146,7 +147,7 @@ export default function AiImport() {
       <header className="page-head">
         <div>
           <h1>{editScan ? 'Sửa nốt trên ảnh' : 'Nhập bài'}</h1>
-          <p className="muted">Chụp khuông nhạc để máy tự đọc nốt, mở file nhạc MIDI / MusicXML, dán tab copy từ mạng, hoặc nhờ AI đọc ảnh / nhớ bài theo tên.</p>
+          <p className="muted">Mở file nhạc MIDI / MusicXML (chính xác nhất), chụp khuông nhạc để máy tự đọc nốt, dán tab copy từ mạng, hoặc nhờ AI đọc ảnh / nhớ bài theo tên.</p>
         </div>
       </header>
 
@@ -158,11 +159,11 @@ export default function AiImport() {
       {(mode === 'image' || mode === 'name') && !online && <div className="alert">Bạn đang offline. Phần này cần mạng; các phần khác của app vẫn dùng bình thường.</div>}
 
       <div className="segmented" role="tablist" aria-label="Cách nhập">
-        <button type="button" role="tab" aria-selected={mode === 'scan'} className={mode === 'scan' ? 'on' : ''} onClick={() => setMode('scan')}>
-          <Icon name="scan" size={18} /> Quét nhạc
-        </button>
         <button type="button" role="tab" aria-selected={mode === 'file'} className={mode === 'file' ? 'on' : ''} onClick={() => setMode('file')}>
           <Icon name="music" size={18} /> File nhạc
+        </button>
+        <button type="button" role="tab" aria-selected={mode === 'scan'} className={mode === 'scan' ? 'on' : ''} onClick={() => setMode('scan')}>
+          <Icon name="scan" size={18} /> Quét nhạc
         </button>
         <button type="button" role="tab" aria-selected={mode === 'paste'} className={mode === 'paste' ? 'on' : ''} onClick={() => setMode('paste')}>
           <Icon name="edit" size={18} /> Dán tab
