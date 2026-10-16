@@ -36,6 +36,7 @@ function SongPlayerView({ song }: { song: Song }) {
   const parsed = useMemo(() => parseTab(song.body, song.harpKey), [song.body, song.harpKey]);
   const flat = useMemo(() => flatten(parsed), [parsed]);
   const stats = useMemo(() => countTechniques(parsed), [parsed]);
+  const sections = useMemo(() => parsed.sections.map((s) => s.title), [parsed]);
   const bpb = beatsPerBar(song.timeSig);
 
   // tự động tối ưu: mở bài là áp kiểu nhịp hợp nhất (trừ bài để "Không beat" / "Máy đếm nhịp")
@@ -47,6 +48,7 @@ function SongPlayerView({ song }: { song: Song }) {
     style: autoApplied ? autoStyle.style : song.style, melody: true, beat: song.style !== 'none', click: false, countIn: true,
     songKey: song.songKey || songTonality(song.harpKey, song.position),
     chordOverrides: song.chords,
+    sections,
   });
   // nhạc cụ giai điệu hợp với bài và kiểu nhịp đang phát (chỉ dùng khi tự động, chỉnh tay thì giữ)
   const autoInstrument = useMemo(() => suggestInstrument(song, flat, p.opts.style), [song, flat, p.opts.style]);

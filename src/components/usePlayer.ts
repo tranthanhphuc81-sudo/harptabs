@@ -10,6 +10,8 @@ export interface PlayerState {
   countIn: number | null;
   /** hợp âm đệm đang vang (khi bật bass) */
   chord: string | null;
+  /** cách đệm hát bài này (theo đặc trưng bài) */
+  accompNote: string | null;
   opts: PlayerOptions;
   setOpts: (p: Partial<PlayerOptions>) => void;
   play: (fromIndex?: number) => void;
@@ -33,6 +35,7 @@ export function usePlayer(flat: FlatEvent[], init: Omit<PlayerOptions, 'loop'> &
   const [active, setActive] = useState<number | null>(null);
   const [countIn, setCountIn] = useState<number | null>(null);
   const [chord, setChord] = useState<string | null>(null);
+  const [accompNote, setAccompNote] = useState<string | null>(null);
   const raf = useRef(0);
   const flatRef = useRef(flat);
   flatRef.current = flat;
@@ -40,16 +43,17 @@ export function usePlayer(flat: FlatEvent[], init: Omit<PlayerOptions, 'loop'> &
   if (!playerRef.current) playerRef.current = new Player(opts);
   const player = playerRef.current;
 
-  useEffect(() => { player.load(flat); }, [flat, player]);
+  useEffect(() => { player.load(flat); setAccompNote(player.accompSummary()); }, [flat, player]);
 
   // đồng bộ khi bài thay đổi tempo/nhịp gốc
   useEffect(() => {
-    setOptsState((o) => ({ ...o, bpm: init.bpm, beatsPerBar: init.beatsPerBar, pickupBeats: init.pickupBeats, style: init.style, songKey: init.songKey, chordOverrides: init.chordOverrides }));
-  }, [init.bpm, init.beatsPerBar, init.pickupBeats, init.style, init.songKey, init.chordOverrides]);
+    setOptsState((o) => ({ ...o, bpm: init.bpm, beatsPerBar: init.beatsPerBar, pickupBeats: init.pickupBeats, style: init.style, songKey: init.songKey, chordOverrides: init.chordOverrides, sections: init.sections }));
+  }, [init.bpm, init.beatsPerBar, init.pickupBeats, init.style, init.songKey, init.chordOverrides, init.sections]);
 
   useEffect(() => {
     const prevStyle = player.options.style;
     player.setOptions(opts);
+    setAccompNote(player.accompSummary());
     if (player.playing && prevStyle !== opts.style) {
       const b = player.currentBeat() ?? 0;
       player.start(Math.max(0, b));
@@ -97,5 +101,5 @@ export function usePlayer(flat: FlatEvent[], init: Omit<PlayerOptions, 'loop'> &
 
   const setOpts = useCallback((p: Partial<PlayerOptions>) => setOptsState((o) => ({ ...o, ...p })), []);
 
-  return { playing, active, countIn, chord, opts, setOpts, play, stop, toggle };
+  return { playing, active, countIn, chord, accompNote, opts, setOpts, play, stop, toggle };
 }

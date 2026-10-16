@@ -7,6 +7,7 @@ import { getEffectivePrefs, setActiveStyle } from './beatPrefs';
 import { Accomp, accompHit, audio, bass, bongo, chordStab, clap, clave, click, cowbell, conga, crash, guiro, hat, kick, playTone, ride, rim, setHumanVelocity, shaker, snare, surdo, tom } from './engine';
 import { bassMidi, Chord, chordAt, chordVoicing, ChordOverrides, ChordSpan, harmonize, parseTonality, walkingNote } from './harmony';
 import { BeatPattern, BeatStyle, boPattern, resolvePattern, strumPattern } from './patterns';
+import { AccompPlan, barTrack, planAccomp } from './accompPlan';
 
 export interface PlayerOptions {
   bpm: number;
@@ -17,6 +18,8 @@ export interface PlayerOptions {
   melody: boolean;
   /** đệm hát: tắt giai điệu, chỉ phát phần đệm (nhạc cụ đệm chọn trong cài đặt beat) */
   sing?: boolean;
+  /** tiêu đề từng đoạn (nhận ra điệp khúc để đệm đầy hơn) */
+  sections?: (string | undefined)[];
   beat: boolean;
   click: boolean;
   countIn: boolean;
@@ -44,6 +47,9 @@ export class Player {
   private finished = false;
   private chords: ChordSpan[] = [];
   private chordKey = '';
+  /** kế hoạch đệm hát theo đặc trưng bài + điệu từng ô đã dựng */
+  private plan: AccompPlan | null = null;
+  private barTracks = new Map<string, string>();
   /** nốt bass walking vừa đánh (để nốt sau đi liền mạch) */
   private walkPrev: number | null = null;
   playing = false;
@@ -64,10 +70,17 @@ export class Player {
 
   private updateChords() {
     const o = this.opts;
-    const k = `${o.beatsPerBar}|${o.pickupBeats}|${o.songKey ?? ''}|${JSON.stringify(o.chordOverrides ?? {})}`;
+    const k = `${o.beatsPerBar}|${o.pickupBeats}|${o.songKey ?? ''}|${JSON.stringify(o.chordOverrides ?? {})}|${o.bpm}|${(o.sections ?? []).join('')}`;
     if (k === this.chordKey) return;
     this.chordKey = k;
     this.chords = harmonize(this.events, o.beatsPerBar, o.pickupBeats, parseTonality(o.songKey), o.chordOverrides);
+    this.plan = planAccomp(this.events, this.chords, { bpm: o.bpm, beatsPerBar: o.beatsPerBar, pickupBeats: o.pickupBeats, sections: o.sections });
+    this.barTracks.clear();
+  }
+
+  /** Mô tả cách đệm hát bài này (hiện cho người dùng) */
+  accompSummary(): string | null {
+    return this.plan?.summary ?? null;
   }
 
   /** Hợp âm đệm tại vị trí (phách) */
@@ -212,34 +225,52 @@ export class Player {
     bass(bassMidi(chord, altFifth), t, durBeats * spb, ch === 'X' || stepIdx === 0 ? 1 : 0.8);
   }
 
-  /** Một ô của điệu đệm hát (guitar gõ bo / quạt chả / piano) */
-  private strumHit(track: string, acc: Accomp, stepIdx: number, beat: number, t0: number, spb: number, subdiv: number) {
+  /** Một ô của điệu đệm hát (guitar gõ bo / quạt chả / piano), theo kế hoạch đệm của bài */
+  private strumHit(acc: Accomp, stepIdx: number, beat: number, t0: number, spb: number) {
     const o = this.opts;
-    const barLen = o.beatsPerBar * subdiv;
-    const len = track.length;
+    const base = strumPattern(o.style, o.beatsPerBar);
+    const subdiv = base.subdiv;
     const bar = Math.floor((beat - o.pickupBeats) / o.beatsPerBar + EPS);
-    const cyc = (len > barLen ? (Math.max(0, bar) % Math.round(len / barLen)) * barLen : 0) + stepIdx;
-    const kind = track[cyc % len];
-    if (!kind || kind === '.') return;
+    const plan = bar >= 0 ? this.plan?.bars[bar] : undefined;
+    const tk = `${bar}|${o.style}|${o.beatsPerBar}`;
+    let track = this.barTracks.get(tk);
+    if (!track) { track = barTrack(plan, bar, base); this.barTracks.set(tk, track); }
+    const len = track.length;
+    let kind = track[stepIdx] ?? '.';
     const chord = this.chordAt(beat + 1e-3);
     if (!chord || chord.root < 0) return;
+    const span = this.chords.find((c) => beat >= c.start - 1e-6 && beat < c.end - 1e-6);
+    // đổi hợp âm giữa ô mà điệu không có bass ở đó: đánh bass gốc của hợp âm mới
+    const changed = !!span && bar >= 0 && stepIdx > 0 && Math.abs(span.start - beat) < 1e-6;
+    if (kind === '.' && !changed) return;
     const gapTo = (hit: (k: string) => boolean) => {
       let g = 1;
-      while (g < len && !hit(track[(cyc + g) % len])) g++;
+      while (stepIdx + g < len && !hit(track![stepIdx + g])) g++;
       return g;
     };
     const step = 1 / subdiv;
-    const span = this.chords.find((c) => beat >= c.start - 1e-6 && beat < c.end - 1e-6);
     const untilChange = span ? span.end - beat : Infinity;
     const dur = Math.min(gapTo((k) => k !== '.') * step, 2, untilChange);
-    const bassDur = Math.min(gapTo((k) => k === 'B' || k === 'F') * step, 2, untilChange);
+    const bassDur = Math.min(gapTo((k) => 'BFPQZ'.includes(k)) * step, 2, untilChange);
     const bp = getEffectivePrefs(o.style);
     setHumanVelocity(bp.humanize ? 0.1 : 0);
     const swing = subdiv !== 3 && stepIdx % 2 === 1 ? bp.swing * step * spb : 0;
     const jitter = bp.humanize ? (Math.random() - 0.5) * 0.01 : 0;
-    const accent = stepIdx % subdiv === 0 ? 1 : 0.85;
-    accompHit(acc, kind, { bass: bassMidi(chord), fifth: bassMidi(chord, true), minor: chord.minor, triad: chordVoicing(chord) },
-      t0 + swing + jitter, dur * spb, bassDur * spb, accent);
+    const vel = (stepIdx % subdiv === 0 ? 1 : 0.85) * (plan?.energy ?? 1);
+    const ch = { bass: bassMidi(chord), fifth: bassMidi(chord, true), minor: chord.minor, triad: chordVoicing(chord) };
+    const when = t0 + swing + jitter;
+    if (kind === 'P' || kind === 'Q') {
+      // bass dẫn: nửa cung / một cung dưới gốc hợp âm ô sau
+      const next = this.chordAt(o.pickupBeats + (bar + 1) * o.beatsPerBar + 1e-3);
+      const target = next && next.root >= 0 ? bassMidi(next) : ch.bass;
+      accompHit(acc, 'B', { ...ch, bass: target - (kind === 'Q' ? 2 : 1) }, when, dur * spb, dur * spb, 0.85 * vel);
+      return;
+    }
+    if (changed && !'BFZ'.includes(kind)) {
+      accompHit(acc, 'B', ch, when, dur * spb, bassDur * spb, vel);
+      if (kind === '.') return;
+    }
+    accompHit(acc, kind, ch, when, dur * spb, bassDur * spb, vel);
   }
 
   private tick() {
@@ -280,7 +311,7 @@ export class Player {
       const posInBar = mod(b0 - o.pickupBeats, o.beatsPerBar);
       const stepIdx = Math.round(posInBar * subdiv);
       const onGrid = Math.abs(posInBar * subdiv - stepIdx) < 1e-3;
-      if (onGrid && strum && acc) this.strumHit(strum.strum, acc, stepIdx, b0, t0, spb, subdiv);
+      if (onGrid && strum && acc) this.strumHit(acc, stepIdx, b0, t0, spb);
       if (onGrid && (acc === 'band' || (!acc && o.beat)) && pattern) {
         const bp = getEffectivePrefs(style);
         setHumanVelocity(bp.humanize ? 0.12 : 0);

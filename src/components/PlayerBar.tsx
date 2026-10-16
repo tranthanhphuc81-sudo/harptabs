@@ -200,6 +200,7 @@ export function PlayerBar({ p, loopLabel, onToggleLoop, extra, autoStyle, autoAp
           </div>
         </div>
       )}
+      {opts.sing && prefs.accomp !== 'band' && p.accompNote && <p className="pb-auto" role="status">✨ Đệm theo bài: {p.accompNote}</p>}
       {tuner && <BeatTuner style={opts.style} styleName={styleLabel(opts.style)} autoInstrument={autoInstrument} sing={!!opts.sing} />}
     </div>
   );

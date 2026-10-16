@@ -930,7 +930,8 @@ function goboSlap(c: AudioContext, ch: AccompChord, t: number, vel: number) {
 }
 
 /**
- * Một nhát đệm hát. kind theo điệu đệm (strumPattern): B/F bass, D/d/U quạt, X gõ bo.
+ * Một nhát đệm hát. kind theo điệu đệm (strumPattern / barTrack): B/F bass, D/d/U quạt, X gõ bo,
+ * 3/4/5 rải một dây (dây số 3 = quãng 3, 4 = quãng 5, 5 = quãng 8 trên), Z = kết bài (bass + quạt chậm ngân dài).
  * `dur` = thời gian tới nhát kế tiếp (giây), `bassDur` = tới nốt bass kế tiếp.
  */
 export function accompHit(accomp: Accomp, kind: string, ch: AccompChord, when: number, dur: number, bassDur: number, vel = 1) {
@@ -938,6 +939,27 @@ export function accompHit(accomp: Accomp, kind: string, ch: AccompChord, when: n
   const c = audio();
   const t = Math.max(when, c.currentTime);
   vel = vary(vel);
+  const arp = kind >= '3' && kind <= '5';
+  if (kind === 'Z') {
+    // kết bài: bass rồi một tiếng quạt / hợp âm thật chậm, để ngân
+    if (accomp === 'piano') {
+      pianoTone(c, ch.bass, t, 2.6, 0.7 * vel, singBus);
+      [...ch.triad, ch.triad[0] + 12].forEach((m, i) => pianoTone(c, m, t + i * 0.02, 2.6, 0.38 * vel, singBus));
+    } else {
+      guitarTone(c, ch.bass, t, 2.6, 0.55 * vel, singBus);
+      guitarShape(ch).slice(1).forEach((m, i) => guitarTone(c, m, t + 0.02 + i * 0.035, 2.6, vel * 0.32, singBus));
+    }
+    return;
+  }
+  if (arp) {
+    // rải: dây buông ngân tới nhát sau một chút cho liền tiếng
+    const ring = Math.min(1.6, dur * 2.2);
+    if (accomp === 'piano') {
+      const m = kind === '3' ? ch.triad[1] : kind === '4' ? ch.triad[2] : ch.triad[0] + 12;
+      pianoTone(c, m, t, ring, 0.34 * vel, singBus);
+    } else guitarTone(c, guitarShape(ch)[Number(kind)], t, ring, 0.42 * vel, singBus);
+    return;
+  }
   if (accomp === 'piano') {
     if (kind === 'B' || kind === 'F') pianoTone(c, kind === 'F' ? ch.fifth : ch.bass, t, bassDur * 0.95, 0.6 * vel, singBus);
     else if (kind !== 'U') ch.triad.forEach((m) => pianoTone(c, m, t, dur * 0.9, (kind === 'd' ? 0.25 : kind === 'X' ? 0.42 : 0.36) * vel, singBus));
