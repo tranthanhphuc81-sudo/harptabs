@@ -123,6 +123,7 @@ const NAMED_INSTRUMENTS: [RegExp, Instrument][] = [
   [/accordion|phong cam/, 'accordion'],
   [/\borgan\b/, 'organ'],
   [/\bsax/, 'sax'],
+  [/huyt sao|\bwhistl/, 'whistle'],
 ];
 
 const HYMN = /thanh ca|thanh vinh|\bhymn\b|\bchoral\b/;

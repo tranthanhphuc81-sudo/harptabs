@@ -52,6 +52,8 @@ describe('tự chọn nhạc cụ', () => {
     expect(inst({ title: 'Romance (guitar)' }, 'waltz')).toBe('guitar');
     expect(inst({ title: 'Song of the Wind', tags: ['fiddle'] }, 'country')).toBe('violin');
     expect(inst({ title: 'Hồn quê', tags: ['sáo trúc'] }, 'ballad')).toBe('flute');
+    expect(inst({ title: 'Đồi thông hai mộ', tags: ['huýt sáo'] }, 'ballad')).toBe('whistle');
+    expect(inst({ title: 'The Good, the Bad and the Ugly (whistling)' }, 'country')).toBe('whistle');
     expect(inst({ title: 'Amazing Grace', tags: ['hymn'] }, 'waltz')).toBe('organ');
     expect(inst({ title: 'Lý cây đa', tags: ['dân ca quan họ'] }, 'ballad')).toBe('flute');
     expect(inst({ title: 'Bắc kim thang', tags: ['dân ca'] }, 'ballad', notes([1, 1], [60, 62], ['Bắc', 'kim']))).toBe('flute');

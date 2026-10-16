@@ -71,7 +71,7 @@ export function audio(): AudioContext {
   return ctx;
 }
 
-export type Instrument = 'harmonica' | 'piano' | 'guitar' | 'flute' | 'violin' | 'accordion' | 'organ' | 'sax';
+export type Instrument = 'harmonica' | 'piano' | 'guitar' | 'flute' | 'violin' | 'accordion' | 'organ' | 'sax' | 'whistle';
 
 export const INSTRUMENT_OPTIONS: { value: Instrument; label: string }[] = [
   { value: 'harmonica', label: 'Kèn harmonica' },
@@ -82,6 +82,7 @@ export const INSTRUMENT_OPTIONS: { value: Instrument; label: string }[] = [
   { value: 'accordion', label: 'Accordion' },
   { value: 'organ', label: 'Organ' },
   { value: 'sax', label: 'Saxophone' },
+  { value: 'whistle', label: 'Huýt sáo' },
 ];
 
 let instrument: Instrument = 'harmonica';
@@ -99,6 +100,7 @@ export function playTone(midi: number, when: number, dur: number, velocity = 1, 
     case 'accordion': return reedTone(c, midi, t, dur, velocity, dest);
     case 'organ': return organTone(c, midi, t, dur, velocity, dest);
     case 'sax': return saxTone(c, midi, t, dur, velocity, dest);
+    case 'whistle': return whistleTone(c, midi, t, dur, velocity, dest);
     default: return harmonicaTone(c, midi, t, dur, velocity, dest);
   }
 }
@@ -261,6 +263,35 @@ function fluteTone(c: AudioContext, midi: number, t: number, dur: number, vel: n
   for (const o of [o1, o2]) { o.start(t); o.stop(end + 0.12); }
   // tiếng hơi qua lỗ sáo
   breath(c, t, end, f * 2, 2, 0.09 * vel, 0.025 * vel, out);
+}
+
+/** huýt sáo: sin gần như tinh khiết, vuốt cao độ lên lúc vào nốt, rung muộn, chút tiếng hơi qua môi */
+function whistleTone(c: AudioContext, midi: number, t: number, dur: number, vel: number, out: AudioNode) {
+  const f = midiToHz(midi);
+  const end = t + Math.max(0.1, dur);
+  const env = c.createGain();
+  const peak = 0.34 * vel;
+  env.gain.setValueAtTime(0.0001, t);
+  env.gain.exponentialRampToValueAtTime(peak, t + 0.04);
+  env.gain.setValueAtTime(peak, end - 0.02 > t + 0.04 ? end - 0.02 : t + 0.04);
+  env.gain.exponentialRampToValueAtTime(0.0001, end + 0.07);
+  env.connect(out);
+  const o1 = c.createOscillator();
+  const o2 = c.createOscillator();
+  const g2 = c.createGain();
+  o1.type = 'sine';
+  o2.type = 'sine';
+  g2.gain.value = 0.04;
+  for (const [o, n] of [[o1, 1], [o2, 2]] as [OscillatorNode, number][]) {
+    // môi chỉnh dần tới đúng nốt: bắt đầu thấp ~40 cent
+    o.frequency.setValueAtTime(f * n * 0.977, t);
+    o.frequency.exponentialRampToValueAtTime(f * n, t + 0.06);
+  }
+  o1.connect(env);
+  o2.connect(g2).connect(env);
+  vibrato(c, t, 5.2, f * 0.008, 0.22, [o1.frequency, o2.frequency], end + 0.1);
+  for (const o of [o1, o2]) { o.start(t); o.stop(end + 0.1); }
+  breath(c, t, end, f, 6, 0.05 * vel, 0.012 * vel, out);
 }
 
 /** nguồn răng cưa/vuông qua lọc cộng hưởng (formant) — dùng cho violin, kèn sax */
