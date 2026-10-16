@@ -34,6 +34,8 @@ export default function AiImport() {
   // mặc định mở "File nhạc" (MIDI / MusicXML: chính xác tuyệt đối); link sửa bản quét / dán tab mở thẳng chế độ đó
   const [mode, setMode] = useState<Mode>(params.get('paste') ? 'paste' : editScan ? 'scan' : 'file');
   const [lastMode, setLastMode] = useState<Mode>('image'); // chế độ đã tạo ra kết quả đang hiện
+  // ảnh khuông nhạc chọn ở ô "File nhạc" → mở "Quét nhạc" với sẵn các ảnh đó
+  const [scanFiles, setScanFiles] = useState<{ n: number; files: File[] } | null>(null);
   const [images, setImages] = useState<Img[]>([]);
   const [title, setTitle] = useState('');
   const [artist, setArtist] = useState('');
@@ -176,7 +178,8 @@ export default function AiImport() {
         </button>
       </div>
 
-      {mode === 'scan' ? <ScanImport key={editScan ?? 'new'} editSongId={editScan} /> : mode === 'file' ? <FileImport /> : mode === 'paste' ? <PasteTab /> : <>
+      {mode === 'scan' ? <ScanImport key={editScan ?? `new-${scanFiles?.n ?? 0}`} editSongId={editScan} initialFiles={scanFiles?.files} />
+        : mode === 'file' ? <FileImport onImages={(files) => { setScanFiles((s) => ({ n: (s?.n ?? 0) + 1, files })); setMode('scan'); }} /> : mode === 'paste' ? <PasteTab /> : <>
       <div className="ai-form">
         {mode === 'image' ? (
           <>

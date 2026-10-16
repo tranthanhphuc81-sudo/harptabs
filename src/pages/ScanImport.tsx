@@ -71,7 +71,8 @@ const durIndex = (b: number) => DURATIONS.findIndex((d) => Math.abs(d.beats - b)
 const keySigLabel = (k: number) => (k === 0 ? 'Không dấu hoá' : `${Math.abs(k)} dấu ${k > 0 ? 'thăng ♯' : 'giáng ♭'}`) + ` (${keyName(k)} trưởng)`;
 
 /** editSongId: mở lại ảnh đã quét của một bài để sửa tiếp (lưu sẽ cập nhật bài đó) */
-export default function ScanImport({ editSongId }: { editSongId?: string }) {
+/** `initialFiles`: ảnh đã chọn ở chỗ khác (ô "File nhạc") — mở trang là quét luôn */
+export default function ScanImport({ editSongId, initialFiles }: { editSongId?: string; initialFiles?: File[] }) {
   const { settings, toast } = useAppState();
   const nav = useNavigate();
   const camRef = useRef<HTMLInputElement>(null);
@@ -153,7 +154,7 @@ export default function ScanImport({ editSongId }: { editSongId?: string }) {
 
   const setAutoTitle = (t: string) => { autoTitle.current = t; setTitle(t); };
 
-  const addFiles = async (files: FileList | null) => {
+  const addFiles = async (files: FileList | File[] | null | undefined) => {
     if (!files?.length) return;
     if (!grays.length && !editSongId) {
       // tên file đặt có nghĩa (vd "nang-thuy-tinh.jpg") → điền ngay, máy đọc chữ có thể thay sau
@@ -173,6 +174,14 @@ export default function ScanImport({ editSongId }: { editSongId?: string }) {
     if (camRef.current) camRef.current.value = '';
     if (galRef.current) galRef.current.value = '';
   };
+
+  // ảnh chuyển sang từ ô "File nhạc": nạp một lần khi mở trang
+  const took = useRef(false);
+  useEffect(() => {
+    if (took.current || !initialFiles?.length) return;
+    took.current = true;
+    void addFiles(initialFiles);
+  }, [initialFiles]);
 
   const reset = () => {
     setGrays([]); setPages([]); setSelected(null); setError(null); setFromStore(false); setTitleShot(null); setArtistShot(null);

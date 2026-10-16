@@ -17,7 +17,10 @@ import { useAppState } from '../state';
  * Nhập file nhạc dạng dữ liệu (MusicXML / MIDI) → tab. File ghi sẵn từng nốt nên chính xác tuyệt đối,
  * không phải đoán như đọc ảnh; chỉ cần chọn đúng bè giai điệu nếu file có nhiều bè.
  */
-export default function FileImport() {
+/** ảnh khuông nhạc (jpg, png…): không phải file dữ liệu, chuyển sang quét */
+const isImage = (f: File) => f.type.startsWith('image/') || /\.(jpe?g|png|webp)$/i.test(f.name);
+
+export default function FileImport({ onImages }: { onImages?: (files: File[]) => void }) {
   const { settings, toast } = useAppState();
   const nav = useNavigate();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -32,9 +35,15 @@ export default function FileImport() {
   const [busy, setBusy] = useState(false);
 
   const open = async (files: FileList | null) => {
-    const f = files?.[0];
+    const list = Array.from(files ?? []);
     if (inputRef.current) inputRef.current.value = '';
-    if (!f) return;
+    const images = list.filter(isImage);
+    if (images.length && onImages) { onImages(images); return; }
+    const f = list.find((x) => !isImage(x));
+    if (!f) {
+      if (images.length) setError('Ảnh khuông nhạc hãy mở ở mục "Quét nhạc".');
+      return;
+    }
     setBusy(true);
     setError(null);
     try {
@@ -93,15 +102,16 @@ export default function FileImport() {
       <p className="muted small">
         Chọn file <strong>MusicXML</strong> (<code>.musicxml</code>, <code>.mxl</code>, <code>.xml</code>) hoặc <strong>MIDI</strong> (<code>.mid</code>).
         File ghi sẵn từng nốt nên tab <strong>đúng tuyệt đối</strong>, không phải đoán như đọc ảnh.
+        Chọn <strong>ảnh khuông nhạc</strong> (<code>.jpg</code>, <code>.png</code>, chọn được nhiều trang) thì app chuyển sang quét nốt ngay trên máy.
         Tìm file này trên MuseScore, các diễn đàn nhạc, hoặc xuất từ phần mềm soạn nhạc (MuseScore, Sibelius, Finale…).
       </p>
       <div className="row gap wrap center">
         <button type="button" className="btn btn-primary" disabled={busy} onClick={() => inputRef.current?.click()}>
-          <Icon name="music" size={18} /> {file ? 'Chọn file khác' : 'Chọn file nhạc'}
+          <Icon name="music" size={18} /> {file ? 'Chọn file khác' : 'Chọn file nhạc / ảnh'}
         </button>
         {fileName && <span className="muted small">{fileName}</span>}
-        <input ref={inputRef} type="file" hidden onChange={(e) => open(e.target.files)}
-          accept=".mid,.midi,.kar,.rmi,.musicxml,.mxl,.xml,audio/midi,audio/x-midi,application/vnd.recordare.musicxml,application/vnd.recordare.musicxml+xml" />
+        <input ref={inputRef} type="file" hidden multiple={!!onImages} onChange={(e) => open(e.target.files)}
+          accept={`.mid,.midi,.kar,.rmi,.musicxml,.mxl,.xml,audio/midi,audio/x-midi,application/vnd.recordare.musicxml,application/vnd.recordare.musicxml+xml${onImages ? ',.jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp' : ''}`} />
       </div>
       {error && <div className="alert error" role="alert">{error}</div>}
       <FileSources />
