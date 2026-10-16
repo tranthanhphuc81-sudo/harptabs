@@ -19,8 +19,8 @@ const SORT_KEY = 'harptabs.librarySort';
 function loadSort(): Sort {
   try {
     const v = localStorage.getItem(SORT_KEY) as Sort | null;
-    return v && SORTS.includes(v) ? v : 'recent';
-  } catch { return 'recent'; }
+    return v && SORTS.includes(v) ? v : 'title';
+  } catch { return 'title'; }
 }
 
 const DIFF = ['', 'Dễ', 'Vừa', 'Khó'];
