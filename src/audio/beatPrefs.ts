@@ -2,8 +2,9 @@
  * Tuỳ chỉnh âm thanh beat (dùng chung cho mọi trang phát, lưu trên máy).
  *
  * Chế độ "Tự động tối ưu": bộ trống, độ lắc, gõ bo, dồn trống, độ vang và âm lượng từng phần
- * tự lấy theo kiểu nhịp đang phát (STYLE_PRESETS). Mục nào người dùng chỉnh tay thì được giữ
- * nguyên (danh sách `manual`) cho tới khi bấm "Về tự động".
+ * tự lấy theo kiểu nhịp đang phát (STYLE_PRESETS); nhạc cụ giai điệu lấy theo bài đang mở
+ * (setSongInstrument). Mục nào người dùng chỉnh tay thì được giữ nguyên (danh sách `manual`)
+ * cho tới khi bấm "Về tự động".
  */
 import { useSyncExternalStore } from 'react';
 import { applyMix, DrumKit, Instrument } from './engine';
@@ -49,9 +50,11 @@ export const DEFAULT_BEAT_PREFS: BeatPrefs = {
   auto: true, manual: [],
 };
 
-/** Các mục chế độ tự động được phép chỉnh (nhạc cụ, bật/tắt bass, đệm, hiện hợp âm là sở thích riêng nên không đụng) */
+/** Các mục chế độ tự động chỉnh theo kiểu nhịp (bật/tắt bass, đệm, hiện hợp âm là sở thích riêng nên không đụng) */
 export const AUTO_KEYS = ['kit', 'swing', 'fills', 'bo', 'beatVol', 'bassVol', 'compVol', 'boVol', 'bellVol', 'clapVol', 'reverb'] as const;
 type AutoKey = (typeof AUTO_KEYS)[number];
+/** Mọi mục tự động (thêm nhạc cụ, chọn theo bài): chỉnh tay mục nào thì giữ mục đó */
+const TRACKED_KEYS: readonly (keyof BeatPrefs)[] = [...AUTO_KEYS, 'instrument'];
 
 /** Cài đặt hợp nhất cho từng kiểu nhịp (mục không ghi = mặc định) */
 export const STYLE_PRESETS: Partial<Record<BeatStyle, Partial<Pick<BeatPrefs, AutoKey>>>> = {
@@ -98,8 +101,8 @@ export const SWING_OPTIONS = [
   { value: 0.33, label: 'Lắc đậm' },
 ];
 
-/** Cài đặt thực dùng khi phát kiểu nhịp `style` */
-export function effectivePrefs(p: BeatPrefs, style: BeatStyle): BeatPrefs {
+/** Cài đặt thực dùng khi phát kiểu nhịp `style` (`songInstrument`: nhạc cụ tự chọn cho bài đang mở) */
+export function effectivePrefs(p: BeatPrefs, style: BeatStyle, songInstrument: Instrument | null = activeInstrument): BeatPrefs {
   if (!p.auto) return p;
   const out = { ...p } as Record<string, unknown>;
   const preset = STYLE_PRESETS[style] ?? {};
@@ -107,12 +110,14 @@ export function effectivePrefs(p: BeatPrefs, style: BeatStyle): BeatPrefs {
     if (p.manual.includes(k)) continue;
     out[k] = k in preset ? preset[k] : DEFAULT_BEAT_PREFS[k];
   }
+  if (!p.manual.includes('instrument')) out.instrument = songInstrument ?? DEFAULT_BEAT_PREFS.instrument;
   return out as unknown as BeatPrefs;
 }
 
 const KEY = 'harptabs.beatPrefs';
 let prefs: BeatPrefs = load();
 let activeStyle: BeatStyle = 'ballad';
+let activeInstrument: Instrument | null = null;
 applyMix(effectivePrefs(prefs, activeStyle));
 const subs = new Set<() => void>();
 
@@ -124,7 +129,10 @@ function load(): BeatPrefs {
       const merged = { ...DEFAULT_BEAT_PREFS, ...saved };
       // người dùng cũ (trước khi có chế độ tự động): mục đã khác mặc định coi như chỉnh tay
       if (saved.auto === undefined) {
-        merged.manual = AUTO_KEYS.filter((k) => k in saved && saved[k] !== DEFAULT_BEAT_PREFS[k]);
+        merged.manual = TRACKED_KEYS.filter((k) => k in saved && saved[k] !== DEFAULT_BEAT_PREFS[k]);
+      } else if (merged.auto && !merged.manual.includes('instrument') && merged.instrument !== DEFAULT_BEAT_PREFS.instrument) {
+        // trước khi nhạc cụ được tự chọn, nhạc cụ khác mặc định là người dùng tự chọn: giữ nguyên
+        merged.manual = [...merged.manual, 'instrument'];
       }
       return merged;
     }
@@ -139,6 +147,13 @@ export function getBeatPrefs(): BeatPrefs {
 /** Cài đặt thực dùng cho kiểu nhịp `style` */
 export function getEffectivePrefs(style: BeatStyle): BeatPrefs {
   return effectivePrefs(prefs, style);
+}
+
+/** Trang bài hát báo nhạc cụ tự chọn cho bài (null khi rời bài: về kèn harmonica) */
+export function setSongInstrument(inst: Instrument | null) {
+  if (inst === activeInstrument) return;
+  activeInstrument = inst;
+  applyMix(effectivePrefs(prefs, activeStyle));
 }
 
 /** Bộ phát báo kiểu nhịp đang phát để áp âm lượng / bộ trống / độ vang tương ứng */
@@ -157,14 +172,15 @@ function commit(next: BeatPrefs) {
 
 /** Người dùng chỉnh: khi đang tự động, mục chỉnh tay được ghi nhớ để không bị ghi đè */
 export function setBeatPrefs(p: Partial<BeatPrefs>) {
-  const touched = (Object.keys(p) as (keyof BeatPrefs)[]).filter((k) => (AUTO_KEYS as readonly string[]).includes(k));
+  const touched = (Object.keys(p) as (keyof BeatPrefs)[]).filter((k) => TRACKED_KEYS.includes(k));
   const manual = prefs.auto ? [...new Set([...prefs.manual, ...touched])] : prefs.manual;
   commit({ ...prefs, ...p, manual });
 }
 
 /** Bật/tắt tự động; bật lại thì bỏ hết các mục chỉnh tay */
 export function setAutoPrefs(on: boolean) {
-  if (on) commit({ ...prefs, auto: true, manual: [] });
+  // nhạc cụ cố định cũ về mặc định, để lần mở app sau không bị coi là chọn tay
+  if (on) commit({ ...prefs, instrument: DEFAULT_BEAT_PREFS.instrument, auto: true, manual: [] });
   // tắt: giữ nguyên những gì đang nghe (của kiểu nhịp hiện tại) làm cài đặt cố định
   else commit({ ...effectivePrefs(prefs, activeStyle), auto: false, manual: [] });
 }

@@ -3,6 +3,7 @@
  * tiết tấu giai điệu (chùm ba, chấm dôi, lệch nhịp), giọng trưởng/thứ, tốc độ và ngôn ngữ lời.
  */
 import type { BeatStyle } from './patterns';
+import type { Instrument } from './engine';
 import { estimateTonality, parseTonality } from './harmony';
 
 /** bỏ dấu tiếng Việt, chữ thường (để so từ khoá) */
@@ -109,4 +110,73 @@ export function suggestStyle(song: SongLike, notes: NoteLike[]): StyleSuggestion
       : { style: 'rock', reason: 'Nhịp vừa nhanh' };
   }
   return { style: 'ballad', reason: 'Nhịp vừa' };
+}
+
+export interface InstrumentSuggestion { instrument: Instrument; reason: string }
+
+/** tên nhạc cụ nhắc trong tên / thẻ / ghi chú (đã bỏ dấu) → nhạc cụ đó */
+const NAMED_INSTRUMENTS: [RegExp, Instrument][] = [
+  [/sao truc|\bflute\b/, 'flute'],
+  [/\bpiano\b|duong cam/, 'piano'],
+  [/\bguitar\b|ghi ?ta\b/, 'guitar'],
+  [/\bviolin\b|vi ?cam\b|\bfiddle\b/, 'violin'],
+  [/accordion|phong cam/, 'accordion'],
+  [/\borgan\b/, 'organ'],
+  [/\bsax/, 'sax'],
+];
+
+const HYMN = /thanh ca|thanh vinh|\bhymn\b|\bchoral\b/;
+/** chắc chắn là nhạc dân tộc Việt */
+const VN_FOLK = /dan ca (viet|bac bo|trung bo|nam bo|mien|tay nguyen|hue|xu nghe|quan ho)|quan ho|vong co|cai luong|nhac dan toc|\bho (keo|gia|mai|hue)\b/;
+/** "dân ca", "ru con" chung chung: chỉ tính là của Việt khi không ghi nước khác và có lời Việt */
+const FOLK_ANY = /dan ca|ru con/;
+const FOREIGN_FOLK = /dan ca (my|anh|phap|duc|nga|y|ai ?len|scotland|tay ban nha|nhat|trung|han)\b/;
+
+/** Nhạc cụ hợp với từng kiểu nhịp (kiểu không ghi = kèn harmonica) */
+const STYLE_INSTRUMENT: Partial<Record<BeatStyle, [Instrument, string]>> = {
+  bolero: ['guitar', 'Bolero hợp guitar'],
+  rumba: ['guitar', 'Rumba hợp guitar'],
+  bossa: ['guitar', 'Bossa nova hợp guitar'],
+  tango: ['accordion', 'Tango hợp accordion'],
+  polka: ['accordion', 'Polka hợp accordion'],
+  jazz: ['sax', 'Jazz hợp saxophone'],
+  ska: ['sax', 'Ska hợp kèn saxophone'],
+  slowrock: ['piano', 'Slow rock hợp piano'],
+  ballad: ['piano', 'Ballad hợp piano'],
+  chacha: ['organ', 'Cha cha cha hợp organ'],
+  disco: ['organ', 'Disco hợp organ'],
+  salsa: ['piano', 'Salsa hợp piano'],
+  samba: ['flute', 'Samba hợp sáo'],
+};
+
+const median = (xs: number[]) => {
+  if (!xs.length) return 0;
+  const s = [...xs].sort((a, b) => a - b);
+  return s[Math.floor(s.length / 2)];
+};
+
+/**
+ * Tự chọn nhạc cụ phát giai điệu hợp với bài: tên nhạc cụ nhắc trong bài, thánh ca, dân ca Việt,
+ * rồi theo kiểu nhịp đang phát, tốc độ và quãng âm. Còn lại giữ kèn harmonica.
+ */
+export function suggestInstrument(song: SongLike, notes: NoteLike[], style: BeatStyle): InstrumentSuggestion {
+  const text = fold([song.title, song.artist, song.notes, ...(song.tags ?? [])].filter(Boolean).join(' '));
+  for (const [re, instrument] of NAMED_INSTRUMENTS) if (re.test(text)) return { instrument, reason: 'Bài ghi rõ nhạc cụ' };
+  if (HYMN.test(text)) return { instrument: 'organ', reason: 'Thánh ca hợp organ' };
+  const vnLyrics = VIET_CHARS.test(notes.map((n) => n.lyric ?? '').join(' '));
+  if (VN_FOLK.test(text) || (FOLK_ANY.test(text) && !FOREIGN_FOLK.test(text) && vnLyrics)) {
+    return { instrument: 'flute', reason: 'Dân ca Việt hợp sáo trúc' };
+  }
+
+  const pitch = median(notes.filter((n) => n.midi !== null).map((n) => n.midi as number));
+  if (style === 'waltz') {
+    return song.bpm >= 150
+      ? { instrument: 'accordion', reason: 'Valse nhanh hợp accordion' }
+      : { instrument: 'violin', reason: 'Valse hợp violin' };
+  }
+  // ballad chậm mà giai điệu nằm cao: violin hát ngân hợp hơn piano
+  if (style === 'ballad' && song.bpm < 75 && pitch >= 74) return { instrument: 'violin', reason: 'Ballad chậm, giai điệu cao hợp violin' };
+  const byStyle = STYLE_INSTRUMENT[style];
+  if (byStyle) return { instrument: byStyle[0], reason: byStyle[1] };
+  return { instrument: 'harmonica', reason: 'Giữ tiếng kèn harmonica' };
 }

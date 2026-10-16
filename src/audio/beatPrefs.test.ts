@@ -38,9 +38,9 @@ describe('tự động tối ưu âm thanh', () => {
     expect(m.getBeatPrefs().manual).toEqual(['kit']);
     expect(m.getEffectivePrefs('bossa').kit).toBe('electronic');
     expect(m.getEffectivePrefs('bossa').compVol).toBe(0.6); // mục khác vẫn tự động
-    // nhạc cụ, hiện hợp âm là sở thích riêng: không tính là chỉnh tay
+    // hiện hợp âm là sở thích riêng: không tính là chỉnh tay; nhạc cụ thì có (vì được tự chọn theo bài)
     m.setBeatPrefs({ instrument: 'piano', showChords: true });
-    expect(m.getBeatPrefs().manual).toEqual(['kit']);
+    expect(m.getBeatPrefs().manual).toEqual(['kit', 'instrument']);
     m.setAutoPrefs(true);
     expect(m.getBeatPrefs().manual).toEqual([]);
     expect(m.getEffectivePrefs('bossa').kit).toBe('soft');
@@ -68,5 +68,30 @@ describe('tự động tối ưu âm thanh', () => {
       const r = m.TEMPO_RANGES[name as keyof typeof m.TEMPO_RANGES];
       expect(r && r[0] < r[1], name).toBe(true);
     }
+  });
+
+  it('nhạc cụ lấy theo bài đang mở; chỉnh tay thì giữ, "Về tự động" lại theo bài', async () => {
+    const m = await fresh();
+    expect(m.getEffectivePrefs('tango').instrument).toBe('harmonica');
+    m.setSongInstrument('accordion');
+    expect(m.getEffectivePrefs('tango').instrument).toBe('accordion');
+    expect(m.effectivePrefs(m.getBeatPrefs(), 'tango', 'guitar').instrument).toBe('guitar');
+    m.setBeatPrefs({ instrument: 'piano' });
+    expect(m.getBeatPrefs().manual).toContain('instrument');
+    expect(m.getEffectivePrefs('tango').instrument).toBe('piano');
+    m.setAutoPrefs(true);
+    expect(m.getEffectivePrefs('tango').instrument).toBe('accordion');
+    // rời bài: về kèn harmonica
+    m.setSongInstrument(null);
+    expect(m.getEffectivePrefs('tango').instrument).toBe('harmonica');
+  });
+
+  it('người dùng đã chọn nhạc cụ trước đây: coi là chỉnh tay, không bị đổi theo bài', async () => {
+    const m = await fresh({ auto: true, manual: [], instrument: 'violin' });
+    m.setSongInstrument('guitar');
+    expect(m.getEffectivePrefs('bolero').instrument).toBe('violin');
+    const m2 = await fresh({ auto: true, manual: [], instrument: 'harmonica' });
+    m2.setSongInstrument('guitar');
+    expect(m2.getEffectivePrefs('bolero').instrument).toBe('guitar');
   });
 });

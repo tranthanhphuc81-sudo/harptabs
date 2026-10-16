@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { SAMPLE_SONGS } from '../data/samples';
 import { flatten, parseTab } from '../lib/tabText';
-import { rhythmFeatures, suggestStyle } from './suggest';
+import { rhythmFeatures, suggestInstrument, suggestStyle } from './suggest';
 
 const notes = (beats: number[], midis: number[], lyrics: string[] = []) => {
   let t = 0;
@@ -41,5 +41,53 @@ describe('tự chọn kiểu nhịp', () => {
     const rated = SAMPLE_SONGS.filter((s) => s.style !== 'metronome' && s.style !== 'none');
     const ok = rated.filter((s) => suggestStyle(s, flatten(parseTab(s.body, s.harpKey))).style === s.style).length;
     expect(ok / rated.length).toBeGreaterThanOrEqual(0.8);
+  });
+});
+
+describe('tự chọn nhạc cụ', () => {
+  const inst = (song: Partial<typeof base> & { title?: string; tags?: string[] }, style: Parameters<typeof suggestInstrument>[2], ns: Parameters<typeof suggestInstrument>[1] = []) =>
+    suggestInstrument({ ...base, ...song }, ns, style).instrument;
+
+  it('bài ghi rõ nhạc cụ, thánh ca, dân ca Việt thắng kiểu nhịp', () => {
+    expect(inst({ title: 'Romance (guitar)' }, 'waltz')).toBe('guitar');
+    expect(inst({ title: 'Song of the Wind', tags: ['fiddle'] }, 'country')).toBe('violin');
+    expect(inst({ title: 'Hồn quê', tags: ['sáo trúc'] }, 'ballad')).toBe('flute');
+    expect(inst({ title: 'Amazing Grace', tags: ['hymn'] }, 'waltz')).toBe('organ');
+    expect(inst({ title: 'Lý cây đa', tags: ['dân ca quan họ'] }, 'ballad')).toBe('flute');
+    expect(inst({ title: 'Bắc kim thang', tags: ['dân ca'] }, 'ballad', notes([1, 1], [60, 62], ['Bắc', 'kim']))).toBe('flute');
+    // dân ca nước ngoài / không có lời Việt: không phải sáo trúc
+    expect(inst({ title: 'Greensleeves', tags: ['dân ca Anh'] }, 'ballad', notes([1, 1], [60, 62], ['Đi', 'đi']))).toBe('piano');
+    expect(inst({ title: 'Danny Boy', tags: ['dân ca'] }, 'train')).toBe('harmonica');
+    // "sao" (vì sao, ngôi sao) không phải sáo trúc
+    expect(inst({ title: 'Sao em nỡ vội lấy chồng' }, 'bolero')).toBe('guitar');
+  });
+
+  it('theo kiểu nhịp: bolero/rumba/bossa → guitar, tango/polka → accordion, jazz → sax…', () => {
+    expect(inst({}, 'bolero')).toBe('guitar');
+    expect(inst({}, 'rumba')).toBe('guitar');
+    expect(inst({}, 'bossa')).toBe('guitar');
+    expect(inst({}, 'tango')).toBe('accordion');
+    expect(inst({}, 'polka')).toBe('accordion');
+    expect(inst({}, 'jazz')).toBe('sax');
+    expect(inst({}, 'chacha')).toBe('organ');
+    expect(inst({}, 'ballad')).toBe('piano');
+    expect(inst({}, 'samba')).toBe('flute');
+  });
+
+  it('nhạc blues, rock, đồng quê, hành khúc giữ kèn harmonica', () => {
+    for (const s of ['shuffle', 'rock', 'country', 'train', 'march', 'none'] as const) expect(inst({}, s)).toBe('harmonica');
+  });
+
+  it('valse theo tốc độ, ballad chậm giai điệu cao → violin', () => {
+    expect(inst({ bpm: 120 }, 'waltz')).toBe('violin');
+    expect(inst({ bpm: 170 }, 'waltz')).toBe('accordion');
+    const high = notes([1, 1, 1, 1], [76, 79, 81, 77]);
+    const low = notes([1, 1, 1, 1], [60, 62, 64, 65]);
+    expect(inst({ bpm: 66 }, 'ballad', high)).toBe('violin');
+    expect(inst({ bpm: 66 }, 'ballad', low)).toBe('piano');
+  });
+
+  it('luôn có lý do để hiện cho người dùng', () => {
+    expect(suggestInstrument({ ...base }, [], 'tango').reason).toMatch(/accordion/);
   });
 });

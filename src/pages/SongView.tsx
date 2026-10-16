@@ -18,9 +18,9 @@ import { useAppState } from '../state';
 import { MicPitch, PitchReading } from '../audio/pitch';
 import { previewNote } from '../audio/engine';
 import { ChordSegment, harmonizeSegments, parseTonality, segKey, transposeChords } from '../audio/harmony';
-import { setBeatPrefs, useBeatPrefs } from '../audio/beatPrefs';
+import { setBeatPrefs, setSongInstrument, useBeatPrefs } from '../audio/beatPrefs';
 import { ChordPicker } from '../components/ChordPicker';
-import { suggestStyle } from '../audio/suggest';
+import { suggestInstrument, suggestStyle } from '../audio/suggest';
 
 export default function SongView() {
   const { id } = useParams();
@@ -48,6 +48,10 @@ function SongPlayerView({ song }: { song: Song }) {
     songKey: song.songKey || songTonality(song.harpKey, song.position),
     chordOverrides: song.chords,
   });
+  // nhạc cụ giai điệu hợp với bài và kiểu nhịp đang phát (chỉ dùng khi tự động, chỉnh tay thì giữ)
+  const autoInstrument = useMemo(() => suggestInstrument(song, flat, p.opts.style), [song, flat, p.opts.style]);
+  useEffect(() => { setSongInstrument(autoInstrument.instrument); }, [autoInstrument]);
+  useEffect(() => () => setSongInstrument(null), []);
 
   // ----- hợp âm đệm: hiện trên tab, chọn tay khi máy đoán sai -----
   const tonality = useMemo(() => parseTonality(song.songKey || songTonality(song.harpKey, song.position))!, [song.songKey, song.harpKey, song.position]);
@@ -277,6 +281,7 @@ function SongPlayerView({ song }: { song: Song }) {
         onToggleLoop={toggleLoop}
         autoStyle={autoStyle}
         autoApplied={autoApplied}
+        autoInstrument={autoInstrument}
         extra={
           <button type="button" className={`chip${waitMode ? ' on' : ''}`} aria-pressed={waitMode} onClick={() => (waitMode ? stopWait() : startWait())}>
             <Icon name="mic" size={15} /> Chờ nốt

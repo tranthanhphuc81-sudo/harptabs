@@ -1,6 +1,6 @@
 import { ReactNode, useEffect, useState } from 'react';
 import { STYLE_OPTIONS, BeatStyle } from '../audio/patterns';
-import type { StyleSuggestion } from '../audio/suggest';
+import type { InstrumentSuggestion, StyleSuggestion } from '../audio/suggest';
 import { INSTRUMENT_OPTIONS, Instrument, previewNote } from '../audio/engine';
 import { effectivePrefs, setAutoPrefs, TEMPO_RANGES, KIT_OPTIONS, resetBeatPrefs, setBeatPrefs, SWING_OPTIONS, useBeatPrefs } from '../audio/beatPrefs';
 import { Icon } from './Icon';
@@ -15,6 +15,8 @@ interface Props {
   autoStyle?: StyleSuggestion | null;
   /** mở bài đã áp sẵn kiểu nhịp tự chọn */
   autoApplied?: boolean;
+  /** nhạc cụ app tự chọn cho bài (dùng khi đang "Tự động tối ưu") */
+  autoInstrument?: InstrumentSuggestion | null;
 }
 
 function Toggle({ on, onClick, children }: { on: boolean; onClick: () => void; children: ReactNode }) {
@@ -54,10 +56,11 @@ function TempoHint({ style, bpm, tempoScale, auto, label, onSet }: { style: Beat
   );
 }
 
-function BeatTuner({ style, styleName }: { style: BeatStyle; styleName: string }) {
+function BeatTuner({ style, styleName, autoInstrument }: { style: BeatStyle; styleName: string; autoInstrument?: InstrumentSuggestion | null }) {
   const raw = useBeatPrefs();
   // giá trị thực đang dùng cho kiểu nhịp này (khi tự động)
-  const b = effectivePrefs(raw, style);
+  const b = effectivePrefs(raw, style, autoInstrument?.instrument ?? null);
+  const instAuto = raw.auto && !raw.manual.includes('instrument') && autoInstrument;
   // nhớ mục "Bộ gõ" đang mở hay đóng (chỉ là tiện lợi trên máy này)
   const [percOpen, setPercOpen] = useState(() => {
     try { return localStorage.getItem(PERC_OPEN_KEY) === '1'; } catch { return false; }
@@ -73,7 +76,7 @@ function BeatTuner({ style, styleName }: { style: BeatStyle; styleName: string }
         <span className="small muted">
           {!raw.auto ? 'Đang tắt: dùng cài đặt cố định cho mọi kiểu nhịp.'
             : raw.manual.length ? <>Tự chỉnh theo {styleName}, giữ {raw.manual.length} mục bạn chỉnh tay. <button type="button" className="link-btn" onClick={() => setAutoPrefs(true)}>Về tự động</button></>
-            : <>Bộ trống, độ lắc, bo, âm lượng đang tự chỉnh theo {styleName}.</>}
+            : <>Nhạc cụ, bộ trống, độ lắc, bo, âm lượng đang tự chỉnh theo bài và {styleName}.</>}
         </span>
       </div>
       <label className="bt-row">
@@ -84,6 +87,7 @@ function BeatTuner({ style, styleName }: { style: BeatStyle; styleName: string }
         }}>
           {INSTRUMENT_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
         </select>
+        {instAuto && <span className="small muted">✨ {instAuto.reason}</span>}
       </label>
       <div className="bt-row">
         <span className="bt-label">Bộ trống</span>
@@ -124,7 +128,7 @@ function BeatTuner({ style, styleName }: { style: BeatStyle; styleName: string }
   );
 }
 
-export function PlayerBar({ p, loopLabel, onToggleLoop, extra, autoStyle, autoApplied = false }: Props) {
+export function PlayerBar({ p, loopLabel, onToggleLoop, extra, autoStyle, autoApplied = false, autoInstrument }: Props) {
   const { opts, setOpts } = p;
   const [tuner, setTuner] = useState(false);
   const [autoPicked, setAutoPicked] = useState(autoApplied);
@@ -185,7 +189,7 @@ export function PlayerBar({ p, loopLabel, onToggleLoop, extra, autoStyle, autoAp
         )}
         {extra}
       </div>
-      {tuner && <BeatTuner style={opts.style} styleName={styleLabel(opts.style)} />}
+      {tuner && <BeatTuner style={opts.style} styleName={styleLabel(opts.style)} autoInstrument={autoInstrument} />}
     </div>
   );
 }
