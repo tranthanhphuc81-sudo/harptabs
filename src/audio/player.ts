@@ -33,13 +33,32 @@ export interface PlayerOptions {
 interface Marker { time: number; beat: number; spb: number }
 
 const EPS = 1e-6;
+/** lên lịch trước bao lâu (giây): đủ dài để máy khựng một lúc vẫn không trễ nhịp */
+const LOOKAHEAD = 0.25;
+
+/**
+ * Đồng hồ gọi lập lịch mỗi 25ms. Chạy trong Web Worker vì trình duyệt hãm bộ hẹn giờ của trang
+ * (tới ~1 lần/giây) khi tắt màn hình / chuyển app, còn hẹn giờ trong worker thì không; thiếu Worker thì dùng setInterval.
+ */
+function startClock(fn: () => void): () => void {
+  try {
+    const url = URL.createObjectURL(new Blob(['setInterval(() => postMessage(0), 25);'], { type: 'text/javascript' }));
+    const w = new Worker(url);
+    URL.revokeObjectURL(url);
+    w.onmessage = fn;
+    return () => w.terminate();
+  } catch {
+    const id = window.setInterval(fn, 25);
+    return () => window.clearInterval(id);
+  }
+}
 const mod = (a: number, n: number) => ((a % n) + n) % n;
 
 export class Player {
   private events: FlatEvent[] = [];
   private endBeat = 0;
   private opts: PlayerOptions;
-  private timer: number | null = null;
+  private stopClock: (() => void) | null = null;
   private endTimer: number | null = null;
   private cursorBeat = 0;
   private cursorTime = 0;
@@ -131,7 +150,8 @@ export class Player {
     const c = audio();
     const spb = this.spb();
     const from = this.snap(Math.max(0, fromBeat));
-    let t = c.currentTime + 0.08;
+    // âm thanh vừa khởi động (lần phát đầu): đồng hồ chưa chạy đều, cho bắt đầu chậm hơn một chút
+    let t = c.currentTime + (c.state === 'running' && c.currentTime > 0.5 ? 0.08 : 0.3);
     this.markers = [];
     if (this.opts.countIn) {
       const n = this.opts.beatsPerBar;
@@ -148,13 +168,13 @@ export class Player {
     this.finished = false;
     this.playing = true;
     this.tick();
-    this.timer = window.setInterval(() => this.tick(), 25);
+    this.stopClock = startClock(() => this.tick());
   }
 
   stop() {
-    if (this.timer !== null) clearInterval(this.timer);
+    this.stopClock?.();
     if (this.endTimer !== null) clearTimeout(this.endTimer);
-    this.timer = null;
+    this.stopClock = null;
     this.endTimer = null;
     this.playing = false;
     this.markers = [];
@@ -277,7 +297,9 @@ export class Player {
   private tick() {
     if (this.finished) return;
     const c = audio();
-    const horizon = c.currentTime + 0.15;
+    // máy bận quá lâu, lỡ mất vài ô: dời cả nhịp ra sau một chút thay vì dồn các tiếng trễ vào cùng một lúc
+    if (this.cursorTime < c.currentTime + 0.01) this.cursorTime = c.currentTime + 0.04;
+    const horizon = c.currentTime + LOOKAHEAD;
     const o = this.opts;
     const acc = this.accomp();
     const style = this.beatStyle();

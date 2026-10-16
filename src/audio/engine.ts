@@ -33,7 +33,8 @@ function roomImpulse(c: AudioContext, seconds = 1.1): AudioBuffer {
 export function audio(): AudioContext {
   if (!ctx) {
     const AC = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-    ctx = new AC({ latencyHint: 'interactive' });
+    // 'playback': bộ đệm âm thanh lớn hơn, điện thoại yếu bớt rè / đứt tiếng (lịch phát đã tính trước nên không lo trễ)
+    ctx = new AC({ latencyHint: 'playback' });
     master = ctx.createGain();
     master.gain.value = 0.9;
     const comp = ctx.createDynamicsCompressor();
@@ -71,6 +72,7 @@ export function audio(): AudioContext {
     const d = noise.getChannelData(0);
     for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
     applyMix(mix);
+    prepareMetal(ctx);
   }
   if (ctx.state === 'suspended') void ctx.resume();
   return ctx;
@@ -571,9 +573,49 @@ export function snare(when: number, vel = 1) {
   osc('triangle', when, 240, 185, 0.05, 0.4 * vel, 0.12);
 }
 
+/** 6 sóng vuông lệch tần qua lọc, tổng hợp sẵn một lần (hi-hat đánh rất dày: đỡ tạo 8 node mỗi tiếng) */
+let metalBuf: AudioBuffer | null = null;
+let metalPending = false;
+function prepareMetal(c: AudioContext) {
+  if (metalBuf || metalPending || typeof OfflineAudioContext === 'undefined') return;
+  metalPending = true;
+  try {
+    const oc = new OfflineAudioContext(1, Math.round(c.sampleRate * 1.4), c.sampleRate);
+    const bp = oc.createBiquadFilter();
+    bp.type = 'bandpass';
+    bp.frequency.value = 10000;
+    bp.Q.value = 0.8;
+    const hp = oc.createBiquadFilter();
+    hp.type = 'highpass';
+    hp.frequency.value = 7000;
+    bp.connect(hp).connect(oc.destination);
+    for (const r of [2, 3, 4.16, 5.43, 6.79, 8.21]) {
+      const o = oc.createOscillator();
+      o.type = 'square';
+      o.frequency.value = 40 * r;
+      o.connect(bp);
+      o.start(0);
+    }
+    oc.startRendering().then((b) => { metalBuf = b; }, () => { metalPending = false; });
+  } catch { metalPending = false; }
+}
+
 /** tiếng kim loại: chồng 6 sóng vuông lệch tần như máy trống kinh điển */
 function metal(when: number, decay: number, gain: number) {
   const c = audio();
+  if (metalBuf) {
+    const src = c.createBufferSource();
+    src.buffer = metalBuf;
+    const g = c.createGain();
+    g.gain.setValueAtTime(0.0001, when);
+    g.gain.exponentialRampToValueAtTime(gain, when + 0.002);
+    g.gain.exponentialRampToValueAtTime(0.001, when + decay);
+    src.connect(g).connect(drumBus);
+    src.start(when, Math.random() * 0.3);
+    src.stop(when + decay + 0.02);
+    return;
+  }
+  prepareMetal(c);
   const g = c.createGain();
   const bp = c.createBiquadFilter();
   bp.type = 'bandpass';
