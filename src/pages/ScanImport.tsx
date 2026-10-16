@@ -7,6 +7,7 @@ import { HarpKey } from '../lib/harp';
 import { Gray, OmrNote, OmrPage, findHeaderBoxes, keyName, midiToStep, notePitch, readSheet, toGray, toTranscription } from '../lib/omr';
 import { MIN_CONFIDENCE, cleanArtist, cleanTitle, cropToCanvas, hasDiacritics, looksLikeTitle, readLine, titleFromFilename } from '../lib/titleOcr';
 import { loadScanPages, saveScan } from '../lib/scanStore';
+import { isPdf, pdfToImages } from '../lib/pdf';
 import { flatten, parseTab } from '../lib/tabText';
 import { beatsPerBar } from '../lib/types';
 import { KeySelect } from '../components/KeySelect';
@@ -162,12 +163,26 @@ export default function ScanImport({ editSongId, initialFiles }: { editSongId?: 
       if (fileTitle.current && (!title || title === autoTitle.current)) setAutoTitle(fileTitle.current);
     }
     const room = MAX_IMAGES - grays.length;
-    if (files.length > room) toast(`Tối đa ${MAX_IMAGES} trang mỗi lần`);
     try {
-      const next = [...grays, ...(await Promise.all(Array.from(files).slice(0, room).map(fileToGray)))];
-      setGrays(next);
-      setSelected(null);
-      read(next);
+      // file PDF: vẽ từng trang thành ảnh rồi quét như ảnh chụp
+      const list: File[] = [];
+      let skipped = 0;
+      for (const f of Array.from(files)) {
+        if (!isPdf(f)) { list.push(f); continue; }
+        setBusy(true);
+        try {
+          const { images, total } = await pdfToImages(f, Math.max(0, room - list.length));
+          list.push(...images);
+          skipped += total - images.length;
+        } finally { setBusy(false); }
+      }
+      if (list.length > room || skipped > 0) toast(`Tối đa ${MAX_IMAGES} trang mỗi lần — đã lấy ${Math.min(room, list.length)} trang đầu`);
+      if (list.length) {
+        const next = [...grays, ...(await Promise.all(list.slice(0, room).map(fileToGray)))];
+        setGrays(next);
+        setSelected(null);
+        read(next);
+      }
     } catch (e) {
       toast((e as Error).message);
     }
@@ -422,7 +437,7 @@ export default function ScanImport({ editSongId, initialFiles }: { editSongId?: 
         {pages.length === 0 && !busy && grays.length < MAX_IMAGES && (
           <div className="shot-add">
             <button type="button" className="btn btn-primary" onClick={() => camRef.current?.click()} disabled={busy}><Icon name="camera" size={18} /> Chụp bản nhạc</button>
-            <button type="button" className="btn btn-ghost" onClick={() => galRef.current?.click()} disabled={busy}><Icon name="image" size={18} /> Chọn ảnh có sẵn</button>
+            <button type="button" className="btn btn-ghost" onClick={() => galRef.current?.click()} disabled={busy}><Icon name="image" size={18} /> Chọn ảnh / PDF có sẵn</button>
             <p className="muted small">
               Máy tự đọc nốt ngay trên điện thoại — <strong>không cần mạng, không tốn tiền</strong>. Hợp với bản nhạc in khoá Sol, một bè giai điệu.
               Chụp thẳng, đủ sáng, cho bản nhạc lấp đầy khung hình.
@@ -430,7 +445,7 @@ export default function ScanImport({ editSongId, initialFiles }: { editSongId?: 
           </div>
         )}
         <input ref={camRef} type="file" accept="image/*" capture="environment" hidden onChange={(e) => addFiles(e.target.files)} />
-        <input ref={galRef} type="file" accept="image/*" multiple hidden onChange={(e) => addFiles(e.target.files)} />
+        <input ref={galRef} type="file" accept="image/*,application/pdf,.pdf" multiple hidden onChange={(e) => addFiles(e.target.files)} />
       </div>
 
       {busy && <><p className="muted small">Đang đọc nốt nhạc…</p><div className="progress" aria-hidden="true"><span /></div></>}
