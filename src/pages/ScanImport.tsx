@@ -4,7 +4,7 @@ import { MAX_IMAGES } from '../../shared/ai';
 import { aiToTab } from '../lib/ai';
 import { blankSong, db } from '../lib/db';
 import { HarpKey } from '../lib/harp';
-import { Gray, OmrNote, OmrPage, findHeaderBoxes, keyName, notePitch, readSheet, toGray, toTranscription } from '../lib/omr';
+import { Gray, OmrNote, OmrPage, findHeaderBoxes, keyName, midiToStep, notePitch, readSheet, toGray, toTranscription } from '../lib/omr';
 import { MIN_CONFIDENCE, cleanArtist, cleanTitle, cropToCanvas, hasDiacritics, looksLikeTitle, readLine, titleFromFilename } from '../lib/titleOcr';
 import { loadScanPages, saveScan } from '../lib/scanStore';
 import { flatten, parseTab } from '../lib/tabText';
@@ -15,6 +15,9 @@ import { MiniPlay } from '../components/PlayerBar';
 import { usePlayer } from '../components/usePlayer';
 import { Icon } from '../components/Icon';
 import { ScanPageView } from '../components/ScanPageView';
+import { RecordingCheck } from '../components/RecordingCheck';
+import type { ScoreNote, Suggestion } from '../lib/audioAlign';
+import { nameToMidi } from '../lib/harp';
 import { useAppState } from '../state';
 
 /** Ảnh chụp rất lớn thì thu nhỏ trước cho nhanh; bước đọc tự đưa về cỡ chuẩn */
@@ -304,6 +307,68 @@ export default function ScanImport({ editSongId }: { editSongId?: string }) {
   }, [pages]);
   const guessCount = allNotes.filter((n) => n.guess).length;
 
+  // ───── đối chiếu với bản thu ─────
+  /** nốt theo thứ tự chơi (gộp nốt nối), vị trí để hiện ("Khuông 2, nốt 5") */
+  const checkData = useMemo(() => {
+    const score: ScoreNote[] = [];
+    const where = new Map<string, string>();
+    let staffNo = 0;
+    pages.forEach((p, pi) => p.staves.forEach((st, si) => {
+      staffNo++;
+      const edges = [-Infinity, ...st.bars, Infinity];
+      p.notes.filter((n) => n.staff === si).sort((a, b) => a.x - b.x).forEach((n, k) => {
+        where.set(n.id, `Khuông ${staffNo}, nốt ${k + 1}`);
+        const midi = n.rest ? null : nameToMidi(notePitch(n, keySig));
+        const prev = score[score.length - 1];
+        if (n.tied && midi !== null && prev && prev.midi === midi) { prev.beats += n.beats; return; }
+        const bar = edges.findIndex((e, i) => i < edges.length - 1 && e < n.x && n.x < edges[i + 1]);
+        score.push({ id: n.id, midi, beats: n.beats, guess: n.guess, bar: `${pi}:${si}:${bar}` });
+      });
+    }));
+    return { score, where };
+  }, [pages, keySig]);
+
+  /** áp dụng gợi ý từ bản thu: sửa cao độ, biến dấu lặng thành nốt, thêm nốt sót, bỏ nốt thừa, sửa trường độ */
+  const applySuggestions = (list: Suggestion[]) => {
+    setPages((ps) => {
+      const next = ps.map((p) => ({ ...p, notes: [...p.notes] }));
+      const find = (id: string) => {
+        for (const p of next) { const i = p.notes.findIndex((n) => n.id === id); if (i >= 0) return { p, i, n: p.notes[i] }; }
+        return null;
+      };
+      const pitchFields = (p: OmrPage, n: OmrNote, midi: number) => {
+        const st = p.staves[n.staff];
+        const { step, accidental } = midiToStep(midi, keySig);
+        return { step, accidental, y: st.bottom - (step * st.space) / 2, rest: false, guess: false };
+      };
+      for (const s of list) {
+        if (s.kind === 'missing') {
+          const f = find(s.afterId);
+          if (!f) continue;
+          const st = f.p.staves[f.n.staff];
+          const after = f.p.notes.filter((m) => m.staff === f.n.staff && m.x > f.n.x).sort((a, b) => a.x - b.x)[0];
+          let x = after ? (f.n.x + after.x) / 2 : Math.min(f.n.x + 2 * st.space, st.xRight - st.space);
+          // máy sót cả ô nhịp (ô trống giữa hai nốt): đặt nốt vào giữa ô trống đó
+          const edges = [...st.bars, st.xRight];
+          for (let b = 0; b + 1 < edges.length; b++) {
+            const [a0, a1] = [edges[b], edges[b + 1]];
+            if (a0 > f.n.x && a1 <= (after ? after.x : st.xRight + 1) && !f.p.notes.some((m) => m.staff === f.n.staff && m.x > a0 && m.x < a1)) { x = (a0 + a1) / 2; break; }
+          }
+          f.p.notes.push({ ...f.n, id: `rec${Date.now()}${Math.round(s.at * 1000)}`, x, tied: false, beats: s.beats, hollow: s.beats >= 2, dot: [0.75, 1.5, 3].includes(s.beats), ...pitchFields(f.p, f.n, s.to) });
+          continue;
+        }
+        const f = find(s.noteId);
+        if (!f) continue;
+        if (s.kind === 'extra') { f.p.notes.splice(f.i, 1); continue; }
+        if (s.kind === 'duration') { f.p.notes[f.i] = { ...f.n, beats: s.to, dot: [0.75, 1.5, 3].includes(s.to), hollow: s.to >= 2, guess: false }; continue; }
+        f.p.notes[f.i] = { ...f.n, ...pitchFields(f.p, f.n, s.to) };
+      }
+      for (const p of next) p.notes.sort((a, b) => a.staff - b.staff || a.x - b.x);
+      return next;
+    });
+    toast(`Đã sửa ${list.length} chỗ theo bản thu — nghe thử lại để kiểm tra`);
+  };
+
   const save = async () => {
     if (!converted) return;
     const fields = {
@@ -387,6 +452,8 @@ export default function ScanImport({ editSongId }: { editSongId?: string }) {
               Có {offBars.size} ô nhịp không đủ/thừa phách (vạch nhịp màu đỏ). Thường do máy đọc nhầm trường độ hoặc sót nốt — chạm vào nốt trong ô đó để sửa.
             </div>
           )}
+
+          <RecordingCheck score={checkData.score} meter={barBeats(timeSig)} label={(id) => checkData.where.get(id) ?? 'Nốt'} onApply={applySuggestions} onFocus={setSelected} />
 
           {pages.map((p, pi) => (
             <figure key={pi} className="scan-page">

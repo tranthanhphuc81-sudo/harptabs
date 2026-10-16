@@ -533,6 +533,12 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .keypad button.draw { background: var(--draw-fill); color: var(--draw); border-color: var(--draw-edge); }
 .keypad .kp-mode { min-width: 56px; background: var(--ink); color: var(--bg); border-color: var(--ink); font-family: var(--font); font-size: 0.9rem; }
 .syntax-help summary { cursor: pointer; color: var(--draw); font-weight: 500; }
+.rec-check > p, .rec-check > div { margin: 10px 0 0; font-weight: 400; color: var(--ink); }
+.rec-result { display: flex; flex-direction: column; gap: 8px; }
+.rec-result p { margin: 0; }
+.rec-list { list-style: none; padding: 0 !important; margin: 0 !important; gap: 6px !important; }
+.rec-list li { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 6px 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+.rec-list .check { font-weight: 400; }
 .file-sources > form, .file-sources > p { margin: 10px 0 0; font-weight: 400; color: var(--ink); }
 .syntax-help ul { margin: 8px 0 0; padding-left: 18px; font-weight: 400; color: var(--ink); font-size: 0.9rem; display: flex; flex-direction: column; gap: 4px; }
 .issues { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; font-size: 0.88rem; }

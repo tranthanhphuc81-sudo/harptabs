@@ -1625,6 +1625,28 @@ function alterOf(step: number, keySig: number): -1 | 0 | 1 {
   return 0;
 }
 
+/**
+ * Ngược với notePitch: số MIDI → bậc trên khuông + dấu hoá riêng (null nếu hoá biểu đã đúng).
+ * Nốt đen trên phím đàn viết thăng hay giáng theo hoá biểu (giọng giáng → giáng).
+ */
+export function midiToStep(midi: number, keySig: number): { step: number; accidental: -1 | 0 | 1 | null } {
+  const NAT = [0, 2, 4, 5, 7, 9, 11];
+  const pc = ((midi % 12) + 12) % 12, oct = Math.floor(midi / 12) - 1;
+  const stepOf = (li: number, o: number) => (o - 4) * 7 + li - 2;
+  const opts: { step: number; alter: -1 | 0 | 1 }[] = [];
+  const li = NAT.indexOf(pc);
+  if (li >= 0) opts.push({ step: stepOf(li, oct), alter: 0 });
+  // thăng: chữ ngay dưới; giáng: chữ ngay trên (kể cả E#, B#, Fb, Cb khi hoá biểu có)
+  const below = NAT.indexOf((pc + 11) % 12), above = NAT.indexOf((pc + 1) % 12);
+  if (below >= 0) opts.push({ step: stepOf(below, pc === 0 ? oct - 1 : oct), alter: 1 });
+  if (above >= 0) opts.push({ step: stepOf(above, pc === 11 ? oct + 1 : oct), alter: -1 });
+  // ưu tiên cách viết không cần dấu hoá riêng
+  const fit = opts.find((o) => alterOf(o.step, keySig) === o.alter);
+  if (fit) return { step: fit.step, accidental: null };
+  const pref = opts.find((o) => o.alter === 0) ?? opts.find((o) => o.alter === (keySig < 0 ? -1 : 1)) ?? opts[0];
+  return { step: pref.step, accidental: pref.alter };
+}
+
 /** Tên nốt (vd "F#4") theo bậc, hoá biểu và dấu hoá riêng; dấu lặng → "R" */
 export function notePitch(n: Pick<OmrNote, 'step' | 'accidental' | 'rest'>, keySig: number): string {
   if (n.rest) return 'R';

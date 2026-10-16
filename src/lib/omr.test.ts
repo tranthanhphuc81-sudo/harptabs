@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { Gray, OmrNote, OmrPage, fillRests, keyName, notePitch, readSheet, toTranscription } from './omr';
+import { Gray, OmrNote, OmrPage, fillRests, keyName, midiToStep, notePitch, readSheet, toTranscription } from './omr';
+import { nameToMidi } from './harp';
 
 /** Vẽ một khuông nhạc giả lập: khoá (khối cao), nốt, vạch nhịp — đủ để kiểm tra các luật đọc */
 type Sym = { kind: 'note'; step: number; beats: 0.5 | 1 | 1.5 | 2 | 3 | 4; sharp?: boolean } | { kind: 'bar' };
@@ -159,6 +160,17 @@ describe('đọc khuông nhạc (OMR)', () => {
     };
     expect(fillRests([page])).toBe(4);
     expect(page.notes.map((n) => +n.beats.toFixed(3))).toEqual([1, 1, 1, 1, 1, 1, 0.667, 0.667, 0.667, 1, 1, 0.5, 0.5, 1]);
+  });
+
+  it('số MIDI → bậc trên khuông, viết dấu hoá theo hoá biểu', () => {
+    for (let k = -7; k <= 7; k++) for (let m = 55; m <= 84; m++) {
+      const st = midiToStep(m, k);
+      expect(nameToMidi(notePitch({ ...st, rest: false }, k))).toBe(m);
+    }
+    expect(midiToStep(66, 1)).toEqual({ step: 1, accidental: null }); // F#4 ở Sol trưởng: theo hoá biểu
+    expect(midiToStep(65, 1)).toEqual({ step: 1, accidental: 0 }); // F4 ở Sol trưởng: dấu bình
+    expect(midiToStep(70, -2)).toEqual({ step: 4, accidental: null }); // Bb4 ở Si giáng trưởng
+    expect(midiToStep(61, -2)).toEqual({ step: -1, accidental: -1 }); // Db4 ở giọng giáng
   });
 
   it('không thấy khuông nhạc thì không bịa nốt', () => {
