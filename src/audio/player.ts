@@ -3,7 +3,7 @@
  * (look-ahead scheduling), hỗ trợ đổi tempo trực tiếp, lặp đoạn, đếm vào.
  */
 import { FlatEvent } from '../lib/tabText';
-import { getBeatPrefs } from './beatPrefs';
+import { getEffectivePrefs, setActiveStyle } from './beatPrefs';
 import { audio, bass, bongo, chordStab, clap, clave, click, cowbell, conga, crash, guiro, hat, kick, playTone, ride, rim, setHumanVelocity, shaker, snare, surdo, tom } from './engine';
 import { bassMidi, Chord, chordAt, chordVoicing, ChordOverrides, ChordSpan, harmonize, parseTonality, walkingNote } from './harmony';
 import { BeatPattern, BeatStyle, boPattern, resolvePattern } from './patterns';
@@ -49,6 +49,7 @@ export class Player {
 
   constructor(opts: PlayerOptions) {
     this.opts = { ...opts };
+    setActiveStyle(opts.style);
   }
 
   load(events: FlatEvent[]) {
@@ -79,6 +80,7 @@ export class Player {
   setOptions(p: Partial<PlayerOptions>) {
     this.opts = { ...this.opts, ...p };
     this.updateChords();
+    if (this.playing) setActiveStyle(this.opts.style);
   }
 
   private spb() {
@@ -111,6 +113,7 @@ export class Player {
       t += n * spb;
     }
     this.walkPrev = null;
+    setActiveStyle(this.opts.style);
     this.cursorBeat = from;
     this.cursorTime = t;
     this.finished = false;
@@ -221,7 +224,7 @@ export class Player {
       const stepIdx = Math.round(posInBar * subdiv);
       const onGrid = Math.abs(posInBar * subdiv - stepIdx) < 1e-3;
       if (onGrid && o.beat && pattern) {
-        const bp = getBeatPrefs();
+        const bp = getEffectivePrefs(o.style);
         setHumanVelocity(bp.humanize ? 0.12 : 0);
         // lắc (swing): đẩy trễ các ô lẻ; nhịp chùm ba vốn đã lắc nên bỏ qua
         const swing = subdiv !== 3 && stepIdx % 2 === 1 ? bp.swing * step * spb : 0;

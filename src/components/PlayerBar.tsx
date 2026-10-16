@@ -1,8 +1,8 @@
-import { ReactNode, useState } from 'react';
+import { ReactNode, useEffect, useState } from 'react';
 import { STYLE_OPTIONS, BeatStyle } from '../audio/patterns';
 import type { StyleSuggestion } from '../audio/suggest';
 import { INSTRUMENT_OPTIONS, Instrument, previewNote } from '../audio/engine';
-import { KIT_OPTIONS, resetBeatPrefs, setBeatPrefs, SWING_OPTIONS, useBeatPrefs } from '../audio/beatPrefs';
+import { effectivePrefs, setAutoPrefs, TEMPO_RANGES, KIT_OPTIONS, resetBeatPrefs, setBeatPrefs, SWING_OPTIONS, useBeatPrefs } from '../audio/beatPrefs';
 import { Icon } from './Icon';
 import { PlayerState } from './usePlayer';
 
@@ -13,6 +13,8 @@ interface Props {
   extra?: ReactNode;
   /** kiểu nhịp app tự chọn cho bài (hiện lựa chọn "Tự chọn theo bài") */
   autoStyle?: StyleSuggestion | null;
+  /** mở bài đã áp sẵn kiểu nhịp tự chọn */
+  autoApplied?: boolean;
 }
 
 function Toggle({ on, onClick, children }: { on: boolean; onClick: () => void; children: ReactNode }) {
@@ -36,8 +38,26 @@ function Slider({ label, value, onChange }: { label: string; value: number; onCh
 /** Bảng chỉnh âm beat: bộ trống, lắc, dồn trống, âm lượng, độ vang */
 const PERC_OPEN_KEY = 'harptabs.percOpen';
 
-function BeatTuner() {
-  const b = useBeatPrefs();
+/** Gợi ý tốc độ khi tempo đang phát lệch xa tốc độ thường gặp của kiểu nhịp (không sửa bài) */
+function TempoHint({ style, bpm, tempoScale, auto, label, onSet }: { style: BeatStyle; bpm: number; tempoScale: number; auto: boolean; label: string; onSet: (scale: number) => void }) {
+  const range = TEMPO_RANGES[style];
+  const now = Math.round(bpm * tempoScale);
+  if (!auto || !range || (now >= range[0] && now <= range[1])) return null;
+  const target = now < range[0] ? range[0] : range[1];
+  const scale = Math.min(1.6, Math.max(0.4, Math.round((target / bpm) * 100) / 100));
+  const reach = Math.round(bpm * scale);
+  return (
+    <p className="pb-auto">
+      {label} thường {range[0]}–{range[1]} bpm, bài đang {now}.{' '}
+      {reach !== now && <button type="button" className="link-btn" onClick={() => onSet(scale)}>Phát ở {reach} bpm</button>}
+    </p>
+  );
+}
+
+function BeatTuner({ style, styleName }: { style: BeatStyle; styleName: string }) {
+  const raw = useBeatPrefs();
+  // giá trị thực đang dùng cho kiểu nhịp này (khi tự động)
+  const b = effectivePrefs(raw, style);
   // nhớ mục "Bộ gõ" đang mở hay đóng (chỉ là tiện lợi trên máy này)
   const [percOpen, setPercOpen] = useState(() => {
     try { return localStorage.getItem(PERC_OPEN_KEY) === '1'; } catch { return false; }
@@ -48,6 +68,14 @@ function BeatTuner() {
   };
   return (
     <div className="beat-tuner" role="group" aria-label="Tuỳ chỉnh âm thanh">
+      <div className="bt-row bt-auto">
+        <Toggle on={raw.auto} onClick={() => setAutoPrefs(!raw.auto)}>✨ Tự động tối ưu</Toggle>
+        <span className="small muted">
+          {!raw.auto ? 'Đang tắt: dùng cài đặt cố định cho mọi kiểu nhịp.'
+            : raw.manual.length ? <>Tự chỉnh theo {styleName}, giữ {raw.manual.length} mục bạn chỉnh tay. <button type="button" className="link-btn" onClick={() => setAutoPrefs(true)}>Về tự động</button></>
+            : <>Bộ trống, độ lắc, bo, âm lượng đang tự chỉnh theo {styleName}.</>}
+        </span>
+      </div>
       <label className="bt-row">
         <span className="bt-label">Nhạc cụ</span>
         <select className="chip-select" value={b.instrument} onChange={(e) => {
@@ -96,10 +124,11 @@ function BeatTuner() {
   );
 }
 
-export function PlayerBar({ p, loopLabel, onToggleLoop, extra, autoStyle }: Props) {
+export function PlayerBar({ p, loopLabel, onToggleLoop, extra, autoStyle, autoApplied = false }: Props) {
   const { opts, setOpts } = p;
   const [tuner, setTuner] = useState(false);
-  const [autoPicked, setAutoPicked] = useState(false);
+  const [autoPicked, setAutoPicked] = useState(autoApplied);
+  useEffect(() => { setAutoPicked(autoApplied); }, [autoApplied]);
   const styleLabel = (v: BeatStyle) => STYLE_OPTIONS.find((s) => s.value === v)?.label ?? v;
   const prefs = useBeatPrefs();
   const eff = Math.round(opts.bpm * opts.tempoScale);
@@ -122,7 +151,7 @@ export function PlayerBar({ p, loopLabel, onToggleLoop, extra, autoStyle }: Prop
         {p.countIn == null && p.chord && opts.beat && (prefs.bass || prefs.comp) && <div className="pb-chord" title="Hợp âm đệm">{p.chord}</div>}
         <label className="pb-style">
           <span className="sr-only">Kiểu beat</span>
-          <select value={opts.style} onChange={(e) => {
+          <select value={autoPicked && autoStyle && opts.style === autoStyle.style ? '__auto' : opts.style} onChange={(e) => {
             if (e.target.value === '__auto' && autoStyle) {
               setOpts({ style: autoStyle.style, beat: true });
               setAutoPicked(true);
@@ -142,6 +171,8 @@ export function PlayerBar({ p, loopLabel, onToggleLoop, extra, autoStyle }: Prop
       {autoPicked && autoStyle && opts.style === autoStyle.style && (
         <p className="pb-auto" role="status">✨ Tự chọn: <strong>{styleLabel(autoStyle.style)}</strong> — {autoStyle.reason}</p>
       )}
+      <TempoHint style={opts.style} bpm={opts.bpm} tempoScale={opts.tempoScale} auto={prefs.auto} label={styleLabel(opts.style)}
+        onSet={(scale) => setOpts({ tempoScale: scale })} />
       <div className="pb-chips">
         <Toggle on={opts.melody} onClick={() => setOpts({ melody: !opts.melody })}>Giai điệu</Toggle>
         <Toggle on={opts.beat} onClick={() => setOpts({ beat: !opts.beat })}>Beat</Toggle>
@@ -154,7 +185,7 @@ export function PlayerBar({ p, loopLabel, onToggleLoop, extra, autoStyle }: Prop
         )}
         {extra}
       </div>
-      {tuner && <BeatTuner />}
+      {tuner && <BeatTuner style={opts.style} styleName={styleLabel(opts.style)} />}
     </div>
   );
 }

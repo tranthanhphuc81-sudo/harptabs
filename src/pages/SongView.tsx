@@ -38,15 +38,18 @@ function SongPlayerView({ song }: { song: Song }) {
   const stats = useMemo(() => countTechniques(parsed), [parsed]);
   const bpb = beatsPerBar(song.timeSig);
 
+  // tự động tối ưu: mở bài là áp kiểu nhịp hợp nhất (trừ bài để "Không beat" / "Máy đếm nhịp")
+  const beatPrefs = useBeatPrefs();
+  const autoStyle = useMemo(() => suggestStyle(song, flat), [song, flat]);
+  const autoApplied = beatPrefs.auto && song.style !== 'none' && song.style !== 'metronome';
   const p = usePlayer(flat, {
     bpm: song.bpm, tempoScale: 1, beatsPerBar: bpb, pickupBeats: song.pickupBeats,
-    style: song.style, melody: true, beat: song.style !== 'none', click: false, countIn: true,
+    style: autoApplied ? autoStyle.style : song.style, melody: true, beat: song.style !== 'none', click: false, countIn: true,
     songKey: song.songKey || songTonality(song.harpKey, song.position),
     chordOverrides: song.chords,
   });
 
   // ----- hợp âm đệm: hiện trên tab, chọn tay khi máy đoán sai -----
-  const beatPrefs = useBeatPrefs();
   const tonality = useMemo(() => parseTonality(song.songKey || songTonality(song.harpKey, song.position))!, [song.songKey, song.harpKey, song.position]);
   const chordSegs = useMemo(
     () => (beatPrefs.showChords ? harmonizeSegments(flat, bpb, song.pickupBeats, tonality, song.chords) : null),
@@ -66,7 +69,6 @@ function SongPlayerView({ song }: { song: Song }) {
     return `ô nhịp ${bar}${half ? ' (nửa sau)' : ''}`;
   };
   const manualCount = Object.keys(song.chords ?? {}).length;
-  const autoStyle = useMemo(() => suggestStyle(song, flat), [song, flat]);
 
   const [focus, setFocus] = useState<number | null>(null);
   const [showDiagram, setShowDiagram] = useState(false);
@@ -274,6 +276,7 @@ function SongPlayerView({ song }: { song: Song }) {
         loopLabel={loopInfo?.label}
         onToggleLoop={toggleLoop}
         autoStyle={autoStyle}
+        autoApplied={autoApplied}
         extra={
           <button type="button" className={`chip${waitMode ? ' on' : ''}`} aria-pressed={waitMode} onClick={() => (waitMode ? stopWait() : startWait())}>
             <Icon name="mic" size={15} /> Chờ nốt
