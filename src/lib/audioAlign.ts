@@ -8,6 +8,7 @@
  */
 import { yin } from '../audio/pitch';
 import { hzToMidiFloat } from './harp';
+import { trackMelodyInMix } from './melodyMix';
 
 // ───────────────────────── dò cao độ ─────────────────────────
 
@@ -165,7 +166,8 @@ export function compareWithAudio(score: ScoreNote[], audio: AudioNote[], meter?:
     const B = keep ? new Uint8Array((n + 1) * (m + 1)) : null;
     const W = m + 1;
     for (let i = 1; i <= n; i++) { D[i * W] = D[(i - 1) * W] + SKIP_S; if (B) B[i * W] = 1; }
-    for (let j = 1; j <= m; j++) { D[j] = D[j - 1] + skipA(A[j - 1]); if (B) B[j] = 2; }
+    // bản thu dư ở đầu / cuối (dạo đầu, hát thêm lần nữa, bài gốc có đoạn nhạc dạo) không tính phí
+    for (let j = 1; j <= m; j++) { D[j] = 0; if (B) B[j] = 2; }
     for (let i = 1; i <= n; i++) for (let j = 1; j <= m; j++) {
       const c0 = D[(i - 1) * W + j - 1] + matchCost(S[i - 1].midi + k, A[j - 1].midi);
       const c1 = D[(i - 1) * W + j] + SKIP_S;
@@ -176,19 +178,25 @@ export function compareWithAudio(score: ScoreNote[], audio: AudioNote[], meter?:
       D[i * W + j] = best;
       if (B) B[i * W + j] = b;
     }
-    return { cost: D[n * W + m], B };
+    let end = m;
+    for (let j = 0; j <= m; j++) if (D[n * W + j] < D[n * W + end]) end = j;
+    return { cost: D[n * W + end], B, end };
   };
   // lệch giọng: thử mọi độ lệch quanh độ lệch trung vị
   const guess = Math.round(med(A.map((a) => a.midi)) - med(S.map((s) => s.midi)));
   let bestK = guess, bestCost = Infinity;
-  for (let k = guess - 7; k <= guess + 7; k++) { const c = run(k, false).cost; if (c < bestCost) { bestCost = c; bestK = k; } }
-  const { B } = run(bestK, true);
+  // (bài gốc có nhạc đệm: trung vị lẫn tiếng đàn → thử thêm quanh giọng gốc của bản nhạc)
+  const ks = new Set<number>();
+  for (let k = guess - 7; k <= guess + 7; k++) ks.add(k);
+  for (let k = -12; k <= 12; k++) ks.add(k);
+  for (const k of ks) { const c = run(k, false).cost; if (c < bestCost - 1e-9 || (Math.abs(c - bestCost) < 1e-9 && Math.abs(k) < Math.abs(bestK))) { bestCost = c; bestK = k; } }
+  const { B, end } = run(bestK, true);
   const pairs: [number, number][] = [];
   const skippedS: number[] = [], skippedA: number[] = [];
-  for (let i = n, j = m; i > 0 || j > 0;) {
+  for (let i = n, j = end; i > 0;) {
     const b = B![i * (m + 1) + j];
-    if (i > 0 && j > 0 && b === 0) { pairs.push([i - 1, j - 1]); i--; j--; }
-    else if (i > 0 && (j === 0 || b === 1)) { skippedS.push(i - 1); i--; }
+    if (j > 0 && b === 0) { pairs.push([i - 1, j - 1]); i--; j--; }
+    else if (j === 0 || b === 1) { skippedS.push(i - 1); i--; }
     else { skippedA.push(j - 1); j--; }
   }
   pairs.reverse();
@@ -272,8 +280,15 @@ export function compareWithAudio(score: ScoreNote[], audio: AudioNote[], meter?:
   return { offset: k, matched: anchors.length, scoreNotes: n, audioNotes: m, suggestions: sugg };
 }
 
-/** Phân tích trọn gói: mẫu âm thanh (mono) → so với bản quét */
-export function analyzeRecording(samples: Float32Array, sampleRate: number, score: ScoreNote[], meter?: number): Comparison & { notes: AudioNote[] } {
-  const notes = segmentNotes(trackPitch(samples, sampleRate));
-  return { ...compareWithAudio(score, notes, meter), notes };
+/**
+ * Phân tích trọn gói: mẫu âm thanh (mono) → so với bản quét.
+ * mode 'solo': bản thu một giọng (tự thổi / hát); 'mix': bài hát gốc có nhạc đệm — dò giai điệu chính
+ * (melodyMix) và chỉ giữ gợi ý sửa cao độ: các loại khác bị nhạc đệm làm nhiễu (thử nghiệm: thêm / bỏ
+ * nốt theo bài gốc làm bản quét sai hơn, sửa cao độ thì không).
+ */
+export function analyzeRecording(samples: Float32Array, sampleRate: number, score: ScoreNote[], meter?: number, mode: 'solo' | 'mix' = 'solo'): Comparison & { notes: AudioNote[] } {
+  const notes = segmentNotes(mode === 'mix' ? trackMelodyInMix(samples, sampleRate) : trackPitch(samples, sampleRate));
+  const r = compareWithAudio(score, notes, meter);
+  if (mode === 'mix') r.suggestions = r.suggestions.filter((x) => x.kind === 'pitch');
+  return { ...r, notes };
 }

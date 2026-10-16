@@ -4,6 +4,8 @@ import { midiToName } from '../lib/harp';
 import { Icon } from './Icon';
 
 type Status = 'idle' | 'recording' | 'decoding' | 'analyzing' | 'done' | 'error';
+/** solo: bản thu một giọng; mix: bài hát gốc có nhạc đệm (chỉ gợi ý cao độ) */
+type Mode = 'solo' | 'mix';
 
 const BEAT_NAMES: Record<string, string> = { '0.25': 'móc kép', '0.333': 'móc đơn liên ba', '0.5': 'móc đơn', '0.667': 'đen liên ba', '0.75': 'móc đơn chấm', '1': 'đen', '1.5': 'đen chấm', '2': 'trắng', '3': 'trắng chấm', '4': 'tròn' };
 const beatName = (b: number) => BEAT_NAMES[String(+b.toFixed(3))] ?? `${+b.toFixed(2)} phách`;
@@ -28,7 +30,7 @@ async function decode(blob: Blob): Promise<{ samples: Float32Array; sampleRate: 
   }
 }
 
-function analyze(samples: Float32Array, sampleRate: number, score: ScoreNote[], meter: number): Promise<Comparison> {
+function analyze(samples: Float32Array, sampleRate: number, score: ScoreNote[], meter: number, mode: Mode): Promise<Comparison> {
   return new Promise((resolve, reject) => {
     const w = new Worker(new URL('../lib/audioAlign.worker.ts', import.meta.url), { type: 'module' });
     w.onmessage = (e: MessageEvent<{ ok: boolean; result?: Comparison; error?: string }>) => {
@@ -36,7 +38,7 @@ function analyze(samples: Float32Array, sampleRate: number, score: ScoreNote[], 
       if (e.data.ok && e.data.result) resolve(e.data.result); else reject(new Error(e.data.error || 'Lỗi phân tích'));
     };
     w.onerror = (e) => { w.terminate(); reject(new Error(e.message || 'Lỗi phân tích')); };
-    w.postMessage({ samples, sampleRate, score, meter }, [samples.buffer]);
+    w.postMessage({ samples, sampleRate, score, meter, mode }, [samples.buffer]);
   });
 }
 
@@ -54,6 +56,7 @@ export function RecordingCheck({ score, meter, label, onApply, onFocus }: {
   onFocus: (noteId: string) => void;
 }) {
   const [status, setStatus] = useState<Status>('idle');
+  const [mode, setMode] = useState<Mode>('solo');
   const [error, setError] = useState('');
   const [result, setResult] = useState<Comparison | null>(null);
   const [checked, setChecked] = useState<Set<string>>(new Set());
@@ -71,7 +74,7 @@ export function RecordingCheck({ score, meter, label, onApply, onFocus }: {
       const { samples, sampleRate } = await decode(blob);
       if (samples.length < sampleRate * 2) throw new Error('Bản thu quá ngắn — thu ít nhất vài câu nhạc');
       setStatus('analyzing');
-      const r = await analyze(samples, sampleRate, score, meter);
+      const r = await analyze(samples, sampleRate, score, meter, mode);
       setResult(r);
       // mặc định chọn: sai cao độ, sót nốt, trường độ; nốt "có thể thừa" để người dùng tự quyết
       setChecked(new Set(r.suggestions.filter((s) => s.kind !== 'extra').map(sugKey)));
@@ -130,32 +133,45 @@ export function RecordingCheck({ score, meter, label, onApply, onFocus }: {
   };
 
   const busy = status === 'decoding' || status === 'analyzing';
-  const lowMatch = result && result.matched < result.scoreNotes * 0.5;
+  const lowMatch = result && result.matched < result.scoreNotes * (mode === 'mix' ? 0.35 : 0.5);
   return (
     <details className="syntax-help rec-check">
       <summary>Đối chiếu với bản thu — tìm nốt quét sai</summary>
-      <p className="small">
-        Thổi kèn, hát hoặc ngân nga <strong>giai điệu</strong> bài này (một giọng, không có nhạc đệm) — thu ngay hoặc chọn file ghi âm có sẵn.
-        Máy so từng nốt với bản quét rồi gợi ý chỗ sửa. Hát khác giọng, nhanh chậm tuỳ ý đều được.
-      </p>
+      <div className="segmented" role="group" aria-label="Loại bản thu">
+        <button type="button" className={mode === 'solo' ? 'on' : ''} aria-pressed={mode === 'solo'} disabled={busy || status === 'recording'} onClick={() => { setMode('solo'); setResult(null); }}>Tôi tự thổi / hát</button>
+        <button type="button" className={mode === 'mix' ? 'on' : ''} aria-pressed={mode === 'mix'} disabled={busy || status === 'recording'} onClick={() => { setMode('mix'); setResult(null); }}>Bài hát gốc (MP3)</button>
+      </div>
+      {mode === 'solo' ? (
+        <p className="small">
+          Thổi kèn, hát hoặc ngân nga <strong>giai điệu</strong> bài này (một giọng, không có nhạc đệm) — thu ngay hoặc chọn file ghi âm có sẵn.
+          Máy so từng nốt với bản quét rồi gợi ý chỗ sửa. Hát khác giọng, nhanh chậm tuỳ ý đều được.
+        </p>
+      ) : (
+        <p className="small">
+          Chọn file bài hát gốc (ca sĩ hát kèm nhạc đệm). Máy tự tách giọng hát chính rồi <strong>chỉ gợi ý sửa cao độ</strong> —
+          tách giọng khỏi nhạc đệm không chắc chắn bằng bản bạn tự thu, nên nghe lại từng chỗ. Hợp nhất với bài giọng hát rõ, nhạc đệm nhẹ.
+        </p>
+      )}
       <div className="row gap wrap center">
-        {status === 'recording' ? (
+        {mode === 'mix' ? null : status === 'recording' ? (
           <button type="button" className="btn btn-primary" onClick={stop}><Icon name="stop" size={18} /> Dừng ({Math.floor(secs / 60)}:{String(secs % 60).padStart(2, '0')})</button>
         ) : (
           <button type="button" className="btn btn-primary" disabled={busy} onClick={start}><Icon name="mic" size={18} /> Thu âm</button>
         )}
-        <button type="button" className="btn btn-ghost" disabled={busy || status === 'recording'} onClick={() => fileRef.current?.click()}><Icon name="music" size={18} /> Chọn file ghi âm</button>
+        <button type="button" className="btn btn-ghost" disabled={busy || status === 'recording'} onClick={() => fileRef.current?.click()}><Icon name="music" size={18} /> {mode === 'mix' ? 'Chọn file bài hát' : 'Chọn file ghi âm'}</button>
         <input ref={fileRef} type="file" accept="audio/*,.mp3,.m4a,.wav,.ogg,.aac,.webm" hidden onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) run(f); }} />
-        {busy && <span className="muted small">{status === 'decoding' ? 'Đang đọc bản thu…' : 'Đang dò cao độ và so từng nốt…'}</span>}
+        {busy && <span className="muted small">{status === 'decoding' ? 'Đang đọc file âm thanh…' : mode === 'mix' ? 'Đang tách giọng hát và so từng nốt…' : 'Đang dò cao độ và so từng nốt…'}</span>}
       </div>
       {error && <div className="alert error" role="alert">{error}</div>}
       {result && (
         <div className="rec-result">
           <p className="small">
             Khớp <strong>{result.matched}/{result.scoreNotes}</strong> nốt
-            {result.offset % 12 !== 0 && <> · bạn hát / thổi lệch {result.offset > 0 ? '+' : ''}{result.offset} nửa cung so với bản nhạc (không sao)</>}.
+            {result.offset % 12 !== 0 && <> · {mode === 'mix' ? 'bài gốc' : 'bạn hát / thổi'} lệch {result.offset > 0 ? '+' : ''}{result.offset} nửa cung so với bản nhạc (không sao)</>}.
           </p>
-          {lowMatch && <div className="alert" role="note">Bản thu khớp ít — có thể thu nhầm bài, có nhạc đệm / tiếng ồn, hoặc mới thu một đoạn ngắn. Gợi ý dưới đây kém tin cậy.</div>}
+          {lowMatch && <div className="alert" role="note">{mode === 'mix'
+            ? 'Máy tách giọng hát được ít — nhạc đệm có thể quá dày, hoặc bài gốc khác bản nhạc (khác lời, khác giai điệu). Gợi ý dưới đây kém tin cậy.'
+            : 'Bản thu khớp ít — có thể thu nhầm bài, có nhạc đệm / tiếng ồn, hoặc mới thu một đoạn ngắn. Gợi ý dưới đây kém tin cậy.'}</div>}
           {result.suggestions.length === 0 ? (
             <p className="small"><Icon name="check" size={16} /> Không thấy chỗ nào khác giữa bản quét và bản thu.</p>
           ) : (
