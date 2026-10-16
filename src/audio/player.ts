@@ -6,7 +6,7 @@ import { FlatEvent } from '../lib/tabText';
 import { getEffectivePrefs, setActiveStyle } from './beatPrefs';
 import { Accomp, accompHit, audio, bass, bongo, chordStab, clap, clave, click, cowbell, conga, crash, guiro, hat, kick, playTone, ride, rim, setHumanVelocity, shaker, snare, surdo, tom } from './engine';
 import { bassMidi, Chord, chordAt, chordVoicing, ChordOverrides, ChordSpan, harmonize, parseTonality, walkingNote } from './harmony';
-import { BeatPattern, BeatStyle, boPattern, resolvePattern, strumPattern } from './patterns';
+import { BeatPattern, BeatStyle, boPattern, lacPattern, resolvePattern, strumPattern } from './patterns';
 import { AccompPlan, barTrack, planAccomp } from './accompPlan';
 
 export interface PlayerOptions {
@@ -232,9 +232,11 @@ export class Player {
     const subdiv = base.subdiv;
     const bar = Math.floor((beat - o.pickupBeats) / o.beatsPerBar + EPS);
     const plan = bar >= 0 ? this.plan?.bars[bar] : undefined;
-    const tk = `${bar}|${o.style}|${o.beatsPerBar}`;
+    const bp = getEffectivePrefs(o.style);
+    const tech = acc === 'piano' ? {} : { rake: bp.gRake, trem: bp.gTrem, shake: bp.gShake };
+    const tk = `${bar}|${o.style}|${o.beatsPerBar}|${+!!tech.rake}${+!!tech.trem}${+!!tech.shake}`;
     let track = this.barTracks.get(tk);
-    if (!track) { track = barTrack(plan, bar, base); this.barTracks.set(tk, track); }
+    if (!track) { track = barTrack(plan, bar, base, tech); this.barTracks.set(tk, track); }
     const len = track.length;
     let kind = track[stepIdx] ?? '.';
     const chord = this.chordAt(beat + 1e-3);
@@ -251,8 +253,7 @@ export class Player {
     const step = 1 / subdiv;
     const untilChange = span ? span.end - beat : Infinity;
     const dur = Math.min(gapTo((k) => k !== '.') * step, 2, untilChange);
-    const bassDur = Math.min(gapTo((k) => 'BFPQZ'.includes(k)) * step, 2, untilChange);
-    const bp = getEffectivePrefs(o.style);
+    const bassDur = Math.min(gapTo((k) => 'BFPQZV'.includes(k)) * step, 2, untilChange);
     setHumanVelocity(bp.humanize ? 0.1 : 0);
     const swing = subdiv !== 3 && stepIdx % 2 === 1 ? bp.swing * step * spb : 0;
     const jitter = bp.humanize ? (Math.random() - 0.5) * 0.01 : 0;
@@ -266,7 +267,7 @@ export class Player {
       accompHit(acc, 'B', { ...ch, bass: target - (kind === 'Q' ? 2 : 1) }, when, dur * spb, dur * spb, 0.85 * vel);
       return;
     }
-    if (changed && !'BFZ'.includes(kind)) {
+    if (changed && !'BFZV'.includes(kind)) {
       accompHit(acc, 'B', ch, when, dur * spb, bassDur * spb, vel);
       if (kind === '.') return;
     }
@@ -354,8 +355,19 @@ export class Player {
           hit(pattern.hat, (t, v) => hat(t, v * accent));
           hit(pattern.openHat, (t, v) => hat(t, v, true));
           hit(pattern.rim, rim);
-          hit(pattern.shaker, (t, v) => shaker(t, v * accent));
-          perc(bp.bo ? boPattern(pattern) : pattern.bongo, (t, ch) => bongo(t, ch));
+          hit(pattern.shaker ?? (bp.lac ? lacPattern(pattern) : undefined), (t, v) => shaker(t, v * accent));
+          const boTrack = bp.bo || bp.boSlide || bp.boRoll ? boPattern(pattern) : pattern.bongo;
+          // chỗ hết câu: theo kế hoạch đệm của bài (không có thì cứ 4 ô một câu)
+          const pl = bar >= 0 ? this.plan?.bars[bar] : undefined;
+          const phraseEnd = pl ? pl.phraseEnd : (bar + 1) % 4 === 0;
+          const k = stepIdx - (o.beatsPerBar - 1) * subdiv;
+          if (boTrack && bp.boRoll && phraseEnd && k >= 0) {
+            // rung bo suốt phách cuối câu
+            if (k === 0) bongo(t, 'r', 0.9, spb * 0.92);
+          } else {
+            // vuốt bo thay tiếng mở trầm ở ô thứ hai của mỗi cặp ô
+            perc(boTrack, (t, ch) => bongo(t, bp.boSlide && ch === 'o' && bar % 2 === 1 ? 'v' : ch));
+          }
           perc(pattern.conga, (t, ch) => conga(t, ch));
           perc(pattern.guiro, (t, ch) => guiro(t, ch === 'X'));
           hit(pattern.clave, clave);

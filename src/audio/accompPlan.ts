@@ -21,6 +21,10 @@ export interface BarPlan {
   /** hệ số lực đánh 0.6…1.15 (theo độ cao giai điệu, cao trào, điệp khúc, càng về sau càng đầy) */
   energy: number;
   fill: Fill;
+  /** ô này kết thúc một câu / mở một câu mới / kết bằng nốt ngân */
+  phraseEnd: boolean;
+  phraseStart: boolean;
+  held: boolean;
   /** ô kết: ô (tính trong ô nhịp) đánh tiếng quạt ngân cuối bài */
   finalStep?: number;
 }
@@ -174,7 +178,10 @@ export function planAccomp(notes: PlanNote[], chords: ChordSpan[], o: PlanOption
       else if (texture !== 'arp') fill = 'push';
     }
 
-    const plan: BarPlan = { texture, energy: clamp(energy, 0.6, 1.15), fill };
+    const plan: BarPlan = {
+      texture, energy: clamp(energy, 0.6, 1.15), fill,
+      phraseEnd: phraseEnd[b], phraseStart: b > 0 && phraseEnd[b - 1], held: s.endsHeld,
+    };
     if (b === finalBar && lastOnset) {
       plan.texture = 'final';
       plan.fill = 'none';
@@ -217,8 +224,18 @@ export function arpTrack(beats: number, subdiv: number): string {
   return out.join('');
 }
 
-/** Điệu của một ô theo kế hoạch: kết cấu + câu dồn ở phách cuối */
-export function barTrack(plan: BarPlan | undefined, bar: number, base: StrumPattern): string {
+/** Kỹ thuật tay guitar bật thêm khi đệm hát */
+export interface GuitarTech {
+  /** vuốt dây: quạt thật chậm ở đầu câu mới */
+  rake?: boolean;
+  /** rung dây: quạt rung ở phách cuối ô có nốt ngân */
+  trem?: boolean;
+  /** lắc cổ tay: "rrà" thay câu dồn ở chỗ hết câu */
+  shake?: boolean;
+}
+
+/** Điệu của một ô theo kế hoạch: kết cấu + câu dồn ở phách cuối + kỹ thuật tay (nếu bật) */
+export function barTrack(plan: BarPlan | undefined, bar: number, base: StrumPattern, tech: GuitarTech = {}): string {
   const len = base.beats * base.subdiv;
   const sub = base.subdiv;
   const slice = (() => {
@@ -247,8 +264,18 @@ export function barTrack(plan: BarPlan | undefined, bar: number, base: StrumPatt
     }
     default: t = slice.split('');
   }
+  const from = len - sub;
+  const lastBeat = (first: string) => { t[from] = first; for (let i = 1; i < sub; i++) t[from + i] = '.'; };
+  if (tech.rake && plan.phraseStart) t[0] = 'V';
+  if (plan.fill === 'push' && tech.shake && base.beats >= 2) { lastBeat('L'); return t.join(''); }
+  if (plan.fill !== 'walk' && tech.trem && plan.held && base.beats >= 2) { lastBeat('R'); return t.join(''); }
+  // phách cuối dành cho bass dẫn: rung (nốt ngân) hoặc lắc đánh ở phách ngay trước
+  if (plan.fill === 'walk' && base.beats >= 3 && ((tech.trem && plan.held) || tech.shake)) {
+    const pre = from - sub;
+    t[pre] = tech.trem && plan.held ? 'R' : 'L';
+    for (let i = 1; i < sub; i++) t[pre + i] = '.';
+  }
   if (plan.fill !== 'none' && base.beats >= 2) {
-    const from = len - sub;
     const fill = plan.fill === 'walk'
       ? (sub === 1 ? ['P'] : sub === 2 ? ['Q', 'P'] : sub === 3 ? ['Q', '.', 'P'] : ['Q', '.', 'P', '.'])
       : (sub === 1 ? ['X'] : sub === 2 ? ['X', 'X'] : sub === 3 ? ['X', 'U', 'X'] : ['X', 'U', 'X', 'U']);

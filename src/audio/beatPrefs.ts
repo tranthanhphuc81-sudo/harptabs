@@ -40,6 +40,14 @@ export interface BeatPrefs {
   accomp: Accomp;
   /** âm lượng đệm hát (guitar / piano tự đệm) */
   singVol: number;
+  /** kỹ thuật tay guitar khi đệm hát: vuốt dây (mở câu), rung dây (nốt ngân), lắc cổ tay (hết câu) */
+  gRake: boolean;
+  gTrem: boolean;
+  gShake: boolean;
+  /** trống bo: vuốt bo (luyến mặt da), rung bo (vê dồn cuối câu); lắc = thêm maracas cho mọi kiểu nhịp */
+  boSlide: boolean;
+  boRoll: boolean;
+  lac: boolean;
   /** hiện hợp âm đệm trên tab */
   showChords: boolean;
   /** tự chỉnh âm thanh theo kiểu nhịp */
@@ -50,7 +58,7 @@ export interface BeatPrefs {
 
 export const DEFAULT_BEAT_PREFS: BeatPrefs = {
   instrument: 'harmonica', kit: 'acoustic', swing: 0, humanize: true, fills: false, bass: true, comp: true, bo: false,
-  beatVol: 0.6, melodyVol: 0.55, bassVol: 0.7, boVol: 0.8, bellVol: 0.8, compVol: 0.7, clapVol: 0.8, reverb: 0.25, accomp: 'gobo', singVol: 0.8, showChords: false,
+  beatVol: 0.6, melodyVol: 0.55, bassVol: 0.7, boVol: 0.8, bellVol: 0.8, compVol: 0.7, clapVol: 0.8, reverb: 0.25, accomp: 'gobo', singVol: 0.8, gRake: false, gTrem: false, gShake: false, boSlide: false, boRoll: false, lac: false, showChords: false,
   auto: true, manual: [],
 };
 

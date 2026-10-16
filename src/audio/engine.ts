@@ -645,10 +645,49 @@ function handDrum(when: number, f: number, decay: number, gain: number, bright: 
   noiseHit(when, 'bandpass', bright, 0.012, gain * 0.5, 1.5);
 }
 
-/** bongo; kind: f = ngón nhẹ, t = gót tay, s = vỗ, h = mở cao, o = mở trầm */
-export function bongo(when: number, kind: string, vel = 1) {
+/**
+ * bongo; kind: f = ngón nhẹ, t = gót tay, s = vỗ, h = mở cao, o = mở trầm,
+ * v = vuốt bo (miết ngón trên mặt da: tiếng "u…" luyến lên), r = rung bo (vê dồn liên tục trong `dur` giây)
+ */
+export function bongo(when: number, kind: string, vel = 1, dur = 0.4) {
   hitOut = boBus;
-  try { bongoHit(when, kind, vel); } finally { hitOut = null; }
+  try {
+    if (kind === 'v') bongoSlide(when, vel);
+    else if (kind === 'r') bongoRoll(when, dur, vel);
+    else bongoHit(when, kind, vel);
+  } finally { hitOut = null; }
+}
+
+/** vuốt bo: ngón miết làm mặt da căng dần — cao độ trượt lên rồi chùng lại, kèm tiếng ma sát */
+function bongoSlide(when: number, vel: number) {
+  const c = audio();
+  vel = vary(vel) * (kit === 'soft' ? 0.75 : 1);
+  const o = c.createOscillator();
+  const g = c.createGain();
+  const f = 360;
+  o.type = 'sine';
+  o.frequency.setValueAtTime(f * 0.95, when);
+  o.frequency.exponentialRampToValueAtTime(f * 1.55, when + 0.2);
+  o.frequency.exponentialRampToValueAtTime(f * 1.35, when + 0.34);
+  g.gain.setValueAtTime(0.0001, when);
+  g.gain.exponentialRampToValueAtTime(0.2 * vel, when + 0.04);
+  g.gain.setValueAtTime(0.2 * vel, when + 0.18);
+  g.gain.exponentialRampToValueAtTime(0.0001, when + 0.38);
+  o.connect(g).connect(boBus);
+  o.start(when);
+  o.stop(when + 0.4);
+  noiseHit(when, 'bandpass', 1600, 0.26, 0.05 * vel, 2, 0.06);
+}
+
+/** rung bo: hai tay vê xen kẽ mặt cao / trầm thật nhanh, to dần, chốt bằng tiếng mở */
+function bongoRoll(when: number, dur: number, vel: number) {
+  const gap = 0.045;
+  const n = Math.max(4, Math.floor(dur / gap));
+  for (let i = 0; i < n; i++) {
+    const v = vel * (0.35 + 0.55 * (i / n));
+    handDrum(when + i * gap, i % 2 ? 360 : 520, 0.05, 0.13 * vary(v), 3400);
+  }
+  handDrum(when + n * gap, 520, 0.16, 0.26 * vel, 3800);
 }
 
 function bongoHit(when: number, kind: string, vel: number) {
@@ -931,7 +970,9 @@ function goboSlap(c: AudioContext, ch: AccompChord, t: number, vel: number) {
 
 /**
  * Một nhát đệm hát. kind theo điệu đệm (strumPattern / barTrack): B/F bass, D/d/U quạt, X gõ bo,
- * 3/4/5 rải một dây (dây số 3 = quãng 3, 4 = quãng 5, 5 = quãng 8 trên), Z = kết bài (bass + quạt chậm ngân dài).
+ * 3/4/5 rải một dây (dây số 3 = quãng 3, 4 = quãng 5, 5 = quãng 8 trên), Z = kết bài (bass + quạt chậm ngân dài),
+ * V = vuốt dây (quạt thật chậm từ bass lên dây cao, để ngân), R = rung dây (quạt rung xuống–lên liên tục suốt `dur`, to dần),
+ * L = lắc cổ tay (3 ngón búng dây liên tiếp "rrà" rồi chốt).
  * `dur` = thời gian tới nhát kế tiếp (giây), `bassDur` = tới nốt bass kế tiếp.
  */
 export function accompHit(accomp: Accomp, kind: string, ch: AccompChord, when: number, dur: number, bassDur: number, vel = 1) {
@@ -940,6 +981,30 @@ export function accompHit(accomp: Accomp, kind: string, ch: AccompChord, when: n
   const t = Math.max(when, c.currentTime);
   vel = vary(vel);
   const arp = kind >= '3' && kind <= '5';
+  if (kind === 'V') {
+    const notes = accomp === 'piano' ? [ch.bass, ...ch.triad, ch.triad[0] + 12] : guitarShape(ch);
+    const ring = Math.max(1.2, dur * 1.5);
+    notes.forEach((m, i) => (accomp === 'piano' ? pianoTone : guitarTone)(c, m, t + i * 0.05, ring, (i === 0 ? 0.5 : 0.3 + 0.03 * i) * vel, singBus));
+    return;
+  }
+  if (kind === 'R') {
+    // quạt rung: nhát xuống/lên luân phiên ~14 nhát mỗi giây, to dần
+    const gap = 0.07;
+    const n = Math.max(3, Math.floor(dur / gap));
+    for (let i = 0; i < n; i++) {
+      const v = vel * (0.45 + 0.5 * (i / n));
+      if (accomp === 'piano') ch.triad.forEach((m) => pianoTone(c, m + (i % 2 ? 12 : 0), t + i * gap, 0.14, 0.22 * v, singBus));
+      else strumGuitar(c, ch, t + i * gap, 0.16, 0.8 * v, i % 2 === 1);
+    }
+    return;
+  }
+  if (kind === 'L') {
+    if (accomp === 'piano') { ch.triad.forEach((m) => pianoTone(c, m, t, dur * 0.9, 0.45 * vel, singBus)); return; }
+    // lắc cổ tay (rasgueado): ngón út, áp út, giữa búng xuống liên tiếp, ngón trỏ chốt
+    for (let i = 0; i < 3; i++) strumGuitar(c, ch, t + i * 0.035, 0.12, 0.55 * vel * (0.8 + 0.1 * i), false);
+    strumGuitar(c, ch, t + 0.11, Math.max(0.2, dur - 0.11), 1.05 * vel, false);
+    return;
+  }
   if (kind === 'Z') {
     // kết bài: bass rồi một tiếng quạt / hợp âm thật chậm, để ngân
     if (accomp === 'piano') {

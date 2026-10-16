@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { SAMPLE_SONGS } from '../data/samples';
 import { flatten, parseTab } from '../lib/tabText';
 import { harmonize, parseTonality } from './harmony';
-import { arpTrack, barTrack, planAccomp, PlanNote } from './accompPlan';
+import { arpTrack, BarPlan, barTrack, planAccomp, PlanNote } from './accompPlan';
 import { strumPattern } from './patterns';
 
 /** giai điệu dựng nhanh: [midi | null, số phách] */
@@ -10,6 +10,7 @@ const mel = (spec: [number | null, number][], sectionIndex = 0): PlanNote[] => {
   let t = 0;
   return spec.map(([midi, beats]) => { const n = { start: t, beats, midi, sectionIndex }; t += beats; return n; });
 };
+const bp0: BarPlan = { texture: 'strum', energy: 1, fill: 'none', phraseEnd: false, phraseStart: false, held: false };
 const plan = (notes: PlanNote[], bpm: number, sections?: string[]) =>
   planAccomp(notes, harmonize(notes, 4, 0, parseTonality('C')), { bpm, beatsPerBar: 4, pickupBeats: 0, sections });
 
@@ -54,14 +55,14 @@ describe('kế hoạch đệm hát theo bài', () => {
       const len = base.beats * base.subdiv;
       for (const texture of ['arp', 'strum', 'sparse', 'busy', 'final', 'rest'] as const) {
         for (const fill of ['none', 'walk', 'push'] as const) {
-          const t = barTrack({ texture, energy: 1, fill, finalStep: 1 }, 1, base);
+          const t = barTrack({ ...bp0, texture, fill, finalStep: 1 }, 1, base);
           expect(t.length, `${bpb} ${texture} ${fill}`).toBe(len);
           if (texture === 'final') expect(t).toContain('Z');
           if (fill === 'walk' && texture !== 'final' && texture !== 'rest') expect(t.slice(len - base.subdiv)).toMatch(/P/);
         }
       }
     }
-    expect(barTrack({ texture: 'strum', energy: 1, fill: 'none' }, -1, strumPattern('ballad', 4))).toMatch(/^\.+$/);
+    expect(barTrack({ ...bp0, texture: 'strum' }, -1, strumPattern('ballad', 4))).toMatch(/^\.+$/);
     expect(arpTrack(4, 2)).toBe('B345F345');
     expect(arpTrack(3, 2)).toBe('B34543');
   });
@@ -86,5 +87,18 @@ describe('kế hoạch đệm hát theo bài', () => {
       // mỗi bài một cách đệm (bài khác nhau thì kế hoạch khác nhau)
       expect(sigs.size, style).toBe(count);
     }
+  });
+
+  it('kỹ thuật tay guitar rơi đúng chỗ: vuốt mở câu, lắc thay câu dồn, rung ở nốt ngân', () => {
+    const base = strumPattern('ballad', 4);
+    expect(barTrack({ ...bp0, phraseStart: true }, 2, base, { rake: true })[0]).toBe('V');
+    expect(barTrack({ ...bp0, phraseStart: true }, 2, base, {})[0]).toBe('B');
+    expect(barTrack({ ...bp0, fill: 'push' }, 1, base, { shake: true }).slice(6)).toBe('L.');
+    expect(barTrack({ ...bp0, held: true }, 1, base, { trem: true }).slice(6)).toBe('R.');
+    // bass dẫn được giữ, không bị rung đè
+    expect(barTrack({ ...bp0, held: true, fill: 'walk' }, 1, base, { trem: true }).slice(4)).toBe('R.QP');
+    expect(barTrack({ ...bp0, fill: 'walk' }, 1, base, { shake: true }).slice(4)).toBe('L.QP');
+    const slow = strumPattern('waltz', 3);
+    expect(barTrack({ ...bp0, held: true }, 1, slow, { trem: true })).toHaveLength(6);
   });
 });

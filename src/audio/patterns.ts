@@ -309,3 +309,8 @@ export function strumPattern(style: BeatStyle, beatsPerBar: number): StrumPatter
   const n = Math.max(1, beatsPerBar);
   return { beats: n, subdiv: 2, strum: 'B.' + 'XU'.repeat(n - 1) };
 }
+
+/** Lắc (maracas) thêm cho kiểu nhịp chưa có sẵn: đều từng ô, nhấn đầu phách */
+export function lacPattern(p: BeatPattern): string {
+  return ('X' + 'x'.repeat(Math.max(0, p.subdiv - 1))).repeat(p.beats);
+}

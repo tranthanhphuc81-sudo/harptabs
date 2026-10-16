@@ -115,11 +115,20 @@ function BeatTuner({ style, styleName, autoInstrument, sing }: { style: BeatStyl
         : <Slider label="Âm lượng giai điệu" value={b.melodyVol} onChange={(v) => setBeatPrefs({ melodyVol: v })} />}
       <Slider label="Độ vang" value={b.reverb} onChange={(v) => setBeatPrefs({ reverb: v })} />
       <details className="bt-group" open={percOpen} onToggle={(e) => rememberPercOpen((e.target as HTMLDetailsElement).open)}>
-        <summary>Bộ gõ <span className="muted">bo, cowbell, clap{b.bo ? ' · đang gõ bo' : ''}</span></summary>
+        <summary>Bộ gõ <span className="muted">bo, lắc, cowbell, clap{b.bo ? ' · đang gõ bo' : ''}</span></summary>
         <div className="bt-group-body">
           <div className="bt-seg">
-            <Toggle on={b.bo} onClick={() => setBeatPrefs({ bo: !b.bo })}>Gõ bo</Toggle>
+            <Toggle on={b.bo} onClick={() => setBeatPrefs(b.bo ? { bo: false, boSlide: false, boRoll: false } : { bo: true })}>Gõ bo</Toggle>
+            {/* vuốt / rung cần có lớp bo: bật kèm gõ bo */}
+            <Toggle on={b.boSlide} onClick={() => setBeatPrefs(b.boSlide ? { boSlide: false } : { boSlide: true, bo: true })}>Vuốt bo</Toggle>
+            <Toggle on={b.boRoll} onClick={() => setBeatPrefs(b.boRoll ? { boRoll: false } : { boRoll: true, bo: true })}>Rung bo</Toggle>
+            <Toggle on={b.lac} onClick={() => setBeatPrefs({ lac: !b.lac })}>Lắc</Toggle>
           </div>
+          {(b.boSlide || b.boRoll || b.lac) && (
+            <p className="small muted">
+              {[b.boSlide && 'Vuốt bo: luyến mặt da ở ô thứ hai mỗi cặp ô', b.boRoll && 'Rung bo: vê dồn ở phách cuối mỗi câu', b.lac && 'Lắc: maracas đều từng phách'].filter(Boolean).join(' · ')}
+            </p>
+          )}
           <Slider label="Âm lượng bo" value={b.boVol} onChange={(v) => setBeatPrefs({ boVol: v })} />
           <Slider label="Âm lượng cowbell" value={b.bellVol} onChange={(v) => setBeatPrefs({ bellVol: v })} />
           <Slider label="Âm lượng clap" value={b.clapVol} onChange={(v) => setBeatPrefs({ clapVol: v })} />
@@ -199,6 +208,21 @@ export function PlayerBar({ p, loopLabel, onToggleLoop, extra, autoStyle, autoAp
             {ACCOMP_OPTIONS.map((a) => <Toggle key={a.value} on={prefs.accomp === a.value} onClick={() => setBeatPrefs({ accomp: a.value })}>{a.label}</Toggle>)}
           </div>
         </div>
+      )}
+      {opts.sing && (prefs.accomp === 'gobo' || prefs.accomp === 'strum') && (
+        <div className="pb-sing" role="group" aria-label="Kỹ thuật tay guitar">
+          <span className="bt-label">Kỹ thuật</span>
+          <div className="pb-chips">
+            <Toggle on={prefs.gRake} onClick={() => setBeatPrefs({ gRake: !prefs.gRake })}>Vuốt dây</Toggle>
+            <Toggle on={prefs.gTrem} onClick={() => setBeatPrefs({ gTrem: !prefs.gTrem })}>Rung dây</Toggle>
+            <Toggle on={prefs.gShake} onClick={() => setBeatPrefs({ gShake: !prefs.gShake })}>Lắc cổ tay</Toggle>
+          </div>
+        </div>
+      )}
+      {opts.sing && (prefs.accomp === 'gobo' || prefs.accomp === 'strum') && (prefs.gRake || prefs.gTrem || prefs.gShake) && (
+        <p className="pb-auto">
+          {[prefs.gRake && 'vuốt dây khi mở câu mới', prefs.gTrem && 'rung dây ở chỗ ngân cuối ô', prefs.gShake && 'lắc cổ tay "rrà" ở chỗ hết câu'].filter(Boolean).join(' · ')}
+        </p>
       )}
       {opts.sing && prefs.accomp !== 'band' && p.accompNote && <p className="pb-auto" role="status">✨ Đệm theo bài: {p.accompNote}</p>}
       {tuner && <BeatTuner style={opts.style} styleName={styleLabel(opts.style)} autoInstrument={autoInstrument} sing={!!opts.sing} />}
