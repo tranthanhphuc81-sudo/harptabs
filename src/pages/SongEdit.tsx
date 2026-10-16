@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { blankSong, db, deleteSongs } from '../lib/db';
-import { HarpKey, normalizeKey, songTonality } from '../lib/harp';
+import { HarpKey, HarpType, harpTypeOf, holeCount, isChromatic, normalizeKey, songTonality } from '../lib/harp';
 import { flatten, parseTab } from '../lib/tabText';
 import { beatsPerBar, Song } from '../lib/types';
 import { STYLE_OPTIONS, BeatStyle } from '../audio/patterns';
 import { suggestStyle } from '../audio/suggest';
-import { KeySelect } from '../components/KeySelect';
+import { HarpTypeSelect, KeySelect } from '../components/KeySelect';
 import { TabView } from '../components/TabView';
 import { Icon } from '../components/Icon';
 import { MiniPlay } from '../components/PlayerBar';
@@ -26,15 +26,14 @@ export default function SongEdit() {
     } else {
       let draft: Partial<Song> = {};
       try { draft = JSON.parse(sessionStorage.getItem(DRAFT_KEY) ?? '{}'); } catch { /* bỏ qua */ }
-      setSong(blankSong({ harpKey: settings.defaultHarpKey, ...draft }));
+      const harpType = settings.defaultHarpType === 'diatonic' ? undefined : settings.defaultHarpType;
+      setSong(blankSong({ harpKey: settings.defaultHarpKey, harpType, ...draft }));
     }
-  }, [id, settings.defaultHarpKey]);
+  }, [id, settings.defaultHarpKey, settings.defaultHarpType]);
 
   if (!song) return <div className="page"><p className="muted">Đang tải…</p></div>;
   return <Editor initial={song} isNew={!id} />;
 }
-
-const KEYPAD_HOLES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 
 function Editor({ initial, isNew }: { initial: Song; isNew: boolean }) {
   const [s, setS] = useState<Song>(initial);
@@ -45,7 +44,10 @@ function Editor({ initial, isNew }: { initial: Song; isNew: boolean }) {
   const nav = useNavigate();
   const { settings, toast } = useAppState();
 
-  const parsed = useMemo(() => parseTab(s.body, s.harpKey), [s.body, s.harpKey]);
+  const harpType = harpTypeOf(s);
+  const chrom = isChromatic(harpType);
+  const holes = Array.from({ length: holeCount(harpType) }, (_, i) => i + 1);
+  const parsed = useMemo(() => parseTab(s.body, s.harpKey, harpType), [s.body, s.harpKey, harpType]);
   const flat = useMemo(() => flatten(parsed), [parsed]);
   const preview = usePlayer(flat, {
     bpm: s.bpm, tempoScale: 1, beatsPerBar: beatsPerBar(s.timeSig), pickupBeats: s.pickupBeats,
@@ -65,7 +67,7 @@ function Editor({ initial, isNew }: { initial: Song; isNew: boolean }) {
     if (!ta) return;
     const { selectionStart: a, selectionEnd: b, value } = ta;
     const before = value.slice(0, a);
-    const needSpace = before && !/[\s]$/.test(before) && text !== '\n' && !text.startsWith(':') && !text.startsWith("'");
+    const needSpace = before && !/[\s]$/.test(before) && text !== '\n' && !text.startsWith(':') && !text.startsWith("'") && !text.startsWith('<');
     const ins = (needSpace ? ' ' : '') + text;
     const next = before + ins + value.slice(b);
     set('body', next);
@@ -122,15 +124,18 @@ function Editor({ initial, isNew }: { initial: Song; isNew: boolean }) {
             <span className="field-label">Tác giả / ca sĩ</span>
             <input value={s.artist ?? ''} onChange={(e) => set('artist', e.target.value || undefined)} />
           </label>
+          <HarpTypeSelect value={harpType} onChange={(t: HarpType) => setS((prev) => ({ ...prev, harpType: t === 'diatonic' ? undefined : t, position: isChromatic(t) ? 1 : prev.position }))} />
           <KeySelect value={s.harpKey} onChange={(k) => set('harpKey', k as HarpKey)} />
-          <label className="field">
-            <span className="field-label">Vị trí</span>
-            <select value={s.position ?? 1} onChange={(e) => set('position', Number(e.target.value) as 1 | 2 | 3)}>
-              <option value={1}>1 (thẳng)</option>
-              <option value={2}>2 (cross harp)</option>
-              <option value={3}>3 (slant)</option>
-            </select>
-          </label>
+          {!chrom && (
+            <label className="field">
+              <span className="field-label">Vị trí</span>
+              <select value={s.position ?? 1} onChange={(e) => set('position', Number(e.target.value) as 1 | 2 | 3)}>
+                <option value={1}>1 (thẳng)</option>
+                <option value={2}>2 (cross harp)</option>
+                <option value={3}>3 (slant)</option>
+              </select>
+            </label>
+          )}
           <label className="field">
             <span className="field-label">Giọng bài</span>
             <input value={s.songKey ?? ''} onChange={(e) => set('songKey', e.target.value || undefined)} placeholder="C, Am…"
@@ -186,7 +191,9 @@ function Editor({ initial, isNew }: { initial: Song; isNew: boolean }) {
               <summary>Cách ghi</summary>
               <ul>
                 <li><code>4</code> thổi lỗ 4, <code>-4</code> hút lỗ 4</li>
-                <li><code>-3'</code> bend nửa cung, <code>-3''</code> bend 1 cung, <code>6o</code> overblow</li>
+                {chrom
+                  ? <li><code>4&lt;</code> thổi lỗ 4 bấm nút gạt, <code>-4&lt;</code> hút bấm nút gạt (cao lên nửa cung)</li>
+                  : <li><code>-3'</code> bend nửa cung, <code>-3''</code> bend 1 cung, <code>6o</code> overblow</li>}
                 <li><code>4:2</code> giữ 2 phách, <code>4:0.5</code> nửa phách, <code>r</code> dấu nghỉ</li>
                 <li>Dòng ngay dưới dòng tab là lời. Gạch nối tách âm tiết: <code>Hap-py</code>; <code>_</code> là nốt luyến</li>
                 <li><code># Điệp khúc</code> để đặt tên đoạn; dòng trống để ngắt câu</li>
@@ -197,10 +204,12 @@ function Editor({ initial, isNew }: { initial: Song; isNew: boolean }) {
             <button type="button" className={`kp-mode${draw ? ' draw' : ''}`} onClick={() => setDraw(!draw)} aria-pressed={draw}>
               {draw ? 'Hút' : 'Thổi'}
             </button>
-            {KEYPAD_HOLES.map((h) => (
+            {holes.map((h) => (
               <button type="button" key={h} className={draw ? 'draw' : 'blow'} onClick={() => insert(`${draw ? '-' : ''}${h}`)}>{draw ? `−${h}` : h}</button>
             ))}
-            <button type="button" onClick={() => insert("'")} aria-label="Thêm bend">′</button>
+            {chrom
+              ? <button type="button" onClick={() => insert('<')} aria-label="Bấm nút gạt">&lt;</button>
+              : <button type="button" onClick={() => insert("'")} aria-label="Thêm bend">′</button>}
             <button type="button" onClick={() => insert(':2')}>:2</button>
             <button type="button" onClick={() => insert(':0.5')}>:½</button>
             <button type="button" onClick={() => insert('r')}>nghỉ</button>

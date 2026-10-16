@@ -5,10 +5,11 @@
  *   4 4 -4 4 5 -5:2               ← dòng tab; ":2" = 2 phách, ":0.5" hay ":1/2" = nửa phách
  *   Hap-py birth-day to you       ← dòng lời (tuỳ chọn) ngay dưới dòng tab
  *
+ *   Kèn chromatic: 4< / -4< = bấm nút gạt.
  *   r = nghỉ, "|" = vạch nhịp (bỏ qua), "_" trong lời = nốt luyến (không có chữ)
  *   Dòng chữ không đứng sau dòng tab được hiển thị như ghi chú.
  */
-import { HarpKey, cleanToken, parseToken, isTabToken } from './harp';
+import { HarpKey, HarpType, cleanToken, harpName, parseToken, isTabToken } from './harp';
 
 export interface TabEvent {
   /** token đã chuẩn hoá, null nếu là dấu nghỉ */
@@ -72,12 +73,12 @@ function tokensOf(line: string): string[] {
 }
 
 /** Một dòng là dòng tab nếu mọi token đều là ký hiệu lỗ / nghỉ (có thể kèm :độ dài) */
-export function looksLikeTabLine(line: string): boolean {
+export function looksLikeTabLine(line: string, type: HarpType = 'diatonic'): boolean {
   const toks = tokensOf(line);
   if (!toks.length) return false;
   return toks.every((t) => {
     const { head } = splitTokenDuration(t);
-    return isRest(head) || isTabToken(head);
+    return isRest(head) || isTabToken(head, type);
   });
 }
 
@@ -98,7 +99,7 @@ export function splitLyrics(line: string): { text: string; hyphen: boolean; meli
   return out;
 }
 
-export function parseTab(body: string, key: HarpKey): ParsedTab {
+export function parseTab(body: string, key: HarpKey, type: HarpType = 'diatonic'): ParsedTab {
   const issues: ParseIssue[] = [];
   const sections: TabSection[] = [];
   let current: TabSection = { lines: [] };
@@ -119,7 +120,7 @@ export function parseTab(body: string, key: HarpKey): ParsedTab {
       lastTab = null;
       return;
     }
-    if (looksLikeTabLine(line)) {
+    if (looksLikeTabLine(line, type)) {
       const events: TabEvent[] = [];
       for (const raw of tokensOf(line)) {
         const { head, beats, bad } = splitTokenDuration(raw);
@@ -129,9 +130,9 @@ export function parseTab(body: string, key: HarpKey): ParsedTab {
           events.push({ token: null, midi: null, beats: b });
           continue;
         }
-        const note = parseToken(head, key);
+        const note = parseToken(head, key, type);
         if (!note) {
-          issues.push({ lineNo, level: 'error', message: `"${cleanToken(head)}" không chơi được trên kèn ${key}` });
+          issues.push({ lineNo, level: 'error', message: `"${cleanToken(head)}" không chơi được trên ${harpName(key, type).replace(/^Kèn/, 'kèn')}` });
           events.push({ token: cleanToken(head), midi: null, beats: b });
         } else {
           events.push({ token: note.token, midi: note.midi, beats: b });
@@ -232,13 +233,14 @@ export function totalBeats(parsed: ParsedTab): number {
   return last ? last.start + last.beats : 0;
 }
 
-export function countTechniques(parsed: ParsedTab): { notes: number; bends: number; overblows: number } {
-  let notes = 0, bends = 0, overblows = 0;
+export function countTechniques(parsed: ParsedTab): { notes: number; bends: number; overblows: number; slides: number } {
+  let notes = 0, bends = 0, overblows = 0, slides = 0;
   for (const ev of flatten(parsed)) {
     if (!ev.token) continue;
     notes++;
     if (ev.token.includes("'")) bends++;
     if (ev.token.includes('o')) overblows++;
+    if (ev.token.includes('<')) slides++;
   }
-  return { notes, bends, overblows };
+  return { notes, bends, overblows, slides };
 }

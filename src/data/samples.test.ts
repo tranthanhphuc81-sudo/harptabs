@@ -21,7 +21,7 @@ describe('bài mẫu', () => {
   for (const s of SAMPLE_SONGS) {
     describe(s.title, () => {
       it('đọc tab không lỗi, mọi nốt thổi được', () => {
-        const p = parseTab(s.body, s.harpKey);
+        const p = parseTab(s.body, s.harpKey, s.harpType);
         expect(p.issues.filter((i) => i.level === 'error')).toEqual([]);
         const events = p.sections.flatMap((x) => x.lines).flatMap((l) => (l.kind === 'tab' ? l.events : []));
         expect(events.length).toBeGreaterThan(0);
@@ -33,7 +33,7 @@ describe('bài mẫu', () => {
         const lines = s.body.split('\n');
         lines.forEach((line, i) => {
           const next = lines[i + 1];
-          if (!looksLikeTabLine(line) || !next || !next.trim() || next.startsWith('#') || looksLikeTabLine(next)) return;
+          if (!looksLikeTabLine(line, s.harpType) || !next || !next.trim() || next.startsWith('#') || looksLikeTabLine(next, s.harpType)) return;
           const notes = line.trim().split(/\s+/).filter((t) => !/^r(:|$)/i.test(t)).length;
           expect(splitLyrics(next).length, `${s.title}: "${next}"`).toBe(notes);
         });
@@ -41,7 +41,7 @@ describe('bài mẫu', () => {
 
       it('tổng số phách khớp nhịp (trừ nhịp lấy đà)', () => {
         if (s.style === 'metronome' || s.tags.includes('luyện tập')) return; // bài luyện không theo ô nhịp
-        const total = s.body.split('\n').filter((l) => looksLikeTabLine(l))
+        const total = s.body.split('\n').filter((l) => looksLikeTabLine(l, s.harpType))
           .flatMap((l) => l.trim().split(/\s+/)).reduce((t, tok) => t + beatsOf(tok), 0);
         // hai cách ghi đều đúng: ô cuối đủ phách, hoặc ô cuối rút ngắn bù cho nhịp lấy đà
         const bar = barQuarters(s.timeSig);

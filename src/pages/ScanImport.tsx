@@ -3,14 +3,15 @@ import { useNavigate } from 'react-router-dom';
 import { MAX_IMAGES } from '../../shared/ai';
 import { aiToTab } from '../lib/ai';
 import { blankSong, db } from '../lib/db';
-import { HarpKey } from '../lib/harp';
+import { HarpKey, HarpType, harpName } from '../lib/harp';
 import { Gray, OmrNote, OmrPage, findHeaderBoxes, keyName, midiToStep, notePitch, readSheet, toGray, toTranscription } from '../lib/omr';
 import { MIN_CONFIDENCE, cleanArtist, cleanTitle, cropToCanvas, hasDiacritics, looksLikeTitle, readLine, titleFromFilename } from '../lib/titleOcr';
 import { loadScanPages, saveScan } from '../lib/scanStore';
 import { isPdf, pdfToImages } from '../lib/pdf';
 import { flatten, parseTab } from '../lib/tabText';
 import { beatsPerBar } from '../lib/types';
-import { KeySelect } from '../components/KeySelect';
+import { HarpTypeSelect, KeySelect } from '../components/KeySelect';
+import { difficultyOf } from '../lib/converter';
 import { TabView } from '../components/TabView';
 import { MiniPlay } from '../components/PlayerBar';
 import { usePlayer } from '../components/usePlayer';
@@ -88,6 +89,7 @@ export default function ScanImport({ editSongId, initialFiles }: { editSongId?: 
   const [tempo, setTempo] = useState(90);
   const [title, setTitle] = useState('');
   const [target, setTarget] = useState<HarpKey | 'auto'>('auto');
+  const [harpType, setHarpType] = useState<HarpType>(settings.defaultHarpType);
   const [allowTranspose, setAllowTranspose] = useState(true);
   const [zoom, setZoom] = useState(1);
   const [fromStore, setFromStore] = useState(false);
@@ -119,6 +121,7 @@ export default function ScanImport({ editSongId, initialFiles }: { editSongId?: 
         setTimeSig(scan.timeSig);
         setTempo(scan.tempo);
         setTarget(scan.target);
+        setHarpType(scan.harpType ?? song.harpType ?? 'diatonic');
         setAllowTranspose(scan.allowTranspose);
       } catch (e) {
         setError((e as Error).message || 'Không mở được ảnh đã lưu');
@@ -277,8 +280,8 @@ export default function ScanImport({ editSongId, initialFiles }: { editSongId?: 
     () => (pages.length ? toTranscription(pages, { title, keySig, timeSig, tempo, pickupBeats: pickupOf(pages, timeSig) }) : null),
     [pages, title, keySig, timeSig, tempo],
   );
-  const converted = useMemo(() => (transcription ? aiToTab(transcription, target, allowTranspose) : null), [transcription, target, allowTranspose]);
-  const parsed = useMemo(() => (converted ? parseTab(converted.body, converted.harpKey) : null), [converted]);
+  const converted = useMemo(() => (transcription ? aiToTab(transcription, target, allowTranspose, harpType) : null), [transcription, target, allowTranspose, harpType]);
+  const parsed = useMemo(() => (converted ? parseTab(converted.body, converted.harpKey, converted.harpType) : null), [converted]);
   const flat = useMemo(() => (parsed ? flatten(parsed) : []), [parsed]);
   const player = usePlayer(flat, {
     bpm: tempo, tempoScale: 1, beatsPerBar: beatsPerBar(timeSig), pickupBeats: converted?.pickupBeats ?? 0,
@@ -399,13 +402,14 @@ export default function ScanImport({ editSongId, initialFiles }: { editSongId?: 
       title: title.trim() || 'Bài quét',
       artist: artist.trim() || undefined,
       harpKey: converted.harpKey,
+      harpType: converted.harpType === 'diatonic' ? undefined : converted.harpType,
       songKey: converted.fit.shift % 12 === 0 ? keyName(keySig) : undefined,
       bpm: tempo,
       timeSig,
       pickupBeats: converted.pickupBeats,
       style: converted.style,
       body: converted.body,
-      difficulty: (converted.fit.stats.bends > 3 || converted.fit.stats.overblows ? 3 : converted.fit.stats.bends ? 2 : 1) as 1 | 2 | 3,
+      difficulty: difficultyOf(converted.fit.stats),
     };
     const existing = editSongId ? await db.songs.get(editSongId) : undefined;
     const song = existing
@@ -415,7 +419,7 @@ export default function ScanImport({ editSongId, initialFiles }: { editSongId?: 
       // ảnh + vị trí nốt + số lỗ kèn được lưu kèm bài để mở lại xem / sửa trên ảnh
       const tokens: Record<string, string | null> = {};
       tokenOf.forEach((v, k) => { tokens[k] = v; });
-      await saveScan(song.id, pages, { keySig, timeSig, tempo, target, allowTranspose, tokens });
+      await saveScan(song.id, pages, { keySig, timeSig, tempo, target, harpType, allowTranspose, tokens });
     } catch {
       toast('Không lưu được ảnh quét (bộ nhớ đầy?) — tab vẫn được lưu');
     }
@@ -545,6 +549,7 @@ export default function ScanImport({ editSongId, initialFiles }: { editSongId?: 
             </label>
           </div>
           <div className="row gap wrap end-align">
+            <HarpTypeSelect value={harpType} onChange={setHarpType} />
             <KeySelect value={target} onChange={setTarget} allowAuto label="Chơi trên kèn" />
             {target !== 'auto' && (
               <label className="check">
@@ -559,7 +564,7 @@ export default function ScanImport({ editSongId, initialFiles }: { editSongId?: 
               <div>
                 <h2>{title.trim() || 'Bài quét'}</h2>
                 <p className="muted">
-                  Kèn {converted.harpKey}
+                  {harpName(converted.harpKey, converted.harpType)}
                   {converted.fit.shift % 12 !== 0 && `, đã dịch giọng ${converted.fit.shift > 0 ? '+' : ''}${converted.fit.shift} nửa cung`}
                   {`, ${timeSig}, ${tempo} bpm`}
                 </p>

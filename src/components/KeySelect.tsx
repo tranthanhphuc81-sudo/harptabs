@@ -1,4 +1,4 @@
-import { HARP_KEYS, HarpKey } from '../lib/harp';
+import { HARP_KEYS, HARP_TYPES, HARP_TYPE_LABEL, HarpKey, HarpType, harpName, holeCount, isChromatic } from '../lib/harp';
 
 interface Props {
   value: HarpKey | 'auto';
@@ -20,11 +20,24 @@ export function KeySelect({ value, onChange, allowAuto, id, label = 'Tông kèn'
   );
 }
 
-export function KeyPlate({ k, size = 'm' }: { k: string; size?: 's' | 'm' | 'l' }) {
+export function HarpTypeSelect({ value, onChange, id, label = 'Loại kèn' }: { value: HarpType; onChange: (t: HarpType) => void; id?: string; label?: string }) {
   return (
-    <span className={`keyplate size-${size}`} aria-label={`Kèn ${k}`}>
+    <label className="field" htmlFor={id}>
+      <span className="field-label">{label}</span>
+      <select id={id} value={value} onChange={(e) => onChange(e.target.value as HarpType)}>
+        {HARP_TYPES.map((t) => <option key={t} value={t}>{HARP_TYPE_LABEL[t]}</option>)}
+      </select>
+    </label>
+  );
+}
+
+export function KeyPlate({ k, type = 'diatonic', size = 'm' }: { k: string; type?: HarpType; size?: 's' | 'm' | 'l' }) {
+  const holes = holeCount(type);
+  return (
+    <span className={`keyplate size-${size}${isChromatic(type) ? ' chromatic' : ''}`} aria-label={harpName(k, type)}>
       <span className="kp-letter">{k}</span>
-      <span className="kp-holes" aria-hidden="true">{Array.from({ length: 10 }, (_, i) => <i key={i} />)}</span>
+      <span className="kp-holes" aria-hidden="true" style={{ gridTemplateColumns: `repeat(${holes}, 1fr)` }}>{Array.from({ length: holes }, (_, i) => <i key={i} />)}</span>
+      {isChromatic(type) && <span className="kp-slide" aria-hidden="true" />}
     </span>
   );
 }

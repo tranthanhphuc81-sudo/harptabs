@@ -371,6 +371,14 @@ button, a, select { -webkit-tap-highlight-color: transparent; }
 .kp-holes { display: grid; grid-template-columns: repeat(10, 1fr); gap: 1.5px; width: 100%; }
 .kp-holes i { height: calc(var(--kp) * 0.07); border-radius: 1px; background: var(--ink); opacity: 0.75; }
 .keyplate.size-s { --kp: 38px; }
+/* kèn chromatic: nút gạt nhô ra bên phải */
+.keyplate.chromatic { margin-right: calc(var(--kp) * 0.12); }
+.kp-slide {
+  position: absolute; right: calc(var(--kp) * -0.12); top: 50%;
+  width: calc(var(--kp) * 0.14); height: calc(var(--kp) * 0.3); transform: translateY(-50%);
+  border-radius: 0 4px 4px 0; background: linear-gradient(180deg, var(--steel-1), var(--steel-3));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
 .keyplate.size-l { --kp: 68px; }
 
 /* ===== Library ===== */
@@ -467,11 +475,11 @@ button, a, select { -webkit-tap-highlight-color: transparent; }
 .nt.rest .nt-hole { color: var(--steel-3); background: transparent; justify-content: center; }
 .nt.bad .nt-hole { background: transparent; color: var(--bend); outline: 2px dashed var(--bend); outline-offset: -2px; }
 .tok-sign { margin-right: 0.04em; }
-.tok-bend, .tok-over { color: var(--bend); font-size: 0.72em; line-height: 0; position: relative; top: -0.05em; margin-left: 0.04em; letter-spacing: -0.04em; }
+.tok-bend, .tok-over, .tok-slide { color: var(--bend); font-size: 0.72em; line-height: 0; position: relative; top: -0.05em; margin-left: 0.04em; letter-spacing: -0.04em; }
 .nt-lyric { font-size: 0.88rem; padding: 3px 0 0 0.3em; white-space: nowrap; color: var(--ink); min-height: 1.4em; }
 .tabview.size-l .nt-lyric { font-size: 1.05rem; }
 .nt.is-active .nt-hole { background: var(--ink); color: var(--bg); border-color: var(--ink); transform: translateY(-3px); box-shadow: 0 6px 14px -6px color-mix(in srgb, var(--ink) 70%, transparent); }
-.nt.is-active .tok-bend, .nt.is-active .tok-over { color: inherit; }
+.nt.is-active .tok-bend, .nt.is-active .tok-over, .nt.is-active .tok-slide { color: inherit; }
 .nt.is-active .nt-lyric { font-weight: 600; }
 .nt:hover:not(.is-active) .nt-hole { filter: brightness(0.96); }
 
@@ -546,7 +554,9 @@ button, a, select { -webkit-tap-highlight-color: transparent; }
 }
 .hd-grid { display: grid; gap: 3px; min-width: 320px; }
 .hd-label { font-size: 0.72rem; color: var(--ink); opacity: 0.8; padding-right: 6px; align-self: center; white-space: nowrap; }
-@media (max-width: 520px) { .hd-label { display: none; } .hd-grid { grid-template-columns: repeat(10, minmax(0, 1fr)) !important; } }
+@media (max-width: 520px) { .hd-label { display: none; } .hd-grid { grid-template-columns: repeat(var(--holes, 10), minmax(0, 1fr)) !important; } }
+.harp-diagram.chromatic .hd-grid { min-width: calc(var(--holes, 12) * 30px); }
+.harp-diagram.chromatic .hd-hole:nth-child(4n + 2) { box-shadow: inset 2px 0 0 var(--steel-1); }
 .hd-hole {
   display: grid;
   place-items: center;

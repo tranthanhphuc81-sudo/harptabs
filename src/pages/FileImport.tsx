@@ -2,11 +2,12 @@ import { useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { aiToTab } from '../lib/ai';
 import { blankSong, db } from '../lib/db';
-import { HarpKey, midiToName } from '../lib/harp';
+import { HarpKey, HarpType, harpName, midiToName } from '../lib/harp';
 import { MusicFile, readMusicFile } from '../lib/musicFile';
 import { flatten, parseTab } from '../lib/tabText';
 import { beatsPerBar } from '../lib/types';
-import { KeySelect } from '../components/KeySelect';
+import { HarpTypeSelect, KeySelect } from '../components/KeySelect';
+import { difficultyOf } from '../lib/converter';
 import { TabView } from '../components/TabView';
 import { MiniPlay } from '../components/PlayerBar';
 import { usePlayer } from '../components/usePlayer';
@@ -30,6 +31,7 @@ export default function FileImport({ onImages }: { onImages?: (files: File[]) =>
   const [title, setTitle] = useState('');
   const [artist, setArtist] = useState('');
   const [target, setTarget] = useState<HarpKey | 'auto'>('auto');
+  const [harpType, setHarpType] = useState<HarpType>(settings.defaultHarpType);
   const [allowTranspose, setAllowTranspose] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -62,8 +64,8 @@ export default function FileImport({ onImages }: { onImages?: (files: File[]) =>
   };
 
   const transcription = useMemo(() => (file && partId ? file.transcribe(partId) : null), [file, partId]);
-  const converted = useMemo(() => (transcription ? aiToTab(transcription, target, allowTranspose) : null), [transcription, target, allowTranspose]);
-  const parsed = useMemo(() => (converted ? parseTab(converted.body, converted.harpKey) : null), [converted]);
+  const converted = useMemo(() => (transcription ? aiToTab(transcription, target, allowTranspose, harpType) : null), [transcription, target, allowTranspose, harpType]);
+  const parsed = useMemo(() => (converted ? parseTab(converted.body, converted.harpKey, converted.harpType) : null), [converted]);
   const flat = useMemo(() => (parsed ? flatten(parsed) : []), [parsed]);
   const player = usePlayer(flat, {
     bpm: converted?.bpm ?? 90, tempoScale: 1, beatsPerBar: beatsPerBar(converted?.timeSig ?? '4/4'),
@@ -76,13 +78,14 @@ export default function FileImport({ onImages }: { onImages?: (files: File[]) =>
       title: title.trim() || 'Bài nhập từ file',
       artist: artist.trim() || undefined,
       harpKey: converted.harpKey,
+      harpType: converted.harpType === 'diatonic' ? undefined : converted.harpType,
       songKey: converted.fit.shift % 12 === 0 ? converted.songKey : undefined,
       bpm: converted.bpm,
       timeSig: converted.timeSig,
       pickupBeats: converted.pickupBeats,
       style: converted.style,
       body: converted.body,
-      difficulty: converted.fit.stats.bends > 3 || converted.fit.stats.overblows ? 3 : converted.fit.stats.bends ? 2 : 1,
+      difficulty: difficultyOf(converted.fit.stats),
       source: 'import',
       tags: [file.kind === 'midi' ? 'MIDI' : 'MusicXML'],
       notes: file.kind === 'midi'
@@ -141,6 +144,7 @@ export default function FileImport({ onImages }: { onImages?: (files: File[]) =>
                 </select>
               </label>
             )}
+            <HarpTypeSelect value={harpType} onChange={setHarpType} />
             <KeySelect value={target} onChange={setTarget} allowAuto label="Chơi trên kèn" />
             {target !== 'auto' && (
               <label className="check">
@@ -152,7 +156,7 @@ export default function FileImport({ onImages }: { onImages?: (files: File[]) =>
 
           <section className="ai-result" aria-label="Kết quả">
             <p className="muted">
-              Kèn {converted.harpKey}
+              {harpName(converted.harpKey, converted.harpType)}
               {converted.fit.shift % 12 !== 0 && `, đã dịch giọng ${converted.fit.shift > 0 ? '+' : ''}${converted.fit.shift} nửa cung`}
               {`, ${converted.timeSig}, ${converted.bpm} bpm`}
               {converted.songKey && `, giọng ${converted.songKey}`}

@@ -1,4 +1,4 @@
-import type { HarpKey, NoteNameStyle } from './harp';
+import type { HarpKey, HarpType, NoteNameStyle } from './harp';
 import type { BeatStyle } from '../audio/patterns';
 
 export type SongSource = 'sample' | 'user' | 'ai-image' | 'ai-name' | 'scan' | 'import';
@@ -8,6 +8,8 @@ export interface Song {
   title: string;
   artist?: string;
   harpKey: HarpKey;
+  /** loại kèn; không ghi = diatonic (bài cũ) */
+  harpType?: HarpType;
   /** vị trí chơi (1 = thẳng, 2 = cross harp, 3 = slant) */
   position?: 1 | 2 | 3;
   songKey?: string;
@@ -42,6 +44,7 @@ export interface Settings {
   tabSize: 's' | 'm' | 'l';
   theme: 'system' | 'light' | 'dark';
   defaultHarpKey: HarpKey;
+  defaultHarpType: HarpType;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -55,6 +58,7 @@ export const DEFAULT_SETTINGS: Settings = {
   tabSize: 'm',
   theme: 'system',
   defaultHarpKey: 'C',
+  defaultHarpType: 'diatonic',
 };
 
 export interface AiLogEntry {

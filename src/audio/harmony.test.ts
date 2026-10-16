@@ -7,7 +7,7 @@ import { bassMidi, chordAt, chordVoicing, walkingNote, estimateTonality, harmoni
 
 const song = (id: string) => {
   const s = SAMPLE_SONGS.find((x) => x.sampleId === id)!;
-  const flat = flatten(parseTab(s.body, s.harpKey));
+  const flat = flatten(parseTab(s.body, s.harpKey, s.harpType));
   return { s, flat, spans: harmonize(flat, beatsPerBar(s.timeSig), s.pickupBeats, parseTonality(s.songKey || songTonality(s.harpKey, s.position))) };
 };
 

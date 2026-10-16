@@ -2,7 +2,7 @@
 import {
   AiInput, AiResponse, AiTranscription, buildGeminiRequest, geminiUrl, parseGeminiResponse, validateInput,
 } from '../../shared/ai';
-import { HarpKey, nameToMidi } from './harp';
+import { HarpKey, HarpType, nameToMidi } from './harp';
 import { fitToHarp, rankHarpKeys, TabFit } from './converter';
 import { TabEvent, TabSection, serializeTab } from './tabText';
 import type { Settings } from './types';
@@ -63,6 +63,7 @@ export async function prepareImage(file: File): Promise<{ mimeType: string; data
 export interface ConvertedSong {
   body: string;
   harpKey: HarpKey;
+  harpType: HarpType;
   fit: TabFit;
   bpm: number;
   timeSig: string;
@@ -77,7 +78,7 @@ export interface ConvertedSong {
  * targetKey = 'auto' → chọn kèn hợp nhất (giữ giọng gốc);
  * targetKey cụ thể → chơi trên kèn đó, `allowTranspose` cho phép dịch giọng cho dễ thổi.
  */
-export function aiToTab(r: AiTranscription, targetKey: HarpKey | 'auto', allowTranspose: boolean): ConvertedSong {
+export function aiToTab(r: AiTranscription, targetKey: HarpKey | 'auto', allowTranspose: boolean, harpType: HarpType = 'diatonic'): ConvertedSong {
   let invalid = 0;
   const sections: TabSection[] = r.sections.map((sec) => ({
     title: sec.name,
@@ -100,8 +101,8 @@ export function aiToTab(r: AiTranscription, targetKey: HarpKey | 'auto', allowTr
   sections.forEach((s) => s.lines.forEach((l) => l.kind === 'tab' && l.events.forEach((e) => midis.push(e.midi))));
 
   const fit = targetKey === 'auto'
-    ? rankHarpKeys(midis, 1)[0]
-    : fitToHarp(midis, targetKey, { transpose: allowTranspose ? 'any' : 'octave' });
+    ? rankHarpKeys(midis, 1, harpType)[0]
+    : fitToHarp(midis, targetKey, { transpose: allowTranspose ? 'any' : 'octave', type: harpType });
 
   let i = 0;
   sections.forEach((s) => s.lines.forEach((l) => {
@@ -129,6 +130,7 @@ export function aiToTab(r: AiTranscription, targetKey: HarpKey | 'auto', allowTr
   return {
     body: serializeTab(sections),
     harpKey: fit.key,
+    harpType,
     fit,
     bpm: r.tempo ?? 90,
     timeSig: r.timeSignature ?? '4/4',

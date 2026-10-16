@@ -1,13 +1,16 @@
 /**
  * Nhập tab harmonica dán từ trang web / tin nhắn: nhận nhiều kiểu ký hiệu phổ biến
  * và chuyển về định dạng tab của app. Tab trên mạng thường không ghi trường độ → mỗi nốt 1 phách.
+ * Kèn chromatic: nút gạt ghi bằng < (4<, <4), * hoặc ' — app đổi hết về 4<.
  */
-import { HarpKey, normalizeKey } from './harp';
+import { HarpKey, HarpType, normalizeKey } from './harp';
 import { looksLikeTabLine, splitLyrics } from './tabText';
 
 export interface ImportResult {
   body: string;
   harpKey: HarpKey | null;
+  /** loại kèn (người dùng chọn, hoặc đoán từ ký hiệu trong bài) */
+  harpType: HarpType;
   title: string | null;
   tabLines: number;
   notes: number;
@@ -22,10 +25,13 @@ interface Conventions {
   parens: boolean;
 }
 
-const HOLE = '(10|[1-9])';
+const DIA_HOLE = '(10|[1-9])';
+const CHROM_HOLE = '(1[0-6]|[1-9])';
 
 /** Chuẩn hoá một ký hiệu; trả null nếu không phải nốt kèn */
-export function normalizeToken(raw: string, conv: Conventions = { letters: false, parens: false }): string | null {
+export function normalizeToken(raw: string, conv: Conventions = { letters: false, parens: false }, type: HarpType = 'diatonic'): string | null {
+  const chrom = type !== 'diatonic';
+  const HOLE = chrom ? CHROM_HOLE : DIA_HOLE;
   let t = raw.trim()
     .replace(/[’‘`´]/g, "'").replace(/[″”"]/g, "''").replace(/[−–—]/g, '-')
     .replace(/^[.,;]+|[.,;]+$/g, '');
@@ -52,13 +58,21 @@ export function normalizeToken(raw: string, conv: Conventions = { letters: false
     })();
     if (m) { draw = /d/i.test(m[1]); t = m[2] + (m[3] ?? ''); }
   }
+  let slide = false;
+  if (chrom && t.startsWith('<')) { slide = true; t = t.slice(1); }
   if (t.startsWith('+')) t = t.slice(1);
   if (t.startsWith('-')) { draw = true; t = t.slice(1); }
+  if (chrom && t.startsWith('<')) { slide = true; t = t.slice(1); }
 
   const m = new RegExp(`^${HOLE}(.*)$`).exec(t);
   if (!m) return null;
   const hole = m[1];
   let rest = m[2].toLowerCase();
+  if (chrom) {
+    rest = rest.replace(/~/g, '');
+    if (!/^[<*'#]?$/.test(rest)) return null;
+    return `${draw ? '-' : ''}${hole}${slide || rest ? '<' : ''}${dur}`;
+  }
   // overblow / overdraw: o, ob, od, ^o
   if (/^(o|ob|od|ov)$/.test(rest)) return `${draw || rest === 'od' ? '-' : ''}${hole}o${dur}`;
   // bend: ', b, ^ (mỗi ký hiệu = nửa cung); "~" rung hơi thì bỏ
@@ -74,26 +88,37 @@ const KEY_RE = /(?:key|tông|tone|kèn|harp(?:monica)?|giọng)\s*(?:of|:|-)?\s*
 /** Tách dòng thành ký hiệu: hiểu cả kiểu viết dính 4-4-5, dấu phẩy, vạch | */
 function rawTokens(line: string): string[] {
   return line
-    .replace(/([0-9'’^bBoD)])(?=[-−–]\d)/g, '$1 ') // 4-4-5 → 4 -4 -5
+    .replace(/([0-9'’^bBoD)<*])(?=[-−–]\d)/g, '$1 ') // 4-4-5 → 4 -4 -5
     .replace(/[,;|/\\]+/g, ' ')
     .split(/\s+/)
     .filter(Boolean);
 }
 
 /** Dòng tab: phần lớn ký hiệu là nốt kèn */
-function tabLine(line: string, conv: Conventions): { tokens: string[]; unknown: string[] } | null {
+function tabLine(line: string, conv: Conventions, type: HarpType): { tokens: string[]; unknown: string[] } | null {
   const toks = rawTokens(line);
   if (!toks.length) return null;
   const out: string[] = [], unknown: string[] = [];
   for (const t of toks) {
-    const n = normalizeToken(t, conv);
+    const n = normalizeToken(t, conv, type);
     if (n) out.push(n); else unknown.push(t);
   }
   return out.length && out.length >= 0.7 * toks.length ? { tokens: out, unknown } : null;
 }
 
-export function importTabText(raw: string): ImportResult {
+/** Đoán loại kèn: có ký hiệu nút gạt, lỗ 11–16 hoặc chữ "chromatic" → chromatic */
+export function guessHarpType(raw: string): HarpType {
+  const toks = rawTokens(raw);
+  const holes = toks.map((t) => /^[+-]?<?(\d+)/.exec(t.replace(/[−–]/g, '-'))?.[1]).filter(Boolean).map(Number);
+  if (holes.some((h) => h > 12 && h <= 16)) return 'chromatic16';
+  if (/chromatic|chromonica|nút gạt/i.test(raw) || holes.some((h) => h > 10 && h <= 12)) return 'chromatic';
+  if (toks.some((t) => /^[+-]?(<\d{1,2}|\d{1,2}[<*])$/.test(t))) return 'chromatic';
+  return 'diatonic';
+}
+
+export function importTabText(raw: string, harpType?: HarpType): ImportResult {
   const text = raw.replace(/\r\n?/g, '\n').replace(/\t/g, ' ');
+  const type = harpType ?? guessHarpType(text);
   const all = rawTokens(text);
   const conv: Conventions = {
     letters: all.some((t) => /^[Dd](10|[1-9])$|^(10|[1-9])[Dd]$/.test(t)) && all.some((t) => /^[Bb](10|[1-9])$|^(10|[1-9])B$/.test(t)),
@@ -107,7 +132,7 @@ export function importTabText(raw: string): ImportResult {
   for (const line of text.split('\n')) {
     const trimmed = line.trim();
     if (!trimmed) { rows.push({ kind: 'blank' }); continue; }
-    const tl = tabLine(trimmed, conv);
+    const tl = tabLine(trimmed, conv, type);
     if (tl) {
       rows.push({ kind: 'tab', tokens: tl.tokens });
       tl.unknown.forEach((u) => unknown.add(u));
@@ -163,7 +188,7 @@ export function importTabText(raw: string): ImportResult {
   });
 
   const body = out.filter((l, i, a) => !(l === '' && (i === 0 || a[i - 1] === ''))).join('\n').trim();
-  const tabLines = body.split('\n').filter((l) => looksLikeTabLine(l)).length;
-  const notes = body.split('\n').filter((l) => looksLikeTabLine(l)).reduce((t, l) => t + l.split(/\s+/).filter((x) => x && x !== 'r').length, 0);
-  return { body, harpKey, title, tabLines, notes, unknown: [...unknown].slice(0, 20) };
+  const tabLines = body.split('\n').filter((l) => looksLikeTabLine(l, type)).length;
+  const notes = body.split('\n').filter((l) => looksLikeTabLine(l, type)).reduce((t, l) => t + l.split(/\s+/).filter((x) => x && x !== 'r').length, 0);
+  return { body, harpKey, harpType: type, title, tabLines, notes, unknown: [...unknown].slice(0, 20) };
 }

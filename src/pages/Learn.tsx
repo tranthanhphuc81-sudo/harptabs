@@ -1,7 +1,7 @@
 import { Fragment, ReactNode, useMemo } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { Block, LESSON_GROUPS, LESSONS } from '../data/lessons';
-import { HARP_KEYS, positionKey } from '../lib/harp';
+import { HARP_KEYS, harpName, positionKey } from '../lib/harp';
 import { flatten, parseTab } from '../lib/tabText';
 import { beatsPerBar } from '../lib/types';
 import { HarpDiagram } from '../components/HarpDiagram';
@@ -27,7 +27,7 @@ export default function Learn() {
       <header className="page-head">
         <div>
           <h1>Học thổi harmonica</h1>
-          <p className="muted">Kỹ thuật, thủ thuật và mẹo, kèm bài tập nghe được. Tất cả dùng offline.</p>
+          <p className="muted">Kỹ thuật, thủ thuật và mẹo, kèm bài tập nghe được. Tất cả dùng offline. Chơi kèn chromatic: xem nhóm bài cuối.</p>
         </div>
       </header>
       {LESSON_GROUPS.map((g) => (
@@ -53,7 +53,8 @@ export default function Learn() {
 function LessonTab({ b }: { b: Extract<Block, { t: 'tab' }> }) {
   const { settings } = useAppState();
   const key = b.harpKey ?? 'C';
-  const parsed = useMemo(() => parseTab(b.body, key), [b.body, key]);
+  const type = b.harpType ?? 'diatonic';
+  const parsed = useMemo(() => parseTab(b.body, key, type), [b.body, key, type]);
   const flat = useMemo(() => flatten(parsed), [parsed]);
   const p = usePlayer(flat, {
     bpm: b.bpm ?? 80, tempoScale: 1, beatsPerBar: beatsPerBar(b.timeSig ?? '4/4'), pickupBeats: 0,
@@ -62,7 +63,7 @@ function LessonTab({ b }: { b: Extract<Block, { t: 'tab' }> }) {
   return (
     <figure className="lesson-tab">
       <figcaption className="row between center gap">
-        <span>{b.caption ?? 'Bài tập'} <span className="muted">(kèn {key}, {b.bpm ?? 80} bpm)</span></span>
+        <span>{b.caption ?? 'Bài tập'} <span className="muted">({harpName(key, type).replace(/^Kèn/, 'kèn')}, {b.bpm ?? 80} bpm)</span></span>
         <MiniPlay p={p} />
       </figcaption>
       <TabView parsed={parsed} flat={flat} active={p.active} size="s" showNames={settings.showNoteNames} nameStyle={settings.noteNames} />
@@ -125,7 +126,7 @@ export function LessonPage() {
             case 'tip': return <aside key={i} className="callout tip"><strong>Mẹo</strong>{rich(b.text)}</aside>;
             case 'warn': return <aside key={i} className="callout warn"><strong>Lưu ý</strong>{rich(b.text)}</aside>;
             case 'tab': return <LessonTab key={i} b={b} />;
-            case 'diagram': return <HarpDiagram key={i} harpKey={b.harpKey ?? 'C'} showAdvanced={b.advanced ?? true} nameStyle={settings.noteNames} />;
+            case 'diagram': return <HarpDiagram key={i} harpKey={b.harpKey ?? 'C'} harpType={b.harpType} showAdvanced={b.advanced ?? true} nameStyle={settings.noteNames} />;
             case 'positions': return <PositionsTable key={i} />;
           }
         })}

@@ -1,7 +1,7 @@
 /** Lưu trữ offline bằng IndexedDB (Dexie). Mọi dữ liệu nằm trên thiết bị. */
 import Dexie, { Table } from 'dexie';
 import { FIRST_SAMPLE_IDS, SAMPLE_SONGS } from '../data/samples';
-import { normalizeKey } from './harp';
+import { HARP_TYPES, normalizeKey } from './harp';
 import { AiLogEntry, DEFAULT_SETTINGS, Settings, Song } from './types';
 import type { SongScan } from './scanStore';
 
@@ -123,6 +123,7 @@ function sanitize(raw: Record<string, unknown>): Song | null {
     ...(raw as Partial<Song>),
     id: typeof raw.id === 'string' && raw.id ? raw.id : base.id,
     harpKey: key,
+    harpType: HARP_TYPES.includes(raw.harpType as never) ? (raw.harpType as Song['harpType']) : undefined,
     bpm: Math.min(300, Math.max(20, Number(raw.bpm) || 90)),
     tags: Array.isArray(raw.tags) ? raw.tags.filter((t): t is string => typeof t === 'string') : [],
     favorite: !!raw.favorite,

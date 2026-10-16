@@ -1,10 +1,11 @@
 /**
  * Bài mẫu — chỉ dùng giai điệu và lời đã thuộc phạm vi công cộng (public domain).
- * Tất cả viết cho kèn C.
+ * Tất cả viết cho kèn C (diatonic); bản cho kèn C chromatic tạo ở samples4.ts.
  */
 import type { Song } from '../lib/types';
 import { MORE_SAMPLES } from './samples2';
 import { FOLK_SAMPLES } from './samples3';
+import { chromaticSamples } from './samples4';
 
 type Sample = Omit<Song, 'id' | 'createdAt' | 'updatedAt' | 'favorite' | 'source'>;
 export type SampleSong = Sample & { sampleId: string };
@@ -161,4 +162,5 @@ Sol Fa Rê Đô# Đô Sib Sol
   },
 ];
 
-export const SAMPLE_SONGS: SampleSong[] = [...BASE_SAMPLES, ...MORE_SAMPLES, ...FOLK_SAMPLES];
+const DIATONIC_SAMPLES: SampleSong[] = [...BASE_SAMPLES, ...MORE_SAMPLES, ...FOLK_SAMPLES];
+export const SAMPLE_SONGS: SampleSong[] = [...DIATONIC_SAMPLES, ...chromaticSamples(DIATONIC_SAMPLES)];

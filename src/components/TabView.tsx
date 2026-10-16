@@ -18,7 +18,7 @@ interface Props {
 }
 
 export function TokenText({ token }: { token: string }) {
-  const m = /^(-?)(\d+)('*)(o?)$/.exec(token);
+  const m = /^(-?)(\d+)('*)(o?)(<?)$/.exec(token);
   if (!m) return <>{token}</>;
   return (
     <>
@@ -26,6 +26,7 @@ export function TokenText({ token }: { token: string }) {
       {m[2]}
       {m[3] && <sup className="tok-bend">{m[3].replace(/'/g, '′')}</sup>}
       {m[4] && <sup className="tok-over">o</sup>}
+      {m[5] && <sup className="tok-slide">&lt;</sup>}
     </>
   );
 }
@@ -55,7 +56,7 @@ const Line = memo(function Line({ events, si, li, index, active, clickable, onNo
         const bad = !isRest && ev.midi === null;
         const cls = ['nt', isRest ? 'rest' : draw ? 'draw' : 'blow', bad ? 'bad' : '', fi === active ? 'is-active' : '']
           .filter(Boolean).join(' ');
-        const label = isRest ? `nghỉ ${ev.beats} phách` : `${draw ? 'hút' : 'thổi'} lỗ ${ev.token!.replace('-', '')}${ev.lyric ? `, ${ev.lyric}` : ''}`;
+        const label = isRest ? `nghỉ ${ev.beats} phách` : `${draw ? 'hút' : 'thổi'} lỗ ${ev.token!.replace('-', '').replace('<', ' bấm gạt')}${ev.lyric ? `, ${ev.lyric}` : ''}`;
         const note = (
           <button
             type="button"

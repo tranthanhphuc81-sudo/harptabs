@@ -69,9 +69,11 @@ describe('kế hoạch đệm hát theo bài', () => {
 
   it('các bài mẫu cùng kiểu nhịp được đệm khác nhau', () => {
     const byStyle = new Map<string, Set<string>>();
-    for (const s of SAMPLE_SONGS) {
+    // bản chromatic là cùng bài với bản diatonic nên đệm giống nhau — chỉ xét bài diatonic
+    const songs = SAMPLE_SONGS.filter((s) => !s.harpType);
+    for (const s of songs) {
       if (s.style === 'none' || s.style === 'metronome') continue;
-      const notes = flatten(parseTab(s.body, s.harpKey));
+      const notes = flatten(parseTab(s.body, s.harpKey, s.harpType));
       const bpb = Number(s.timeSig.split('/')[0]) || 4;
       const chords = harmonize(notes, bpb, s.pickupBeats, parseTonality(s.songKey));
       const p = planAccomp(notes, chords, { bpm: s.bpm, beatsPerBar: bpb, pickupBeats: s.pickupBeats });
@@ -81,7 +83,7 @@ describe('kế hoạch đệm hát theo bài', () => {
       byStyle.get(s.style)!.add(sig);
       expect(p.summary.length).toBeGreaterThan(10);
     }
-    const styles = SAMPLE_SONGS.filter((s) => s.style !== 'none' && s.style !== 'metronome').map((s) => s.style);
+    const styles = songs.filter((s) => s.style !== 'none' && s.style !== 'metronome').map((s) => s.style);
     for (const [style, sigs] of byStyle) {
       const count = styles.filter((x) => x === style).length;
       // mỗi bài một cách đệm (bài khác nhau thì kế hoạch khác nhau)

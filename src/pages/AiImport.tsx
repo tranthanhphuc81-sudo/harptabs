@@ -8,6 +8,7 @@ import { HarpKey } from '../lib/harp';
 import { flatten, parseTab } from '../lib/tabText';
 import { beatsPerBar } from '../lib/types';
 import { KeySelect } from '../components/KeySelect';
+import { difficultyOf } from '../lib/converter';
 import { TabView } from '../components/TabView';
 import { MiniPlay } from '../components/PlayerBar';
 import { usePlayer } from '../components/usePlayer';
@@ -115,7 +116,7 @@ export default function AiImport() {
       pickupBeats: converted.pickupBeats,
       style: converted.style,
       body: converted.body,
-      difficulty: converted.fit.stats.bends > 3 || converted.fit.stats.overblows ? 3 : converted.fit.stats.bends ? 2 : 1,
+      difficulty: difficultyOf(converted.fit.stats),
       source: lastMode === 'image' ? 'ai-image' : 'ai-name',
       tags: ['AI'],
       notes: lastMode === 'image'

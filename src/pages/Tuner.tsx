@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
-import { HarpKey, harpLayout, midiToName, TECHNIQUE_LABEL } from '../lib/harp';
+import { HarpKey, HarpType, harpLayout, isChromatic, midiToName, TECHNIQUE_LABEL } from '../lib/harp';
 import { MicPitch, PitchReading } from '../audio/pitch';
 import { HarpDiagram } from '../components/HarpDiagram';
-import { KeySelect } from '../components/KeySelect';
+import { HarpTypeSelect, KeySelect } from '../components/KeySelect';
 import { Icon } from '../components/Icon';
 import { TokenText } from '../components/TabView';
 import { useAppState } from '../state';
@@ -10,6 +10,8 @@ import { useAppState } from '../state';
 export default function Tuner() {
   const { settings } = useAppState();
   const [key, setKey] = useState<HarpKey>(settings.defaultHarpKey);
+  const [type, setType] = useState<HarpType>(settings.defaultHarpType);
+  const chrom = isChromatic(type);
   const [on, setOn] = useState(false);
   const [r, setR] = useState<PitchReading | null>(null);
   const [err, setErr] = useState<string | null>(null);
@@ -46,7 +48,7 @@ export default function Tuner() {
   };
   const stop = () => { micRef.current?.stop(); micRef.current = null; setOn(false); setR(null); };
 
-  const matches = r ? harpLayout(key).filter((n) => n.midi === r.nearest) : [];
+  const matches = r ? harpLayout(key, type).filter((n) => n.midi === r.nearest) : [];
   const cents = r ? Math.round(r.cents) : 0;
   const inTune = r && Math.abs(cents) <= 15;
 
@@ -55,11 +57,12 @@ export default function Tuner() {
       <header className="page-head">
         <div>
           <h1>Dò nốt</h1>
-          <p className="muted">Thổi vào kèn, app cho biết bạn đang ra nốt gì, lỗ nào, và bend đã đủ sâu chưa.</p>
+          <p className="muted">Thổi vào kèn, app cho biết bạn đang ra nốt gì, lỗ nào{chrom ? ', có bấm nút gạt hay không, và có chuẩn không.' : ', và bend đã đủ sâu chưa.'}</p>
         </div>
       </header>
 
       <div className="row gap wrap end-align">
+        <HarpTypeSelect value={type} onChange={setType} id="tuner-type" />
         <KeySelect value={key} onChange={(k) => setKey(k as HarpKey)} id="tuner-key" />
         <button type="button" className={`btn btn-lg ${on ? 'btn-ghost' : 'btn-primary'}`} onClick={on ? stop : start}>
           <Icon name="mic" size={20} /> {on ? 'Tắt micro' : 'Bật micro'}
@@ -89,8 +92,10 @@ export default function Tuner() {
         </div>
       </div>
 
-      <HarpDiagram harpKey={key} highlight={matches.map((m) => m.token)} nameStyle={settings.noteNames} />
-      <p className="muted small">Mẹo: khi tập bend, nhìn kim lệch cent. Bend nửa cung ở lỗ 4 chuẩn khi app hiện <strong>−4′</strong> và kim ở giữa.</p>
+      <HarpDiagram harpKey={key} harpType={type} highlight={matches.map((m) => m.token)} nameStyle={settings.noteNames} />
+      {chrom
+        ? <p className="muted small">Mẹo: kèn chromatic có nhiều cách ra cùng một nốt (ví dụ Đô ở lỗ 4 thổi, lỗ 5 thổi, hoặc <strong>−4&lt;</strong>). Nốt kêu rè hoặc lệch cent thường do bấm gạt chưa hết hoặc hơi lọt sang lỗ bên.</p>
+        : <p className="muted small">Mẹo: khi tập bend, nhìn kim lệch cent. Bend nửa cung ở lỗ 4 chuẩn khi app hiện <strong>−4′</strong> và kim ở giữa.</p>}
     </div>
   );
 }

@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { blankSong, db } from '../lib/db';
-import { HarpKey } from '../lib/harp';
+import { HarpKey, HarpType } from '../lib/harp';
+import { difficultyOf } from '../lib/converter';
 import { importTabText } from '../lib/tabImport';
 import { countTechniques, flatten, parseTab } from '../lib/tabText';
-import { KeySelect } from '../components/KeySelect';
+import { HarpTypeSelect, KeySelect } from '../components/KeySelect';
 import { TabView } from '../components/TabView';
 import { MiniPlay } from '../components/PlayerBar';
 import { usePlayer } from '../components/usePlayer';
@@ -18,6 +19,7 @@ export default function PasteTab() {
   const [text, setText] = useState('');
   const [title, setTitle] = useState<string | null>(null); // null = dùng tên tự nhận
   const [key, setKey] = useState<HarpKey | null>(null); // null = dùng tông tự nhận (hoặc C)
+  const [type, setType] = useState<HarpType | null>(null); // null = đoán từ ký hiệu trong bài
   const [tempo, setTempo] = useState(90);
   const [sharedUrl, setSharedUrl] = useState<string | null>(null);
   const [query, setQuery] = useState('');
@@ -38,14 +40,15 @@ export default function PasteTab() {
     // trình duyệt hay gửi kèm đường dẫn trang ở cuối nội dung
     const link = url || /(https?:\/\/\S+)\s*$/.exec(body)?.[1] || '';
     const content = body.replace(/\s*https?:\/\/\S+\s*$/, '').trim();
-    if (content) { setText(t && !content.includes(t) ? `${t}\n${content}` : content); setTitle(null); setKey(null); }
+    if (content) { setText(t && !content.includes(t) ? `${t}\n${content}` : content); setTitle(null); setKey(null); setType(null); }
     if (link) setSharedUrl(link);
   }, []);
 
-  const imp = useMemo(() => (text.trim() ? importTabText(text) : null), [text]);
+  const imp = useMemo(() => (text.trim() ? importTabText(text, type ?? undefined) : null), [text, type]);
   const harpKey: HarpKey = key ?? imp?.harpKey ?? 'C';
+  const harpType: HarpType = imp?.harpType ?? 'diatonic';
   const songTitle = title ?? imp?.title ?? '';
-  const parsed = useMemo(() => (imp?.body ? parseTab(imp.body, harpKey) : null), [imp, harpKey]);
+  const parsed = useMemo(() => (imp?.body ? parseTab(imp.body, harpKey, harpType) : null), [imp, harpKey, harpType]);
   const flat = useMemo(() => (parsed ? flatten(parsed) : []), [parsed]);
   const player = usePlayer(flat, {
     bpm: tempo, tempoScale: 1, beatsPerBar: 4, pickupBeats: 0, style: 'none', melody: true, beat: false, click: false, countIn: false,
@@ -56,7 +59,7 @@ export default function PasteTab() {
     try {
       const t = await navigator.clipboard.readText();
       if (!t.trim()) { toast('Bộ nhớ tạm đang trống — hãy copy tab trên trang web trước'); return; }
-      setText(t); setTitle(null); setKey(null);
+      setText(t); setTitle(null); setKey(null); setType(null);
     } catch {
       toast('Không đọc được bộ nhớ tạm — nhấn giữ vào ô bên dưới rồi chọn Dán');
     }
@@ -68,11 +71,12 @@ export default function PasteTab() {
     const song = blankSong({
       title: songTitle.trim() || 'Bài dán',
       harpKey,
+      harpType: harpType === 'diatonic' ? undefined : harpType,
       bpm: tempo,
       timeSig: '4/4',
       style: hasDurations ? 'ballad' : 'none',
       body: imp.body,
-      difficulty: t.bends > 3 || t.overblows ? 3 : t.bends ? 2 : 1,
+      difficulty: difficultyOf(t),
       source: 'import',
       tags: ['Dán tab'],
       notes: hasDurations ? undefined : 'Tab dán từ mạng không ghi trường độ (mỗi nốt 1 phách) — tập bằng "Chờ nốt" hoặc chỉnh độ dài trong Sửa bài.',
@@ -133,6 +137,7 @@ export default function PasteTab() {
                 <span className="field-label">Tên bài</span>
                 <input value={songTitle} onChange={(e) => setTitle(e.target.value)} placeholder="Tên bài hát" />
               </label>
+              <HarpTypeSelect value={harpType} onChange={setType} label="Loại kèn trong bài" />
               <KeySelect value={harpKey} onChange={(k) => k !== 'auto' && setKey(k)} label="Kèn trong bài" />
               <label className="field">
                 <span className="field-label">Tốc độ (bpm)</span>

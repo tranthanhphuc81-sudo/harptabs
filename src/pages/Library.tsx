@@ -3,7 +3,7 @@ import { useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { db, deleteSongs, fold, importBackup } from '../lib/db';
 import { compareTitle } from '../lib/songSort';
-import { HARP_KEYS } from '../lib/harp';
+import { HARP_KEYS, isChromatic } from '../lib/harp';
 import { Song } from '../lib/types';
 import { Icon } from '../components/Icon';
 import { ThemeToggle } from '../components/ThemeToggle';
@@ -36,6 +36,7 @@ export default function Library() {
   const [q, setQ] = useState('');
   const [fav, setFav] = useState(false);
   const [key, setKey] = useState<string>('');
+  const [kind, setKind] = useState<'' | 'diatonic' | 'chromatic'>('');
   const [diff, setDiff] = useState<number>(0);
   const [sort, setSortState] = useState<Sort>(loadSort);
   const setSort = (v: Sort) => {
@@ -66,6 +67,7 @@ export default function Library() {
     return songs
       .filter((s) => !fav || s.favorite)
       .filter((s) => !key || s.harpKey === key)
+      .filter((s) => !kind || (kind === 'chromatic') === isChromatic(s.harpType))
       .filter((s) => !diff || s.difficulty === diff)
       .filter((s) => !fq || fold(`${s.title} ${s.artist ?? ''} ${s.tags.join(' ')}`).includes(fq))
       .sort((a, b) => {
@@ -122,6 +124,11 @@ export default function Library() {
           <button type="button" className={`chip${fav ? ' on' : ''}`} aria-pressed={fav} onClick={() => setFav(!fav)}>
             <Icon name="star" size={15} filled={fav} /> Yêu thích
           </button>
+          <select aria-label="Lọc theo loại kèn" value={kind} onChange={(e) => setKind(e.target.value as typeof kind)} className="chip-select">
+            <option value="">Mọi loại kèn</option>
+            <option value="diatonic">Diatonic</option>
+            <option value="chromatic">Chromatic</option>
+          </select>
           <select aria-label="Lọc theo kèn" value={key} onChange={(e) => setKey(e.target.value)} className="chip-select">
             <option value="">Mọi kèn</option>
             {HARP_KEYS.map((k) => <option key={k} value={k}>Kèn {k}</option>)}
@@ -164,7 +171,7 @@ export default function Library() {
               aria-pressed={selecting ? picked.has(s.id) : undefined}
               onClick={selecting ? (e) => { e.preventDefault(); togglePick(s.id); } : undefined}>
               {selecting && <span className="pick-box" aria-hidden="true">{picked.has(s.id) && <Icon name="check" size={16} />}</span>}
-              <KeyPlate k={s.harpKey} />
+              <KeyPlate k={s.harpKey} type={s.harpType} />
               <span className="sr-body">
                 <span className="sr-title">
                   {s.title || 'Chưa đặt tên'}
@@ -176,7 +183,8 @@ export default function Library() {
                   <span>{s.timeSig}</span>
                   <span>{s.bpm} bpm</span>
                   <span>{styleLabel(s.style)}</span>
-                  {s.position && s.position > 1 && <span>Vị trí {s.position}</span>}
+                  {isChromatic(s.harpType) && <span>Chromatic</span>}
+                  {!isChromatic(s.harpType) && s.position && s.position > 1 && <span>Vị trí {s.position}</span>}
                 </span>
               </span>
             </Link>

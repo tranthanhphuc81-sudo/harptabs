@@ -3,7 +3,7 @@ import { useRef, useState } from 'react';
 import { db, downloadJson, ensureSeeded, exportAll, importBackup } from '../lib/db';
 import { HarpKey } from '../lib/harp';
 import { VND_PER_USD, geminiUrl } from '../../shared/ai';
-import { KeySelect } from '../components/KeySelect';
+import { HarpTypeSelect, KeySelect } from '../components/KeySelect';
 import { Icon } from '../components/Icon';
 import { useAppState } from '../state';
 
@@ -100,6 +100,7 @@ export default function SettingsPage() {
               <option value="letter">C D E F G A B</option><option value="solfege">Đô Rê Mi Fa Sol La Si</option>
             </select>
           </label>
+          <HarpTypeSelect value={s.defaultHarpType} onChange={(t) => update({ defaultHarpType: t })} label="Loại kèn mặc định" />
           <KeySelect value={s.defaultHarpKey} onChange={(k) => update({ defaultHarpKey: k as HarpKey })} label="Kèn mặc định" />
           <label className="check wide">
             <input type="checkbox" checked={s.showNoteNames} onChange={(e) => update({ showNoteNames: e.target.checked })} />

@@ -3,7 +3,7 @@
  * để mở lại xem / sửa tiếp trên ảnh. Ảnh lưu dạng JPEG xám trong IndexedDB, chỉ trên máy.
  */
 import { db } from './db';
-import type { HarpKey } from './harp';
+import type { HarpKey, HarpType } from './harp';
 import { Gray, OmrNote, OmrPage, OmrStaff, toGray } from './omr';
 
 export interface SavedScanPage {
@@ -22,6 +22,8 @@ export interface SongScan {
   timeSig: string;
   tempo: number;
   target: HarpKey | 'auto';
+  /** loại kèn lúc lưu; không ghi = diatonic */
+  harpType?: HarpType;
   allowTranspose: boolean;
   /** số lỗ kèn của từng nốt lúc lưu (id nốt → token) */
   tokens: Record<string, string | null>;

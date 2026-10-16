@@ -158,7 +158,7 @@ import { SAMPLE_SONGS } from '../data/samples';
 describe('bài mẫu', () => {
   for (const s of SAMPLE_SONGS) {
     it(`"${s.title}" không có lỗi và lời khớp nốt`, () => {
-      const p = parseTab(s.body, s.harpKey);
+      const p = parseTab(s.body, s.harpKey, s.harpType);
       expect(p.issues).toEqual([]);
     });
   }
@@ -167,6 +167,6 @@ describe('bài mẫu', () => {
 import { LESSONS } from '../data/lessons';
 describe('bài tập trong bài học', () => {
   for (const l of LESSONS) for (const b of l.blocks) if (b.t === 'tab') {
-    it(`${l.id}: ${b.caption ?? 'tab'}`, () => expect(parseTab(b.body, b.harpKey ?? 'C').issues).toEqual([]));
+    it(`${l.id}: ${b.caption ?? 'tab'}`, () => expect(parseTab(b.body, b.harpKey ?? 'C', b.harpType).issues).toEqual([]));
   }
 });

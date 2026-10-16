@@ -1,6 +1,6 @@
-/** Nội dung học offline: kỹ thuật, thủ thuật, mẹo thổi harmonica diatonic. */
+/** Nội dung học offline: kỹ thuật, thủ thuật, mẹo thổi harmonica diatonic và chromatic. */
 import type { BeatStyle } from '../audio/patterns';
-import type { HarpKey } from '../lib/harp';
+import type { HarpKey, HarpType } from '../lib/harp';
 
 export type Block =
   | { t: 'p'; text: string }
@@ -8,8 +8,8 @@ export type Block =
   | { t: 'list'; items: string[]; ordered?: boolean }
   | { t: 'tip'; text: string }
   | { t: 'warn'; text: string }
-  | { t: 'tab'; body: string; caption?: string; harpKey?: HarpKey; bpm?: number; style?: BeatStyle; timeSig?: string }
-  | { t: 'diagram'; harpKey?: HarpKey; advanced?: boolean }
+  | { t: 'tab'; body: string; caption?: string; harpKey?: HarpKey; harpType?: HarpType; bpm?: number; style?: BeatStyle; timeSig?: string }
+  | { t: 'diagram'; harpKey?: HarpKey; harpType?: HarpType; advanced?: boolean }
   | { t: 'positions' };
 
 export interface Lesson {
@@ -21,7 +21,7 @@ export interface Lesson {
   blocks: Block[];
 }
 
-export const LESSON_GROUPS = ['Bắt đầu', 'Kỹ thuật cơ bản', 'Bend và nâng cao', 'Âm nhạc', 'Bảo quản và mẹo'];
+export const LESSON_GROUPS = ['Bắt đầu', 'Kỹ thuật cơ bản', 'Bend và nâng cao', 'Âm nhạc', 'Bảo quản và mẹo', 'Kèn chromatic'];
 
 export const LESSONS: Lesson[] = [
   // ---------------- BẮT ĐẦU ----------------
@@ -383,6 +383,110 @@ export const LESSONS: Lesson[] = [
         '**Tuần 4**: bend lỗ 4 và lỗ 1, vị trí 2, thang âm blues, blues 12 ô nhịp. Bài: Jingle Bells, Thang âm blues.',
       ] },
       { t: 'tip', text: 'Sau 30 ngày, dùng tính năng Nhập AI để chuyển những bài bạn yêu thích thành tab và tập tiếp.' },
+    ],
+  },
+  // ---------------- KÈN CHROMATIC ----------------
+  {
+    id: 'chromatic-la-gi',
+    group: 'Kèn chromatic',
+    title: 'Kèn chromatic là gì',
+    summary: 'Cấu tạo 12 lỗ, nút gạt, khác gì kèn diatonic và nên chọn cây nào.',
+    minutes: 5,
+    blocks: [
+      { t: 'p', text: 'Kèn chromatic có một **nút gạt** (slide) ở bên phải. Bấm nút gạt thì mọi nốt cao lên nửa cung, nên một cây chơi được đủ 12 nốt, mọi giọng, không cần bend. Vì vậy kèn chromatic hay dùng cho nhạc trữ tình, jazz, cổ điển, nhạc Việt có nhiều nốt thăng giáng.' },
+      { t: 'h', text: 'Cấu tạo' },
+      { t: 'list', items: [
+        'Kèn phổ biến nhất có **12 lỗ**, 3 quãng tám, từ Đô4 đến Rê7. Kèn **16 lỗ** thêm một quãng tám trầm (lỗ 1 là Đô3).',
+        'Cứ 4 lỗ là một quãng tám, lặp lại y hệt: thổi **Đô Mi Sol Đô**, hút **Rê Fa La Si**.',
+        'Mỗi lỗ có 4 lưỡi gà: thổi, hút, thổi + gạt, hút + gạt. Các lưỡi gà có **van** (miếng nhựa mỏng) để hơi không lọt sang lưỡi bên kia.',
+        'Vì có van nên kèn chromatic gần như không bend được như diatonic, và cũng không cần bend.',
+      ] },
+      { t: 'p', text: 'Sơ đồ kèn C chromatic 12 lỗ. Hàng trên cùng và dưới cùng là khi bấm nút gạt. Chạm vào ô để nghe.' },
+      { t: 'diagram', harpKey: 'C', harpType: 'chromatic' },
+      { t: 'h', text: 'Chọn cây đầu tiên' },
+      { t: 'list', items: [
+        'Chọn kèn **C, 12 lỗ**: hầu hết tab và giáo trình viết cho cây này.',
+        'Nút gạt phải nhẹ, nhả về nhanh, không kêu lạch cạch. Thử thổi cả 4 kiểu ở vài lỗ xem có nốt nào rè không.',
+        'Kèn 16 lỗ nặng và to hơn, hợp khi đã chơi quen và cần tiếng trầm.',
+      ] },
+      { t: 'tip', text: 'Trong app, chọn loại kèn ở Cài đặt → Loại kèn mặc định. Bài diatonic có sẵn đổi sang chromatic được bằng nút đổi kèn trong trang bài.' },
+    ],
+  },
+  {
+    id: 'chromatic-doc-tab',
+    group: 'Kèn chromatic',
+    title: 'Đọc tab kèn chromatic',
+    summary: 'Ký hiệu thổi, hút, nút gạt và các kiểu ghi hay gặp trên mạng.',
+    minutes: 5,
+    blocks: [
+      { t: 'list', items: [
+        '`4` là thổi lỗ 4, `-4` là hút lỗ 4.',
+        '`4<` là thổi lỗ 4 có bấm nút gạt, `-4<` là hút có bấm nút gạt.',
+        'Trường độ ghi giống kèn diatonic: `4:2` giữ 2 phách, `4:0.5` nửa phách.',
+      ] },
+      { t: 'h', text: 'Các kiểu ghi khác trên mạng' },
+      { t: 'list', items: [
+        '`<4`, `4*`, `4\'` hoặc số có gạch chéo: đều là bấm nút gạt. Khi dán tab vào app, các kiểu này được đổi về `4<`.',
+        'Một số trang dùng `+4` cho thổi. Số trong ngoặc `(4)` thường là hút, đọc chú thích của trang đó.',
+        'Tab có lỗ 11, 12 chắc chắn là tab chromatic. App tự nhận ra khi bạn dán.',
+      ] },
+      { t: 'h', text: 'Một nốt, nhiều chỗ thổi' },
+      { t: 'p', text: 'Đô ở cuối quãng tám này và đầu quãng tám sau trùng nhau: lỗ 4 thổi và lỗ 5 thổi đều là Đô5. `-4<` (Si + gạt) cũng là Đô. Tương tự Fa có thể là `-2` hoặc `2<`. App chọn chỗ gần nốt trước và nốt sau nhất để ít phải nhảy lỗ.' },
+      { t: 'tab', harpKey: 'C', harpType: 'chromatic', caption: 'Thang âm Đô trưởng hai quãng tám', bpm: 80, body: '1 -1 2 -2 3 -3 -4 4:2\n5 -5 6 -6 7 -7 -8 8:2\n8 -8 -7 7 -6 6 -5 5:2\n4 -4 -3 3 -2 2 -1 1:2\n' },
+    ],
+  },
+  {
+    id: 'chromatic-nut-gat',
+    group: 'Kèn chromatic',
+    title: 'Dùng nút gạt',
+    summary: 'Bấm gạt dứt khoát, chơi thang âm chromatic và các giọng Fa, Sol.',
+    minutes: 8,
+    blocks: [
+      { t: 'list', ordered: true, items: [
+        'Đặt ngón trỏ tay phải lên nút gạt, các ngón còn lại ôm thân kèn. Không đặt ngón cái lên nút.',
+        'Bấm **hết hành trình**, nhanh và dứt khoát. Bấm nửa chừng thì tiếng rè hoặc ra hai nốt cùng lúc.',
+        'Bấm gạt **ngay trước** khi đổi hơi, không bấm giữa lúc đang thổi nốt cũ.',
+        'Tập chậm với máy đếm nhịp: mỗi phách một nốt, đều tay rồi mới tăng tốc.',
+      ] },
+      { t: 'tab', harpKey: 'C', harpType: 'chromatic', caption: 'Thang âm chromatic (12 nốt) lên rồi xuống', bpm: 72, body: '1 1< -1 -1< 2 -2 -2< 3 3< -3 -3< -4 4:2\n4 -4 -3< -3 3< 3 -2< -2 2 -1< -1 1< 1:2\n' },
+      { t: 'h', text: 'Chơi giọng khác trên cùng một cây' },
+      { t: 'p', text: 'Kèn diatonic muốn chơi giọng Fa phải đổi kèn. Kèn chromatic chỉ cần bấm gạt ở đúng nốt: giọng Fa trưởng có Si giáng (`-3<`), giọng Sol trưởng có Fa thăng (`-6<`).' },
+      { t: 'tab', harpKey: 'C', harpType: 'chromatic', caption: 'Thang âm Fa trưởng', bpm: 80, body: '-2 3 -3 -3< 4 -5 6 -6:2\n-6 6 -5 4 -3< -3 3 -2:2\n' },
+      { t: 'tab', harpKey: 'C', harpType: 'chromatic', caption: 'Thang âm Sol trưởng', bpm: 80, body: '3 -3 -4 5 -5 6 -6< 7:2\n7 -6< 6 -5 5 -4 -3 3:2\n' },
+      { t: 'tip', text: 'Nốt Mi + gạt (`2<`, `6<`) bằng Fa và Si + gạt (`-4<`, `-8<`) bằng Đô. Ít khi cần, nhưng đôi khi giúp khỏi nhảy lỗ.' },
+    ],
+  },
+  {
+    id: 'chromatic-hoi-am',
+    group: 'Kèn chromatic',
+    title: 'Hơi thở và âm sắc',
+    summary: 'Đơn âm, chặn lưỡi, vibrato, và cách giữ van không kêu.',
+    minutes: 6,
+    blocks: [
+      { t: 'list', items: [
+        '**Đơn âm**: lỗ kèn chromatic vuông và sát nhau hơn diatonic. Môi chúm vừa một lỗ, hoặc dùng **chặn lưỡi** (lưỡi che các lỗ bên trái, hơi đi qua khoé phải).',
+        'Chặn lưỡi được người chơi chromatic dùng nhiều vì tiếng dày hơn và dễ đánh quãng tám (lỗ 1 và lỗ 5 cùng lúc).',
+        '**Thổi nhẹ**: kèn chromatic cần ít hơi hơn diatonic. Hút mạnh làm van rung kêu "rè".',
+        '**Vibrato**: rung bằng họng (như cười "ha-ha-ha" không thành tiếng) hoặc đóng mở tay phải ôm kèn. Tay vẫn bấm nút gạt được.',
+      ] },
+      { t: 'tab', harpKey: 'C', harpType: 'chromatic', caption: 'Đoạn mở đầu Für Elise (Beethoven), có Rê thăng là -5<', bpm: 76, timeSig: '3/4', body: '6:0.5 -5<:0.5 6:0.5 -4:0.5 -5:0.5 5:0.5 -3 r:0.5 1:0.5 2:0.5 -3:0.5\n-4 r:0.5 2:0.5 3<:0.5 -4:0.5 5:3\n' },
+      { t: 'tip', text: 'Bật Chờ nốt khi tập bài có nốt gạt: app chỉ đi tiếp khi bạn thổi đúng, nên biết ngay mình bấm gạt có đủ chưa.' },
+    ],
+  },
+  {
+    id: 'chromatic-bao-quan',
+    group: 'Kèn chromatic',
+    title: 'Bảo quản kèn chromatic',
+    summary: 'Van dính, nút gạt kẹt, và những điều không nên làm.',
+    minutes: 3,
+    blocks: [
+      { t: 'list', items: [
+        '**Làm ấm kèn** bằng tay trước khi thổi khi trời lạnh, để hơi không đọng làm dính van.',
+        'Van dính (nốt bị tắt hoặc kêu): thổi mạnh ngược chiều vài lần, hoặc gõ nhẹ kèn vào lòng bàn tay, lỗ hướng xuống.',
+        'Thổi xong: gõ nhẹ để ráo nước, để kèn khô tự nhiên rồi mới cất vào hộp.',
+        'Không ăn kẹo, uống nước ngọt ngay trước khi thổi: đường làm nút gạt kẹt.',
+        '**Không ngâm nước** như kèn diatonic nhựa: van và lò xo nút gạt dễ hỏng. Nút gạt kẹt thì nhờ người sửa hoặc làm theo hướng dẫn của hãng.',
+      ] },
     ],
   },
 ];

@@ -2,7 +2,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { db, deleteSongs, downloadJson, exportOne, newId, slugify } from '../lib/db';
-import { HARP_KEYS, HarpKey, midiToName, songTonality } from '../lib/harp';
+import { HARP_KEYS, HARP_TYPES, HARP_TYPE_LABEL, HarpKey, HarpType, harpName, harpTypeOf, isChromatic, midiToName, songTonality } from '../lib/harp';
 import { countTechniques, flatten, parseTab } from '../lib/tabText';
 import { rekeyBody } from '../lib/converter';
 import { beatsPerBar, Song } from '../lib/types';
@@ -33,7 +33,9 @@ export default function SongView() {
 function SongPlayerView({ song }: { song: Song }) {
   const { settings, toast } = useAppState();
   const nav = useNavigate();
-  const parsed = useMemo(() => parseTab(song.body, song.harpKey), [song.body, song.harpKey]);
+  const harpType = harpTypeOf(song);
+  const chrom = isChromatic(harpType);
+  const parsed = useMemo(() => parseTab(song.body, song.harpKey, harpType), [song.body, song.harpKey, harpType]);
   const flat = useMemo(() => flatten(parsed), [parsed]);
   const stats = useMemo(() => countTechniques(parsed), [parsed]);
   const sections = useMemo(() => parsed.sections.map((s) => s.title), [parsed]);
@@ -202,17 +204,18 @@ function SongPlayerView({ song }: { song: Song }) {
     <div className="page page-song">
       <header className="song-head">
         <Link to="/" className="icon-btn back" aria-label="Về thư viện"><Icon name="back" /></Link>
-        <KeyPlate k={song.harpKey} size="l" />
+        <KeyPlate k={song.harpKey} type={harpType} size="l" />
         <div className="sh-text">
           <h1>{song.title || 'Chưa đặt tên'}</h1>
           {song.artist && <p className="muted">{song.artist}</p>}
           <p className="sh-meta">
-            <span>Kèn {song.harpKey}</span>
-            {song.position && <span>Vị trí {song.position}</span>}
+            <span>{harpName(song.harpKey, harpType)}</span>
+            {!chrom && song.position && <span>Vị trí {song.position}</span>}
             {song.songKey && <span>Giọng {song.songKey}</span>}
             <span>{song.timeSig}</span>
             <span>{stats.notes} nốt</span>
             {stats.bends > 0 && <span className="bend-count">{stats.bends} bend</span>}
+            {stats.slides > 0 && <span className="bend-count">{stats.slides} nốt gạt</span>}
           </p>
         </div>
         <div className="sh-actions">
@@ -237,7 +240,7 @@ function SongPlayerView({ song }: { song: Song }) {
       <p className="legend">
         <span className="lg blow">4</span> thổi
         <span className="lg draw">−4</span> hút
-        <span className="lg bend">′</span> bend nửa cung
+        {chrom ? <><span className="lg bend">&lt;</span> bấm nút gạt</> : <><span className="lg bend">′</span> bend nửa cung</>}
         <span className="muted">Chạm vào nốt để nghe, hoặc chọn chỗ bắt đầu phát.</span>
         <button type="button" className={`chip legend-chords${beatPrefs.showChords ? ' on' : ''}`} aria-pressed={beatPrefs.showChords}
           onClick={() => setBeatPrefs({ showChords: !beatPrefs.showChords })}>
@@ -275,7 +278,7 @@ function SongPlayerView({ song }: { song: Song }) {
           {showDiagram ? 'Ẩn sơ đồ kèn' : 'Hiện sơ đồ kèn'}
         </button>
       </div>
-      {showDiagram && <HarpDiagram harpKey={song.harpKey} highlight={activeToken ? [activeToken] : []} nameStyle={settings.noteNames} />}
+      {showDiagram && <HarpDiagram harpKey={song.harpKey} harpType={harpType} highlight={activeToken ? [activeToken] : []} nameStyle={settings.noteNames} />}
 
       <ScanSection songId={song.id} />
 
@@ -316,9 +319,13 @@ function SongPlayerView({ song }: { song: Song }) {
 
 function RekeyDialog({ song, onClose, onDone }: { song: Song; onClose: () => void; onDone: (id: string) => void }) {
   const { toast } = useAppState();
+  const fromType = harpTypeOf(song);
+  const [toType, setToType] = useState<HarpType>(fromType);
   const [target, setTarget] = useState<HarpKey>(song.harpKey === 'C' ? 'G' : 'C');
   const [mode, setMode] = useState<'octave' | 'any'>('any');
-  const preview = useMemo(() => rekeyBody(song.body, song.harpKey, target, mode), [song, target, mode]);
+  const preview = useMemo(() => rekeyBody(song.body, song.harpKey, target, mode, fromType, toType), [song, target, mode, fromType, toType]);
+  const toName = harpName(target, toType).replace(/^Kèn/, 'kèn');
+  const typeFields = { harpType: toType === 'diatonic' ? undefined : toType, position: isChromatic(toType) ? 1 as const : song.position };
   const s = preview.fit.stats;
   const dialogRef = useRef<HTMLDialogElement>(null);
   useEffect(() => { dialogRef.current?.showModal?.(); }, []);
@@ -328,12 +335,12 @@ function RekeyDialog({ song, onClose, onDone }: { song: Song; onClose: () => voi
     const shiftNote = preview.fit.shift % 12 !== 0 ? ` Đã dịch giọng ${preview.fit.shift > 0 ? '+' : ''}${preview.fit.shift} nửa cung.` : '';
     if (asNew) {
       const id = newId();
-      await db.songs.put({ ...song, id, title: `${song.title} (kèn ${target})`, harpKey: target, body: preview.body, songKey: undefined, chords: transposeChords(song.chords, preview.fit.shift), source: 'user', createdAt: now, updatedAt: now, favorite: false });
-      toast(`Đã tạo bản cho kèn ${target}.${shiftNote}`);
+      await db.songs.put({ ...song, ...typeFields, id, title: `${song.title} (${toName})`, harpKey: target, body: preview.body, songKey: undefined, chords: transposeChords(song.chords, preview.fit.shift), source: 'user', createdAt: now, updatedAt: now, favorite: false });
+      toast(`Đã tạo bản cho ${toName}.${shiftNote}`);
       onDone(id);
     } else {
-      await db.songs.update(song.id, { harpKey: target, body: preview.body, songKey: mode === 'octave' ? song.songKey : undefined, chords: transposeChords(song.chords, preview.fit.shift), updatedAt: now });
-      toast(`Đã chuyển sang kèn ${target}.${shiftNote}`);
+      await db.songs.update(song.id, { ...typeFields, harpKey: target, body: preview.body, songKey: mode === 'octave' ? song.songKey : undefined, chords: transposeChords(song.chords, preview.fit.shift), updatedAt: now });
+      toast(`Đã chuyển sang ${toName}.${shiftNote}`);
       onDone(song.id);
     }
   };
@@ -341,6 +348,12 @@ function RekeyDialog({ song, onClose, onDone }: { song: Song; onClose: () => voi
   return (
     <dialog ref={dialogRef} className="sheet" onClose={onClose} aria-labelledby="rekey-title">
       <h2 id="rekey-title">Chuyển sang kèn khác</h2>
+      <label className="field">
+        <span className="field-label">Loại kèn</span>
+        <select value={toType} onChange={(e) => setToType(e.target.value as HarpType)}>
+          {HARP_TYPES.map((t) => <option key={t} value={t}>{HARP_TYPE_LABEL[t]}</option>)}
+        </select>
+      </label>
       <label className="field">
         <span className="field-label">Kèn bạn có</span>
         <select value={target} onChange={(e) => setTarget(e.target.value as HarpKey)}>
@@ -350,10 +363,12 @@ function RekeyDialog({ song, onClose, onDone }: { song: Song; onClose: () => voi
       <fieldset className="radio-group">
         <legend className="field-label">Cách chuyển</legend>
         <label><input type="radio" checked={mode === 'any'} onChange={() => setMode('any')} /> Dịch giọng cho dễ thổi nhất <span className="muted">(giai điệu giữ nguyên, cao độ thay đổi)</span></label>
-        <label><input type="radio" checked={mode === 'octave'} onChange={() => setMode('octave')} /> Giữ đúng giọng gốc <span className="muted">(để chơi cùng bản thu, có thể phải bend)</span></label>
+        <label><input type="radio" checked={mode === 'octave'} onChange={() => setMode('octave')} /> Giữ đúng giọng gốc <span className="muted">(để chơi cùng bản thu{isChromatic(toType) ? ', có thể phải bấm gạt nhiều hơn' : ', có thể phải bend'})</span></label>
       </fieldset>
       <p className="rekey-stats">
-        <strong>{s.natural}</strong> nốt thường, <strong>{s.bends}</strong> nốt bend, <strong>{s.overblows}</strong> overblow
+        {isChromatic(toType)
+          ? <><strong>{s.natural}</strong> nốt thường, <strong>{s.slides}</strong> nốt bấm gạt</>
+          : <><strong>{s.natural}</strong> nốt thường, <strong>{s.bends}</strong> nốt bend, <strong>{s.overblows}</strong> overblow</>}
         {s.unplayable > 0 && <>, <strong className="danger">{s.unplayable}</strong> nốt không chơi được (sẽ thành dấu nghỉ)</>}
       </p>
       <div className="row gap end">

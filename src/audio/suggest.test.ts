@@ -39,7 +39,7 @@ describe('tự chọn kiểu nhịp', () => {
 
   it('khớp phần lớn kiểu nhịp người soạn đã chọn cho bài mẫu', () => {
     const rated = SAMPLE_SONGS.filter((s) => s.style !== 'metronome' && s.style !== 'none');
-    const ok = rated.filter((s) => suggestStyle(s, flatten(parseTab(s.body, s.harpKey))).style === s.style).length;
+    const ok = rated.filter((s) => suggestStyle(s, flatten(parseTab(s.body, s.harpKey, s.harpType))).style === s.style).length;
     expect(ok / rated.length).toBeGreaterThanOrEqual(0.8);
   });
 });

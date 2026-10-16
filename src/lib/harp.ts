@@ -1,16 +1,47 @@
 /**
- * Lý thuyết harmonica diatonic 10 lỗ, lên dây Richter.
+ * Lý thuyết harmonica: diatonic 10 lỗ (lên dây Richter) và chromatic 12 / 16 lỗ (lên dây solo).
  *
- * Ký hiệu tab dùng trong app:
+ * Ký hiệu tab diatonic:
  *   4     thổi lỗ 4 (cũng chấp nhận "+4")
  *   -4    hút lỗ 4
  *   -3'   hút lỗ 3 bend nửa cung;  -3'' bend 1 cung;  -3''' bend 1,5 cung
  *   8'    thổi lỗ 8 bend nửa cung (blow bend, lỗ 7–10)
  *   6o    overblow lỗ 6;  -7o  overdraw lỗ 7
+ *
+ * Ký hiệu tab chromatic:
+ *   4     thổi lỗ 4;  -4  hút lỗ 4
+ *   4<    thổi lỗ 4, bấm nút gạt (cao lên nửa cung);  -4<  hút có bấm nút gạt
  */
 
 export type Direction = 'blow' | 'draw';
-export type Technique = 'blow' | 'draw' | 'drawBend' | 'blowBend' | 'overblow' | 'overdraw';
+export type Technique = 'blow' | 'draw' | 'drawBend' | 'blowBend' | 'overblow' | 'overdraw' | 'blowSlide' | 'drawSlide';
+
+/** Loại kèn. Bài cũ không ghi loại là diatonic. */
+export type HarpType = 'diatonic' | 'chromatic' | 'chromatic16';
+export const HARP_TYPES: readonly HarpType[] = ['diatonic', 'chromatic', 'chromatic16'];
+
+export const HARP_TYPE_LABEL: Record<HarpType, string> = {
+  diatonic: 'Diatonic 10 lỗ',
+  chromatic: 'Chromatic 12 lỗ',
+  chromatic16: 'Chromatic 16 lỗ',
+};
+
+export function isChromatic(t: HarpType | undefined): boolean {
+  return t === 'chromatic' || t === 'chromatic16';
+}
+
+export function holeCount(t: HarpType = 'diatonic'): number {
+  return t === 'chromatic16' ? 16 : t === 'chromatic' ? 12 : 10;
+}
+
+export function harpTypeOf(s: { harpType?: HarpType }): HarpType {
+  return s.harpType && HARP_TYPES.includes(s.harpType) ? s.harpType : 'diatonic';
+}
+
+/** "Kèn C" hoặc "Kèn C chromatic" */
+export function harpName(key: string, t: HarpType = 'diatonic'): string {
+  return t === 'diatonic' ? `Kèn ${key}` : t === 'chromatic16' ? `Kèn ${key} chromatic 16 lỗ` : `Kèn ${key} chromatic`;
+}
 
 export interface HarpNote {
   hole: number;
@@ -19,6 +50,8 @@ export interface HarpNote {
   bend: number;
   /** overblow / overdraw */
   over: boolean;
+  /** chromatic: bấm nút gạt */
+  slide: boolean;
   midi: number;
   technique: Technique;
   token: string;
@@ -54,20 +87,42 @@ const C_DRAW = [62, 67, 71, 74, 77, 81, 83, 86, 89, 93];
 const OVERBLOW_HOLES = [1, 4, 5, 6];
 const OVERDRAW_HOLES = [7, 9, 10];
 
-export function makeToken(hole: number, dir: Direction, bend: number, over: boolean): string {
-  return `${dir === 'draw' ? '-' : ''}${hole}${over ? 'o' : "'".repeat(bend)}`;
+// Chromatic kèn C, mỗi 4 lỗ là một quãng tám: thổi Đô Mi Sol Đô, hút Rê Fa La Si
+const CHROM_BLOW = [0, 4, 7, 12];
+const CHROM_DRAW = [2, 5, 9, 11];
+
+export function makeToken(hole: number, dir: Direction, bend: number, over: boolean, slide = false): string {
+  return `${dir === 'draw' ? '-' : ''}${hole}${over ? 'o' : "'".repeat(bend)}${slide ? '<' : ''}`;
 }
 
-const layoutCache = new Map<HarpKey, HarpNote[]>();
+const layoutCache = new Map<string, HarpNote[]>();
 
-/** Toàn bộ nốt chơi được trên kèn (kể cả bend, overblow) */
-export function harpLayout(key: HarpKey): HarpNote[] {
-  const cached = layoutCache.get(key);
+/** Toàn bộ nốt chơi được trên kèn (diatonic: kể cả bend, overblow; chromatic: kể cả nút gạt) */
+export function harpLayout(key: HarpKey, type: HarpType = 'diatonic'): HarpNote[] {
+  const ck = `${type}:${key}`;
+  const cached = layoutCache.get(ck);
   if (cached) return cached;
   const off = KEY_OFFSET[key];
   const notes: HarpNote[] = [];
-  const push = (hole: number, dir: Direction, bend: number, over: boolean, midi: number, technique: Technique) =>
-    notes.push({ hole, dir, bend, over, midi: midi + off, technique, token: makeToken(hole, dir, bend, over) });
+  const push = (hole: number, dir: Direction, bend: number, over: boolean, midi: number, technique: Technique, slide = false) =>
+    notes.push({ hole, dir, bend, over, slide, midi: midi + off, technique, token: makeToken(hole, dir, bend, over, slide) });
+
+  if (isChromatic(type)) {
+    // 12 lỗ: lỗ 1 = Đô4; 16 lỗ thêm một quãng tám trầm, lỗ 1 = Đô3
+    const base = type === 'chromatic16' ? 48 : 60;
+    for (let i = 0; i < holeCount(type); i++) {
+      const hole = i + 1;
+      const oct = base + 12 * Math.floor(i / 4);
+      const blow = oct + CHROM_BLOW[i % 4];
+      const draw = oct + CHROM_DRAW[i % 4];
+      push(hole, 'blow', 0, false, blow, 'blow');
+      push(hole, 'draw', 0, false, draw, 'draw');
+      push(hole, 'blow', 0, false, blow + 1, 'blowSlide', true);
+      push(hole, 'draw', 0, false, draw + 1, 'drawSlide', true);
+    }
+    layoutCache.set(ck, notes);
+    return notes;
+  }
 
   for (let i = 0; i < 10; i++) {
     const hole = i + 1;
@@ -83,11 +138,16 @@ export function harpLayout(key: HarpKey): HarpNote[] {
       if (OVERDRAW_HOLES.includes(hole)) push(hole, 'draw', 0, true, blow + 1, 'overdraw');
     }
   }
-  layoutCache.set(key, notes);
+  layoutCache.set(ck, notes);
   return notes;
 }
 
 export const TOKEN_RE = /^([+-])?(10|[1-9])('{1,3}|o)?$/;
+export const CHROM_TOKEN_RE = /^([+-])?(1[0-6]|[1-9])(<)?$/;
+
+function tokenRe(type: HarpType): RegExp {
+  return isChromatic(type) ? CHROM_TOKEN_RE : TOKEN_RE;
+}
 
 /** Chuẩn hoá các dấu nháy hay gặp khi copy từ web: ’ ′ ` ″ */
 export function cleanToken(raw: string): string {
@@ -96,25 +156,27 @@ export function cleanToken(raw: string): string {
     .replace(/[’′`´‘]/g, "'")
     .replace(/[″”"]/g, "''")
     .replace(/^[–—−]/, '-')
+    .replace(/^([+-]?)<([+-]?)(\d+)$/, '$1$2$3<') // <4 → 4<
     .replace(/^\+/, '')
     .replace(/O$/, 'o');
 }
 
-export function parseToken(raw: string, key: HarpKey): HarpNote | null {
+export function parseToken(raw: string, key: HarpKey, type: HarpType = 'diatonic'): HarpNote | null {
   const t = cleanToken(raw);
-  const m = TOKEN_RE.exec(t);
+  const m = tokenRe(type).exec(t);
   if (!m) return null;
   const dir: Direction = m[1] === '-' ? 'draw' : 'blow';
   const hole = Number(m[2]);
   const mod = m[3] ?? '';
+  const slide = mod === '<';
   const over = mod === 'o';
-  const bend = over ? 0 : mod.length;
-  const token = makeToken(hole, dir, bend, over);
-  return harpLayout(key).find((n) => n.token === token) ?? null;
+  const bend = over || slide ? 0 : mod.length;
+  const token = makeToken(hole, dir, bend, over, slide);
+  return harpLayout(key, type).find((n) => n.token === token) ?? null;
 }
 
-export function isTabToken(raw: string): boolean {
-  return TOKEN_RE.test(cleanToken(raw));
+export function isTabToken(raw: string, type: HarpType = 'diatonic'): boolean {
+  return tokenRe(type).test(cleanToken(raw));
 }
 
 // ---------- Tên nốt ----------
@@ -160,6 +222,8 @@ export const TECHNIQUE_LABEL: Record<Technique, string> = {
   blowBend: 'Thổi bend',
   overblow: 'Overblow',
   overdraw: 'Overdraw',
+  blowSlide: 'Thổi + gạt',
+  drawSlide: 'Hút + gạt',
 };
 
 /** Độ khó khi chơi một nốt — dùng cho bộ chọn lỗ tối ưu */
@@ -175,6 +239,9 @@ export function techniqueCost(n: HarpNote): number {
     case 'overblow':
     case 'overdraw':
       return 8;
+    case 'blowSlide':
+    case 'drawSlide':
+      return 0.4; // bấm gạt dễ, nhưng có nốt tự nhiên cùng cao độ thì ưu tiên nốt tự nhiên
   }
 }
 
