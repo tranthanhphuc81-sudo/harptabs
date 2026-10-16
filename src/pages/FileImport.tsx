@@ -104,6 +104,7 @@ export default function FileImport() {
           accept=".mid,.midi,.kar,.rmi,.musicxml,.mxl,.xml,audio/midi,audio/x-midi,application/vnd.recordare.musicxml,application/vnd.recordare.musicxml+xml" />
       </div>
       {error && <div className="alert error" role="alert">{error}</div>}
+      <FileSources />
 
       {file && converted && parsed && (
         <>
@@ -166,5 +167,43 @@ export default function FileImport() {
         </>
       )}
     </div>
+  );
+}
+
+/** Nơi tìm file nhạc dạng dữ liệu (MusicXML / MIDI) + mẹo chuyển PDF thành MusicXML */
+const SOURCES: { name: string; url: string; what: string }[] = [
+  { name: 'MuseScore.com', url: 'https://musescore.com/sheetmusic', what: 'Kho lớn nhất, có nhiều bài Việt do người dùng soạn. Mở bài → Download → MusicXML hoặc MIDI (cần tài khoản miễn phí; một số bài chỉ dành cho gói Pro).' },
+  { name: 'IMSLP', url: 'https://imslp.org', what: 'Thư viện nhạc cổ điển hết bản quyền. Phần lớn là PDF, một số bài có MusicXML / MIDI.' },
+  { name: 'Mutopia Project', url: 'https://www.mutopiaproject.org', what: 'Nhạc cổ điển, dân ca hết bản quyền — có sẵn file MIDI.' },
+];
+
+function FileSources() {
+  const [q, setQ] = useState('');
+  const search = (kind: 'musescore' | 'any') => {
+    const name = q.trim();
+    if (!name) return;
+    const query = kind === 'musescore' ? `site:musescore.com ${name}` : `${name} musicxml OR mxl OR midi`;
+    window.open(`https://www.google.com/search?q=${encodeURIComponent(query)}`, '_blank', 'noopener');
+  };
+  return (
+    <details className="syntax-help file-sources">
+      <summary>Lấy file MusicXML / MIDI ở đâu?</summary>
+      <form className="row gap wrap end-align" onSubmit={(e) => { e.preventDefault(); search('musescore'); }}>
+        <label className="field grow">
+          <span className="field-label">Tìm theo tên bài</span>
+          <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Ví dụ: Diễm xưa" enterKeyHint="search" />
+        </label>
+        <button type="submit" className="btn btn-ghost" disabled={!q.trim()}><Icon name="search" size={18} /> Trên MuseScore</button>
+        <button type="button" className="btn btn-ghost" disabled={!q.trim()} onClick={() => search('any')}>Mọi trang</button>
+      </form>
+      <ul>
+        {SOURCES.map((s) => (
+          <li key={s.url}><a href={s.url} target="_blank" rel="noreferrer">{s.name}</a> — {s.what}</li>
+        ))}
+      </ul>
+      <p className="small"><strong>Cách tải về điện thoại rồi mở trong app:</strong> tải file (.mxl, .musicxml hoặc .mid) về máy → quay lại đây bấm <strong>Chọn file nhạc</strong> → chọn file vừa tải trong mục Tải xuống.</p>
+      <p className="small"><strong>Chỉ có bản PDF đẹp?</strong> Mở bằng <a href="https://musescore.org" target="_blank" rel="noreferrer">MuseScore</a> (miễn phí, trên máy tính: File → Import PDF) hoặc <a href="https://audiveris.github.io/audiveris/" target="_blank" rel="noreferrer">Audiveris</a>, sửa vài chỗ sai rồi File → Export → MusicXML. PDF in sắc nét đọc chính xác hơn nhiều so với ảnh chụp.</p>
+      <p className="small muted">Bài còn bản quyền: chỉ dùng để tự tập, không chia sẻ lại file.</p>
+    </details>
   );
 }

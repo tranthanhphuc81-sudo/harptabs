@@ -533,6 +533,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .keypad button.draw { background: var(--draw-fill); color: var(--draw); border-color: var(--draw-edge); }
 .keypad .kp-mode { min-width: 56px; background: var(--ink); color: var(--bg); border-color: var(--ink); font-family: var(--font); font-size: 0.9rem; }
 .syntax-help summary { cursor: pointer; color: var(--draw); font-weight: 500; }
+.file-sources > form, .file-sources > p { margin: 10px 0 0; font-weight: 400; color: var(--ink); }
 .syntax-help ul { margin: 8px 0 0; padding-left: 18px; font-weight: 400; color: var(--ink); font-size: 0.9rem; display: flex; flex-direction: column; gap: 4px; }
 .issues { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; font-size: 0.88rem; }
 .issues li { padding: 6px 10px; border-radius: var(--r-s); }
