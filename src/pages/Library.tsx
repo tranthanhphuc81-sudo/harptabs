@@ -76,7 +76,7 @@ export default function Library() {
         if (sort === 'practiced') return (b.lastPracticedAt ?? 0) - (a.lastPracticedAt ?? 0);
         return b.updatedAt - a.updatedAt;
       });
-  }, [songs, q, fav, key, diff, sort]);
+  }, [songs, q, fav, key, kind, diff, sort]);
 
   const onImport = async (f: File | undefined) => {
     if (!f) return;

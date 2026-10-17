@@ -1,5 +1,5 @@
 import { useLiveQuery } from 'dexie-react-hooks';
-import { useMemo, useRef, useState } from 'react';
+import { lazy, Suspense, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { AiInput, AiResponse, estimateCostUsd, MAX_IMAGES, VND_PER_USD } from '../../shared/ai';
 import { aiToTab, prepareImage, transcribe } from '../lib/ai';
@@ -14,9 +14,11 @@ import { MiniPlay } from '../components/PlayerBar';
 import { usePlayer } from '../components/usePlayer';
 import { Icon } from '../components/Icon';
 import { useAppState, useOnline } from '../state';
-import ScanImport from './ScanImport';
 import PasteTab from './PasteTab';
-import FileImport from './FileImport';
+
+// quét nhạc và đọc file nặng (OMR, MIDI, PDF): chỉ tải khi chọn
+const ScanImport = lazy(() => import('./ScanImport'));
+const FileImport = lazy(() => import('./FileImport'));
 
 type Mode = 'scan' | 'file' | 'paste' | 'image' | 'name';
 interface Img { id: string; mimeType: string; data: string; preview: string }
@@ -179,8 +181,8 @@ export default function AiImport() {
         </button>
       </div>
 
-      {mode === 'scan' ? <ScanImport key={editScan ?? `new-${scanFiles?.n ?? 0}`} editSongId={editScan} initialFiles={scanFiles?.files} />
-        : mode === 'file' ? <FileImport onImages={(files) => { setScanFiles((s) => ({ n: (s?.n ?? 0) + 1, files })); setMode('scan'); }} /> : mode === 'paste' ? <PasteTab /> : <>
+      {mode === 'scan' ? <Suspense fallback={null}><ScanImport key={editScan ?? `new-${scanFiles?.n ?? 0}`} editSongId={editScan} initialFiles={scanFiles?.files} /></Suspense>
+        : mode === 'file' ? <Suspense fallback={null}><FileImport onImages={(files) => { setScanFiles((s) => ({ n: (s?.n ?? 0) + 1, files })); setMode('scan'); }} /></Suspense> : mode === 'paste' ? <PasteTab /> : <>
       <div className="ai-form">
         {mode === 'image' ? (
           <>

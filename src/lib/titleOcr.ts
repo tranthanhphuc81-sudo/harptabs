@@ -49,7 +49,7 @@ export function titleFromFilename(name: string): string {
 }
 
 /** Có dấu tiếng Việt / chữ ngoài ASCII → người đặt tên file gõ đàng hoàng, tin hơn máy đọc */
-export const hasDiacritics = (t: string) => /[^\x00-\x7f]/.test(t);
+export const hasDiacritics = (t: string) => /[\u0080-￿]/.test(t);
 
 /** Vẽ vùng tiêu đề (ảnh xám) ra canvas */
 export function cropToCanvas(g: Gray, b: TitleBox): HTMLCanvasElement {

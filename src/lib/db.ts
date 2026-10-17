@@ -4,6 +4,7 @@ import { FIRST_SAMPLE_IDS, SAMPLE_SONGS } from '../data/samples';
 import { HARP_TYPES, normalizeKey } from './harp';
 import { AiLogEntry, DEFAULT_SETTINGS, Settings, Song } from './types';
 import type { SongScan } from './scanStore';
+import { BeatStyle, PATTERNS } from '../audio/patterns';
 
 interface KV { key: string; value: unknown }
 
@@ -114,26 +115,50 @@ export function exportOne(song: Song): BackupFile {
   return { app: 'harptabs', version: 1, exportedAt: new Date().toISOString(), songs: [song] };
 }
 
+const SOURCES: Song['source'][] = ['sample', 'user', 'ai-image', 'ai-name', 'scan', 'import'];
+const MAX_BODY_CHARS = 200_000;
+
+const str = (v: unknown, max: number): string | undefined => (typeof v === 'string' && v ? v.slice(0, max) : undefined);
+const time = (v: unknown, fallback?: number): number | undefined => {
+  const n = Number(v);
+  return Number.isFinite(n) && n > 0 && n < 8.64e15 ? n : fallback;
+};
+
+/** Chỉ nhận các trường đã biết, kiểm tra kiểu và giới hạn — file sao lưu có thể do người khác gửi */
 function sanitize(raw: Record<string, unknown>): Song | null {
-  if (typeof raw.title !== 'string' || typeof raw.body !== 'string') return null;
+  if (!raw || typeof raw !== 'object' || typeof raw.title !== 'string' || typeof raw.body !== 'string') return null;
+  if (raw.body.length > MAX_BODY_CHARS) return null;
   const base = blankSong();
-  const key = normalizeKey(String(raw.harpKey ?? 'C')) ?? 'C';
+  const style = raw.style as BeatStyle;
+  const createdAt = time(raw.createdAt, base.createdAt)!;
   return {
-    ...base,
-    ...(raw as Partial<Song>),
-    id: typeof raw.id === 'string' && raw.id ? raw.id : base.id,
-    harpKey: key,
+    id: typeof raw.id === 'string' && /^[\w-]{1,80}$/.test(raw.id) ? raw.id : base.id,
+    title: raw.title.slice(0, 200),
+    artist: str(raw.artist, 200),
+    harpKey: normalizeKey(String(raw.harpKey ?? 'C')) ?? 'C',
     harpType: HARP_TYPES.includes(raw.harpType as never) ? (raw.harpType as Song['harpType']) : undefined,
-    bpm: Math.min(300, Math.max(20, Number(raw.bpm) || 90)),
-    tags: Array.isArray(raw.tags) ? raw.tags.filter((t): t is string => typeof t === 'string') : [],
-    favorite: !!raw.favorite,
+    position: raw.position === 2 || raw.position === 3 ? raw.position : 1,
+    songKey: str(raw.songKey, 12),
     chords: sanitizeChords(raw.chords),
+    bpm: Math.min(300, Math.max(20, Number(raw.bpm) || 90)),
+    timeSig: typeof raw.timeSig === 'string' && /^\d{1,2}\/\d{1,2}$/.test(raw.timeSig) ? raw.timeSig : base.timeSig,
+    pickupBeats: Math.min(16, Math.max(0, Number(raw.pickupBeats) || 0)),
+    style: style === 'none' || style === 'metronome' || style in PATTERNS ? style : base.style,
+    difficulty: raw.difficulty === 2 || raw.difficulty === 3 ? raw.difficulty : 1,
+    body: raw.body,
+    notes: str(raw.notes, 20_000),
+    tags: Array.isArray(raw.tags) ? raw.tags.filter((t): t is string => typeof t === 'string').slice(0, 50).map((t) => t.slice(0, 50)) : [],
+    source: SOURCES.includes(raw.source as never) ? (raw.source as Song['source']) : 'import',
+    favorite: !!raw.favorite,
+    createdAt,
+    updatedAt: time(raw.updatedAt, createdAt)!,
+    lastPracticedAt: time(raw.lastPracticedAt),
   };
 }
 
 function sanitizeChords(v: unknown): Record<string, string> | undefined {
   if (!v || typeof v !== 'object') return undefined;
-  const out = Object.fromEntries(Object.entries(v).filter(([k, c]) => Number.isFinite(Number(k)) && typeof c === 'string' && c.length <= 8));
+  const out = Object.fromEntries(Object.entries(v).slice(0, 2000).filter(([k, c]) => Number.isFinite(Number(k)) && typeof c === 'string' && c.length <= 8));
   return Object.keys(out).length ? out : undefined;
 }
 

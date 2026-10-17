@@ -31,8 +31,12 @@ export default defineConfig({
       workbox: {
         globPatterns: ['**/*.{js,mjs,css,html,svg,png,woff2}'],
         // bộ đọc chữ tên bài (~5 MB): không tải sẵn khi cài; lần đầu dùng mới tải rồi giữ lại để chạy offline
-        globIgnores: ['ocr/**'],
-        runtimeCaching: [{ urlPattern: ({ url }: { url: URL }) => url.pathname.includes('/ocr/'), handler: 'CacheFirst', options: { cacheName: 'ocr', expiration: { maxEntries: 10 } } }],
+        // bộ đọc PDF (~1,6 MB) cũng vậy: chỉ tải khi nhập bản nhạc PDF lần đầu
+        globIgnores: ['ocr/**', 'assets/pdf-*', 'assets/pdf.worker*'],
+        runtimeCaching: [
+          { urlPattern: ({ url }: { url: URL }) => url.pathname.includes('/ocr/'), handler: 'CacheFirst', options: { cacheName: 'ocr', expiration: { maxEntries: 10 } } },
+          { urlPattern: ({ url }: { url: URL }) => /\/assets\/pdf(-|\.worker)/.test(url.pathname), handler: 'CacheFirst', options: { cacheName: 'pdf', expiration: { maxEntries: 6 } } }
+        ],
         navigateFallback: 'index.html'
       }
     })

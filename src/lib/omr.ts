@@ -930,7 +930,8 @@ function stemSegments(img: Bits, s: number, xFrom: number, xTo: number): Stem[] 
   const used = new Array(segs.length).fill(false);
   segs.forEach((g, i) => {
     if (used[i]) return;
-    let xs = [g.x], a = g.a, b = g.b, last = g.x;
+    const xs = [g.x];
+    let a = g.a, b = g.b, last = g.x;
     for (let j = i + 1; j < segs.length; j++) {
       const h = segs[j];
       if (h.x > last + 1) break;

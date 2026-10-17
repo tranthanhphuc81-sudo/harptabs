@@ -1,16 +1,20 @@
-import { useEffect, useState } from 'react';
-import { HashRouter, NavLink, Route, Routes } from 'react-router-dom';
+import { lazy, Suspense, useEffect, useState } from 'react';
+import { HashRouter, NavLink, Route, Routes, useLocation } from 'react-router-dom';
 import { AppStateProvider, useOnline } from './state';
 import { ensureSeeded } from './lib/db';
 import { Icon } from './components/Icon';
 import { ThemeToggle } from './components/ThemeToggle';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import Library from './pages/Library';
 import SongView from './pages/SongView';
-import SongEdit from './pages/SongEdit';
-import AiImport from './pages/AiImport';
-import Learn, { LessonPage } from './pages/Learn';
-import Tuner from './pages/Tuner';
-import SettingsPage from './pages/Settings';
+
+// các trang ít mở hơn: tải khi cần để app mở nhanh (service worker vẫn lưu sẵn để chạy offline)
+const SongEdit = lazy(() => import('./pages/SongEdit'));
+const AiImport = lazy(() => import('./pages/AiImport'));
+const Learn = lazy(() => import('./pages/Learn'));
+const LessonPage = lazy(() => import('./pages/Learn').then((m) => ({ default: m.LessonPage })));
+const Tuner = lazy(() => import('./pages/Tuner'));
+const SettingsPage = lazy(() => import('./pages/Settings'));
 
 const NAV = [
   { to: '/', icon: 'library', label: 'Bài hát', end: true },
@@ -22,6 +26,7 @@ const NAV = [
 
 function Shell() {
   const online = useOnline();
+  const { pathname } = useLocation();
   const [ready, setReady] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
@@ -29,6 +34,8 @@ function Shell() {
     ensureSeeded()
       .then(() => setReady(true))
       .catch((e) => { setErr(String(e?.message ?? e)); setReady(true); });
+    // mọi bài chỉ nằm trên máy: xin trình duyệt đừng tự xoá khi máy đầy bộ nhớ
+    navigator.storage?.persist?.().catch(() => {});
   }, []);
 
   return (
@@ -52,6 +59,8 @@ function Shell() {
         {!online && <div className="offline-pill" role="status">Đang offline — mọi thứ vẫn dùng được, trừ phần nhờ AI</div>}
         {err && <div className="alert error">Không mở được kho dữ liệu trên máy: {err}. Hãy tắt chế độ ẩn danh hoặc cho phép lưu trữ.</div>}
         {ready && (
+          <ErrorBoundary key={pathname}>
+          <Suspense fallback={<div className="page" aria-busy="true" />}>
           <Routes>
             <Route path="/" element={<Library />} />
             <Route path="/new" element={<SongEdit />} />
@@ -64,6 +73,8 @@ function Shell() {
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="*" element={<Library />} />
           </Routes>
+          </Suspense>
+          </ErrorBoundary>
         )}
       </main>
     </div>

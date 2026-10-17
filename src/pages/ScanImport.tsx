@@ -199,6 +199,7 @@ export default function ScanImport({ editSongId, initialFiles }: { editSongId?: 
     if (took.current || !initialFiles?.length) return;
     took.current = true;
     void addFiles(initialFiles);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- chỉ nạp một lần khi mở trang
   }, [initialFiles]);
 
   const reset = () => {

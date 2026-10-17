@@ -258,7 +258,7 @@ export class Player {
     let track = this.barTracks.get(tk);
     if (!track) { track = barTrack(plan, bar, base, tech); this.barTracks.set(tk, track); }
     const len = track.length;
-    let kind = track[stepIdx] ?? '.';
+    const kind = track[stepIdx] ?? '.';
     const chord = this.chordAt(beat + 1e-3);
     if (!chord || chord.root < 0) return;
     const span = this.chords.find((c) => beat >= c.start - 1e-6 && beat < c.end - 1e-6);
