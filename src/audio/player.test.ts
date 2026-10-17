@@ -1,12 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // âm thanh giả: đồng hồ do test điều khiển, mọi tiếng chỉ được đếm
-const clock = { t: 0 };
+const clock = { t: 0, lat: 0 };
 const calls: Record<string, number> = {};
 const count = (name: string) => () => { calls[name] = (calls[name] ?? 0) + 1; };
 const bassNotes: { midi: number; when: number }[] = [];
 vi.mock('./engine', () => ({
-  audio: () => ({ currentTime: clock.t }),
+  audio: () => ({ currentTime: clock.t, outputLatency: clock.lat }),
   applyMix: () => {},
   setHumanVelocity: () => {},
   playTone: count('melody'),
@@ -31,6 +31,7 @@ vi.mock('./engine', () => ({
 }));
 
 const { Player } = await import('./player');
+const { setSyncOffsetMs } = await import('./latency');
 
 /** chạy bộ phát `seconds` giây (đồng hồ giả), trả về số tiếng mỗi loại */
 function run(style: string, beatsPerBar: number, seconds = 4, chordOverrides?: Record<string, string>) {
@@ -87,3 +88,38 @@ describe('bộ phát beat', () => {
     expect(c.ride).toBeGreaterThan(0);
   });
 });
+
+describe('đèn nốt khớp với tiếng', () => {
+  const at = (t: number, lat: number, offsetMs = 0) => {
+    clock.t = 0; clock.lat = lat;
+    setSyncOffsetMs(offsetMs);
+    const p = new Player({ bpm: 120, tempoScale: 1, beatsPerBar: 4, pickupBeats: 0, style: 'none', melody: true, beat: false, click: false, countIn: false, loop: null, songKey: 'C' });
+    p.load(Array.from({ length: 8 }, (_, i) => ({ token: '4', midi: 60, beats: 1, start: i, sectionIndex: 0, lineIndex: 0, eventIndex: i })));
+    p.start(0); // nốt đầu lên lịch lúc 0,3 s, mỗi phách 0,5 s
+    const tick = (p as unknown as { tick: () => void }).tick.bind(p);
+    for (let s = 0; s <= t + 1e-9; s += 0.05) { clock.t = s; tick(); }
+    clock.t = t;
+    const b = p.currentBeat()!;
+    p.stop();
+    clock.lat = 0;
+    setSyncOffsetMs(0);
+    return b;
+  };
+
+  it('không có trễ: vị trí theo đồng hồ lên lịch', () => {
+    expect(at(0.9, 0)).toBeCloseTo(1.2, 2);
+  });
+
+  it('loa trễ 200 ms: đèn lùi lại đúng 200 ms (0,4 phách ở 120 bpm), không sáng trước tiếng', () => {
+    expect(at(0.9, 0.2)).toBeCloseTo(0.8, 2);
+  });
+
+  it('bù tay thêm 100 ms cho tai nghe Bluetooth báo thiếu trễ', () => {
+    expect(at(0.9, 0.2, 100)).toBeCloseTo(0.6, 2);
+  });
+
+  it('máy báo độ trễ vô lý thì bỏ qua', () => {
+    expect(at(0.9, 5)).toBeCloseTo(1.2, 2);
+  });
+});
+

@@ -7,6 +7,7 @@ import { VND_PER_USD, geminiUrl } from '../../shared/ai';
 import { HarpTypeSelect, KeySelect } from '../components/KeySelect';
 import { Icon } from '../components/Icon';
 import { ThemePicker } from '../components/ThemePicker';
+import { SyncCalibrator } from '../components/SyncCalibrator';
 import { useAppState } from '../state';
 
 const MODELS = ['gemini-3.5-flash-lite', 'gemini-3.1-flash-lite'];
@@ -144,6 +145,7 @@ export default function SettingsPage() {
             <input type="checkbox" checked={s.keepAwake} onChange={(e) => update({ keepAwake: e.target.checked })} />
             Giữ màn hình sáng khi đang phát bài, chờ nốt hoặc dò nốt
           </label>
+          <SyncCalibrator value={s.syncOffsetMs} onChange={(syncOffsetMs) => update({ syncOffsetMs })} />
         </div>
       </section>
 

@@ -2,6 +2,7 @@ import { createContext, ReactNode, useCallback, useContext, useEffect, useState 
 import { loadSettings, saveSettings } from './lib/db';
 import { DEFAULT_SETTINGS, Settings } from './lib/types';
 import { applyTheme } from './lib/themes';
+import { setSyncOffsetMs } from './audio/latency';
 
 interface Ctx {
   settings: Settings;
@@ -20,6 +21,8 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     loadSettings().then((s) => { setSettings(s); setReady(true); }).catch(() => setReady(true));
   }, []);
+
+  useEffect(() => { setSyncOffsetMs(settings.syncOffsetMs); }, [settings.syncOffsetMs]);
 
   // bảng màu + sáng/tối; "theo máy" thì đổi theo khi máy chuyển chế độ
   useEffect(() => {

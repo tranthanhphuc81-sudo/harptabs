@@ -8,6 +8,7 @@ import { Accomp, accompHit, audio, bass, bongo, chordStab, clap, clave, click, c
 import { bassMidi, Chord, chordAt, chordVoicing, ChordOverrides, ChordSpan, harmonize, parseTonality, walkingNote } from './harmony';
 import { BeatPattern, BeatStyle, boPattern, lacPattern, resolvePattern, strumPattern } from './patterns';
 import { AccompPlan, barTrack, planAccomp } from './accompPlan';
+import { heardTime } from './latency';
 
 export interface PlayerOptions {
   bpm: number;
@@ -180,10 +181,10 @@ export class Player {
     this.markers = [];
   }
 
-  /** Vị trí hiện tại (phách) theo đồng hồ âm thanh; null nếu đang dừng */
+  /** Vị trí (phách) của tiếng đang ra loa lúc này — đã trừ độ trễ âm thanh; null nếu đang dừng */
   currentBeat(): number | null {
     if (!this.playing) return null;
-    const now = audio().currentTime;
+    const now = heardTime(audio());
     let m: Marker | undefined;
     for (let i = this.markers.length - 1; i >= 0; i--) {
       if (this.markers[i].time <= now) { m = this.markers[i]; break; }
@@ -420,7 +421,8 @@ export class Player {
           this.cursorBeat = this.snap(o.loop.start);
         } else {
           this.finished = true;
-          const wait = Math.max(0, (this.cursorTime - c.currentTime) * 1000) + 120;
+          // chờ tới lúc tiếng cuối thật sự ra loa (cộng độ trễ âm thanh) mới tắt đèn nốt
+          const wait = Math.max(0, (this.cursorTime - heardTime(c)) * 1000) + 120;
           this.endTimer = window.setTimeout(() => {
             this.stop();
             this.onEnd?.();

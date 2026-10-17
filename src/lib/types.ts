@@ -51,6 +51,8 @@ export interface Settings {
   defaultHarpType: HarpType;
   /** giữ màn hình sáng khi đang phát bài / chờ nốt / dò nốt */
   keepAwake: boolean;
+  /** bù trễ đèn nốt (ms): dương = đèn sáng muộn hơn; dùng khi loa / tai nghe Bluetooth trễ hơn máy báo */
+  syncOffsetMs: number;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -67,6 +69,7 @@ export const DEFAULT_SETTINGS: Settings = {
   defaultHarpKey: 'C',
   defaultHarpType: 'diatonic',
   keepAwake: true,
+  syncOffsetMs: 0,
 };
 
 export interface AiLogEntry {
