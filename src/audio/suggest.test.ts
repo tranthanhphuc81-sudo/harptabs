@@ -125,6 +125,18 @@ describe('tự chọn nhạc cụ', () => {
     expect(inst({ title: 'Lý cây đa', tags: ['dân ca quan họ'] }, 'ballad')).toBe('flute');
   });
 
+  it('tiếng độc lạ: chỉ chọn khi bài ghi rõ', () => {
+    expect(inst({ title: 'Super Mario Bros. theme' }, 'disco')).toBe('chiptune');
+    expect(inst({ title: 'Tetris (Korobeiniki)' }, 'polka')).toBe('chiptune');
+    expect(inst({ title: 'Ave Maria', tags: ['theremin'] }, 'ballad')).toBe('theremin');
+    expect(inst({ title: 'Space Oddity' }, 'ballad')).toBe('space');
+    expect(inst({ title: 'Mèo con', tags: ['tiếng mèo'] }, 'polka')).toBe('meow');
+    expect(inst({ title: 'Mr. Roboto', tags: ['robot'] }, 'disco')).toBe('talkbox');
+    // bài thường không bị đổi sang tiếng độc lạ
+    expect(inst({ title: 'Chú mèo con' }, 'polka')).toBe('accordion');
+    expect(inst({ title: 'Twinkle Twinkle Little Star' }, 'none')).toBe('harmonica');
+  });
+
   it('luôn có lý do để hiện cho người dùng', () => {
     expect(suggestInstrument({ ...base }, [], 'tango').reason).toMatch(/accordion/);
   });

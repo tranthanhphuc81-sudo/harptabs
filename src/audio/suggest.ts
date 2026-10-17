@@ -149,6 +149,14 @@ const NAMED_INSTRUMENTS: [RegExp, Instrument][] = [
   [/kalimba|mbira/, 'kalimba'],
   [/\bsynth|nhac dien tu/, 'synth'],
   [/steel ?drum|steel ?pan|trong thep|calypso/, 'steeldrum'],
+  [/theremin/, 'theremin'],
+  [/8 ?-?bit|chiptune|nhac game|\bmario\b|tetris|pokemon/, 'chiptune'],
+  [/kazoo/, 'kazoo'],
+  [/talkbox|\brobot\b/, 'talkbox'],
+  [/\bmeow\b|meo keu|tieng meo/, 'meow'],
+  [/giot nuoc|water ?drop/, 'waterdrop'],
+  [/ly thuy tinh|glass ?harp|glass harmonica/, 'glassharp'],
+  [/vu tru|\bspace\b|galaxy|ngan ha|thien ha/, 'space'],
 ];
 
 const HYMN = /thanh ca|thanh vinh|\bhymn\b|\bchoral\b/;

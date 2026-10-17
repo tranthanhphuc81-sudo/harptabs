@@ -80,7 +80,8 @@ export function audio(): AudioContext {
 
 export type Instrument = 'harmonica' | 'tremolo' | 'piano' | 'guitar' | 'flute' | 'violin' | 'accordion' | 'organ' | 'sax' | 'whistle'
   | 'danbau' | 'dantranh' | 'trumpet' | 'clarinet' | 'cello' | 'marimba' | 'musicbox' | 'choir'
-  | 'dannhi' | 'kenbau' | 'dannguyet' | 'ukulele' | 'banjo' | 'danhac' | 'ocarina' | 'vibraphone' | 'kalimba' | 'epiano' | 'synth' | 'steeldrum';
+  | 'dannhi' | 'kenbau' | 'dannguyet' | 'ukulele' | 'banjo' | 'danhac' | 'ocarina' | 'vibraphone' | 'kalimba' | 'epiano' | 'synth' | 'steeldrum'
+  | 'theremin' | 'chiptune' | 'kazoo' | 'talkbox' | 'meow' | 'waterdrop' | 'glassharp' | 'space';
 
 /** nhóm trong ô chọn nhạc cụ (18 nhạc cụ, chia nhóm cho dễ tìm) */
 export const INSTRUMENT_GROUPS: { label: string; items: Instrument[] }[] = [
@@ -90,6 +91,7 @@ export const INSTRUMENT_GROUPS: { label: string; items: Instrument[] }[] = [
   { label: 'Đàn dây', items: ['guitar', 'ukulele', 'banjo', 'danhac', 'violin', 'cello'] },
   { label: 'Phím', items: ['piano', 'epiano', 'accordion', 'organ', 'synth'] },
   { label: 'Gõ & giọng hát', items: ['marimba', 'vibraphone', 'kalimba', 'steeldrum', 'musicbox', 'choir'] },
+  { label: 'Độc lạ', items: ['theremin', 'chiptune', 'kazoo', 'talkbox', 'meow', 'waterdrop', 'glassharp', 'space'] },
 ];
 
 export const INSTRUMENT_OPTIONS: { value: Instrument; label: string }[] = [
@@ -123,6 +125,14 @@ export const INSTRUMENT_OPTIONS: { value: Instrument; label: string }[] = [
   { value: 'epiano', label: 'Piano điện' },
   { value: 'synth', label: 'Synth' },
   { value: 'steeldrum', label: 'Trống thép (steel drum)' },
+  { value: 'theremin', label: 'Theremin' },
+  { value: 'chiptune', label: '8-bit (game)' },
+  { value: 'kazoo', label: 'Kazoo' },
+  { value: 'talkbox', label: 'Robot "wah"' },
+  { value: 'meow', label: 'Mèo kêu' },
+  { value: 'waterdrop', label: 'Giọt nước' },
+  { value: 'glassharp', label: 'Ly thủy tinh' },
+  { value: 'space', label: 'Vũ trụ' },
 ];
 
 let instrument: Instrument = 'harmonica';
@@ -161,6 +171,14 @@ export function playTone(midi: number, when: number, dur: number, velocity = 1, 
     case 'epiano': return ePianoTone(c, midi, t, dur, velocity, dest);
     case 'synth': return synthTone(c, midi, t, dur, velocity, dest);
     case 'steeldrum': return steelDrumTone(c, midi, t, dur, velocity, dest);
+    case 'theremin': return thereminTone(c, midi, t, dur, velocity, dest);
+    case 'chiptune': return chipTone(c, midi, t, dur, velocity, dest);
+    case 'kazoo': return kazooTone(c, midi, t, dur, velocity, dest);
+    case 'talkbox': return talkboxTone(c, midi, t, dur, velocity, dest);
+    case 'meow': return meowTone(c, midi, t, dur, velocity, dest);
+    case 'waterdrop': return waterDropTone(c, midi, t, dur, velocity, dest);
+    case 'glassharp': return glassHarpTone(c, midi, t, dur, velocity, dest);
+    case 'space': return spaceTone(c, midi, t, dur, velocity, dest);
     case 'tremolo': return harmonicaTone(c, midi, t, dur, velocity, dest, true);
     default: return harmonicaTone(c, midi, t, dur, velocity, dest);
   }
@@ -855,6 +873,265 @@ function steelDrumTone(c: AudioContext, midi: number, t: number, _dur: number, v
   g.connect(out);
   additive(c, f, t, [[1, 0.55, life], [2.01, 0.3, life * 0.7], [3.02, 0.12, life * 0.4], [4.2, 0.05, life * 0.2]], g, t + life);
   hammer(c, t, f * 2, 0.04 * vel, out);
+}
+
+// ===== Tiếng độc lạ =====
+
+/** theremin: nhớ nốt vừa phát để lướt liền sang nốt kế (tay di trong không khí, không có phím) */
+let thereminLast: { f: number; start: number; end: number } | null = null;
+
+function thereminTone(c: AudioContext, midi: number, t: number, dur: number, vel: number, out: AudioNode) {
+  const f = midiToHz(midi);
+  const end = t + Math.max(0.1, dur);
+  const o = c.createOscillator();
+  o.type = 'sine';
+  const prev = thereminLast;
+  // nốt đến ngay sau nốt trước (kể cả khi còn chồng lên): trượt từ cao độ cũ; nốt rời: vuốt nhẹ từ dưới lên
+  const from = prev && t > prev.start + 0.02 && t - prev.end < 0.3 ? prev.f : f * 0.94;
+  o.frequency.setValueAtTime(from, t);
+  o.frequency.exponentialRampToValueAtTime(f, t + Math.min(0.14, Math.max(0.05, dur * 0.3)));
+  thereminLast = { f, start: t, end };
+  const h2 = c.createOscillator();
+  const g2 = c.createGain();
+  h2.type = 'sine';
+  h2.frequency.setValueAtTime(from * 2, t);
+  h2.frequency.exponentialRampToValueAtTime(f * 2, t + Math.min(0.14, Math.max(0.05, dur * 0.3)));
+  g2.gain.value = 0.08;
+  const env = c.createGain();
+  const peak = 0.34 * vel;
+  env.gain.setValueAtTime(0.0001, t);
+  env.gain.exponentialRampToValueAtTime(peak, t + 0.05);
+  env.gain.setValueAtTime(peak, end);
+  env.gain.exponentialRampToValueAtTime(0.0001, end + 0.12);
+  o.connect(env);
+  h2.connect(g2).connect(env);
+  env.connect(out);
+  vibrato(c, t, 6.5, f * 0.014, 0.12, [o.frequency, h2.frequency], end + 0.15);
+  for (const x of [o, h2]) { x.start(t); x.stop(end + 0.15); }
+}
+
+/** sóng xung (độ rộng `duty`) dựng sẵn — tiếng máy chơi game đời đầu */
+const pulseWaves = new Map<number, PeriodicWave>();
+function pulseWave(c: AudioContext, duty: number): PeriodicWave {
+  const hit = pulseWaves.get(duty);
+  if (hit) return hit;
+  const n = 48;
+  const real = new Float32Array(n);
+  const imag = new Float32Array(n);
+  for (let k = 1; k < n; k++) real[k] = (2 / (k * Math.PI)) * Math.sin(k * Math.PI * duty);
+  const w = c.createPeriodicWave(real, imag);
+  pulseWaves.set(duty, w);
+  return w;
+}
+
+/** 8-bit: sóng xung 25%, bật / tắt gọn, "blip" quãng tám ngắn lúc vào nốt, rung muộn kiểu nhạc game */
+function chipTone(c: AudioContext, midi: number, t: number, dur: number, vel: number, out: AudioNode) {
+  const f = midiToHz(midi);
+  const end = t + Math.max(0.06, dur * 0.92);
+  const o = c.createOscillator();
+  o.setPeriodicWave(pulseWave(c, 0.25));
+  o.frequency.setValueAtTime(f * 2, t);
+  o.frequency.setValueAtTime(f, t + 0.025);
+  const env = c.createGain();
+  const peak = 0.15 * vel;
+  env.gain.setValueAtTime(peak, t);
+  env.gain.setValueAtTime(peak * 0.85, t + 0.06);
+  env.gain.setValueAtTime(peak * 0.85, end);
+  env.gain.linearRampToValueAtTime(0, end + 0.015);
+  o.connect(env).connect(out);
+  if (dur > 0.5) vibrato(c, t, 7, f * 0.01, 0.3, [o.frequency], end + 0.05);
+  o.start(t);
+  o.stop(end + 0.03);
+}
+
+/** đường cong méo tiếng (tanh) cho tiếng rè */
+let buzzCurve: Float32Array | null = null;
+function buzz(): Float32Array {
+  if (buzzCurve) return buzzCurve;
+  buzzCurve = new Float32Array(1024);
+  for (let i = 0; i < 1024; i++) { const x = (i / 1023) * 2 - 1; buzzCurve[i] = Math.tanh(4 * x); }
+  return buzzCurve;
+}
+
+/** Kazoo: ngân giọng qua màng giấy — tiếng rè, giọng mũi */
+function kazooTone(c: AudioContext, midi: number, t: number, dur: number, vel: number, out: AudioNode) {
+  const f = midiToHz(midi);
+  const end = t + Math.max(0.1, dur);
+  const o = c.createOscillator();
+  o.type = 'sawtooth';
+  o.frequency.setValueAtTime(f * 0.96, t);
+  o.frequency.exponentialRampToValueAtTime(f, t + 0.05);
+  const shaper = c.createWaveShaper();
+  shaper.curve = buzz() as Float32Array<ArrayBuffer>;
+  const mix = c.createGain();
+  const env = c.createGain();
+  for (const [freq, q, g] of [[1100, 3, 1], [2500, 6, 0.6], [3800, 8, 0.25]]) {
+    const bp = c.createBiquadFilter();
+    bp.type = 'bandpass';
+    bp.frequency.value = freq;
+    bp.Q.value = q;
+    const gg = c.createGain();
+    gg.gain.value = g;
+    mix.connect(bp).connect(gg).connect(env);
+  }
+  const peak = 0.3 * vel;
+  env.gain.setValueAtTime(0.0001, t);
+  env.gain.exponentialRampToValueAtTime(peak, t + 0.03);
+  env.gain.setValueAtTime(peak, end);
+  env.gain.exponentialRampToValueAtTime(0.0001, end + 0.06);
+  o.connect(shaper).connect(mix);
+  env.connect(out);
+  vibrato(c, t, 5.5, f * 0.01, 0.2, [o.frequency], end + 0.1);
+  o.start(t);
+  o.stop(end + 0.1);
+}
+
+/** hai bộ lọc nguyên âm, chuyển khẩu hình theo thời gian: [thời điểm (0..1 của nốt), F1, F2] */
+function vowelSweep(c: AudioContext, t: number, len: number, path: [number, number, number][], q: number): { input: GainNode; output: GainNode } {
+  const input = c.createGain();
+  const output = c.createGain();
+  [1, 2].forEach((fi) => {
+    const bp = c.createBiquadFilter();
+    bp.type = 'bandpass';
+    bp.Q.value = q;
+    path.forEach(([at, f1, f2], i) => {
+      const v = fi === 1 ? f1 : f2;
+      if (i === 0) bp.frequency.setValueAtTime(v, t);
+      else bp.frequency.exponentialRampToValueAtTime(v, t + at * len);
+    });
+    const g = c.createGain();
+    g.gain.value = fi === 1 ? 1 : 0.7;
+    input.connect(bp).connect(g).connect(output);
+  });
+  return { input, output };
+}
+
+/** Robot "wah": tiếng máy nói qua ống (talkbox) — mỗi nốt đổi khẩu hình "u" → "a" */
+function talkboxTone(c: AudioContext, midi: number, t: number, dur: number, vel: number, out: AudioNode) {
+  const f = midiToHz(midi);
+  const end = t + Math.max(0.1, dur);
+  const len = Math.max(0.15, Math.min(0.5, dur));
+  const { input, output } = vowelSweep(c, t, len, [[0, 320, 800], [0.5, 750, 1150], [1, 700, 1250]], 5);
+  const env = c.createGain();
+  const peak = 0.5 * vel;
+  env.gain.setValueAtTime(0.0001, t);
+  env.gain.exponentialRampToValueAtTime(peak, t + 0.03);
+  env.gain.setValueAtTime(peak, end);
+  env.gain.exponentialRampToValueAtTime(0.0001, end + 0.07);
+  output.connect(env).connect(out);
+  for (const [type, dt] of [['sawtooth', 0], ['square', 7]] as [OscillatorType, number][]) {
+    const o = c.createOscillator();
+    o.type = type;
+    o.frequency.value = f;
+    o.detune.value = dt;
+    o.connect(input);
+    o.start(t);
+    o.stop(end + 0.1);
+  }
+}
+
+/** Mèo kêu: mỗi nốt một tiếng "meo" — cao độ vút lên rồi rơi xuống, khẩu hình i → a → u */
+function meowTone(c: AudioContext, midi: number, t: number, dur: number, vel: number, out: AudioNode) {
+  const f = midiToHz(midi);
+  const len = Math.max(0.22, Math.min(0.9, dur));
+  const end = t + len;
+  const o = c.createOscillator();
+  o.type = 'sawtooth';
+  o.frequency.setValueAtTime(f * 0.86, t);
+  o.frequency.exponentialRampToValueAtTime(f * 1.07, t + len * 0.35);
+  o.frequency.exponentialRampToValueAtTime(f * 0.97, t + len * 0.8);
+  o.frequency.exponentialRampToValueAtTime(f * 0.88, end);
+  const { input, output } = vowelSweep(c, t, len, [[0, 330, 2300], [0.35, 800, 1300], [1, 400, 800]], 4);
+  const env = c.createGain();
+  const peak = 0.55 * vel;
+  env.gain.setValueAtTime(0.0001, t);
+  env.gain.exponentialRampToValueAtTime(peak, t + 0.05);
+  env.gain.exponentialRampToValueAtTime(peak * 0.7, t + len * 0.6);
+  env.gain.exponentialRampToValueAtTime(0.0001, end + 0.05);
+  o.connect(input);
+  output.connect(env).connect(out);
+  o.start(t);
+  o.stop(end + 0.08);
+  breath(c, t, end, 4000, 1, 0.02 * vel, 0.006 * vel, out);
+}
+
+/** Giọt nước: "bloop" — cao độ vút lên rất nhanh rồi tắt, như giọt nước rơi xuống chậu */
+function waterDropTone(c: AudioContext, midi: number, t: number, _dur: number, vel: number, out: AudioNode) {
+  const f = midiToHz(midi);
+  const o = c.createOscillator();
+  o.type = 'sine';
+  o.frequency.setValueAtTime(f * 0.55, t);
+  o.frequency.exponentialRampToValueAtTime(f * 1.15, t + 0.06);
+  o.frequency.exponentialRampToValueAtTime(f, t + 0.14);
+  const env = c.createGain();
+  const peak = 0.5 * vel;
+  env.gain.setValueAtTime(0.0001, t);
+  env.gain.exponentialRampToValueAtTime(peak, t + 0.006);
+  env.gain.exponentialRampToValueAtTime(peak * 0.3, t + 0.12);
+  env.gain.exponentialRampToValueAtTime(0.0001, t + 0.45);
+  o.connect(env).connect(out);
+  o.start(t);
+  o.stop(t + 0.5);
+}
+
+/** Ly thủy tinh: miết vành ly ướt — vào nốt chậm, trong vắt, hai tiếng lệch nhau chút làm "phập phồng", ngân lâu */
+function glassHarpTone(c: AudioContext, midi: number, t: number, dur: number, vel: number, out: AudioNode) {
+  const f = midiToHz(midi);
+  const end = t + Math.max(0.2, dur);
+  const env = c.createGain();
+  const peak = 0.32 * vel;
+  env.gain.setValueAtTime(0.0001, t);
+  env.gain.exponentialRampToValueAtTime(peak, t + Math.min(0.25, Math.max(0.08, dur * 0.4)));
+  env.gain.setValueAtTime(peak, end);
+  env.gain.exponentialRampToValueAtTime(0.0001, end + 0.7);
+  env.connect(out);
+  for (const [m, dt, g] of [[1, 0, 0.7], [1, 4, 0.5], [2, 2, 0.12], [3.01, 0, 0.04]]) {
+    const o = c.createOscillator();
+    const og = c.createGain();
+    o.type = 'sine';
+    o.frequency.value = f * m;
+    o.detune.value = dt;
+    og.gain.value = g;
+    o.connect(og).connect(env);
+    o.start(t);
+    o.stop(end + 0.75);
+  }
+}
+
+/** Vũ trụ: điều tần với độ sâu biến đổi chậm, vào nốt từ từ, cao độ nhích lên nhẹ — tiếng nền phim viễn tưởng */
+function spaceTone(c: AudioContext, midi: number, t: number, dur: number, vel: number, out: AudioNode) {
+  const f = midiToHz(midi);
+  const end = t + Math.max(0.2, dur);
+  const env = c.createGain();
+  const peak = 0.3 * vel;
+  env.gain.setValueAtTime(0.0001, t);
+  env.gain.exponentialRampToValueAtTime(peak, t + Math.min(0.35, Math.max(0.08, dur * 0.4)));
+  env.gain.setValueAtTime(peak, end);
+  env.gain.exponentialRampToValueAtTime(0.0001, end + 0.9);
+  env.connect(out);
+  const car = c.createOscillator();
+  const mod = c.createOscillator();
+  const idx = c.createGain();
+  const slow = c.createOscillator();
+  const slowDepth = c.createGain();
+  car.frequency.setValueAtTime(f * 0.995, t);
+  car.frequency.linearRampToValueAtTime(f, t + 0.4);
+  mod.frequency.value = f * 1.5;
+  idx.gain.value = f * 0.6;
+  // độ sâu điều tần trôi lên xuống chậm → tiếng biến hình liên tục
+  slow.frequency.value = 0.35;
+  slowDepth.gain.value = f * 0.5;
+  slow.connect(slowDepth).connect(idx.gain);
+  mod.connect(idx).connect(car.frequency);
+  const shimmer = c.createOscillator();
+  const sg = c.createGain();
+  shimmer.type = 'triangle';
+  shimmer.frequency.value = f * 2;
+  shimmer.detune.value = 9;
+  sg.gain.value = 0.15;
+  car.connect(env);
+  shimmer.connect(sg).connect(env);
+  for (const o of [car, mod, slow, shimmer]) { o.start(t); o.stop(end + 0.95); }
 }
 
 /**
