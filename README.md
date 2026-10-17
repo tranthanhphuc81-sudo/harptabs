@@ -1,6 +1,6 @@
 # Sổ Tab Harmonica
 
-App lưu và tập harptab cho kèn **diatonic 10 lỗ** và **chromatic 12 / 16 lỗ**. Chạy **offline hoàn toàn** (PWA, cài được lên điện thoại, có bản APK Android), chỉ cần mạng khi dùng **AI** để chuyển ảnh khuông nhạc hoặc tên bài hát thành tab.
+App lưu và tập harptab cho kèn **diatonic 10 lỗ**, **chromatic 12 / 16 lỗ** và **tremolo 21 / 24 lỗ** (kiểu châu Á). Chạy **offline hoàn toàn** (PWA, cài được lên điện thoại, có bản APK Android), chỉ cần mạng khi dùng **AI** để chuyển ảnh khuông nhạc hoặc tên bài hát thành tab.
 
 Bản đang chạy: https://harptabs.pages.dev
 
@@ -8,7 +8,7 @@ Bản đang chạy: https://harptabs.pages.dev
 
 | Phần | Chạy ở đâu | Nội dung |
 |---|---|---|
-| Thư viện bài | Offline (IndexedDB) | 43 bài mẫu, tìm kiếm không dấu, lọc theo loại kèn / tông / độ khó, sắp xếp A–Z đúng chữ tiếng Việt, yêu thích, xoá nhiều bài, xuất/nhập file `.json` |
+| Thư viện bài | Offline (IndexedDB) | 51 bài mẫu, tìm kiếm không dấu, lọc theo loại kèn / tông / độ khó, sắp xếp A–Z đúng chữ tiếng Việt, yêu thích, xoá nhiều bài, xuất/nhập file `.json` |
 | Giao diện | Offline | 6 bảng màu (Thép, Gỗ ấm, Blues đêm, Rừng thông, Hoa đào, Tương phản cao), mỗi bảng có bản sáng và tối, chọn sáng / tối / theo máy trong Cài đặt. Màu nằm ở `src/lib/themes.ts`; test kiểm tra độ tương phản chữ theo chuẩn WCAG cho mọi bảng |
 | Giữ an toàn dữ liệu | Offline | Tự lưu nháp khi sửa bài và quét nhạc (tắt app hay tải lại vẫn mở lại được), nhắc xuất file sao lưu khi có 10 bài mới / sửa hoặc 30 ngày chưa sao lưu, Cài đặt hiện bộ nhớ đang dùng và cho bật "giữ dữ liệu lâu dài". Có bản mới thì app hiện nút **Cập nhật**, không tự tải lại giữa chừng. Giữ màn hình sáng khi đang phát bài, chờ nốt, dò nốt (tắt được trong Cài đặt) |
 | Xem & phát bài | Offline (Web Audio) | Tab tô màu thổi/hút/bend, lời dưới từng nốt, 9 nhạc cụ giai điệu (harmonica, piano, guitar, sáo trúc, violin, accordion, organ, sax, huýt sáo), 20 kiểu beat (rock, ballad, bolero, cha cha, valse, bossa…), tự chọn kiểu nhịp và nhạc cụ hợp với bài, đệm hợp âm, đếm vào, chỉnh tempo 40–160%, lặp đoạn |
@@ -111,6 +111,13 @@ Hap-py birth-day to you
 - `:2` = 2 phách, `:0.5` hoặc `:1/2` = nửa phách, `r` = nghỉ, `|` vạch nhịp (bỏ qua)
 - Dòng dưới dòng tab là lời; gạch nối tách âm tiết, `_` là nốt luyến
 - Chấp nhận `+4` và các dấu nháy copy từ web (’ ″)
+
+
+**Kèn tremolo (21 / 24 lỗ, kiểu châu Á):** mỗi số lỗ chỉ có một nốt — lỗ lẻ thổi, lỗ chẵn hút
+(kèn C: thổi G3 C4 E4 G4 C5 E5 G5 C6 E6 G6 C7 E7, hút D4 F4 A4 B4 D5 F5 A5 B5 D6 F6 A6 B6;
+theo bảng [Tremolo harmonica — Wikipedia](https://en.wikipedia.org/wiki/Tremolo_harmonica)).
+App ghi lỗ hút là `-4` để tô màu, nhưng gõ / dán `4` cũng được. Kèn không có nốt thăng giáng, không bend;
+đổi bài sang tremolo thì nên chọn "dịch giọng cho dễ thổi". Một số hãng xếp nốt khác bảng này — nếu kèn của bạn khác, hãy so với bảng in kèm kèn.
 
 ## Cấu trúc
 

@@ -335,6 +335,9 @@ button, a, select { -webkit-tap-highlight-color: transparent; }
 .keyplate.size-s { --kp: 38px; }
 /* kèn chromatic: nút gạt nhô ra bên phải */
 .keyplate.chromatic { margin-right: calc(var(--kp) * 0.12); }
+.keyplate.tremolo .kp-holes { row-gap: 2px; }
+.keyplate.tremolo .kp-holes i { height: calc(var(--kp) * 0.05); }
+.harp-diagram .hd-pair { opacity: 0.6; font-size: 0.85em; }
 .kp-slide {
   position: absolute; right: calc(var(--kp) * -0.12); top: 50%;
   width: calc(var(--kp) * 0.14); height: calc(var(--kp) * 0.3); transform: translateY(-50%);

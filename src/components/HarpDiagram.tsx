@@ -1,4 +1,4 @@
-import { HarpKey, HarpNote, HarpType, harpLayout, harpName, holeCount, isChromatic, midiToName, NoteNameStyle } from '../lib/harp';
+import { HarpKey, HarpNote, HarpType, harpLayout, harpName, holeCount, isChromatic, isTremolo, midiToName, NoteNameStyle } from '../lib/harp';
 import { previewNote } from '../audio/engine';
 
 interface Row { id: string; label: string; pick: (n: HarpNote) => boolean }
@@ -33,7 +33,40 @@ interface Props {
   interactive?: boolean;
 }
 
+/** Tremolo: mỗi cột là một cặp lỗ — thổi (lỗ lẻ) ở trên, hút (lỗ chẵn) ở dưới, như sách tremolo hay in */
+function TremoloDiagram({ harpKey, harpType, highlight, nameStyle, interactive }: Required<Omit<Props, 'showAdvanced'>>) {
+  const layout = harpLayout(harpKey, harpType);
+  const pairs = Math.ceil(holeCount(harpType) / 2);
+  const cell = (hole: number) => {
+    const n = layout.find((x) => x.hole === hole);
+    if (!n) return <div key={hole} className="hd-empty" />;
+    return (
+      <button key={hole} type="button" className={`hd-cell ${n.dir}${highlight.includes(n.token) ? ' on' : ''}`}
+        onClick={interactive ? () => previewNote(n.midi) : undefined}
+        title={`Lỗ ${hole} ${n.dir === 'blow' ? 'thổi' : 'hút'} = ${midiToName(n.midi, nameStyle)}`}
+        aria-label={`Lỗ ${hole} ${n.dir === 'blow' ? 'thổi' : 'hút'}, nốt ${midiToName(n.midi, nameStyle)}`}>
+        {midiToName(n.midi, nameStyle, false)}
+      </button>
+    );
+  };
+  const cols = Array.from({ length: pairs }, (_, i) => i);
+  return (
+    <div className="harp-diagram tremolo" role="group" aria-label={`Sơ đồ nốt ${harpName(harpKey, harpType).replace(/^Kèn/, 'kèn')}`}
+      style={{ ['--holes' as string]: pairs }}>
+      <div className="hd-grid" style={{ gridTemplateColumns: `minmax(0, auto) repeat(${pairs}, minmax(0, 1fr))` }}>
+        <div className="hd-label">Thổi</div>
+        {cols.map((i) => cell(2 * i + 1))}
+        <div className="hd-label">Lỗ</div>
+        {cols.map((i) => <div key={i} className="hd-hole">{2 * i + 1}<span className="hd-pair">·{2 * i + 2}</span></div>)}
+        <div className="hd-label">Hút</div>
+        {cols.map((i) => cell(2 * i + 2))}
+      </div>
+    </div>
+  );
+}
+
 export function HarpDiagram({ harpKey, harpType = 'diatonic', highlight = [], nameStyle = 'letter', showAdvanced = true, interactive = true }: Props) {
+  if (isTremolo(harpType)) return <TremoloDiagram harpKey={harpKey} harpType={harpType} highlight={highlight} nameStyle={nameStyle} interactive={interactive} />;
   const layout = harpLayout(harpKey, harpType);
   const chrom = isChromatic(harpType);
   const holes = holeCount(harpType);

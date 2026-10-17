@@ -2,7 +2,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { db, deleteSongs, downloadJson, exportOne, newId, slugify } from '../lib/db';
-import { HARP_KEYS, HARP_TYPES, HARP_TYPE_LABEL, HarpKey, HarpType, harpName, harpTypeOf, isChromatic, midiToName, songTonality } from '../lib/harp';
+import { HARP_KEYS, HARP_TYPES, HARP_TYPE_LABEL, HarpKey, HarpType, harpName, harpTypeOf, isChromatic, isTremolo, midiToName, songTonality } from '../lib/harp';
 import { countTechniques, flatten, parseTab } from '../lib/tabText';
 import { rekeyBody } from '../lib/converter';
 import { beatsPerBar, Song } from '../lib/types';
@@ -39,6 +39,7 @@ function SongPlayerView({ song }: { song: Song }) {
   const nav = useNavigate();
   const harpType = harpTypeOf(song);
   const chrom = isChromatic(harpType);
+  const trem = isTremolo(harpType);
   const parsed = useMemo(() => parseTab(song.body, song.harpKey, harpType), [song.body, song.harpKey, harpType]);
   const flat = useMemo(() => flatten(parsed), [parsed]);
   const stats = useMemo(() => countTechniques(parsed), [parsed]);
@@ -241,7 +242,7 @@ function SongPlayerView({ song }: { song: Song }) {
           {song.artist && <p className="muted">{song.artist}</p>}
           <p className="sh-meta">
             <span>{harpName(song.harpKey, harpType)}</span>
-            {!chrom && song.position && <span>Vị trí {song.position}</span>}
+            {!chrom && !trem && song.position && <span>Vị trí {song.position}</span>}
             {song.songKey && <span>Giọng {song.songKey}</span>}
             <span>{song.timeSig}</span>
             <span>{stats.notes} nốt</span>
@@ -272,7 +273,7 @@ function SongPlayerView({ song }: { song: Song }) {
       <p className="legend">
         <span className="lg blow">4</span> thổi
         <span className="lg draw">−4</span> hút
-        {chrom ? <><span className="lg bend">&lt;</span> bấm nút gạt</> : <><span className="lg bend">′</span> bend nửa cung</>}
+        {trem ? null : chrom ? <><span className="lg bend">&lt;</span> bấm nút gạt</> : <><span className="lg bend">′</span> bend nửa cung</>}
         <span className="muted">Chạm vào nốt để nghe, hoặc chọn chỗ bắt đầu phát.</span>
         <button type="button" className={`chip legend-chords${beatPrefs.showChords ? ' on' : ''}`} aria-pressed={beatPrefs.showChords}
           onClick={() => setBeatPrefs({ showChords: !beatPrefs.showChords })}>
@@ -371,7 +372,7 @@ function RekeyDialog({ song, onClose, onDone }: { song: Song; onClose: () => voi
   const [mode, setMode] = useState<'octave' | 'any'>('any');
   const preview = useMemo(() => rekeyBody(song.body, song.harpKey, target, mode, fromType, toType), [song, target, mode, fromType, toType]);
   const toName = harpName(target, toType).replace(/^Kèn/, 'kèn');
-  const typeFields = { harpType: toType === 'diatonic' ? undefined : toType, position: isChromatic(toType) ? 1 as const : song.position };
+  const typeFields = { harpType: toType === 'diatonic' ? undefined : toType, position: toType === 'diatonic' ? song.position : 1 as const };
   const s = preview.fit.stats;
   const dialogRef = useRef<HTMLDialogElement>(null);
   useEffect(() => { dialogRef.current?.showModal?.(); }, []);
@@ -409,10 +410,12 @@ function RekeyDialog({ song, onClose, onDone }: { song: Song; onClose: () => voi
       <fieldset className="radio-group">
         <legend className="field-label">Cách chuyển</legend>
         <label><input type="radio" checked={mode === 'any'} onChange={() => setMode('any')} /> Dịch giọng cho dễ thổi nhất <span className="muted">(giai điệu giữ nguyên, cao độ thay đổi)</span></label>
-        <label><input type="radio" checked={mode === 'octave'} onChange={() => setMode('octave')} /> Giữ đúng giọng gốc <span className="muted">(để chơi cùng bản thu{isChromatic(toType) ? ', có thể phải bấm gạt nhiều hơn' : ', có thể phải bend'})</span></label>
+        <label><input type="radio" checked={mode === 'octave'} onChange={() => setMode('octave')} /> Giữ đúng giọng gốc <span className="muted">(để chơi cùng bản thu{isTremolo(toType) ? ', nốt thăng giáng không có trên kèn tremolo' : isChromatic(toType) ? ', có thể phải bấm gạt nhiều hơn' : ', có thể phải bend'})</span></label>
       </fieldset>
       <p className="rekey-stats">
-        {isChromatic(toType)
+        {isTremolo(toType)
+          ? <><strong>{s.natural}</strong> nốt chơi được</>
+          : isChromatic(toType)
           ? <><strong>{s.natural}</strong> nốt thường, <strong>{s.slides}</strong> nốt bấm gạt</>
           : <><strong>{s.natural}</strong> nốt thường, <strong>{s.bends}</strong> nốt bend, <strong>{s.overblows}</strong> overblow</>}
         {s.unplayable > 0 && <>, <strong className="danger">{s.unplayable}</strong> nốt không chơi được (sẽ thành dấu nghỉ)</>}

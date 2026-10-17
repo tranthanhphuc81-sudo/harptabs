@@ -78,10 +78,11 @@ export function audio(): AudioContext {
   return ctx;
 }
 
-export type Instrument = 'harmonica' | 'piano' | 'guitar' | 'flute' | 'violin' | 'accordion' | 'organ' | 'sax' | 'whistle';
+export type Instrument = 'harmonica' | 'tremolo' | 'piano' | 'guitar' | 'flute' | 'violin' | 'accordion' | 'organ' | 'sax' | 'whistle';
 
 export const INSTRUMENT_OPTIONS: { value: Instrument; label: string }[] = [
   { value: 'harmonica', label: 'Kèn harmonica' },
+  { value: 'tremolo', label: 'Kèn tremolo' },
   { value: 'piano', label: 'Piano' },
   { value: 'guitar', label: 'Guitar' },
   { value: 'flute', label: 'Sáo trúc' },
@@ -108,6 +109,7 @@ export function playTone(midi: number, when: number, dur: number, velocity = 1, 
     case 'organ': return organTone(c, midi, t, dur, velocity, dest);
     case 'sax': return saxTone(c, midi, t, dur, velocity, dest);
     case 'whistle': return whistleTone(c, midi, t, dur, velocity, dest);
+    case 'tremolo': return harmonicaTone(c, midi, t, dur, velocity, dest, true);
     default: return harmonicaTone(c, midi, t, dur, velocity, dest);
   }
 }
@@ -411,9 +413,14 @@ function organTone(c: AudioContext, midi: number, t: number, dur: number, vel: n
 }
 
 /** Âm sắc gần giống harmonica: sóng răng cưa + vuông qua lọc thông thấp, có rung nhẹ */
-function harmonicaTone(c: AudioContext, midi: number, t: number, dur: number, velocity: number, out: AudioNode): void {
+/**
+ * Tiếng kèn harmonica. `tremolo`: mỗi nốt có hai lưỡi gà, lưỡi thứ hai chỉnh cao hơn ~14 cent
+ * → hai tiếng phách nhau thành tiếng rung "phập phồng" đặc trưng (không cần rung hơi giả bằng LFO).
+ */
+function harmonicaTone(c: AudioContext, midi: number, t: number, dur: number, velocity: number, out: AudioNode, tremolo = false): void {
   const f = midiToHz(midi);
   const end = t + Math.max(0.06, dur);
+  const extra: OscillatorNode[] = [];
 
   const o1 = c.createOscillator();
   const o2 = c.createOscillator();
@@ -428,7 +435,7 @@ function harmonicaTone(c: AudioContext, midi: number, t: number, dur: number, ve
   lfo.frequency.value = 5.2;
   lfoGain.gain.setValueAtTime(0, t);
   lfoGain.gain.linearRampToValueAtTime(0, t + 0.25);
-  lfoGain.gain.linearRampToValueAtTime(f * 0.004, t + 0.6);
+  lfoGain.gain.linearRampToValueAtTime(tremolo ? 0 : f * 0.004, t + 0.6);
   lfo.connect(lfoGain);
   lfoGain.connect(o1.frequency);
   lfoGain.connect(o2.frequency);
@@ -442,8 +449,26 @@ function harmonicaTone(c: AudioContext, midi: number, t: number, dur: number, ve
   filter.frequency.linearRampToValueAtTime(Math.min(f * 3.5, 9000), t + 0.05);
   filter.frequency.linearRampToValueAtTime(Math.min(f * 2.6, 7000), t + 0.2);
 
+  if (tremolo) {
+    // cặp lưỡi gà thứ hai, lệch lên 14 cent (nốt thấp phách chậm, nốt cao phách nhanh — như kèn thật)
+    const o3 = c.createOscillator();
+    const o4 = c.createOscillator();
+    o3.type = 'sawtooth';
+    o4.type = 'square';
+    o3.frequency.value = f;
+    o4.frequency.value = f;
+    o3.detune.value = 14;
+    o4.detune.value = 20;
+    const mix4 = c.createGain();
+    mix4.gain.value = 0.35;
+    o3.connect(filter);
+    o4.connect(mix4).connect(filter);
+    extra.push(o3, o4);
+  }
+
   const env = c.createGain();
-  const peak = 0.32 * velocity;
+  // hai cặp lưỡi gà cộng lại to hơn: hạ bớt cho ngang tiếng kèn thường
+  const peak = (tremolo ? 0.24 : 0.32) * velocity;
   env.gain.setValueAtTime(0.0001, t);
   env.gain.exponentialRampToValueAtTime(peak, t + 0.025);
   env.gain.exponentialRampToValueAtTime(peak * 0.75, t + 0.12);
@@ -466,7 +491,7 @@ function harmonicaTone(c: AudioContext, midi: number, t: number, dur: number, ve
   brG.gain.exponentialRampToValueAtTime(0.0001, t + 0.08);
   br.connect(brF).connect(brG).connect(out);
 
-  for (const o of [o1, o2, lfo]) { o.start(t); o.stop(end + 0.02); }
+  for (const o of [o1, o2, lfo, ...extra]) { o.start(t); o.stop(end + 0.02); }
   br.start(t, Math.random() * 0.5);
   br.stop(t + 0.1);
 }

@@ -3,7 +3,7 @@ import { useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { db, deleteSongs, fold, importBackup } from '../lib/db';
 import { compareTitle } from '../lib/songSort';
-import { HARP_KEYS, isChromatic } from '../lib/harp';
+import { HARP_KEYS, isChromatic, isTremolo } from '../lib/harp';
 import { Song } from '../lib/types';
 import { Icon } from '../components/Icon';
 import { ThemeToggle } from '../components/ThemeToggle';
@@ -37,7 +37,7 @@ export default function Library() {
   const [q, setQ] = useState('');
   const [fav, setFav] = useState(false);
   const [key, setKey] = useState<string>('');
-  const [kind, setKind] = useState<'' | 'diatonic' | 'chromatic'>('');
+  const [kind, setKind] = useState<'' | 'diatonic' | 'chromatic' | 'tremolo'>('');
   const [diff, setDiff] = useState<number>(0);
   const [sort, setSortState] = useState<Sort>(loadSort);
   const setSort = (v: Sort) => {
@@ -68,7 +68,7 @@ export default function Library() {
     return songs
       .filter((s) => !fav || s.favorite)
       .filter((s) => !key || s.harpKey === key)
-      .filter((s) => !kind || (kind === 'chromatic') === isChromatic(s.harpType))
+      .filter((s) => !kind || (kind === 'chromatic' ? isChromatic(s.harpType) : kind === 'tremolo' ? isTremolo(s.harpType) : !isChromatic(s.harpType) && !isTremolo(s.harpType)))
       .filter((s) => !diff || s.difficulty === diff)
       .filter((s) => !fq || fold(`${s.title} ${s.artist ?? ''} ${s.tags.join(' ')}`).includes(fq))
       .sort((a, b) => {
@@ -131,6 +131,7 @@ export default function Library() {
             <option value="">Mọi loại kèn</option>
             <option value="diatonic">Diatonic</option>
             <option value="chromatic">Chromatic</option>
+            <option value="tremolo">Tremolo</option>
           </select>
           <select aria-label="Lọc theo kèn" value={key} onChange={(e) => setKey(e.target.value)} className="chip-select">
             <option value="">Mọi kèn</option>
@@ -187,7 +188,8 @@ export default function Library() {
                   <span>{s.bpm} bpm</span>
                   <span>{styleLabel(s.style)}</span>
                   {isChromatic(s.harpType) && <span>Chromatic</span>}
-                  {!isChromatic(s.harpType) && s.position && s.position > 1 && <span>Vị trí {s.position}</span>}
+                  {isTremolo(s.harpType) && <span>Tremolo</span>}
+                  {!isChromatic(s.harpType) && !isTremolo(s.harpType) && s.position && s.position > 1 && <span>Vị trí {s.position}</span>}
                 </span>
               </span>
             </Link>

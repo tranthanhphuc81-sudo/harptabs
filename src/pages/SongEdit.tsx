@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { blankSong, db, deleteSongs } from '../lib/db';
-import { HarpKey, HarpType, harpTypeOf, holeCount, isChromatic, normalizeKey, songTonality } from '../lib/harp';
+import { HarpKey, HarpType, harpTypeOf, holeCount, isChromatic, isTremolo, normalizeKey, songTonality, tremoloDir } from '../lib/harp';
 import { flatten, parseTab } from '../lib/tabText';
 import { beatsPerBar, Song } from '../lib/types';
 import { STYLE_OPTIONS, BeatStyle } from '../audio/patterns';
@@ -54,6 +54,7 @@ function Editor({ initial, isNew, draft }: { initial: Song; isNew: boolean; draf
 
   const harpType = harpTypeOf(s);
   const chrom = isChromatic(harpType);
+  const trem = isTremolo(harpType);
   const holes = Array.from({ length: holeCount(harpType) }, (_, i) => i + 1);
   const parsed = useMemo(() => parseTab(s.body, s.harpKey, harpType), [s.body, s.harpKey, harpType]);
   const flat = useMemo(() => flatten(parsed), [parsed]);
@@ -172,9 +173,9 @@ function Editor({ initial, isNew, draft }: { initial: Song; isNew: boolean; draf
             <span className="field-label">Tác giả / ca sĩ</span>
             <input value={s.artist ?? ''} onChange={(e) => set('artist', e.target.value || undefined)} />
           </label>
-          <HarpTypeSelect value={harpType} onChange={(t: HarpType) => setS((prev) => ({ ...prev, harpType: t === 'diatonic' ? undefined : t, position: isChromatic(t) ? 1 : prev.position }))} />
+          <HarpTypeSelect value={harpType} onChange={(t: HarpType) => setS((prev) => ({ ...prev, harpType: t === 'diatonic' ? undefined : t, position: t === 'diatonic' ? prev.position : 1 }))} />
           <KeySelect value={s.harpKey} onChange={(k) => set('harpKey', k as HarpKey)} />
-          {!chrom && (
+          {!chrom && !trem && (
             <label className="field">
               <span className="field-label">Vị trí</span>
               <select value={s.position ?? 1} onChange={(e) => set('position', Number(e.target.value) as 1 | 2 | 3)}>
@@ -238,8 +239,10 @@ function Editor({ initial, isNew, draft }: { initial: Song; isNew: boolean; draf
             <details className="syntax-help">
               <summary>Cách ghi</summary>
               <ul>
-                <li><code>4</code> thổi lỗ 4, <code>-4</code> hút lỗ 4</li>
-                {chrom
+                {trem
+                  ? <li>Kèn tremolo: lỗ lẻ là thổi, lỗ chẵn là hút. Gõ <code>3</code> hay <code>4</code> là đủ — app tự ghi lỗ hút thành <code>-4</code>. Kèn này không bend.</li>
+                  : <li><code>4</code> thổi lỗ 4, <code>-4</code> hút lỗ 4</li>}
+                {trem ? null : chrom
                   ? <li><code>4&lt;</code> thổi lỗ 4 bấm nút gạt, <code>-4&lt;</code> hút bấm nút gạt (cao lên nửa cung)</li>
                   : <li><code>-3'</code> bend nửa cung, <code>-3''</code> bend 1 cung, <code>6o</code> overblow</li>}
                 <li><code>4:2</code> giữ 2 phách, <code>4:0.5</code> nửa phách, <code>r</code> dấu nghỉ</li>
@@ -248,14 +251,19 @@ function Editor({ initial, isNew, draft }: { initial: Song; isNew: boolean; draf
               </ul>
             </details>
           </div>
-          <div className="keypad" role="toolbar" aria-label="Bàn phím tab">
-            <button type="button" className={`kp-mode${draw ? ' draw' : ''}`} onClick={() => setDraw(!draw)} aria-pressed={draw}>
-              {draw ? 'Hút' : 'Thổi'}
-            </button>
-            {holes.map((h) => (
-              <button type="button" key={h} className={draw ? 'draw' : 'blow'} onClick={() => insert(`${draw ? '-' : ''}${h}`)}>{draw ? `−${h}` : h}</button>
-            ))}
-            {chrom
+          <div className={`keypad${trem ? ' tremolo' : ''}`} role="toolbar" aria-label="Bàn phím tab">
+            {trem ? holes.map((h) => {
+              const d = tremoloDir(h) === 'draw';
+              return <button type="button" key={h} className={d ? 'draw' : 'blow'} onClick={() => insert(`${d ? '-' : ''}${h}`)} aria-label={`Lỗ ${h} ${d ? 'hút' : 'thổi'}`}>{d ? `−${h}` : h}</button>;
+            }) : <>
+              <button type="button" className={`kp-mode${draw ? ' draw' : ''}`} onClick={() => setDraw(!draw)} aria-pressed={draw}>
+                {draw ? 'Hút' : 'Thổi'}
+              </button>
+              {holes.map((h) => (
+                <button type="button" key={h} className={draw ? 'draw' : 'blow'} onClick={() => insert(`${draw ? '-' : ''}${h}`)}>{draw ? `−${h}` : h}</button>
+              ))}
+            </>}
+            {trem ? null : chrom
               ? <button type="button" onClick={() => insert('<')} aria-label="Bấm nút gạt">&lt;</button>
               : <button type="button" onClick={() => insert("'")} aria-label="Thêm bend">′</button>}
             <button type="button" onClick={() => insert(':2')}>:2</button>

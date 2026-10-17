@@ -5,7 +5,7 @@
 import type { Song } from '../lib/types';
 import { MORE_SAMPLES } from './samples2';
 import { FOLK_SAMPLES } from './samples3';
-import { chromaticSamples } from './samples4';
+import { chromaticSamples, tremoloSamples } from './samples4';
 
 type Sample = Omit<Song, 'id' | 'createdAt' | 'updatedAt' | 'favorite' | 'source'>;
 export type SampleSong = Sample & { sampleId: string };
@@ -163,4 +163,4 @@ Sol Fa Rê Đô# Đô Sib Sol
 ];
 
 const DIATONIC_SAMPLES: SampleSong[] = [...BASE_SAMPLES, ...MORE_SAMPLES, ...FOLK_SAMPLES];
-export const SAMPLE_SONGS: SampleSong[] = [...DIATONIC_SAMPLES, ...chromaticSamples(DIATONIC_SAMPLES)];
+export const SAMPLE_SONGS: SampleSong[] = [...DIATONIC_SAMPLES, ...chromaticSamples(DIATONIC_SAMPLES), ...tremoloSamples(DIATONIC_SAMPLES)];

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { HarpKey, HarpType, harpLayout, isChromatic, midiToName, TECHNIQUE_LABEL } from '../lib/harp';
+import { HarpKey, HarpType, harpLayout, isChromatic, isTremolo, midiToName, TECHNIQUE_LABEL } from '../lib/harp';
 import { MicPitch, PitchReading } from '../audio/pitch';
 import { HarpDiagram } from '../components/HarpDiagram';
 import { HarpTypeSelect, KeySelect } from '../components/KeySelect';
@@ -13,6 +13,7 @@ export default function Tuner() {
   const [key, setKey] = useState<HarpKey>(settings.defaultHarpKey);
   const [type, setType] = useState<HarpType>(settings.defaultHarpType);
   const chrom = isChromatic(type);
+  const trem = isTremolo(type);
   const [on, setOn] = useState(false);
   const [r, setR] = useState<PitchReading | null>(null);
   const [err, setErr] = useState<string | null>(null);
@@ -59,7 +60,7 @@ export default function Tuner() {
       <header className="page-head">
         <div>
           <h1>Dò nốt</h1>
-          <p className="muted">Thổi vào kèn, app cho biết bạn đang ra nốt gì, lỗ nào{chrom ? ', có bấm nút gạt hay không, và có chuẩn không.' : ', và bend đã đủ sâu chưa.'}</p>
+          <p className="muted">Thổi vào kèn, app cho biết bạn đang ra nốt gì, lỗ nào{trem ? ' và có chuẩn không.' : chrom ? ', có bấm nút gạt hay không, và có chuẩn không.' : ', và bend đã đủ sâu chưa.'}</p>
         </div>
       </header>
 
@@ -95,7 +96,9 @@ export default function Tuner() {
       </div>
 
       <HarpDiagram harpKey={key} harpType={type} highlight={matches.map((m) => m.token)} nameStyle={settings.noteNames} />
-      {chrom
+      {trem
+        ? <p className="muted small">Mẹo: mỗi nốt tremolo có hai lưỡi gà chỉnh lệch nhau một chút để tạo tiếng rung, nên kim lệch cent hơi dao động là bình thường. Nốt lạc hẳn sang lỗ bên thường do môi chưa khép gọn một lỗ.</p>
+        : chrom
         ? <p className="muted small">Mẹo: kèn chromatic có nhiều cách ra cùng một nốt (ví dụ Đô ở lỗ 4 thổi, lỗ 5 thổi, hoặc <strong>−4&lt;</strong>). Nốt kêu rè hoặc lệch cent thường do bấm gạt chưa hết hoặc hơi lọt sang lỗ bên.</p>
         : <p className="muted small">Mẹo: khi tập bend, nhìn kim lệch cent. Bend nửa cung ở lỗ 4 chuẩn khi app hiện <strong>−4′</strong> và kim ở giữa.</p>}
     </div>

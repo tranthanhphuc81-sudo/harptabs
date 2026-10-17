@@ -3,7 +3,7 @@
  * và chuyển về định dạng tab của app. Tab trên mạng thường không ghi trường độ → mỗi nốt 1 phách.
  * Kèn chromatic: nút gạt ghi bằng < (4<, <4), * hoặc ' — app đổi hết về 4<.
  */
-import { HarpKey, HarpType, normalizeKey } from './harp';
+import { HarpKey, HarpType, isTremolo, normalizeKey, tremoloDir } from './harp';
 import { looksLikeTabLine, splitLyrics } from './tabText';
 
 export interface ImportResult {
@@ -27,11 +27,12 @@ interface Conventions {
 
 const DIA_HOLE = '(10|[1-9])';
 const CHROM_HOLE = '(1[0-6]|[1-9])';
+const TREM_HOLE = '(2[0-4]|1[0-9]|[1-9])';
 
 /** Chuẩn hoá một ký hiệu; trả null nếu không phải nốt kèn */
 export function normalizeToken(raw: string, conv: Conventions = { letters: false, parens: false }, type: HarpType = 'diatonic'): string | null {
   const chrom = type !== 'diatonic';
-  const HOLE = chrom ? CHROM_HOLE : DIA_HOLE;
+  const HOLE = isTremolo(type) ? TREM_HOLE : chrom ? CHROM_HOLE : DIA_HOLE;
   let t = raw.trim()
     .replace(/[’‘`´]/g, "'").replace(/[″”"]/g, "''").replace(/[−–—]/g, '-')
     .replace(/^[.,;]+|[.,;]+$/g, '');
@@ -68,6 +69,12 @@ export function normalizeToken(raw: string, conv: Conventions = { letters: false
   if (!m) return null;
   const hole = m[1];
   let rest = m[2].toLowerCase();
+  if (isTremolo(type)) {
+    // tremolo: hướng do số lỗ quyết định (chẵn = hút), sách thường chỉ ghi số
+    if (rest.replace(/~/g, '')) return null;
+    if (draw && tremoloDir(Number(hole)) === 'blow') return null;
+    return `${tremoloDir(Number(hole)) === 'draw' ? '-' : ''}${hole}${dur}`;
+  }
   if (chrom) {
     rest = rest.replace(/~/g, '');
     if (!/^[<*'#]?$/.test(rest)) return null;
@@ -110,6 +117,10 @@ function tabLine(line: string, conv: Conventions, type: HarpType): { tokens: str
 export function guessHarpType(raw: string): HarpType {
   const toks = rawTokens(raw);
   const holes = toks.map((t) => /^[+-]?<?(\d+)/.exec(t.replace(/[−–]/g, '-'))?.[1]).filter(Boolean).map(Number);
+  // tremolo châu Á đánh số tới 21 / 24 lỗ
+  // (đoán 24 lỗ: phổ biến hơn, bài chơi được trên kèn 21 lỗ thì kèn 24 lỗ cũng chơi được)
+  if (holes.some((h) => h > 16 && h <= 24)) return 'tremolo24';
+  if (/tremolo/i.test(raw)) return 'tremolo24';
   if (holes.some((h) => h > 12 && h <= 16)) return 'chromatic16';
   if (/chromatic|chromonica|nút gạt/i.test(raw) || holes.some((h) => h > 10 && h <= 12)) return 'chromatic';
   if (toks.some((t) => /^[+-]?(<\d{1,2}|\d{1,2}[<*])$/.test(t))) return 'chromatic';
