@@ -89,7 +89,32 @@ describe('tự chọn nhạc cụ', () => {
     expect(inst({ bpm: 66 }, 'ballad', low)).toBe('piano');
   });
 
+  it('nhạc cụ mới: ghi rõ tên, hát ru → hộp nhạc, dân ca Việt chậm → đàn bầu', () => {
+    expect(inst({ title: 'Trống cơm', tags: ['đàn bầu'] }, 'ballad')).toBe('danbau');
+    expect(inst({ title: 'Lưu thủy (đàn tranh)' }, 'ballad')).toBe('dantranh');
+    expect(inst({ title: 'Il Silenzio', tags: ['trumpet'] }, 'march')).toBe('trumpet');
+    expect(inst({ title: 'Stranger on the Shore (clarinet)' }, 'ballad')).toBe('clarinet');
+    expect(inst({ title: 'The Swan', tags: ['cello'] }, 'waltz')).toBe('cello');
+    expect(inst({ title: 'Tico Tico (marimba)' }, 'samba')).toBe('marimba');
+    expect(inst({ title: 'Edelweiss', tags: ['hộp nhạc'] }, 'waltz')).toBe('musicbox');
+    expect(inst({ title: 'Ave Verum', tags: ['hợp xướng'] }, 'ballad')).toBe('choir');
+    expect(inst({ title: "Brahms' Lullaby" }, 'waltz')).toBe('musicbox');
+    expect(inst({ title: 'Lý ngựa ô', tags: ['dân ca Nam Bộ'], bpm: 66 }, 'ballad')).toBe('danbau');
+    expect(inst({ title: 'Lý ngựa ô', tags: ['dân ca Nam Bộ'], bpm: 110 }, 'ballad')).toBe('flute');
+    // "chorus" (điệp khúc) không phải hợp xướng
+    expect(inst({ title: 'Song', notes: 'Chorus lặp lại hai lần' } as never, 'rock')).toBe('harmonica');
+  });
+
   it('luôn có lý do để hiện cho người dùng', () => {
     expect(suggestInstrument({ ...base }, [], 'tango').reason).toMatch(/accordion/);
+  });
+});
+
+describe('danh sách nhạc cụ', () => {
+  it('mỗi nhạc cụ nằm đúng một nhóm trong ô chọn', async () => {
+    const { INSTRUMENT_GROUPS, INSTRUMENT_OPTIONS } = await import('./engine');
+    const grouped = INSTRUMENT_GROUPS.flatMap((g) => g.items);
+    expect([...grouped].sort()).toEqual(INSTRUMENT_OPTIONS.map((o) => o.value).sort());
+    expect(new Set(grouped).size).toBe(grouped.length);
   });
 });

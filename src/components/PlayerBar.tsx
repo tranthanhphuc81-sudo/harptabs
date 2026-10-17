@@ -1,7 +1,7 @@
 import { ReactNode, useEffect, useState } from 'react';
 import { STYLE_OPTIONS, BeatStyle } from '../audio/patterns';
 import type { InstrumentSuggestion, StyleSuggestion } from '../audio/suggest';
-import { ACCOMP_OPTIONS, INSTRUMENT_OPTIONS, Instrument, previewNote } from '../audio/engine';
+import { ACCOMP_OPTIONS, INSTRUMENT_GROUPS, INSTRUMENT_OPTIONS, Instrument, previewNote } from '../audio/engine';
 import { effectivePrefs, setAutoPrefs, TEMPO_RANGES, KIT_OPTIONS, resetBeatPrefs, setBeatPrefs, SWING_OPTIONS, useBeatPrefs } from '../audio/beatPrefs';
 import { Icon } from './Icon';
 import { PlayerState } from './usePlayer';
@@ -85,7 +85,11 @@ function BeatTuner({ style, styleName, autoInstrument, sing }: { style: BeatStyl
           setBeatPrefs({ instrument: e.target.value as Instrument });
           previewNote(67, 0.5);
         }}>
-          {INSTRUMENT_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+          {INSTRUMENT_GROUPS.map((g) => (
+            <optgroup key={g.label} label={g.label}>
+              {g.items.map((v) => <option key={v} value={v}>{INSTRUMENT_OPTIONS.find((o) => o.value === v)?.label ?? v}</option>)}
+            </optgroup>
+          ))}
         </select>
         {instAuto && <span className="small muted">✨ {instAuto.reason}</span>}
       </label>

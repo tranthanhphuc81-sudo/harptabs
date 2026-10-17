@@ -126,9 +126,19 @@ const NAMED_INSTRUMENTS: [RegExp, Instrument][] = [
   [/\borgan\b/, 'organ'],
   [/\bsax/, 'sax'],
   [/huyt sao|\bwhistl/, 'whistle'],
+  [/dan bau|monochord/, 'danbau'],
+  [/dan tranh|\bzither\b/, 'dantranh'],
+  [/trumpet|ken dong/, 'trumpet'],
+  [/clarinet/, 'clarinet'],
+  [/\bcello\b|vi ?ong ?can|violoncell/, 'cello'],
+  [/marimba|xylophone|moc cam/, 'marimba'],
+  [/hop nhac|music ?box/, 'musicbox'],
+  // không dùng "chorus": trong tab đó là tên đoạn điệp khúc
+  [/hop xuong|\bchoir\b/, 'choir'],
 ];
 
 const HYMN = /thanh ca|thanh vinh|\bhymn\b|\bchoral\b/;
+const LULLABY = /lullaby|wiegenlied|berceuse|\bhat ru\b|\bru em\b/;
 /** chắc chắn là nhạc dân tộc Việt */
 const VN_FOLK = /dan ca (viet|bac bo|trung bo|nam bo|mien|tay nguyen|hue|xu nghe|quan ho)|quan ho|vong co|cai luong|nhac dan toc|\bho (keo|gia|mai|hue)\b/;
 /** "dân ca", "ru con" chung chung: chỉ tính là của Việt khi không ghi nước khác và có lời Việt */
@@ -168,8 +178,11 @@ export function suggestInstrument(song: SongLike, notes: NoteLike[], style: Beat
   const text = fold([song.title, song.artist, song.notes, ...(song.tags ?? [])].filter(Boolean).join(' '));
   for (const [re, instrument] of NAMED_INSTRUMENTS) if (re.test(text)) return { instrument, reason: 'Bài ghi rõ nhạc cụ' };
   if (HYMN.test(text)) return { instrument: 'organ', reason: 'Thánh ca hợp organ' };
+  if (LULLABY.test(text) && !VN_FOLK.test(text)) return { instrument: 'musicbox', reason: 'Bài hát ru hợp hộp nhạc' };
   const vnLyrics = VIET_CHARS.test(notes.map((n) => n.lyric ?? '').join(' '));
   if (VN_FOLK.test(text) || (FOLK_ANY.test(text) && !FOREIGN_FOLK.test(text) && vnLyrics)) {
+    // dân ca chậm, ngân dài: đàn bầu; còn lại sáo trúc
+    if (song.bpm < 76) return { instrument: 'danbau', reason: 'Dân ca Việt chậm hợp đàn bầu' };
     return { instrument: 'flute', reason: 'Dân ca Việt hợp sáo trúc' };
   }
 
