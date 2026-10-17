@@ -81,17 +81,20 @@ export function audio(): AudioContext {
 export type Instrument = 'harmonica' | 'tremolo' | 'piano' | 'guitar' | 'flute' | 'violin' | 'accordion' | 'organ' | 'sax' | 'whistle'
   | 'danbau' | 'dantranh' | 'trumpet' | 'clarinet' | 'cello' | 'marimba' | 'musicbox' | 'choir'
   | 'dannhi' | 'kenbau' | 'dannguyet' | 'ukulele' | 'banjo' | 'danhac' | 'ocarina' | 'vibraphone' | 'kalimba' | 'epiano' | 'synth' | 'steeldrum'
-  | 'theremin' | 'chiptune' | 'kazoo' | 'talkbox' | 'meow' | 'waterdrop' | 'glassharp' | 'space';
+  | 'theremin' | 'chiptune' | 'kazoo' | 'talkbox' | 'meow' | 'waterdrop' | 'glassharp' | 'space'
+  | 'duck' | 'bird' | 'frog' | 'squeak' | 'bubble' | 'laser' | 'windchime' | 'musicalsaw' | 'oldradio'
+  | 'danda' | 'dantrung' | 'khen';
 
 /** nhóm trong ô chọn nhạc cụ (18 nhạc cụ, chia nhóm cho dễ tìm) */
 export const INSTRUMENT_GROUPS: { label: string; items: Instrument[] }[] = [
   { label: 'Kèn harmonica', items: ['harmonica', 'tremolo'] },
-  { label: 'Dân tộc Việt', items: ['flute', 'danbau', 'dantranh', 'dannhi', 'kenbau', 'dannguyet'] },
+  { label: 'Dân tộc Việt', items: ['flute', 'danbau', 'dantranh', 'dannhi', 'kenbau', 'dannguyet', 'danda', 'dantrung', 'khen'] },
   { label: 'Kèn & sáo', items: ['whistle', 'ocarina', 'sax', 'trumpet', 'clarinet'] },
   { label: 'Đàn dây', items: ['guitar', 'ukulele', 'banjo', 'danhac', 'violin', 'cello'] },
   { label: 'Phím', items: ['piano', 'epiano', 'accordion', 'organ', 'synth'] },
   { label: 'Gõ & giọng hát', items: ['marimba', 'vibraphone', 'kalimba', 'steeldrum', 'musicbox', 'choir'] },
-  { label: 'Độc lạ', items: ['theremin', 'chiptune', 'kazoo', 'talkbox', 'meow', 'waterdrop', 'glassharp', 'space'] },
+  { label: 'Độc lạ', items: ['theremin', 'musicalsaw', 'chiptune', 'kazoo', 'talkbox', 'oldradio', 'glassharp', 'windchime', 'waterdrop', 'space'] },
+  { label: 'Vui nhộn', items: ['meow', 'duck', 'bird', 'frog', 'squeak', 'bubble', 'laser'] },
 ];
 
 export const INSTRUMENT_OPTIONS: { value: Instrument; label: string }[] = [
@@ -133,6 +136,18 @@ export const INSTRUMENT_OPTIONS: { value: Instrument; label: string }[] = [
   { value: 'waterdrop', label: 'Giọt nước' },
   { value: 'glassharp', label: 'Ly thủy tinh' },
   { value: 'space', label: 'Vũ trụ' },
+  { value: 'duck', label: 'Vịt kêu' },
+  { value: 'bird', label: 'Chim hót' },
+  { value: 'frog', label: 'Ếch kêu' },
+  { value: 'squeak', label: 'Đồ chơi chút chít' },
+  { value: 'bubble', label: 'Bong bóng' },
+  { value: 'laser', label: 'Laser "piu piu"' },
+  { value: 'windchime', label: 'Chuông gió' },
+  { value: 'musicalsaw', label: 'Cưa nhạc' },
+  { value: 'oldradio', label: 'Radio xưa' },
+  { value: 'danda', label: 'Đàn đá' },
+  { value: 'dantrung', label: "Đàn T'rưng" },
+  { value: 'khen', label: 'Khèn' },
 ];
 
 let instrument: Instrument = 'harmonica';
@@ -179,6 +194,18 @@ export function playTone(midi: number, when: number, dur: number, velocity = 1, 
     case 'waterdrop': return waterDropTone(c, midi, t, dur, velocity, dest);
     case 'glassharp': return glassHarpTone(c, midi, t, dur, velocity, dest);
     case 'space': return spaceTone(c, midi, t, dur, velocity, dest);
+    case 'duck': return duckTone(c, midi, t, dur, velocity, dest);
+    case 'bird': return birdTone(c, midi, t, dur, velocity, dest);
+    case 'frog': return frogTone(c, midi, t, dur, velocity, dest);
+    case 'squeak': return squeakTone(c, midi, t, dur, velocity, dest);
+    case 'bubble': return bubbleTone(c, midi, t, dur, velocity, dest);
+    case 'laser': return laserTone(c, midi, t, dur, velocity, dest);
+    case 'windchime': return windChimeTone(c, midi, t, dur, velocity, dest);
+    case 'musicalsaw': return musicalSawTone(c, midi, t, dur, velocity, dest);
+    case 'oldradio': return oldRadioTone(c, midi, t, dur, velocity, dest);
+    case 'danda': return danDaTone(c, midi, t, dur, velocity, dest);
+    case 'dantrung': return danTrungTone(c, midi, t, dur, velocity, dest);
+    case 'khen': return khenTone(c, midi, t, dur, velocity, dest);
     case 'tremolo': return harmonicaTone(c, midi, t, dur, velocity, dest, true);
     default: return harmonicaTone(c, midi, t, dur, velocity, dest);
   }
@@ -1132,6 +1159,252 @@ function spaceTone(c: AudioContext, midi: number, t: number, dur: number, vel: n
   car.connect(env);
   shimmer.connect(sg).connect(env);
   for (const o of [car, mod, slow, shimmer]) { o.start(t); o.stop(end + 0.95); }
+}
+
+// ----- vui nhộn -----
+
+/** một tiếng ngắn: sóng `type` trượt cao độ theo `path` [thời điểm (s), hệ số tần số], vỏ âm nhanh */
+function blip(c: AudioContext, f: number, t: number, len: number, peak: number, out: AudioNode, type: OscillatorType, path: [number, number][]) {
+  const o = c.createOscillator();
+  o.type = type;
+  path.forEach(([at, m], i) => {
+    if (i === 0) o.frequency.setValueAtTime(f * m, t + at);
+    else o.frequency.exponentialRampToValueAtTime(f * m, t + at);
+  });
+  const env = c.createGain();
+  env.gain.setValueAtTime(0.0001, t);
+  env.gain.exponentialRampToValueAtTime(peak, t + Math.min(0.01, len * 0.2));
+  env.gain.exponentialRampToValueAtTime(0.0001, t + len);
+  o.connect(env).connect(out);
+  o.start(t);
+  o.stop(t + len + 0.02);
+}
+
+/** Vịt kêu "quạc": răng cưa rè qua khẩu hình "a", giọng mũi, cao độ rơi nhanh */
+function duckTone(c: AudioContext, midi: number, t: number, dur: number, vel: number, out: AudioNode) {
+  const f = midiToHz(midi);
+  const len = Math.max(0.16, Math.min(0.35, dur));
+  const o = c.createOscillator();
+  o.type = 'sawtooth';
+  o.frequency.setValueAtTime(f * 1.05, t);
+  o.frequency.exponentialRampToValueAtTime(f * 0.86, t + len);
+  const shaper = c.createWaveShaper();
+  shaper.curve = buzz() as Float32Array<ArrayBuffer>;
+  const { input, output } = vowelSweep(c, t, len, [[0, 650, 1200], [1, 750, 1100]], 5);
+  const nasal = c.createBiquadFilter();
+  nasal.type = 'peaking';
+  nasal.frequency.value = 2600;
+  nasal.Q.value = 2;
+  nasal.gain.value = 10;
+  const env = c.createGain();
+  const peak = 0.5 * vel;
+  env.gain.setValueAtTime(0.0001, t);
+  env.gain.exponentialRampToValueAtTime(peak, t + 0.02);
+  env.gain.exponentialRampToValueAtTime(0.0001, t + len);
+  o.connect(shaper).connect(input);
+  output.connect(nasal).connect(env).connect(out);
+  o.start(t);
+  o.stop(t + len + 0.03);
+}
+
+/** Chim hót: líu lo — vài tiếng "chíp" vút lên liên tiếp, cao hơn hai quãng tám */
+function birdTone(c: AudioContext, midi: number, t: number, dur: number, vel: number, out: AudioNode) {
+  const f = midiToHz(Math.min(midi + 24, 100));
+  const n = Math.max(1, Math.min(6, Math.floor(dur / 0.11)));
+  for (let i = 0; i < n; i++) {
+    const at = t + i * 0.1;
+    const wob = 1 + (Math.random() - 0.5) * 0.04;
+    blip(c, f * wob, at, 0.07, (i === 0 ? 0.3 : 0.22) * vel, out, 'sine', [[0, 0.85], [0.03, 1.2], [0.06, 1]]);
+  }
+}
+
+/** Ếch kêu "ộp ộp": tiếng trầm, rung giật (điều biên nhanh), hai tiếng liền */
+function frogTone(c: AudioContext, midi: number, t: number, dur: number, vel: number, out: AudioNode) {
+  const f = midiToHz(midi - 12);
+  const total = Math.max(0.25, Math.min(0.7, dur));
+  for (const [start, len] of [[0, total * 0.38], [total * 0.5, total * 0.45]]) {
+    const at = t + start;
+    const o = c.createOscillator();
+    o.type = 'sawtooth';
+    o.frequency.setValueAtTime(f * 0.9, at);
+    o.frequency.exponentialRampToValueAtTime(f, at + len * 0.5);
+    const bp = c.createBiquadFilter();
+    bp.type = 'bandpass';
+    bp.frequency.value = 550;
+    bp.Q.value = 2.5;
+    const am = c.createGain();
+    am.gain.value = 0.5;
+    const lfo = c.createOscillator();
+    const lg = c.createGain();
+    lfo.type = 'square';
+    lfo.frequency.value = 26;
+    lg.gain.value = 0.5;
+    lfo.connect(lg).connect(am.gain);
+    const env = c.createGain();
+    const peak = 0.6 * vel;
+    env.gain.setValueAtTime(0.0001, at);
+    env.gain.exponentialRampToValueAtTime(peak, at + 0.02);
+    env.gain.exponentialRampToValueAtTime(0.0001, at + len);
+    o.connect(bp).connect(am).connect(env).connect(out);
+    for (const x of [o, lfo]) { x.start(at); x.stop(at + len + 0.03); }
+  }
+}
+
+/** Đồ chơi chút chít: tiếng "chít" cao, vút lên rồi xẹp xuống, kèm tiếng hơi xì */
+function squeakTone(c: AudioContext, midi: number, t: number, dur: number, vel: number, out: AudioNode) {
+  const f = midiToHz(Math.min(midi + 12, 96));
+  const len = Math.max(0.12, Math.min(0.3, dur));
+  blip(c, f, t, len, 0.35 * vel, out, 'triangle', [[0, 0.8], [len * 0.35, 1.25], [len, 0.95]]);
+  breath(c, t, t + len, 5000, 1, 0.04 * vel, 0.01 * vel, out);
+}
+
+/** Bong bóng: chuỗi tiếng "bụp" nhỏ vút lên, mỗi tiếng hơi khác cao độ */
+function bubbleTone(c: AudioContext, midi: number, t: number, dur: number, vel: number, out: AudioNode) {
+  const f = midiToHz(midi + 12);
+  const n = Math.max(1, Math.min(6, Math.floor(dur / 0.08)));
+  for (let i = 0; i < n; i++) {
+    const wob = 1 + (Math.random() - 0.5) * 0.12;
+    blip(c, f * wob, t + i * 0.075, 0.06, (0.32 - i * 0.03) * vel, out, 'sine', [[0, 0.6], [0.04, 1.4]]);
+  }
+}
+
+/** Laser "piu": sóng vuông rơi từ rất cao xuống đúng nốt */
+function laserTone(c: AudioContext, midi: number, t: number, dur: number, vel: number, out: AudioNode) {
+  const f = midiToHz(midi);
+  const len = Math.max(0.15, Math.min(0.45, dur));
+  blip(c, f, t, len, 0.16 * vel, out, 'square', [[0, 5], [0.12, 1], [len, 0.97]]);
+}
+
+// ----- độc lạ -----
+
+/** Chuông gió: mỗi nốt vài thanh kim loại khẽ chạm nhau, lệch thời điểm, ngân lâu, cao một quãng tám */
+function windChimeTone(c: AudioContext, midi: number, t: number, _dur: number, vel: number, out: AudioNode) {
+  const f = midiToHz(Math.min(midi + 12, 100));
+  const g = c.createGain();
+  g.gain.value = 0.32 * vel;
+  g.connect(out);
+  [0, 0.06 + Math.random() * 0.08, 0.17 + Math.random() * 0.1].forEach((d, i) => {
+    const m = i === 0 ? 1 : i === 1 ? 2 : 1.5; // nốt chính, quãng tám, quãng năm
+    additive(c, f * m, t + d, [[1, i === 0 ? 0.6 : 0.3, 1.6], [2.76, 0.12, 0.6], [5.4, 0.05, 0.25]], g, t + d + 1.7);
+  });
+}
+
+/** cưa nhạc: nhớ nốt trước để lướt liền như theremin */
+let sawLast: { f: number; start: number; end: number } | null = null;
+
+/** Cưa nhạc: lưỡi cưa uốn cong, kéo vĩ — tiếng sin trong, vào chậm, rung chập chờn rất rõ, lướt giữa các nốt */
+function musicalSawTone(c: AudioContext, midi: number, t: number, dur: number, vel: number, out: AudioNode) {
+  const f = midiToHz(midi);
+  const end = t + Math.max(0.15, dur);
+  const prev = sawLast;
+  const from = prev && t > prev.start + 0.02 && t - prev.end < 0.3 ? prev.f : f * 0.97;
+  sawLast = { f, start: t, end };
+  const o = c.createOscillator();
+  o.type = 'sine';
+  o.frequency.setValueAtTime(from, t);
+  o.frequency.exponentialRampToValueAtTime(f, t + 0.18);
+  const env = c.createGain();
+  const peak = 0.34 * vel;
+  env.gain.setValueAtTime(0.0001, t);
+  env.gain.exponentialRampToValueAtTime(peak, t + Math.min(0.2, Math.max(0.06, dur * 0.35)));
+  env.gain.setValueAtTime(peak, end);
+  env.gain.exponentialRampToValueAtTime(0.0001, end + 0.25);
+  o.connect(env).connect(out);
+  vibrato(c, t, 5.8, f * 0.02, 0.15, [o.frequency], end + 0.3);
+  o.start(t);
+  o.stop(end + 0.3);
+}
+
+/** Radio xưa: tiếng kèn lọt qua loa nhỏ (dải tần hẹp), băng chạy hơi chao, lạo xạo */
+function oldRadioTone(c: AudioContext, midi: number, t: number, dur: number, vel: number, out: AudioNode) {
+  const f = midiToHz(midi);
+  const end = t + Math.max(0.1, dur);
+  const hp = c.createBiquadFilter();
+  hp.type = 'highpass';
+  hp.frequency.value = 450;
+  const lp = c.createBiquadFilter();
+  lp.type = 'lowpass';
+  lp.frequency.value = 2800;
+  lp.Q.value = 2;
+  const env = c.createGain();
+  const peak = 0.32 * vel;
+  env.gain.setValueAtTime(0.0001, t);
+  env.gain.exponentialRampToValueAtTime(peak, t + 0.03);
+  env.gain.setValueAtTime(peak, end);
+  env.gain.exponentialRampToValueAtTime(0.0001, end + 0.06);
+  hp.connect(lp).connect(env).connect(out);
+  const o = c.createOscillator();
+  o.type = 'sawtooth';
+  o.frequency.value = f;
+  o.connect(hp);
+  // băng chạy không đều: chao cao độ chậm
+  vibrato(c, t, 0.9, f * 0.006, 0, [o.frequency], end + 0.1);
+  o.start(t);
+  o.stop(end + 0.1);
+  // lạo xạo: vài tiếng nổ lách tách
+  for (let i = 0; i < 3; i++) hammer(c, t + Math.random() * Math.max(0.05, dur), 4000 + Math.random() * 3000, 0.03 * vel, out);
+  breath(c, t, end, 3000, 0.5, 0.012 * vel, 0.01 * vel, out);
+}
+
+// ----- dân tộc Việt (Tây Nguyên, miền núi) -----
+
+/** Đàn đá: phiến đá gõ — tiếng khô, hoạ âm lệch, tắt nhanh, tiếng gõ rõ */
+function danDaTone(c: AudioContext, midi: number, t: number, _dur: number, vel: number, out: AudioNode) {
+  const f = midiToHz(midi);
+  const life = Math.min(0.9, Math.max(0.3, 0.7 * Math.pow(392 / f, 0.4)));
+  const g = c.createGain();
+  g.gain.value = 0.55 * vel;
+  g.connect(out);
+  additive(c, f, t, [[1, 0.6, life], [2.32, 0.2, life * 0.45], [4.25, 0.1, life * 0.25], [6.63, 0.04, 0.06]], g, t + life);
+  hammer(c, t, 1200, 0.08 * vel, out);
+}
+
+/** Đàn T'rưng: ống tre gõ — tiếng rỗng (ống kín vang hoạ âm lẻ), ngắn, có tiếng gõ gỗ */
+function danTrungTone(c: AudioContext, midi: number, t: number, _dur: number, vel: number, out: AudioNode) {
+  const f = midiToHz(midi);
+  const life = Math.min(0.6, Math.max(0.2, 0.45 * Math.pow(392 / f, 0.4)));
+  const g = c.createGain();
+  g.gain.value = 0.6 * vel;
+  g.connect(out);
+  additive(c, f, t, [[1, 0.65, life], [3, 0.18, life * 0.4], [5, 0.05, life * 0.2]], g, t + life);
+  hammer(c, t, 700, 0.07 * vel, out);
+}
+
+/** Khèn: nhiều lưỡi gà đồng trong ống trúc — nốt chính kèm tiếng nền quãng năm thấp, hơi thổi nhấp nhô */
+function khenTone(c: AudioContext, midi: number, t: number, dur: number, vel: number, out: AudioNode) {
+  const f = midiToHz(midi);
+  const end = t + Math.max(0.12, dur);
+  const lp = c.createBiquadFilter();
+  lp.type = 'lowpass';
+  lp.frequency.value = Math.min(6000, f * 5);
+  const pulse = c.createGain();
+  pulse.gain.value = 0.85;
+  const lfo = c.createOscillator();
+  const lg = c.createGain();
+  lfo.frequency.value = 3.2;
+  lg.gain.value = 0.15;
+  lfo.connect(lg).connect(pulse.gain);
+  const env = c.createGain();
+  const peak = 0.22 * vel;
+  env.gain.setValueAtTime(0.0001, t);
+  env.gain.exponentialRampToValueAtTime(peak, t + 0.06);
+  env.gain.setValueAtTime(peak, end);
+  env.gain.exponentialRampToValueAtTime(0.0001, end + 0.1);
+  lp.connect(pulse).connect(env).connect(out);
+  for (const [m, g, type] of [[1, 0.6, 'sawtooth'], [1, 0.3, 'square'], [2 / 3, 0.28, 'sawtooth'], [0.5, 0.22, 'sawtooth']] as [number, number, OscillatorType][]) {
+    const o = c.createOscillator();
+    const og = c.createGain();
+    o.type = type;
+    o.frequency.value = f * m;
+    o.detune.value = (Math.random() - 0.5) * 8;
+    og.gain.value = g;
+    o.connect(og).connect(lp);
+    o.start(t);
+    o.stop(end + 0.12);
+  }
+  lfo.start(t);
+  lfo.stop(end + 0.12);
+  breath(c, t, end, 2200, 0.8, 0.04 * vel, 0.015 * vel, out);
 }
 
 /**

@@ -157,6 +157,19 @@ const NAMED_INSTRUMENTS: [RegExp, Instrument][] = [
   [/giot nuoc|water ?drop/, 'waterdrop'],
   [/ly thuy tinh|glass ?harp|glass harmonica/, 'glassharp'],
   [/vu tru|\bspace\b|galaxy|ngan ha|thien ha/, 'space'],
+  // từ dễ trùng sau khi bỏ dấu: "đàn đá" ~ "dân dã", "khèn" ~ "khen", "t'rưng" ~ "Trung thu", "saw" = "đã thấy" → chỉ dùng cụm rõ nghĩa
+  [/vit keu|tieng vit|\bquack|\bduck\b/, 'duck'],
+  [/chim hot|tieng chim|\bbirds? ?song|\bchirp/, 'bird'],
+  [/ech keu|tieng ech|ech op|\bfrogs?\b/, 'frog'],
+  [/chut chit|\bsqueak/, 'squeak'],
+  [/bong bong|\bbubbles?\b/, 'bubble'],
+  [/\blaser\b|piu piu/, 'laser'],
+  [/chuong gio|wind ?chimes?/, 'windchime'],
+  [/cua nhac|musical saw/, 'musicalsaw'],
+  [/radio xua|\bgramophone|dia than|\bvinyl\b/, 'oldradio'],
+  [/dan da tay nguyen|dan da ndut|lithophone/, 'danda'],
+  [/t' ?rung|\btrung tay nguyen/, 'dantrung'],
+  [/tieng khen|khen (mong|meo|be|h'?mong)\b|\bkhaen\b/, 'khen'],
 ];
 
 const HYMN = /thanh ca|thanh vinh|\bhymn\b|\bchoral\b/;

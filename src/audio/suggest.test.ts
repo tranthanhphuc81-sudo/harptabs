@@ -137,6 +137,28 @@ describe('tự chọn nhạc cụ', () => {
     expect(inst({ title: 'Twinkle Twinkle Little Star' }, 'none')).toBe('harmonica');
   });
 
+  it('vui nhộn, độc lạ, dân tộc Tây Nguyên: chỉ khi bài ghi rõ', () => {
+    expect(inst({ title: 'Vịt con', tags: ['tiếng vịt'] }, 'polka')).toBe('duck');
+    expect(inst({ title: 'Con chim non', tags: ['chim hót'] }, 'waltz')).toBe('bird');
+    expect(inst({ title: 'Ếch ộp', tags: ['tiếng ếch'] }, 'polka')).toBe('frog');
+    expect(inst({ title: 'Bong bóng xà phòng' }, 'polka')).toBe('bubble');
+    expect(inst({ title: 'Star Wars', tags: ['laser'] }, 'march')).toBe('laser');
+    expect(inst({ title: 'Gió', tags: ['chuông gió'] }, 'ballad')).toBe('windchime');
+    expect(inst({ title: 'Somewhere over the Rainbow (musical saw)' }, 'ballad')).toBe('musicalsaw');
+    expect(inst({ title: 'Lili Marleen', tags: ['radio xưa'] }, 'march')).toBe('oldradio');
+    expect(inst({ title: 'Đàn đá Tây Nguyên' }, 'ballad')).toBe('danda');
+    expect(inst({ title: "Tiếng đàn T'rưng" }, 'ballad')).toBe('dantrung');
+    expect(inst({ title: 'Ru con', tags: ['khèn Mông'] }, 'ballad')).toBe('khen');
+  });
+
+  it('từ dễ nhầm sau khi bỏ dấu không đổi nhạc cụ', () => {
+    expect(inst({ title: 'Món quà dân dã' }, 'ballad')).toBe('piano'); // "dân dã" ≠ đàn đá
+    expect(inst({ title: 'Lời khen' }, 'ballad')).toBe('piano'); // "khen" ≠ khèn
+    expect(inst({ title: 'Rước đèn Trung thu' }, 'march')).toBe('harmonica'); // "Trung thu" ≠ T'rưng
+    expect(inst({ title: 'I Saw Her Standing There' }, 'rock')).toBe('harmonica'); // "saw" ≠ cưa nhạc
+    expect(inst({ title: 'Chim sáo ngày xưa' }, 'ballad')).toBe('piano'); // có chữ "chim" nhưng không ghi "chim hót"
+  });
+
   it('luôn có lý do để hiện cho người dùng', () => {
     expect(suggestInstrument({ ...base }, [], 'tango').reason).toMatch(/accordion/);
   });
