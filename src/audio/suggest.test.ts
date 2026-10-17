@@ -105,6 +105,26 @@ describe('tự chọn nhạc cụ', () => {
     expect(inst({ title: 'Song', notes: 'Chorus lặp lại hai lần' } as never, 'rock')).toBe('harmonica');
   });
 
+  it('thêm nhạc cụ: dân tộc, dây, phím, gõ', () => {
+    expect(inst({ title: 'Ngựa phi đường xa', tags: ['đàn nhị'] }, 'ballad')).toBe('dannhi');
+    expect(inst({ title: 'Dạ cổ hoài lang', tags: ['vọng cổ'] }, 'ballad')).toBe('dannguyet');
+    expect(inst({ title: 'Lễ hội', tags: ['kèn bầu'] }, 'march')).toBe('kenbau');
+    expect(inst({ title: 'Aloha Oe' }, 'waltz')).toBe('ukulele');
+    expect(inst({ title: 'Foggy Mountain Breakdown', tags: ['bluegrass'] }, 'country')).toBe('banjo');
+    expect(inst({ title: 'Canon', tags: ['đàn hạc'] }, 'ballad')).toBe('danhac');
+    expect(inst({ title: 'Song of Storms (ocarina)' }, 'waltz')).toBe('ocarina');
+    expect(inst({ title: 'Autumn Leaves', tags: ['vibraphone'] }, 'jazz')).toBe('vibraphone');
+    expect(inst({ title: 'Kalimba lullaby' }, 'ballad')).toBe('kalimba');
+    expect(inst({ title: 'Just the Two of Us (piano điện)' }, 'ballad')).toBe('epiano');
+    expect(inst({ title: 'Take on Me', tags: ['synth'] }, 'disco')).toBe('synth');
+    expect(inst({ title: 'Jamaica Farewell', tags: ['calypso'] }, 'reggae')).toBe('steeldrum');
+    // "blues harp" là kèn harmonica, không phải đàn hạc
+    expect(inst({ title: 'Blues harp boogie' }, 'shuffle')).toBe('harmonica');
+    // vẫn còn: piano thường, dân ca quan họ → sáo trúc
+    expect(inst({ title: 'Für Elise (piano)' }, 'waltz')).toBe('piano');
+    expect(inst({ title: 'Lý cây đa', tags: ['dân ca quan họ'] }, 'ballad')).toBe('flute');
+  });
+
   it('luôn có lý do để hiện cho người dùng', () => {
     expect(suggestInstrument({ ...base }, [], 'tango').reason).toMatch(/accordion/);
   });

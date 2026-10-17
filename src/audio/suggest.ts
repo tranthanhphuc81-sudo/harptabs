@@ -119,6 +119,8 @@ export interface InstrumentSuggestion { instrument: Instrument; reason: string }
 /** tên nhạc cụ nhắc trong tên / thẻ / ghi chú (đã bỏ dấu) → nhạc cụ đó */
 const NAMED_INSTRUMENTS: [RegExp, Instrument][] = [
   [/sao truc|\bflute\b/, 'flute'],
+  // phải đứng trước "piano"
+  [/piano dien|electric piano|\brhodes\b/, 'epiano'],
   [/\bpiano\b|duong cam/, 'piano'],
   [/\bguitar\b|ghi ?ta\b/, 'guitar'],
   [/\bviolin\b|vi ?cam\b|\bfiddle\b/, 'violin'],
@@ -135,6 +137,18 @@ const NAMED_INSTRUMENTS: [RegExp, Instrument][] = [
   [/hop nhac|music ?box/, 'musicbox'],
   // không dùng "chorus": trong tab đó là tên đoạn điệp khúc
   [/hop xuong|\bchoir\b/, 'choir'],
+  [/dan nhi|\berhu\b|dan co\b/, 'dannhi'],
+  [/ken bau|\bsuona\b/, 'kenbau'],
+  [/dan nguyet|dan kim|mandolin|vong co|cai luong/, 'dannguyet'],
+  [/ukulele|hawaii|aloha/, 'ukulele'],
+  [/\bbanjo\b|bluegrass/, 'banjo'],
+  // không dùng "harp": "blues harp" là kèn harmonica
+  [/dan hac/, 'danhac'],
+  [/ocarina/, 'ocarina'],
+  [/vibraphone|\bvibes\b/, 'vibraphone'],
+  [/kalimba|mbira/, 'kalimba'],
+  [/\bsynth|nhac dien tu/, 'synth'],
+  [/steel ?drum|steel ?pan|trong thep|calypso/, 'steeldrum'],
 ];
 
 const HYMN = /thanh ca|thanh vinh|\bhymn\b|\bchoral\b/;

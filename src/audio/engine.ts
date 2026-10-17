@@ -79,14 +79,17 @@ export function audio(): AudioContext {
 }
 
 export type Instrument = 'harmonica' | 'tremolo' | 'piano' | 'guitar' | 'flute' | 'violin' | 'accordion' | 'organ' | 'sax' | 'whistle'
-  | 'danbau' | 'dantranh' | 'trumpet' | 'clarinet' | 'cello' | 'marimba' | 'musicbox' | 'choir';
+  | 'danbau' | 'dantranh' | 'trumpet' | 'clarinet' | 'cello' | 'marimba' | 'musicbox' | 'choir'
+  | 'dannhi' | 'kenbau' | 'dannguyet' | 'ukulele' | 'banjo' | 'danhac' | 'ocarina' | 'vibraphone' | 'kalimba' | 'epiano' | 'synth' | 'steeldrum';
 
 /** nhóm trong ô chọn nhạc cụ (18 nhạc cụ, chia nhóm cho dễ tìm) */
 export const INSTRUMENT_GROUPS: { label: string; items: Instrument[] }[] = [
-  { label: 'Kèn & sáo', items: ['harmonica', 'tremolo', 'flute', 'whistle', 'sax', 'trumpet', 'clarinet'] },
-  { label: 'Đàn dây', items: ['guitar', 'violin', 'cello', 'danbau', 'dantranh'] },
-  { label: 'Phím', items: ['piano', 'accordion', 'organ'] },
-  { label: 'Gõ & giọng hát', items: ['marimba', 'musicbox', 'choir'] },
+  { label: 'Kèn harmonica', items: ['harmonica', 'tremolo'] },
+  { label: 'Dân tộc Việt', items: ['flute', 'danbau', 'dantranh', 'dannhi', 'kenbau', 'dannguyet'] },
+  { label: 'Kèn & sáo', items: ['whistle', 'ocarina', 'sax', 'trumpet', 'clarinet'] },
+  { label: 'Đàn dây', items: ['guitar', 'ukulele', 'banjo', 'danhac', 'violin', 'cello'] },
+  { label: 'Phím', items: ['piano', 'epiano', 'accordion', 'organ', 'synth'] },
+  { label: 'Gõ & giọng hát', items: ['marimba', 'vibraphone', 'kalimba', 'steeldrum', 'musicbox', 'choir'] },
 ];
 
 export const INSTRUMENT_OPTIONS: { value: Instrument; label: string }[] = [
@@ -108,6 +111,18 @@ export const INSTRUMENT_OPTIONS: { value: Instrument; label: string }[] = [
   { value: 'marimba', label: 'Marimba' },
   { value: 'musicbox', label: 'Hộp nhạc' },
   { value: 'choir', label: 'Hợp xướng' },
+  { value: 'dannhi', label: 'Đàn nhị' },
+  { value: 'kenbau', label: 'Kèn bầu' },
+  { value: 'dannguyet', label: 'Đàn nguyệt (đàn kìm)' },
+  { value: 'ukulele', label: 'Ukulele' },
+  { value: 'banjo', label: 'Banjo' },
+  { value: 'danhac', label: 'Đàn hạc' },
+  { value: 'ocarina', label: 'Ocarina' },
+  { value: 'vibraphone', label: 'Vibraphone' },
+  { value: 'kalimba', label: 'Kalimba' },
+  { value: 'epiano', label: 'Piano điện' },
+  { value: 'synth', label: 'Synth' },
+  { value: 'steeldrum', label: 'Trống thép (steel drum)' },
 ];
 
 let instrument: Instrument = 'harmonica';
@@ -134,6 +149,18 @@ export function playTone(midi: number, when: number, dur: number, velocity = 1, 
     case 'marimba': return marimbaTone(c, midi, t, dur, velocity, dest);
     case 'musicbox': return musicBoxTone(c, midi, t, dur, velocity, dest);
     case 'choir': return choirTone(c, midi, t, dur, velocity, dest);
+    case 'dannhi': return danNhiTone(c, midi, t, dur, velocity, dest);
+    case 'kenbau': return kenBauTone(c, midi, t, dur, velocity, dest);
+    case 'dannguyet': return danNguyetTone(c, midi, t, dur, velocity, dest);
+    case 'ukulele': return pluckedTone(c, midi, t, dur, velocity, dest, UKULELE);
+    case 'banjo': return pluckedTone(c, midi, t, dur, velocity, dest, BANJO);
+    case 'danhac': return harpTone(c, midi, t, dur, velocity, dest);
+    case 'ocarina': return ocarinaTone(c, midi, t, dur, velocity, dest);
+    case 'vibraphone': return vibraphoneTone(c, midi, t, dur, velocity, dest);
+    case 'kalimba': return kalimbaTone(c, midi, t, dur, velocity, dest);
+    case 'epiano': return ePianoTone(c, midi, t, dur, velocity, dest);
+    case 'synth': return synthTone(c, midi, t, dur, velocity, dest);
+    case 'steeldrum': return steelDrumTone(c, midi, t, dur, velocity, dest);
     case 'tremolo': return harmonicaTone(c, midi, t, dur, velocity, dest, true);
     default: return harmonicaTone(c, midi, t, dur, velocity, dest);
   }
@@ -617,6 +644,217 @@ function choirTone(c: AudioContext, midi: number, t: number, dur: number, vel: n
   env.connect(out);
   vibrato(c, t, 5, f * 0.006, 0.3, oscs.map((o) => o.frequency), end + 0.3);
   breath(c, t, end, 3000, 0.7, 0.02 * vel, 0.01 * vel, out);
+}
+
+/** Đàn nhị: hai dây kéo vĩ, hộp đàn bọc da trăn → giọng mũi; vuốt vào nốt, rung sâu và nhanh */
+function danNhiTone(c: AudioContext, midi: number, t: number, dur: number, vel: number, out: AudioNode) {
+  const f = midiToHz(midi);
+  const end = t + Math.max(0.12, dur);
+  const { env, oscs } = shaped(c, f, t, end, 'sawtooth', [[f * 2, 1.2, 0.7], [1100, 2.5, 0.9], [2900, 3, 0.35]], [-3, 4]);
+  const peak = 0.32 * vel;
+  env.gain.setValueAtTime(0.0001, t);
+  env.gain.exponentialRampToValueAtTime(peak, t + 0.07);
+  env.gain.setValueAtTime(peak, end);
+  env.gain.exponentialRampToValueAtTime(0.0001, end + 0.12);
+  env.connect(out);
+  // vuốt lên nốt từ dưới nửa cung
+  oscs.forEach((o) => { o.frequency.setValueAtTime(f * 0.95, t); o.frequency.exponentialRampToValueAtTime(f, t + 0.08); });
+  vibrato(c, t, 6.2, f * 0.012, 0.18, oscs.map((o) => o.frequency), end + 0.15);
+  breath(c, t, end, 3200, 0.9, 0.03 * vel, 0.01 * vel, out);
+}
+
+/** Kèn bầu: dăm kép, loa gỗ — tiếng vang chói, nhiều hoạ âm cao, rung nhanh */
+function kenBauTone(c: AudioContext, midi: number, t: number, dur: number, vel: number, out: AudioNode) {
+  const f = midiToHz(midi);
+  const end = t + Math.max(0.1, dur);
+  const { env, oscs } = shaped(c, f, t, end, 'square', [[f * 3, 1, 0.6], [1800, 2, 1], [3300, 3, 0.55]], [0, 9]);
+  const peak = 0.26 * vel;
+  env.gain.setValueAtTime(0.0001, t);
+  env.gain.exponentialRampToValueAtTime(peak * 1.2, t + 0.03);
+  env.gain.exponentialRampToValueAtTime(peak, t + 0.12);
+  env.gain.setValueAtTime(peak, end);
+  env.gain.exponentialRampToValueAtTime(0.0001, end + 0.06);
+  env.connect(out);
+  oscs.forEach((o) => { o.frequency.setValueAtTime(f * 0.97, t); o.frequency.exponentialRampToValueAtTime(f, t + 0.05); });
+  vibrato(c, t, 6.8, f * 0.01, 0.15, oscs.map((o) => o.frequency), end + 0.1);
+  breath(c, t, end, 2500, 1.2, 0.05 * vel, 0.015 * vel, out);
+}
+
+/** một lần gảy dây (Karplus–Strong) qua lọc thân đàn */
+function pluckAt(c: AudioContext, midi: number, t: number, len: number, gain: number, out: AudioNode, filters: [BiquadFilterType, number, number, number][]) {
+  const src = c.createBufferSource();
+  src.buffer = pluckBuffer(c, midi);
+  src.playbackRate.value = Math.max(2, Math.round(c.sampleRate / midiToHz(midi))) / (c.sampleRate / midiToHz(midi));
+  let node: AudioNode = src;
+  for (const [type, freq, q, g] of filters) {
+    const bq = c.createBiquadFilter();
+    bq.type = type;
+    bq.frequency.value = freq;
+    bq.Q.value = q;
+    bq.gain.value = g;
+    node = node.connect(bq);
+  }
+  const env = releaseEnv(c, t, t + Math.max(0.05, len - 0.08), gain, out, 0.08);
+  node.connect(env);
+  src.start(t);
+  src.stop(t + len + 0.05);
+}
+
+/** Đàn nguyệt (đàn kìm): dây gảy tiếng giòn; nốt ngân dài thì "vê" — gảy liên tục thật nhanh */
+function danNguyetTone(c: AudioContext, midi: number, t: number, dur: number, vel: number, out: AudioNode) {
+  const body: [BiquadFilterType, number, number, number][] = [['peaking', 900, 1.2, 6], ['peaking', 2800, 1, 4], ['highpass', 160, 0.7, 0]];
+  if (dur < 0.45) { pluckAt(c, midi, t, Math.max(0.3, dur) + 0.25, 0.42 * vel, out, body); return; }
+  const step = 0.085;
+  const n = Math.max(2, Math.floor((dur - 0.05) / step));
+  for (let i = 0; i < n; i++) pluckAt(c, midi, t + i * step, step + 0.12, (i === 0 ? 0.42 : 0.3) * vel, out, body);
+}
+
+interface PluckVoice { filters: [BiquadFilterType, number, number, number][]; ring: number; gain: number }
+const UKULELE: PluckVoice = { filters: [['peaking', 450, 1, 5], ['lowpass', 4200, 0.7, 0]], ring: 0.7, gain: 0.45 };
+const BANJO: PluckVoice = { filters: [['highpass', 220, 0.7, 0], ['peaking', 3000, 1.2, 9], ['peaking', 1200, 2, 4]], ring: 0.45, gain: 0.42 };
+
+/** ukulele (dây nylon, thân nhỏ, tắt nhanh), banjo (mặt da, tiếng "tưng" chói, tắt rất nhanh) */
+function pluckedTone(c: AudioContext, midi: number, t: number, dur: number, vel: number, out: AudioNode, v: PluckVoice) {
+  pluckAt(c, midi, t, Math.min(Math.max(0.2, dur) + 0.15, v.ring + dur * 0.4), v.gain * vel, out, v.filters);
+}
+
+/** Đàn hạc: dây gảy bằng đầu ngón tay — tiếng tròn, mềm, ngân lâu */
+function harpTone(c: AudioContext, midi: number, t: number, dur: number, vel: number, out: AudioNode) {
+  const f = midiToHz(midi);
+  const life = Math.min(3, Math.max(1, 2.4 * Math.pow(261 / f, 0.4)));
+  const g = c.createGain();
+  g.gain.value = 0.5 * vel;
+  g.connect(out);
+  additive(c, f, t, [[1, 0.6, life], [2, 0.22, life * 0.6], [3, 0.1, life * 0.35], [4, 0.04, life * 0.2]], g, t + Math.max(life, dur));
+  hammer(c, t, f * 2, 0.015 * vel, out);
+}
+
+/** Ocarina: lòng sáo kín → gần như sin, nhiều tiếng hơi, rung nhẹ */
+function ocarinaTone(c: AudioContext, midi: number, t: number, dur: number, vel: number, out: AudioNode) {
+  const f = midiToHz(midi);
+  const end = t + Math.max(0.1, dur);
+  const env = c.createGain();
+  const peak = 0.36 * vel;
+  env.gain.setValueAtTime(0.0001, t);
+  env.gain.exponentialRampToValueAtTime(peak, t + 0.06);
+  env.gain.setValueAtTime(peak, end);
+  env.gain.exponentialRampToValueAtTime(0.0001, end + 0.08);
+  env.connect(out);
+  const o1 = c.createOscillator();
+  const o3 = c.createOscillator();
+  const g3 = c.createGain();
+  o1.type = 'sine';
+  o3.type = 'sine';
+  o1.frequency.value = f;
+  o3.frequency.value = f * 3;
+  g3.gain.value = 0.05;
+  o1.connect(env);
+  o3.connect(g3).connect(env);
+  vibrato(c, t, 5, f * 0.005, 0.3, [o1.frequency, o3.frequency], end + 0.1);
+  for (const o of [o1, o3]) { o.start(t); o.stop(end + 0.1); }
+  breath(c, t, end, f * 1.5, 1.5, 0.08 * vel, 0.035 * vel, out);
+}
+
+/** Vibraphone: phím kim loại ngân dài + quạt mô-tơ làm tiếng to nhỏ đều đều (tremolo biên độ) */
+function vibraphoneTone(c: AudioContext, midi: number, t: number, dur: number, vel: number, out: AudioNode) {
+  const f = midiToHz(midi);
+  const life = Math.min(3.2, Math.max(1.2, 2.5 * Math.pow(392 / f, 0.3)));
+  const trem = c.createGain();
+  trem.gain.value = 0.42 * vel;
+  const lfo = c.createOscillator();
+  const depth = c.createGain();
+  lfo.frequency.value = 5.5;
+  depth.gain.value = 0.16 * vel;
+  lfo.connect(depth).connect(trem.gain);
+  trem.connect(out);
+  const stopAt = t + Math.max(life, dur + 0.3);
+  additive(c, f, t, [[1, 0.6, life], [4, 0.12, life * 0.2], [10, 0.03, 0.04]], trem, stopAt);
+  lfo.start(t);
+  lfo.stop(stopAt + 0.05);
+  hammer(c, t, f * 2, 0.03 * vel, out);
+}
+
+/** Kalimba: lưỡi thép gảy bằng ngón cái — tiếng ấm, hoạ âm lệch rất cao tắt ngay, tiếng "tách" nhỏ */
+function kalimbaTone(c: AudioContext, midi: number, t: number, _dur: number, vel: number, out: AudioNode) {
+  const f = midiToHz(midi);
+  const life = Math.min(1.8, Math.max(0.6, 1.3 * Math.pow(392 / f, 0.4)));
+  const g = c.createGain();
+  g.gain.value = 0.5 * vel;
+  g.connect(out);
+  additive(c, f, t, [[1, 0.65, life], [5.9, 0.12, 0.12], [3.0, 0.04, life * 0.3]], g, t + life);
+  hammer(c, t, 1500, 0.03 * vel, out);
+}
+
+/** Piano điện (kiểu Rhodes): điều tần (FM) — tiếng "tinh" kim loại lúc gõ rồi dịu lại thành tiếng tròn */
+function ePianoTone(c: AudioContext, midi: number, t: number, dur: number, vel: number, out: AudioNode) {
+  const f = midiToHz(midi);
+  const life = Math.min(3, Math.max(0.8, 2.2 * Math.pow(261 / f, 0.5)));
+  const end = t + Math.max(0.2, dur);
+  const env = c.createGain();
+  const peak = 0.36 * vel;
+  env.gain.setValueAtTime(0.0001, t);
+  env.gain.exponentialRampToValueAtTime(peak, t + 0.005);
+  env.gain.exponentialRampToValueAtTime(peak * 0.5, t + Math.min(life * 0.4, 0.6));
+  env.gain.setValueAtTime(peak * 0.5, Math.max(t + Math.min(life * 0.4, 0.6), end - 0.01));
+  env.gain.exponentialRampToValueAtTime(0.0001, end + 0.25);
+  env.connect(out);
+  const car = c.createOscillator();
+  const mod = c.createOscillator();
+  const idx = c.createGain();
+  car.frequency.value = f;
+  mod.frequency.value = f;
+  // độ sâu điều tần giảm nhanh sau tiếng gõ → tiếng chuông chuyển sang tròn
+  idx.gain.setValueAtTime(f * (1.2 + vel), t);
+  idx.gain.exponentialRampToValueAtTime(f * 0.15, t + 0.35);
+  mod.connect(idx).connect(car.frequency);
+  car.connect(env);
+  // tiếng "ting" của âm thoa
+  const tine = c.createGain();
+  tine.gain.value = 0.35;
+  tine.connect(out);
+  additive(c, f, t, [[14, 0.04 * vel, 0.08]], tine, t + 0.1);
+  for (const o of [car, mod]) { o.start(t); o.stop(end + 0.3); }
+}
+
+/** Synth lead: hai răng cưa lệch nhau + sóng vuông trầm, lọc cộng hưởng mở lúc vào nốt */
+function synthTone(c: AudioContext, midi: number, t: number, dur: number, vel: number, out: AudioNode) {
+  const f = midiToHz(midi);
+  const end = t + Math.max(0.08, dur);
+  const lp = c.createBiquadFilter();
+  lp.type = 'lowpass';
+  lp.Q.value = 6;
+  lp.frequency.setValueAtTime(Math.min(12000, f * 10), t);
+  lp.frequency.exponentialRampToValueAtTime(Math.min(6000, f * 4), t + 0.25);
+  const env = c.createGain();
+  const peak = 0.17 * vel;
+  env.gain.setValueAtTime(0.0001, t);
+  env.gain.exponentialRampToValueAtTime(peak, t + 0.01);
+  env.gain.setValueAtTime(peak, end);
+  env.gain.exponentialRampToValueAtTime(0.0001, end + 0.12);
+  lp.connect(env).connect(out);
+  const oscs = ([[1, -8, 'sawtooth'], [1, 8, 'sawtooth'], [0.5, 0, 'square']] as [number, number, OscillatorType][]).map(([m, dt, type]) => {
+    const o = c.createOscillator();
+    o.type = type;
+    o.detune.value = dt;
+    o.frequency.setValueAtTime(f * m * 0.98, t);
+    o.frequency.exponentialRampToValueAtTime(f * m, t + 0.03);
+    o.connect(lp);
+    o.start(t);
+    o.stop(end + 0.15);
+    return o;
+  });
+  vibrato(c, t, 5.5, f * 0.006, 0.35, oscs.map((o) => o.frequency), end + 0.15);
+}
+
+/** Trống thép (steel drum, Caribe): mặt thép gò thành nhiều vùng — tiếng ngân "boong" có hoạ âm hơi lệch */
+function steelDrumTone(c: AudioContext, midi: number, t: number, _dur: number, vel: number, out: AudioNode) {
+  const f = midiToHz(midi);
+  const life = Math.min(1.4, Math.max(0.5, 1.1 * Math.pow(392 / f, 0.3)));
+  const g = c.createGain();
+  g.gain.value = 0.5 * vel;
+  g.connect(out);
+  additive(c, f, t, [[1, 0.55, life], [2.01, 0.3, life * 0.7], [3.02, 0.12, life * 0.4], [4.2, 0.05, life * 0.2]], g, t + life);
+  hammer(c, t, f * 2, 0.04 * vel, out);
 }
 
 /**
