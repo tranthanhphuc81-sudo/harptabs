@@ -6,6 +6,7 @@ import { HarpTypeSelect, KeySelect } from '../components/KeySelect';
 import { Icon } from '../components/Icon';
 import { TokenText } from '../components/TabView';
 import { useAppState } from '../state';
+import { useWakeLock } from '../components/useWakeLock';
 
 export default function Tuner() {
   const { settings } = useAppState();
@@ -20,6 +21,7 @@ export default function Tuner() {
   const holdRef = useRef<{ r: PitchReading | null; t: number }>({ r: null, t: 0 });
 
   useEffect(() => () => micRef.current?.stop(), []);
+  useWakeLock(on);
 
   const start = async () => {
     setErr(null);

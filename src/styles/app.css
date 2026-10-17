@@ -888,3 +888,9 @@ button, a, select { -webkit-tap-highlight-color: transparent; }
 .pb-sing .bt-label { min-width: auto; flex: none; }
 .pb-sing .pb-chips { min-width: 0; }
 .pb-chord.sing { color: var(--accent); font-size: 1.6rem; }
+
+/* ===== Kết quả tập Chờ nốt ===== */
+.practice-result .pr-score { display: flex; align-items: baseline; justify-content: center; gap: 6px; }
+.practice-result .pr-score strong { font: 600 3.4rem/1 var(--font-cond); color: var(--accent); }
+.practice-result .pr-verdict { text-align: center; margin: -6px 0 0; }
+.practice-result .pr-best { color: var(--accent); font-weight: 600; }

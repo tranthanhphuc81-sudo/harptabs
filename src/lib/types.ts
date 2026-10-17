@@ -45,6 +45,8 @@ export interface Settings {
   theme: 'system' | 'light' | 'dark';
   defaultHarpKey: HarpKey;
   defaultHarpType: HarpType;
+  /** giữ màn hình sáng khi đang phát bài / chờ nốt / dò nốt */
+  keepAwake: boolean;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -59,6 +61,7 @@ export const DEFAULT_SETTINGS: Settings = {
   theme: 'system',
   defaultHarpKey: 'C',
   defaultHarpType: 'diatonic',
+  keepAwake: true,
 };
 
 export interface AiLogEntry {

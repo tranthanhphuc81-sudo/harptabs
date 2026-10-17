@@ -38,7 +38,7 @@ export async function deleteSongs(ids: string[]): Promise<void> {
     await db.songs.bulkDelete(ids);
     // khoá nháp: xem lib/drafts.ts
     await db.scans.bulkDelete([...ids, ...ids.map((id) => `draft:scan:${id}`)]);
-    await db.kv.bulkDelete(ids.map((id) => `draft:${id}`));
+    await db.kv.bulkDelete(ids.flatMap((id) => [`draft:${id}`, `practice:${id}`]));
   });
 }
 
@@ -127,7 +127,7 @@ const time = (v: unknown, fallback?: number): number | undefined => {
 };
 
 /** Chỉ nhận các trường đã biết, kiểm tra kiểu và giới hạn — file sao lưu có thể do người khác gửi */
-function sanitize(raw: Record<string, unknown>): Song | null {
+export function sanitizeSong(raw: Record<string, unknown>): Song | null {
   if (!raw || typeof raw !== 'object' || typeof raw.title !== 'string' || typeof raw.body !== 'string') return null;
   if (raw.body.length > MAX_BODY_CHARS) return null;
   const base = blankSong();
@@ -173,7 +173,7 @@ export async function importBackup(json: unknown): Promise<{ added: number; upda
   let added = 0, updated = 0, skipped = 0;
   await db.transaction('rw', db.songs, async () => {
     for (const raw of obj.songs!) {
-      const s = sanitize(raw as unknown as Record<string, unknown>);
+      const s = sanitizeSong(raw as unknown as Record<string, unknown>);
       if (!s) { skipped++; continue; }
       const existing = await db.songs.get(s.id);
       if (!existing) { await db.songs.put(s); added++; }

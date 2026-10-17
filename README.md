@@ -9,10 +9,11 @@ Bản đang chạy: https://harptabs.pages.dev
 | Phần | Chạy ở đâu | Nội dung |
 |---|---|---|
 | Thư viện bài | Offline (IndexedDB) | 43 bài mẫu, tìm kiếm không dấu, lọc theo loại kèn / tông / độ khó, sắp xếp A–Z đúng chữ tiếng Việt, yêu thích, xoá nhiều bài, xuất/nhập file `.json` |
-| Giữ an toàn dữ liệu | Offline | Tự lưu nháp khi sửa bài và quét nhạc (tắt app hay tải lại vẫn mở lại được), nhắc xuất file sao lưu khi có 10 bài mới / sửa hoặc 30 ngày chưa sao lưu, Cài đặt hiện bộ nhớ đang dùng và cho bật "giữ dữ liệu lâu dài". Có bản mới thì app hiện nút **Cập nhật**, không tự tải lại giữa chừng |
+| Giữ an toàn dữ liệu | Offline | Tự lưu nháp khi sửa bài và quét nhạc (tắt app hay tải lại vẫn mở lại được), nhắc xuất file sao lưu khi có 10 bài mới / sửa hoặc 30 ngày chưa sao lưu, Cài đặt hiện bộ nhớ đang dùng và cho bật "giữ dữ liệu lâu dài". Có bản mới thì app hiện nút **Cập nhật**, không tự tải lại giữa chừng. Giữ màn hình sáng khi đang phát bài, chờ nốt, dò nốt (tắt được trong Cài đặt) |
 | Xem & phát bài | Offline (Web Audio) | Tab tô màu thổi/hút/bend, lời dưới từng nốt, 9 nhạc cụ giai điệu (harmonica, piano, guitar, sáo trúc, violin, accordion, organ, sax, huýt sáo), 20 kiểu beat (rock, ballad, bolero, cha cha, valse, bossa…), tự chọn kiểu nhịp và nhạc cụ hợp với bài, đệm hợp âm, đếm vào, chỉnh tempo 40–160%, lặp đoạn |
 | Đệm hát | Offline | Tắt giai điệu, chỉ còn nhạc đệm (guitar gõ bo, guitar quạt chả, piano, ban nhạc) để hát theo; tuỳ chọn vuốt, rung, lắc |
-| Chờ nốt | Offline (micro) | App chỉ chuyển nốt khi bạn thổi đúng cao độ |
+| Chờ nốt | Offline (micro) | App chỉ chuyển nốt khi bạn thổi đúng cao độ. Tập xong hiện điểm (thổi đúng ngay + độ chuẩn cao độ), các nốt hay lạc để tập lại từ đó, lưu điểm cao nhất của từng bài |
+| Chia sẻ bài | Offline | Gửi bài qua menu chia sẻ của điện thoại (Zalo, Messenger…) bằng một đường link chứa cả bài; người nhận bấm link → xem trước → thêm vào thư viện. Dữ liệu nằm sau dấu `#` nên không qua máy chủ |
 | Đổi kèn | Offline | Chuyển bài sang kèn khác, tự chọn lỗ dễ thổi nhất (thuật toán quy hoạch động), giữ giọng gốc hoặc dịch giọng |
 | Dò nốt | Offline (micro, YIN) | Hiện lỗ/kỹ thuật đang thổi, kim lệch cent để tập bend |
 | Học | Offline | 23 bài: cầm kèn, hơi thở, đơn âm, vibrato, wah, tonguing, bend hút/thổi, overblow, vị trí, blues 12 ô nhịp, bảo quản, lỗi thường gặp, lộ trình 30 ngày, kèm bài tập phát được |

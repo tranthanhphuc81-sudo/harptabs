@@ -10,6 +10,10 @@ import { TabView } from '../components/TabView';
 import { HarpDiagram } from '../components/HarpDiagram';
 import { PlayerBar } from '../components/PlayerBar';
 import { usePlayer } from '../components/usePlayer';
+import { useWakeLock } from '../components/useWakeLock';
+import { shareSong } from '../lib/share';
+import { loadPractice, PracticeRecord, PracticeSummary, recordPractice, WaitScorer } from '../lib/practiceScore';
+import { PracticeResult } from '../components/PracticeResult';
 import { Icon } from '../components/Icon';
 import { KeyPlate } from '../components/KeySelect';
 import { ScanPageView } from '../components/ScanPageView';
@@ -130,7 +134,12 @@ function SongPlayerView({ song }: { song: Song }) {
 
   const onNoteClick = (fi: number) => {
     setFocus(fi);
-    if (waitMode) { const k = playable.indexOf(fi); if (k >= 0) setWaitIdx(k); return; }
+    if (waitMode) {
+      const k = playable.indexOf(fi);
+      // nhảy sang nốt khác: nốt đang chờ không tính điểm
+      if (k >= 0) { waitIdxRef.current = k; setWaitIdx(k); scorer.current?.begin(performance.now()); }
+      return;
+    }
     if (p.playing) p.play(fi);
     else if (flat[fi]?.midi != null) previewNote(flat[fi].midi!, 0.5);
     if (p.opts.loop) {
@@ -139,43 +148,55 @@ function SongPlayerView({ song }: { song: Song }) {
     }
   };
 
-  // ----- chế độ chờ nốt (micro) -----
-  const stableFrames = useRef(0);
+  // ----- chế độ chờ nốt (micro) + chấm điểm -----
   const waitIdxRef = useRef(0);
   waitIdxRef.current = waitIdx;
+  const scorer = useRef<WaitScorer | null>(null);
+  const [result, setResult] = useState<{ summary: PracticeSummary; record: PracticeRecord | null; newBest: boolean } | null>(null);
 
-  const stopWait = () => {
+  const stopMic = () => {
     micRef.current?.stop();
     micRef.current = null;
     setWaitMode(false);
     setHeard(null);
   };
 
-  const startWait = async () => {
+  /** kết thúc lượt tập: tập hết bài thì ghi điểm; dừng giữa chừng mà đã tập kha khá thì vẫn cho xem kết quả */
+  const finishWait = async (finished: boolean) => {
+    stopMic();
+    const sc = scorer.current;
+    scorer.current = null;
+    if (!sc) return;
+    const summary = sc.summary(finished);
+    if (!finished && summary.done < 5) return;
+    const saved = finished ? await recordPractice(song.id, summary.score).catch(() => null) : null;
+    setResult({ summary, record: saved?.rec ?? (await loadPractice(song.id).catch(() => null)), newBest: !!saved?.newBest });
+  };
+  const stopWait = () => { void finishWait(false); };
+
+  const startWait = async (from?: number) => {
     p.stop();
+    setResult(null);
+    const startAt = from ?? (focus != null ? Math.max(0, playable.indexOf(focus)) : 0);
+    const sc = new WaitScorer(playable.length - startAt);
     const mic = new MicPitch();
     mic.onReading = (r) => {
       setHeard(r);
-      const target = flat[playable[waitIdxRef.current]];
-      if (r && target && r.nearest === target.midi && Math.abs(r.cents) < 45) {
-        stableFrames.current++;
-        if (stableFrames.current >= 4) {
-          stableFrames.current = 0;
-          const next = waitIdxRef.current + 1;
-          if (next >= playable.length) {
-            toast('Hoàn thành cả bài!');
-            setWaitIdx(0);
-          } else setWaitIdx(next);
-        }
-      } else if (!r || (target && r.nearest !== target.midi)) {
-        stableFrames.current = 0;
-      }
+      const fi = playable[waitIdxRef.current];
+      const target = flat[fi];
+      if (!target || target.midi == null || scorer.current !== sc) return;
+      if (!sc.feed(r, target.midi, fi, performance.now())) return;
+      const next = waitIdxRef.current + 1;
+      if (next >= playable.length) void finishWait(true);
+      else { waitIdxRef.current = next; setWaitIdx(next); }
     };
     try {
       await mic.start();
       micRef.current = mic;
       markPracticed();
-      const startAt = focus != null ? Math.max(0, playable.indexOf(focus)) : 0;
+      scorer.current = sc;
+      sc.begin(performance.now());
+      waitIdxRef.current = startAt;
       setWaitIdx(startAt);
       setWaitMode(true);
     } catch (e) {
@@ -184,11 +205,21 @@ function SongPlayerView({ song }: { song: Song }) {
   };
   useEffect(() => () => micRef.current?.stop(), []);
 
+  useWakeLock(p.playing || waitMode);
+
   const activeIdx = waitMode ? playable[waitIdx] ?? null : p.active ?? focus;
   const activeToken = activeIdx != null ? flat[activeIdx]?.token : null;
 
   const toggleFav = () => db.songs.update(song.id, { favorite: !song.favorite });
   const exportSong = () => downloadJson(exportOne(song), `${slugify(song.title)}.harptab.json`);
+  // trình duyệt không cho chép tự động: hiện link để người dùng tự chép
+  const [manualLink, setManualLink] = useState<string | null>(null);
+  const share = async () => {
+    const r = await shareSong(song);
+    if (r.status === 'copied') toast('Đã chép link bài — dán vào tin nhắn để gửi');
+    else if (r.status === 'too-long') toast('Bài dài quá để gửi bằng link — dùng nút Xuất file rồi gửi file');
+    else if (r.status === 'failed') setManualLink(`${r.text} ${r.url}`);
+  };
   // xoá: bấm lần đầu để hỏi lại, bấm lần nữa trong 4 giây mới xoá
   const [confirmDel, setConfirmDel] = useState(false);
   const removeSong = async () => {
@@ -223,6 +254,7 @@ function SongPlayerView({ song }: { song: Song }) {
             <Icon name="star" filled={song.favorite} />
           </button>
           <button type="button" className="icon-btn" onClick={() => setRekeyOpen(true)} aria-label="Chuyển sang kèn khác"><Icon name="swap" /></button>
+          <button type="button" className="icon-btn" onClick={share} aria-label="Chia sẻ bài"><Icon name="share" /></button>
           <button type="button" className="icon-btn" onClick={exportSong} aria-label="Xuất file bài"><Icon name="download" /></button>
           <Link to={`/song/${song.id}/edit`} className="icon-btn" aria-label="Sửa bài"><Icon name="edit" /></Link>
           <button type="button" className={confirmDel ? 'btn btn-danger del-confirm' : 'icon-btn'} onClick={removeSong}
@@ -303,6 +335,20 @@ function SongPlayerView({ song }: { song: Song }) {
           where={chordWhere(chordEdit)}
           onPick={(name) => pickChord(chordEdit, name)}
           onClose={() => setChordEdit(null)}
+        />
+      )}
+
+      {manualLink && <ShareLinkDialog text={manualLink} onClose={() => setManualLink(null)} />}
+
+      {result && (
+        <PracticeResult
+          summary={result.summary}
+          record={result.record}
+          newBest={result.newBest}
+          weak={result.summary.weak.map((w) => ({ index: w.index, token: flat[w.index]?.token ?? '?', lyric: flat[w.index]?.lyric, misses: w.misses }))}
+          onRetry={() => { setResult(null); void startWait(0); }}
+          onPick={(fi) => { setResult(null); setFocus(fi); void startWait(Math.max(0, playable.indexOf(fi))); }}
+          onClose={() => setResult(null)}
         />
       )}
 
@@ -413,5 +459,21 @@ function ScanPages({ scan, zoom, setZoom, songId }: { scan: SongScan; zoom: numb
           tokenOf={(id) => scan.tokens[id]} zoom={zoom} label={`Trang ${i + 1}`} />
       ))}
     </div>
+  );
+}
+
+function ShareLinkDialog({ text, onClose }: { text: string; onClose: () => void }) {
+  const ref = useRef<HTMLDialogElement>(null);
+  const area = useRef<HTMLTextAreaElement>(null);
+  useEffect(() => { ref.current?.showModal?.(); area.current?.select(); }, []);
+  return (
+    <dialog ref={ref} className="sheet" onClose={onClose} aria-labelledby="share-title">
+      <h2 id="share-title">Chép link bài</h2>
+      <p className="muted small">Máy này không mở được menu chia sẻ. Chọn hết nội dung dưới đây, chép rồi dán vào tin nhắn. Người nhận bấm link là mở được bài.</p>
+      <textarea ref={area} readOnly rows={4} value={text} onFocus={(e) => e.currentTarget.select()} aria-label="Link bài" />
+      <div className="row gap end">
+        <button type="button" className="btn btn-primary" onClick={() => ref.current?.close()}>Xong</button>
+      </div>
+    </dialog>
   );
 }

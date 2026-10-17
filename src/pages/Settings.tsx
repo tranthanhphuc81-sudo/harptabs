@@ -140,6 +140,10 @@ export default function SettingsPage() {
             <input type="checkbox" checked={s.showNoteNames} onChange={(e) => update({ showNoteNames: e.target.checked })} />
             Hiện tên nốt phía trên tab
           </label>
+          <label className="check wide">
+            <input type="checkbox" checked={s.keepAwake} onChange={(e) => update({ keepAwake: e.target.checked })} />
+            Giữ màn hình sáng khi đang phát bài, chờ nốt hoặc dò nốt
+          </label>
         </div>
       </section>
 

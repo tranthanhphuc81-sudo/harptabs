@@ -26,7 +26,11 @@ const updateSW = registerSW({
 
 // Nội dung được chia sẻ vào app (?title=&text=&url=): cất tạm rồi mở thẳng "Dán tab"
 const shared = new URLSearchParams(location.search);
-if (shared.has('text') || shared.has('url') || shared.has('title')) {
+const sharedLink = /#\/shared\?d=([\w-]+)/.exec(`${shared.get('url') ?? ''} ${shared.get('text') ?? ''}`);
+if (sharedLink) {
+  // chia sẻ link bài (của chính app) vào app → mở thẳng bài, không qua "Dán tab"
+  history.replaceState(null, '', `${location.pathname}#/shared?d=${sharedLink[1]}`);
+} else if (shared.has('text') || shared.has('url') || shared.has('title')) {
   const payload = { title: shared.get('title') ?? '', text: shared.get('text') ?? '', url: shared.get('url') ?? '' };
   try { sessionStorage.setItem('harptabs-shared', JSON.stringify(payload)); } catch { /* chế độ riêng tư */ }
   history.replaceState(null, '', `${location.pathname}#/ai?paste=1`);
