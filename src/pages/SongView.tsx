@@ -14,6 +14,8 @@ import { useWakeLock } from '../components/useWakeLock';
 import { shareSong } from '../lib/share';
 import { loadPractice, PracticeRecord, PracticeSummary, recordPractice, WaitScorer } from '../lib/practiceScore';
 import { PracticeResult } from '../components/PracticeResult';
+import { chordForOriginal, isOriginal, loadViewAs, saveViewAs, ViewAs, viewSong } from '../lib/viewAs';
+import type { TabFit } from '../lib/converter';
 import { Icon } from '../components/Icon';
 import { KeyPlate } from '../components/KeySelect';
 import { ScanPageView } from '../components/ScanPageView';
@@ -31,10 +33,26 @@ export default function SongView() {
   const song = useLiveQuery(() => (id ? db.songs.get(id) : undefined), [id]);
   if (song === undefined) return <div className="page"><p className="muted">Đang tải…</p></div>;
   if (!song) return <div className="page"><p>Không tìm thấy bài này.</p><Link to="/" className="btn btn-ghost">Về thư viện</Link></div>;
-  return <SongPlayerView key={song.id} song={song} />;
+  return <SongWithView key={song.id} original={song} />;
 }
 
-function SongPlayerView({ song }: { song: Song }) {
+/** "Xem cho kèn": nhớ lựa chọn trên máy này, áp cho mọi bài mở sau */
+function SongWithView({ original }: { original: Song }) {
+  const [view, setView] = useState<ViewAs | null>(loadViewAs);
+  const onView = (v: ViewAs | null) => { setView(v); saveViewAs(v); };
+  const { song, fit } = useMemo(() => viewSong(original, view), [original, view]);
+  return <SongPlayerView song={song} original={original} fit={fit} view={view} onView={onView} />;
+}
+
+function SongPlayerView({ song, original, fit, view, onView }: {
+  /** bài đang hiển thị (bản gốc hoặc bản xếp lại cho kèn đang xem) */
+  song: Song;
+  /** bài gốc trong thư viện — mọi thao tác lưu đều làm trên bài này */
+  original: Song;
+  fit: TabFit | null;
+  view: ViewAs | null;
+  onView: (v: ViewAs | null) => void;
+}) {
   const { settings, toast } = useAppState();
   const nav = useNavigate();
   const harpType = harpTypeOf(song);
@@ -72,9 +90,10 @@ function SongPlayerView({ song }: { song: Song }) {
   );
   const [chordEdit, setChordEdit] = useState<ChordSegment | null>(null);
   const pickChord = (seg: ChordSegment, name: string | null) => {
-    const next = { ...(song.chords ?? {}) };
+    // đang xem bản đã dịch giọng: lưu hợp âm theo giọng của bài gốc
+    const next = { ...(original.chords ?? {}) };
     if (name === null) delete next[segKey(seg.start)];
-    else next[segKey(seg.start)] = name;
+    else next[segKey(seg.start)] = chordForOriginal(name, fit);
     void db.songs.update(song.id, { chords: Object.keys(next).length ? next : undefined, updatedAt: Date.now() });
   };
   const chordWhere = (seg: ChordSegment) => {
@@ -208,15 +227,28 @@ function SongPlayerView({ song }: { song: Song }) {
 
   useWakeLock(p.playing || waitMode);
 
+  // đổi kèn đang xem: tab mới, vị trí nốt cũ không còn đúng → dừng phát / chờ nốt (không chấm điểm lượt dở)
+  const viewKey = `${song.harpType ?? ''}|${song.harpKey}|${song.body.length}|${fit?.shift ?? ''}`;
+  const lastViewKey = useRef(viewKey);
+  useEffect(() => {
+    if (lastViewKey.current === viewKey) return;
+    lastViewKey.current = viewKey;
+    p.stop();
+    scorer.current = null;
+    stopMic();
+    setFocus(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- chỉ chạy khi đổi kèn đang xem
+  }, [viewKey]);
+
   const activeIdx = waitMode ? playable[waitIdx] ?? null : p.active ?? focus;
   const activeToken = activeIdx != null ? flat[activeIdx]?.token : null;
 
   const toggleFav = () => db.songs.update(song.id, { favorite: !song.favorite });
-  const exportSong = () => downloadJson(exportOne(song), `${slugify(song.title)}.harptab.json`);
+  const exportSong = () => downloadJson(exportOne(original), `${slugify(original.title)}.harptab.json`);
   // trình duyệt không cho chép tự động: hiện link để người dùng tự chép
   const [manualLink, setManualLink] = useState<string | null>(null);
   const share = async () => {
-    const r = await shareSong(song);
+    const r = await shareSong(original);
     if (r.status === 'copied') toast('Đã chép link bài — dán vào tin nhắn để gửi');
     else if (r.status === 'too-long') toast('Bài dài quá để gửi bằng link — dùng nút Xuất file rồi gửi file');
     else if (r.status === 'failed') setManualLink(`${r.text} ${r.url}`);
@@ -264,6 +296,8 @@ function SongPlayerView({ song }: { song: Song }) {
           </button>
         </div>
       </header>
+
+      <ViewAsBar original={original} view={view} fit={fit} onView={onView} viewed={song} onSaved={(id) => nav(`/song/${id}`)} />
 
       {song.notes && <p className="song-notes">{song.notes}</p>}
       {issues.length > 0 && (
@@ -355,7 +389,7 @@ function SongPlayerView({ song }: { song: Song }) {
 
       {rekeyOpen && (
         <RekeyDialog
-          song={song}
+          song={original}
           onClose={() => setRekeyOpen(false)}
           onDone={(id) => { setRekeyOpen(false); if (id !== song.id) nav(`/song/${id}`); }}
         />
@@ -478,5 +512,84 @@ function ShareLinkDialog({ text, onClose }: { text: string; onClose: () => void 
         <button type="button" className="btn btn-primary" onClick={() => ref.current?.close()}>Xong</button>
       </div>
     </dialog>
+  );
+}
+
+/** Chọn kèn để xem bài: tab được xếp lại ngay, bài gốc giữ nguyên */
+function ViewAsBar({ original, viewed, view, fit, onView, onSaved }: {
+  original: Song;
+  viewed: Song;
+  view: ViewAs | null;
+  fit: TabFit | null;
+  onView: (v: ViewAs | null) => void;
+  onSaved: (id: string) => void;
+}) {
+  const { toast } = useAppState();
+  const origType = harpTypeOf(original);
+  const active = !!view && !isOriginal(original, view);
+  const type = view?.type ?? origType;
+  const key = view?.key ?? original.harpKey;
+  const mode = view?.mode ?? 'any';
+  const set = (p: Partial<ViewAs>) => onView({ type, key, mode, ...p });
+  const shift = fit ? fit.shift % 12 : 0;
+  const missing = fit?.stats.unplayable ?? 0;
+  // kỹ thuật khó mà kèn mới đòi hỏi (bài gốc có thể không cần)
+  const hardBits = fit ? [
+    fit.stats.overblows && `${fit.stats.overblows} nốt overblow`,
+    fit.stats.bends && `${fit.stats.bends} nốt bend`,
+    fit.stats.slides && `${fit.stats.slides} nốt bấm gạt`,
+  ].filter(Boolean).join(', ') : '';
+
+  const saveCopy = async () => {
+    const now = Date.now();
+    const id = newId();
+    const name = harpName(viewed.harpKey, harpTypeOf(viewed)).replace(/^Kèn/, 'kèn');
+    await db.songs.put({ ...viewed, id, title: `${original.title} (${name})`, source: 'user', favorite: false, createdAt: now, updatedAt: now, lastPracticedAt: undefined });
+    toast(`Đã lưu bản cho ${name}`);
+    onSaved(id);
+  };
+
+  return (
+    <section className={`viewas${active ? ' on' : ''}`} aria-label="Xem bài cho kèn khác">
+      <div className="row gap wrap center">
+        <label className="field viewas-field">
+          <span className="field-label">Xem cho kèn</span>
+          <select value={view ? type : ''} onChange={(e) => {
+            const t = e.target.value as HarpType | '';
+            onView(t ? { type: t, key, mode } : null);
+          }}>
+            <option value="">Bản gốc ({harpName(original.harpKey, origType).replace(/^Kèn /, '')})</option>
+            {HARP_TYPES.map((t) => <option key={t} value={t}>{HARP_TYPE_LABEL[t]}</option>)}
+          </select>
+        </label>
+        {view && (
+          <label className="field viewas-field">
+            <span className="field-label">Tông kèn</span>
+            <select value={key} onChange={(e) => set({ key: e.target.value as HarpKey })}>
+              {HARP_KEYS.map((k) => <option key={k} value={k}>Kèn {k}</option>)}
+            </select>
+          </label>
+        )}
+        {active && (
+          <div className="segmented" role="radiogroup" aria-label="Cách xếp tab">
+            <button type="button" role="radio" aria-checked={mode === 'any'} className={mode === 'any' ? 'on' : ''} onClick={() => set({ mode: 'any' })}>Dễ thổi nhất</button>
+            <button type="button" role="radio" aria-checked={mode === 'octave'} className={mode === 'octave' ? 'on' : ''} onClick={() => set({ mode: 'octave' })}>Giữ giọng gốc</button>
+          </div>
+        )}
+      </div>
+      {view && (
+        <p className="small muted viewas-status">
+          {!active ? 'Đang xem bản gốc — bài viết sẵn cho kèn này.' : <>
+            Tab xếp lại cho {harpName(viewed.harpKey, harpTypeOf(viewed)).replace(/^Kèn/, 'kèn')}, bài gốc không đổi
+            {shift !== 0 && <> · đã dịch giọng {fit!.shift > 0 ? '+' : ''}{fit!.shift} nửa cung</>}
+            {missing > 0 && <> · <strong className="danger">{missing} nốt</strong> không có trên kèn này (thành dấu nghỉ)</>}
+            {hardBits && <> · cần {hardBits}</>}
+            {mode === 'octave' && (missing > 0 || (fit?.stats.overblows ?? 0) > 0 || (fit?.stats.bends ?? 0) > 0) && ' — thử "Dễ thổi nhất"'}
+            {'. '}
+            <button type="button" className="link-btn" onClick={saveCopy}>Lưu thành bài mới</button>
+          </>}
+        </p>
+      )}
+    </section>
   );
 }

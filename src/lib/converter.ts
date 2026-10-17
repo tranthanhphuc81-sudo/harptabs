@@ -3,7 +3,7 @@
  * (ưu tiên nốt tự nhiên, hạn chế bend/overblow, hạn chế nhảy lỗ xa),
  * và tìm tông kèn / quãng dịch giọng phù hợp nhất. Dùng chung cho diatonic và chromatic.
  */
-import { HARP_KEYS, HarpKey, HarpNote, HarpType, harpLayout, techniqueCost } from './harp';
+import { HARP_KEYS, HarpKey, HarpNote, HarpType, harpLayout, isTremolo, techniqueCost } from './harp';
 import { ParsedTab, TabSection, parseTab, serializeTab } from './tabText';
 
 const UNPLAYABLE_COST = 60;
@@ -38,6 +38,8 @@ export function bestTabs(midis: (number | null)[], key: HarpKey, shift = 0, type
   const idxMap: number[] = []; // vị trí trong midis của mỗi cột
   let unplayable = 0;
 
+  // tremolo: lỗ thổi (lẻ) và lỗ hút (chẵn) của một cặp nằm cùng chỗ trên kèn → khoảng cách tính theo cặp
+  const place = isTremolo(type) ? (h: number) => Math.ceil(h / 2) : (h: number) => h;
   midis.forEach((m, i) => {
     if (m === null) return;
     const target = m + shift;
@@ -53,7 +55,7 @@ export function bestTabs(midis: (number | null)[], key: HarpKey, shift = 0, type
       }
       let best = Infinity, bestIdx = 0;
       prevCol.forEach((p, pi) => {
-        const move = p.note && c ? Math.abs(p.note.hole - c.hole) * MOVE_COST : 0;
+        const move = p.note && c ? Math.abs(place(p.note.hole) - place(c.hole)) * MOVE_COST : 0;
         const v = p.cost + base + move;
         if (v < best) { best = v; bestIdx = pi; }
       });
