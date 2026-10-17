@@ -1,6 +1,7 @@
 import { createContext, ReactNode, useCallback, useContext, useEffect, useState } from 'react';
 import { loadSettings, saveSettings } from './lib/db';
 import { DEFAULT_SETTINGS, Settings } from './lib/types';
+import { applyTheme } from './lib/themes';
 
 interface Ctx {
   settings: Settings;
@@ -20,11 +21,16 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     loadSettings().then((s) => { setSettings(s); setReady(true); }).catch(() => setReady(true));
   }, []);
 
+  // bảng màu + sáng/tối; "theo máy" thì đổi theo khi máy chuyển chế độ
   useEffect(() => {
-    const root = document.documentElement;
-    if (settings.theme === 'system') root.removeAttribute('data-theme');
-    else root.setAttribute('data-theme', settings.theme);
-  }, [settings.theme]);
+    if (!ready) return;
+    applyTheme(settings.palette, settings.theme);
+    if (settings.theme !== 'system' || typeof matchMedia !== 'function') return;
+    const q = matchMedia('(prefers-color-scheme: dark)');
+    const on = () => applyTheme(settings.palette, 'system');
+    q.addEventListener('change', on);
+    return () => q.removeEventListener('change', on);
+  }, [ready, settings.palette, settings.theme]);
 
   const update = useCallback((p: Partial<Settings>) => {
     setSettings((prev) => {

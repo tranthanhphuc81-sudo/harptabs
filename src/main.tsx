@@ -9,6 +9,9 @@ import '@fontsource/barlow-condensed/600.css';
 import './styles/app.css';
 import App from './App';
 import { setUpdateReady } from './lib/swUpdate';
+import { installThemes } from './lib/themes';
+
+installThemes();
 
 const updateSW = registerSW({
   immediate: true,

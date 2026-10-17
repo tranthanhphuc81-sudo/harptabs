@@ -8,6 +8,18 @@
     <link rel="icon" href="./icon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="./icon-192.png" />
     <title>Sổ Tab Harmonica</title>
+    <script>
+      // áp bảng màu đã chọn ngay khi mở (bản sao trong localStorage, xem src/lib/themes.ts) để không nháy màu
+      (function () {
+        var c = {}; try { c = JSON.parse(localStorage.getItem('harptabs-theme') || '{}'); } catch (e) {}
+        var dark = c.mode === 'dark' || (c.mode !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches);
+        var m = dark ? 'dark' : 'light', r = document.documentElement;
+        r.setAttribute('data-palette', c.palette || 'steel');
+        r.setAttribute('data-mode', m);
+        if (c.bg) r.style.background = c.bg[m];
+        if (c.bar) document.querySelector('meta[name="theme-color"]').setAttribute('content', c.bar[m]);
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

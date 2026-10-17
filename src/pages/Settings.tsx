@@ -6,6 +6,7 @@ import { HarpKey } from '../lib/harp';
 import { VND_PER_USD, geminiUrl } from '../../shared/ai';
 import { HarpTypeSelect, KeySelect } from '../components/KeySelect';
 import { Icon } from '../components/Icon';
+import { ThemePicker } from '../components/ThemePicker';
 import { useAppState } from '../state';
 
 const MODELS = ['gemini-3.5-flash-lite', 'gemini-3.1-flash-lite'];
@@ -114,14 +115,13 @@ export default function SettingsPage() {
       <header className="page-head"><h1>Cài đặt</h1></header>
 
       <section className="panel">
+        <h2>Giao diện</h2>
+        <ThemePicker palette={s.palette} mode={s.theme} onPalette={(palette) => update({ palette })} onMode={(theme) => update({ theme })} />
+      </section>
+
+      <section className="panel">
         <h2>Hiển thị</h2>
         <div className="form-grid">
-          <label className="field">
-            <span className="field-label">Giao diện</span>
-            <select value={s.theme} onChange={(e) => update({ theme: e.target.value as typeof s.theme })}>
-              <option value="system">Theo máy</option><option value="light">Sáng</option><option value="dark">Tối</option>
-            </select>
-          </label>
           <label className="field">
             <span className="field-label">Cỡ chữ tab</span>
             <select value={s.tabSize} onChange={(e) => update({ tabSize: e.target.value as typeof s.tabSize })}>

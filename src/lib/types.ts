@@ -1,3 +1,4 @@
+import type { PaletteId } from './themes';
 import type { HarpKey, HarpType, NoteNameStyle } from './harp';
 import type { BeatStyle } from '../audio/patterns';
 
@@ -42,7 +43,10 @@ export interface Settings {
   noteNames: NoteNameStyle;
   showNoteNames: boolean;
   tabSize: 's' | 'm' | 'l';
+  /** sáng / tối / theo máy */
   theme: 'system' | 'light' | 'dark';
+  /** bảng màu (xem lib/themes.ts) */
+  palette: PaletteId;
   defaultHarpKey: HarpKey;
   defaultHarpType: HarpType;
   /** giữ màn hình sáng khi đang phát bài / chờ nốt / dò nốt */
@@ -59,6 +63,7 @@ export const DEFAULT_SETTINGS: Settings = {
   showNoteNames: false,
   tabSize: 'm',
   theme: 'system',
+  palette: 'steel',
   defaultHarpKey: 'C',
   defaultHarpType: 'diatonic',
   keepAwake: true,
