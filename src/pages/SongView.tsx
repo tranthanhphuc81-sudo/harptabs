@@ -14,7 +14,7 @@ import { useWakeLock } from '../components/useWakeLock';
 import { shareSong } from '../lib/share';
 import { loadPractice, PracticeRecord, PracticeSummary, recordPractice, WaitScorer } from '../lib/practiceScore';
 import { PracticeResult } from '../components/PracticeResult';
-import { chordForOriginal, isOriginal, loadViewAs, saveViewAs, ViewAs, viewSong } from '../lib/viewAs';
+import { bestHarp, chordForOriginal, isOriginal, loadViewChoice, resolveChoice, saveViewChoice, ViewAs, ViewChoice, viewSong } from '../lib/viewAs';
 import type { TabFit } from '../lib/converter';
 import { Icon } from '../components/Icon';
 import { KeyPlate } from '../components/KeySelect';
@@ -36,22 +36,24 @@ export default function SongView() {
   return <SongWithView key={song.id} original={song} />;
 }
 
-/** "Xem cho kèn": nhớ lựa chọn trên máy này, áp cho mọi bài mở sau */
+/** "Xem cho kèn": mặc định tự chọn kèn hợp nhất cho từng bài; chọn tay thì nhớ trên máy này */
 function SongWithView({ original }: { original: Song }) {
-  const [view, setView] = useState<ViewAs | null>(loadViewAs);
-  const onView = (v: ViewAs | null) => { setView(v); saveViewAs(v); };
+  const [choice, setChoice] = useState<ViewChoice>(loadViewChoice);
+  const onChoice = (c: ViewChoice) => { setChoice(c); saveViewChoice(c); };
+  const view = useMemo(() => resolveChoice(original, choice), [original, choice]);
   const { song, fit } = useMemo(() => viewSong(original, view), [original, view]);
-  return <SongPlayerView song={song} original={original} fit={fit} view={view} onView={onView} />;
+  return <SongPlayerView song={song} original={original} fit={fit} view={view} choice={choice} onChoice={onChoice} />;
 }
 
-function SongPlayerView({ song, original, fit, view, onView }: {
+function SongPlayerView({ song, original, fit, view, choice, onChoice }: {
   /** bài đang hiển thị (bản gốc hoặc bản xếp lại cho kèn đang xem) */
   song: Song;
   /** bài gốc trong thư viện — mọi thao tác lưu đều làm trên bài này */
   original: Song;
   fit: TabFit | null;
   view: ViewAs | null;
-  onView: (v: ViewAs | null) => void;
+  choice: ViewChoice;
+  onChoice: (c: ViewChoice) => void;
 }) {
   const { settings, toast } = useAppState();
   const nav = useNavigate();
@@ -297,7 +299,7 @@ function SongPlayerView({ song, original, fit, view, onView }: {
         </div>
       </header>
 
-      <ViewAsBar original={original} view={view} fit={fit} onView={onView} viewed={song} onSaved={(id) => nav(`/song/${id}`)} />
+      <ViewAsBar original={original} view={view} fit={fit} choice={choice} onChoice={onChoice} viewed={song} onSaved={(id) => nav(`/song/${id}`)} />
 
       {song.notes && <p className="song-notes">{song.notes}</p>}
       {issues.length > 0 && (
@@ -516,34 +518,39 @@ function ShareLinkDialog({ text, onClose }: { text: string; onClose: () => void 
 }
 
 /** Chọn kèn để xem bài: tab được xếp lại ngay, bài gốc giữ nguyên */
-function ViewAsBar({ original, viewed, view, fit, onView, onSaved }: {
+function ViewAsBar({ original, viewed, view, fit, choice, onChoice, onSaved }: {
   original: Song;
   viewed: Song;
   view: ViewAs | null;
   fit: TabFit | null;
-  onView: (v: ViewAs | null) => void;
+  choice: ViewChoice;
+  onChoice: (c: ViewChoice) => void;
   onSaved: (id: string) => void;
 }) {
   const { toast } = useAppState();
   const origType = harpTypeOf(original);
+  const manual = typeof choice === 'object';
   const active = !!view && !isOriginal(original, view);
   const type = view?.type ?? origType;
   const key = view?.key ?? original.harpKey;
-  const mode = view?.mode ?? 'any';
-  const set = (p: Partial<ViewAs>) => onView({ type, key, mode, ...p });
+  const mode = manual ? choice.mode : 'any';
+  const set = (p: Partial<ViewAs>) => onChoice({ type, key, mode, ...p });
   const shift = fit ? fit.shift % 12 : 0;
   const missing = fit?.stats.unplayable ?? 0;
-  // kỹ thuật khó mà kèn mới đòi hỏi (bài gốc có thể không cần)
-  const hardBits = fit ? [
-    fit.stats.overblows && `${fit.stats.overblows} nốt overblow`,
-    fit.stats.bends && `${fit.stats.bends} nốt bend`,
-    fit.stats.slides && `${fit.stats.slides} nốt bấm gạt`,
-  ].filter(Boolean).join(', ') : '';
+  const nameOf = (s: Song) => harpName(s.harpKey, harpTypeOf(s)).replace(/^Kèn/, 'kèn');
+  // kỹ thuật khó mà kèn đang xem đòi hỏi
+  const techBits = (st: TabFit['stats']) => [
+    st.overblows && `${st.overblows} nốt overblow`,
+    st.bends && `${st.bends} nốt bend`,
+    st.slides && `${st.slides} nốt bấm gạt`,
+  ].filter(Boolean).join(', ');
+  const hardBits = fit ? techBits(fit.stats) : '';
+  const origBits = choice === 'auto' && active ? techBits(bestHarp(original).originalFit.stats) : '';
 
   const saveCopy = async () => {
     const now = Date.now();
     const id = newId();
-    const name = harpName(viewed.harpKey, harpTypeOf(viewed)).replace(/^Kèn/, 'kèn');
+    const name = nameOf(viewed);
     await db.songs.put({ ...viewed, id, title: `${original.title} (${name})`, source: 'user', favorite: false, createdAt: now, updatedAt: now, lastPracticedAt: undefined });
     toast(`Đã lưu bản cho ${name}`);
     onSaved(id);
@@ -554,15 +561,17 @@ function ViewAsBar({ original, viewed, view, fit, onView, onSaved }: {
       <div className="row gap wrap center">
         <label className="field viewas-field">
           <span className="field-label">Xem cho kèn</span>
-          <select value={view ? type : ''} onChange={(e) => {
-            const t = e.target.value as HarpType | '';
-            onView(t ? { type: t, key, mode } : null);
+          <select value={manual ? choice.type : choice} onChange={(e) => {
+            const v = e.target.value;
+            if (v === 'auto' || v === 'original') onChoice(v);
+            else onChoice({ type: v as HarpType, key, mode: 'any' });
           }}>
-            <option value="">Bản gốc ({harpName(original.harpKey, origType).replace(/^Kèn /, '')})</option>
+            <option value="auto">✨ Tự chọn kèn hợp nhất</option>
+            <option value="original">Bản gốc ({harpName(original.harpKey, origType).replace(/^Kèn /, '')})</option>
             {HARP_TYPES.map((t) => <option key={t} value={t}>{HARP_TYPE_LABEL[t]}</option>)}
           </select>
         </label>
-        {view && (
+        {manual && (
           <label className="field viewas-field">
             <span className="field-label">Tông kèn</span>
             <select value={key} onChange={(e) => set({ key: e.target.value as HarpKey })}>
@@ -570,24 +579,27 @@ function ViewAsBar({ original, viewed, view, fit, onView, onSaved }: {
             </select>
           </label>
         )}
-        {active && (
+        {manual && active && (
           <div className="segmented" role="radiogroup" aria-label="Cách xếp tab">
             <button type="button" role="radio" aria-checked={mode === 'any'} className={mode === 'any' ? 'on' : ''} onClick={() => set({ mode: 'any' })}>Dễ thổi nhất</button>
             <button type="button" role="radio" aria-checked={mode === 'octave'} className={mode === 'octave' ? 'on' : ''} onClick={() => set({ mode: 'octave' })}>Giữ giọng gốc</button>
           </div>
         )}
       </div>
-      {view && (
+      {choice !== 'original' && (
         <p className="small muted viewas-status">
-          {!active ? 'Đang xem bản gốc — bài viết sẵn cho kèn này.' : <>
-            Tab xếp lại cho {harpName(viewed.harpKey, harpTypeOf(viewed)).replace(/^Kèn/, 'kèn')}, bài gốc không đổi
-            {shift !== 0 && <> · đã dịch giọng {fit!.shift > 0 ? '+' : ''}{fit!.shift} nửa cung</>}
-            {missing > 0 && <> · <strong className="danger">{missing} nốt</strong> không có trên kèn này (thành dấu nghỉ)</>}
-            {hardBits && <> · cần {hardBits}</>}
-            {mode === 'octave' && (missing > 0 || (fit?.stats.overblows ?? 0) > 0 || (fit?.stats.bends ?? 0) > 0) && ' — thử "Dễ thổi nhất"'}
-            {'. '}
-            <button type="button" className="link-btn" onClick={saveCopy}>Lưu thành bài mới</button>
-          </>}
+          {!active
+            ? (choice === 'auto' ? `Bản gốc (${nameOf(original)}) đã là kèn dễ chơi nhất cho bài này.` : 'Đang xem bản gốc — bài viết sẵn cho kèn này.')
+            : <>
+              {choice === 'auto' ? <>Tự chọn <strong>{nameOf(viewed)}</strong>, giữ đúng giọng bài{origBits ? ` (bản gốc ${nameOf(original)} cần ${origBits})` : ''}</> : <>Tab xếp lại cho {nameOf(viewed)}</>}
+              {', bài gốc không đổi'}
+              {shift !== 0 && <> · đã dịch giọng {fit!.shift > 0 ? '+' : ''}{fit!.shift} nửa cung</>}
+              {missing > 0 && <> · <strong className="danger">{missing} nốt</strong> không có trên kèn này (thành dấu nghỉ)</>}
+              {hardBits && <> · cần {hardBits}</>}
+              {manual && mode === 'octave' && (missing > 0 || (fit?.stats.overblows ?? 0) > 0 || (fit?.stats.bends ?? 0) > 0) && ' — thử "Dễ thổi nhất"'}
+              {'. '}
+              <button type="button" className="link-btn" onClick={saveCopy}>Lưu thành bài mới</button>
+            </>}
         </p>
       )}
     </section>

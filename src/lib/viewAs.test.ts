@@ -3,7 +3,7 @@ import { SAMPLE_SONGS } from '../data/samples';
 import { blankSong } from './db';
 import { harpTypeOf } from './harp';
 import { flatten, parseTab } from './tabText';
-import { chordForOriginal, isOriginal, viewSong } from './viewAs';
+import { bestHarp, chordForOriginal, hardnessOf, isOriginal, resolveChoice, viewSong } from './viewAs';
 
 const grace = (() => {
   const { sampleId, ...s } = SAMPLE_SONGS.find((x) => x.sampleId === 'amazing-grace')!;
@@ -50,5 +50,47 @@ describe('Xem cho kèn', () => {
     expect(Math.abs(v.fit!.shift % 12)).toBe(0);
     expect(v.song.songKey).toBe(grace.songKey);
     expect(v.fit!.stats.unplayable).toBeGreaterThanOrEqual(0);
+  });
+});
+
+describe('Tự chọn kèn hợp nhất', () => {
+  const sample = (id: string) => {
+    const { sampleId, ...s } = SAMPLE_SONGS.find((x) => x.sampleId === id)!;
+    return blankSong({ ...s, id: sampleId });
+  };
+
+  it('bài thổi trọn trên kèn của nó, không bend → giữ nguyên bản gốc', () => {
+    const s = sample('twinkle');
+    const b = bestHarp(s);
+    expect(b.originalFit.stats.bends + b.originalFit.stats.unplayable).toBe(0);
+    expect(isOriginal(s, b.view)).toBe(true);
+    expect(resolveChoice(s, 'auto')).toEqual(b.view);
+  });
+
+  it('bài nhiều nốt thăng giáng (Für Elise) → kèn chromatic, không phải tremolo', () => {
+    const b = bestHarp(sample('fur-elise-chromatic'));
+    expect(b.view.type).toMatch(/^chromatic/);
+    expect(b.fit.stats.unplayable).toBe(0);
+  });
+
+  it('bài cần bend trên diatonic → chọn kèn khác dễ hơn, vẫn giữ giọng bài', () => {
+    const s = blankSong({ id: 'b', title: 'bend', harpKey: 'C', body: "-2'' -3' -3 4 -4' -4 5 -6'" });
+    const b = bestHarp(s);
+    expect(b.originalFit.stats.bends).toBeGreaterThan(0);
+    expect(hardnessOf(b.fit)).toBeLessThan(hardnessOf(b.originalFit));
+    expect(Math.abs(b.fit.shift % 12)).toBe(0);
+  });
+
+  it('ngang độ khó thì ưu tiên kèn C', () => {
+    // thang Đô trưởng đặt trên kèn G: kèn C diatonic thổi trọn được, không cần đổi loại kèn
+    const s = blankSong({ id: 'g', title: 'g', harpKey: 'G', harpType: 'chromatic', body: '1 -1 2 -2 3 -3 -4 4' });
+    const b = bestHarp(s);
+    expect(hardnessOf(b.fit)).toBe(0);
+  });
+
+  it('lựa chọn "bản gốc" và kèn chọn tay', () => {
+    const s = sample('twinkle');
+    expect(resolveChoice(s, 'original')).toBeNull();
+    expect(resolveChoice(s, { type: 'tremolo24', key: 'C', mode: 'any' })).toEqual({ type: 'tremolo24', key: 'C', mode: 'any' });
   });
 });

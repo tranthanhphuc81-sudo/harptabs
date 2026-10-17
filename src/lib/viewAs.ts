@@ -3,8 +3,9 @@
  * Bộ chọn lỗ tối ưu xếp lại tab; giọng bài và hợp âm dịch theo nếu phải đổi giọng.
  */
 import { transposeChords } from '../audio/harmony';
-import { rekeyBody, TabFit } from './converter';
+import { fitToHarp, midisOf, rekeyBody, TabFit } from './converter';
 import { HARP_KEYS, HARP_TYPES, HarpKey, HarpType, harpTypeOf, songTonality } from './harp';
+import { parseTab } from './tabText';
 import type { Song } from './types';
 
 export interface ViewAs {
@@ -61,21 +62,84 @@ export function chordForOriginal(name: string, fit: TabFit | null): string {
   return transposeChords({ 0: name }, -fit.shift)?.['0'] ?? name;
 }
 
-// ----- nhớ lựa chọn trên máy này (tiện lợi, không cần đồng bộ) -----
+// ----- tự chọn kèn hợp nhất cho từng bài -----
 
-const KEY = 'harptabs.viewAs';
+/** độ khó của một cách xếp tab: nốt không có > overblow > bend > bấm gạt */
+const hardness = (f: TabFit) => f.stats.unplayable * 1000 + f.stats.overblows * 100 + f.stats.bends * 10 + f.stats.slides;
 
-export function loadViewAs(): ViewAs | null {
-  try {
-    const v = JSON.parse(localStorage.getItem(KEY) ?? 'null') as ViewAs | null;
-    if (v && HARP_TYPES.includes(v.type) && (HARP_KEYS as readonly string[]).includes(v.key) && (v.mode === 'any' || v.mode === 'octave')) return v;
-  } catch { /* chế độ riêng tư */ }
-  return null;
+/** ngang độ khó thì ưu tiên kèn của bài, rồi kèn phổ biến hơn */
+const TYPE_ORDER: HarpType[] = ['diatonic', 'chromatic', 'tremolo24', 'chromatic16', 'tremolo21'];
+
+export interface BestHarp {
+  view: ViewAs;
+  /** độ khó (cùng thang với hardness) của bản gốc và của kèn được chọn */
+  originalFit: TabFit;
+  fit: TabFit;
 }
 
-export function saveViewAs(v: ViewAs | null) {
+const bestCache = new Map<string, BestHarp>();
+
+/** so sánh từng phần tử từ trái sang: phần tử khác nhau đầu tiên quyết định */
+function lexLess(a: number[], b: number[]): boolean {
+  for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return a[i] < b[i];
+  return false;
+}
+
+/**
+ * Kèn (loại + tông) chơi bài dễ nhất mà vẫn giữ đúng giọng bài.
+ * Thứ tự ưu tiên: ít nốt không có / overblow / bend / bấm gạt → kèn của bài → kèn phổ biến → tông gốc, rồi kèn C → ít di chuyển.
+ */
+export function bestHarp(song: Song): BestHarp {
+  const origType = harpTypeOf(song);
+  const ck = `${origType}|${song.harpKey}|${song.body}`;
+  const hit = bestCache.get(ck);
+  if (hit) return hit;
+  const midis = midisOf(parseTab(song.body, song.harpKey, origType));
+  const types = [origType, ...TYPE_ORDER.filter((t) => t !== origType)];
+  const originalFit = fitToHarp(midis, song.harpKey, { transpose: 'octave', type: origType });
+  let best: { score: number[]; view: ViewAs; fit: TabFit } | null = null;
+  types.forEach((type, ti) => {
+    for (const key of HARP_KEYS) {
+      const fit = type === origType && key === song.harpKey ? originalFit : fitToHarp(midis, key, { transpose: 'octave', type });
+      const keyRank = type === origType && key === song.harpKey ? 0 : key === 'C' ? 1 : 2;
+      // kèn tông lạ (không phải tông của bài, không phải C) ít người có sẵn: chỉ chọn khi đỡ khó rõ rệt
+      // (bớt được bend / nốt thiếu), không chỉ để bớt vài nốt bấm gạt
+      const score = [hardness(fit) + (keyRank === 2 ? 5 : 0), ti, keyRank, fit.cost];
+      if (!best || lexLess(score, best.score)) best = { score, view: { type, key, mode: 'octave' }, fit };
+    }
+  });
+  const out = { view: best!.view, fit: best!.fit, originalFit };
+  if (bestCache.size > 200) bestCache.clear();
+  bestCache.set(ck, out);
+  return out;
+}
+
+export const hardnessOf = hardness;
+
+// ----- nhớ lựa chọn trên máy này (tiện lợi, không cần đồng bộ) -----
+
+/** 'auto' = tự chọn kèn hợp nhất cho từng bài (mặc định); 'original' = bản gốc; còn lại = kèn chọn tay */
+export type ViewChoice = 'auto' | 'original' | ViewAs;
+
+// khoá mới: ai đã chọn kèn ở bản trước cũng bắt đầu lại từ "tự chọn"
+const KEY = 'harptabs.viewChoice';
+
+export function loadViewChoice(): ViewChoice {
   try {
-    if (v) localStorage.setItem(KEY, JSON.stringify(v));
-    else localStorage.removeItem(KEY);
+    const v = JSON.parse(localStorage.getItem(KEY) ?? '"auto"') as ViewChoice;
+    if (v === 'auto' || v === 'original') return v;
+    if (v && HARP_TYPES.includes(v.type) && (HARP_KEYS as readonly string[]).includes(v.key) && (v.mode === 'any' || v.mode === 'octave')) return v;
   } catch { /* chế độ riêng tư */ }
+  return 'auto';
+}
+
+export function saveViewChoice(v: ViewChoice) {
+  try { localStorage.setItem(KEY, JSON.stringify(v)); } catch { /* chế độ riêng tư */ }
+}
+
+/** lựa chọn → kèn cụ thể để xem bài này */
+export function resolveChoice(song: Song, c: ViewChoice): ViewAs | null {
+  if (c === 'original') return null;
+  if (c === 'auto') return bestHarp(song).view;
+  return c;
 }

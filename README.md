@@ -16,7 +16,7 @@ Bản đang chạy: https://harptabs.pages.dev
 | Chờ nốt | Offline (micro) | App chỉ chuyển nốt khi bạn thổi đúng cao độ. Tập xong hiện điểm (thổi đúng ngay + độ chuẩn cao độ), các nốt hay lạc để tập lại từ đó, lưu điểm cao nhất của từng bài |
 | Chia sẻ bài | Offline | Gửi bài qua menu chia sẻ của điện thoại (Zalo, Messenger…) bằng một đường link chứa cả bài; người nhận bấm link → xem trước → thêm vào thư viện. Dữ liệu nằm sau dấu `#` nên không qua máy chủ |
 | Đổi kèn | Offline | Chuyển bài sang kèn khác, tự chọn lỗ dễ thổi nhất (thuật toán quy hoạch động), giữ giọng gốc hoặc dịch giọng |
-| Xem cho kèn | Offline | Ô "Xem cho kèn" trên trang bài: chọn loại kèn + tông, tab được xếp lại ngay mà bài gốc không đổi; app nhớ lựa chọn cho mọi bài. "Dễ thổi nhất" chỉ dịch giọng khi bớt được nốt khó; báo số nốt không có / cần bend, overblow. Lưu thành bài mới nếu muốn giữ |
+| Xem cho kèn | Offline | Mặc định mỗi bài tự hiện cho kèn dễ chơi nhất mà vẫn giữ giọng bài (ít nốt thiếu / overblow / bend / bấm gạt nhất; ngang nhau thì giữ kèn của bài, rồi kèn phổ biến, kèn C). Chọn tay "Bản gốc" hoặc loại kèn + tông thì tab xếp lại ngay mà bài gốc không đổi, app nhớ lựa chọn cho mọi bài. "Dễ thổi nhất" chỉ dịch giọng khi bớt được nốt khó; báo số nốt không có / cần bend, overblow. Lưu thành bài mới nếu muốn giữ |
 | Dò nốt | Offline (micro, YIN) | Hiện lỗ/kỹ thuật đang thổi, kim lệch cent để tập bend |
 | Học | Offline | 23 bài: cầm kèn, hơi thở, đơn âm, vibrato, wah, tonguing, bend hút/thổi, overblow, vị trí, blues 12 ô nhịp, bảo quản, lỗi thường gặp, lộ trình 30 ngày, kèm bài tập phát được |
 | Dán tab từ mạng | Offline | Copy tab trên web (`4 -4`, `4↑ 4↓`, `B4 D4`, `-3b`, `(4)`…) dán vào, app tự nhận dòng tab, lời, tên bài, tông kèn và chuyển sang định dạng của app |
