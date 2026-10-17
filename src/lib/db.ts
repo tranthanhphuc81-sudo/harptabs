@@ -32,11 +32,13 @@ export function newId(): string {
   return `s-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
 }
 
-/** Xoá bài (kèm ảnh quét của bài). Bài mẫu đã xoá không tự xuất hiện lại. */
+/** Xoá bài (kèm ảnh quét và bản nháp của bài). Bài mẫu đã xoá không tự xuất hiện lại. */
 export async function deleteSongs(ids: string[]): Promise<void> {
-  await db.transaction('rw', db.songs, db.scans, async () => {
+  await db.transaction('rw', db.songs, db.scans, db.kv, async () => {
     await db.songs.bulkDelete(ids);
-    await db.scans.bulkDelete(ids);
+    // khoá nháp: xem lib/drafts.ts
+    await db.scans.bulkDelete([...ids, ...ids.map((id) => `draft:scan:${id}`)]);
+    await db.kv.bulkDelete(ids.map((id) => `draft:${id}`));
   });
 }
 

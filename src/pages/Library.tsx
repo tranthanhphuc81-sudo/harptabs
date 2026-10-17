@@ -7,6 +7,7 @@ import { HARP_KEYS, isChromatic } from '../lib/harp';
 import { Song } from '../lib/types';
 import { Icon } from '../components/Icon';
 import { ThemeToggle } from '../components/ThemeToggle';
+import { BackupNotice } from '../components/AppNotices';
 import { KeyPlate } from '../components/KeySelect';
 import { useAppState } from '../state';
 import { PATTERNS } from '../audio/patterns';
@@ -113,6 +114,8 @@ export default function Library() {
           <input ref={fileRef} type="file" accept=".json,application/json" hidden onChange={(e) => onImport(e.target.files?.[0])} />
         </div>
       </header>
+
+      <BackupNotice />
 
       <div className="filters">
         <label className="search">

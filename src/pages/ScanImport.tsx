@@ -6,7 +6,8 @@ import { blankSong, db } from '../lib/db';
 import { HarpKey, HarpType, harpName } from '../lib/harp';
 import { Gray, OmrNote, OmrPage, findHeaderBoxes, keyName, midiToStep, notePitch, readSheet, toGray, toTranscription } from '../lib/omr';
 import { MIN_CONFIDENCE, cleanArtist, cleanTitle, cropToCanvas, hasDiacritics, looksLikeTitle, readLine, titleFromFilename } from '../lib/titleOcr';
-import { loadScanPages, saveScan } from '../lib/scanStore';
+import { loadScanPages, saveScan, SongScan } from '../lib/scanStore';
+import { scanDraftId } from '../lib/drafts';
 import { isPdf, pdfToImages } from '../lib/pdf';
 import { flatten, parseTab } from '../lib/tabText';
 import { beatsPerBar } from '../lib/types';
@@ -101,6 +102,61 @@ export default function ScanImport({ editSongId, initialFiles }: { editSongId?: 
   const autoArtist = useRef('');
   const [artistShot, setArtistShot] = useState<Shot | null>(null);
 
+  // ───── bản quét dở: tự lưu để tắt app / tải lại trang không mất công sửa nốt ─────
+  const draftKey = scanDraftId(editSongId);
+  const [scanDraft, setScanDraft] = useState<SongScan | null>(null);
+  /** trạng thái lúc vừa mở (trang trống / ảnh đã lưu / nháp vừa mở lại): khác đi mới là có sửa */
+  const baseline = useRef<{ pages: OmrPage[]; meta: string }>({ pages: [], meta: '' });
+  const meta = JSON.stringify({ keySig, timeSig, tempo, target, harpType, allowTranspose, title, artist });
+  const dirty = pages.length > 0 && (pages !== baseline.current.pages || (baseline.current.meta !== '' && meta !== baseline.current.meta));
+  const markBaseline = (ps: OmrPage[], m = '') => { baseline.current = { pages: ps, meta: m }; };
+
+  useEffect(() => {
+    if (initialFiles?.length) return;
+    let alive = true;
+    db.scans.get(draftKey).then((d) => { if (alive && d?.pages.length) setScanDraft(d); }).catch(() => {});
+    return () => { alive = false; };
+  }, [draftKey, initialFiles]);
+
+  useEffect(() => {
+    if (!dirty || busy) return;
+    const t = window.setTimeout(() => {
+      void saveScan(draftKey, pages, { keySig, timeSig, tempo, target, harpType, allowTranspose, tokens: {}, title, artist }).catch(() => {});
+    }, 1500);
+    return () => window.clearTimeout(t);
+  }, [dirty, busy, draftKey, pages, keySig, timeSig, tempo, target, harpType, allowTranspose, title, artist]);
+
+  const restoreScanDraft = async () => {
+    const d = scanDraft;
+    if (!d) return;
+    setBusy(true);
+    try {
+      const ps = await loadScanPages(d);
+      setPages(ps);
+      setFromStore(true);
+      setGrays([]);
+      setSelected(null);
+      setError(null);
+      setKeySig(d.keySig); setTimeSig(d.timeSig); setTempo(d.tempo); setTarget(d.target);
+      setHarpType(d.harpType ?? 'diatonic'); setAllowTranspose(d.allowTranspose);
+      const t = d.title ?? title, a = d.artist ?? artist;
+      setTitle(t); setArtist(a);
+      markBaseline(ps, JSON.stringify({
+        keySig: d.keySig, timeSig: d.timeSig, tempo: d.tempo, target: d.target,
+        harpType: d.harpType ?? 'diatonic', allowTranspose: d.allowTranspose, title: t, artist: a,
+      }));
+      setScanDraft(null);
+    } catch (e) {
+      toast((e as Error).message || 'Không mở được bản quét dở');
+    } finally {
+      setBusy(false);
+    }
+  };
+  const discardScanDraft = () => {
+    setScanDraft(null);
+    void db.scans.delete(draftKey).catch(() => {});
+  };
+
   // mở lại bài đã quét
   useEffect(() => {
     if (!editSongId) return;
@@ -114,6 +170,10 @@ export default function ScanImport({ editSongId, initialFiles }: { editSongId?: 
         const ps = await loadScanPages(scan);
         if (!alive) return;
         setPages(ps);
+        markBaseline(ps, JSON.stringify({
+          keySig: scan.keySig, timeSig: scan.timeSig, tempo: scan.tempo, target: scan.target,
+          harpType: scan.harpType ?? song.harpType ?? 'diatonic', allowTranspose: scan.allowTranspose, title: song.title, artist: song.artist ?? '',
+        }));
         setFromStore(true);
         setTitle(song.title);
         setArtist(song.artist ?? '');
@@ -203,6 +263,8 @@ export default function ScanImport({ editSongId, initialFiles }: { editSongId?: 
   }, [initialFiles]);
 
   const reset = () => {
+    void db.scans.delete(draftKey).catch(() => {});
+    markBaseline([]);
     setGrays([]); setPages([]); setSelected(null); setError(null); setFromStore(false); setTitleShot(null); setArtistShot(null);
     if (title === autoTitle.current) setTitle('');
     if (artist === autoArtist.current) setArtist('');
@@ -425,6 +487,8 @@ export default function ScanImport({ editSongId, initialFiles }: { editSongId?: 
       toast('Không lưu được ảnh quét (bộ nhớ đầy?) — tab vẫn được lưu');
     }
     await db.songs.put(song);
+    markBaseline(pages, meta);
+    await db.scans.delete(draftKey).catch(() => {});
     if (existing) {
       toast('Đã cập nhật bài');
       nav(`/song/${song.id}`, { replace: true });
@@ -453,6 +517,18 @@ export default function ScanImport({ editSongId, initialFiles }: { editSongId?: 
         <input ref={galRef} type="file" accept="image/*,application/pdf,.pdf" multiple hidden onChange={(e) => addFiles(e.target.files)} />
       </div>
 
+      {scanDraft && !dirty && !busy && (
+        <div className="notice" role="status">
+          <span>
+            Có bản quét dở chưa lưu ({scanDraft.pages.length} trang{scanDraft.title ? <>, <strong>{scanDraft.title}</strong></> : ''}) lúc {new Date(scanDraft.savedAt).toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' })}.
+            {' '}Quét ảnh mới sẽ thay bản này.
+          </span>
+          <span className="row gap">
+            <button type="button" className="btn btn-primary btn-sm" onClick={restoreScanDraft}>Mở lại</button>
+            <button type="button" className="btn btn-ghost btn-sm" onClick={discardScanDraft}>Bỏ</button>
+          </span>
+        </div>
+      )}
       {busy && <><p className="muted small">Đang đọc nốt nhạc…</p><div className="progress" aria-hidden="true"><span /></div></>}
       {error && <div className="alert error" role="alert">{error} <button type="button" className="link-btn" onClick={reset}>Chọn ảnh khác</button></div>}
 

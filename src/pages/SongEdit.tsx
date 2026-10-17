@@ -12,34 +12,42 @@ import { Icon } from '../components/Icon';
 import { MiniPlay } from '../components/PlayerBar';
 import { usePlayer } from '../components/usePlayer';
 import { useAppState } from '../state';
+import { clearDraft, loadDraft, saveDraft, SongDraft } from '../lib/drafts';
 
-const DRAFT_KEY = 'harptabs:draft-new';
+const DRAFT_DELAY = 400;
 
 export default function SongEdit() {
   const { id } = useParams();
   const [song, setSong] = useState<Song | null>(null);
+  const [draft, setDraft] = useState<SongDraft | null>(null);
   const { settings } = useAppState();
 
   useEffect(() => {
-    if (id) {
-      db.songs.get(id).then((s) => setSong(s ?? null));
-    } else {
-      let draft: Partial<Song> = {};
-      try { draft = JSON.parse(sessionStorage.getItem(DRAFT_KEY) ?? '{}'); } catch { /* bỏ qua */ }
-      const harpType = settings.defaultHarpType === 'diatonic' ? undefined : settings.defaultHarpType;
-      setSong(blankSong({ harpKey: settings.defaultHarpKey, harpType, ...draft }));
-    }
+    let alive = true;
+    (async () => {
+      const d = await loadDraft(id).catch(() => null);
+      const s = id
+        ? await db.songs.get(id)
+        : blankSong({ harpKey: settings.defaultHarpKey, harpType: settings.defaultHarpType === 'diatonic' ? undefined : settings.defaultHarpType });
+      if (!alive) return;
+      setSong(s ?? null);
+      setDraft(d);
+    })();
+    return () => { alive = false; };
   }, [id, settings.defaultHarpKey, settings.defaultHarpType]);
 
   if (!song) return <div className="page"><p className="muted">Đang tải…</p></div>;
-  return <Editor initial={song} isNew={!id} />;
+  return <Editor key={song.id} initial={song} isNew={!id} draft={draft} />;
 }
 
-function Editor({ initial, isNew }: { initial: Song; isNew: boolean }) {
+function Editor({ initial, isNew, draft }: { initial: Song; isNew: boolean; draft: SongDraft | null }) {
   const [s, setS] = useState<Song>(initial);
   const [draw, setDraw] = useState(false);
   const [confirmDel, setConfirmDel] = useState(false);
   const [tagText, setTagText] = useState(initial.tags.join(', '));
+  /** bản nháp lần trước chưa lưu: hỏi người dùng có mở lại không */
+  const [pendingDraft, setPendingDraft] = useState<SongDraft | null>(draft);
+  const draftId = isNew ? undefined : initial.id;
   const taRef = useRef<HTMLTextAreaElement>(null);
   const nav = useNavigate();
   const { settings, toast } = useAppState();
@@ -57,10 +65,34 @@ function Editor({ initial, isNew }: { initial: Song; isNew: boolean }) {
 
   const set = <K extends keyof Song>(k: K, v: Song[K]) => setS((prev) => ({ ...prev, [k]: v }));
 
+  // tự lưu nháp mỗi khi sửa: tắt app, tải lại trang hay cập nhật bản mới đều không mất
+  const initialSnap = useRef(JSON.stringify({ s: initial, tagText: initial.tags.join(', ') }));
+  const latest = useRef<SongDraft | null>(null);
   useEffect(() => {
-    if (!isNew) return;
-    try { sessionStorage.setItem(DRAFT_KEY, JSON.stringify({ ...s, id: undefined })); } catch { /* bỏ qua */ }
-  }, [s, isNew]);
+    const dirty = JSON.stringify({ s, tagText }) !== initialSnap.current;
+    latest.current = dirty ? { song: s, tagText, savedAt: Date.now(), baseUpdatedAt: isNew ? undefined : initial.updatedAt } : null;
+    const t = window.setTimeout(() => {
+      if (latest.current) void saveDraft(draftId, latest.current).catch(() => {});
+      else if (!pendingDraft) void clearDraft(draftId).catch(() => {});
+    }, DRAFT_DELAY);
+    return () => window.clearTimeout(t);
+  }, [s, tagText, isNew, initial.updatedAt, draftId, pendingDraft]);
+  useEffect(() => {
+    const flush = () => { if (latest.current) void saveDraft(draftId, latest.current).catch(() => {}); };
+    window.addEventListener('pagehide', flush);
+    return () => { window.removeEventListener('pagehide', flush); flush(); };
+  }, [draftId]);
+
+  const restoreDraft = () => {
+    if (!pendingDraft) return;
+    setS({ ...pendingDraft.song, id: initial.id });
+    setTagText(pendingDraft.tagText);
+    setPendingDraft(null);
+  };
+  const discardDraft = () => {
+    setPendingDraft(null);
+    if (!latest.current) void clearDraft(draftId);
+  };
 
   const insert = (text: string) => {
     const ta = taRef.current;
@@ -85,14 +117,17 @@ function Editor({ initial, isNew }: { initial: Song; isNew: boolean }) {
     const tags = tagText.split(',').map((t) => t.trim()).filter(Boolean);
     const rec: Song = { ...s, title: s.title.trim(), tags, updatedAt: Date.now() };
     await db.songs.put(rec);
-    if (isNew) try { sessionStorage.removeItem(DRAFT_KEY); } catch { /* bỏ qua */ }
+    latest.current = null;
+    await clearDraft(draftId).catch(() => {});
     toast(errors.length ? `Đã lưu (còn ${errors.length} lỗi ký hiệu)` : 'Đã lưu');
     nav(`/song/${rec.id}`, { replace: true });
   };
 
   const remove = async () => {
     if (!confirmDel) { setConfirmDel(true); setTimeout(() => setConfirmDel(false), 4000); return; }
+    latest.current = null;
     await deleteSongs([s.id]);
+    await clearDraft(draftId).catch(() => {});
     toast('Đã xoá bài');
     nav('/', { replace: true });
   };
@@ -113,6 +148,19 @@ function Editor({ initial, isNew }: { initial: Song; isNew: boolean }) {
           <button type="button" className="btn btn-primary" onClick={save}><Icon name="check" size={18} /> Lưu bài</button>
         </div>
       </header>
+
+      {pendingDraft && (
+        <div className="notice" role="status">
+          <span>
+            Có bản {isNew ? 'soạn' : 'sửa'} dở chưa lưu{pendingDraft.song.title ? <> của <strong>{pendingDraft.song.title}</strong></> : ''} lúc {new Date(pendingDraft.savedAt).toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' })}.
+            {!isNew && pendingDraft.baseUpdatedAt !== initial.updatedAt && ' Bài đã được lưu lại sau đó, mở bản nháp sẽ thay nội dung hiện tại.'}
+          </span>
+          <span className="row gap">
+            <button type="button" className="btn btn-primary btn-sm" onClick={restoreDraft}>Mở lại</button>
+            <button type="button" className="btn btn-ghost btn-sm" onClick={discardDraft}>Bỏ</button>
+          </span>
+        </div>
+      )}
 
       <div className="edit-grid">
         <div className="edit-meta">

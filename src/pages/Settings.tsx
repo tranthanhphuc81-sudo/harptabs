@@ -1,6 +1,7 @@
 import { useLiveQuery } from 'dexie-react-hooks';
-import { useRef, useState } from 'react';
-import { db, downloadJson, ensureSeeded, exportAll, importBackup } from '../lib/db';
+import { useEffect, useRef, useState } from 'react';
+import { db, ensureSeeded, importBackup } from '../lib/db';
+import { backupStatus, downloadBackup, loadBackupMeta } from '../lib/backup';
 import { HarpKey } from '../lib/harp';
 import { VND_PER_USD, geminiUrl } from '../../shared/ai';
 import { HarpTypeSelect, KeySelect } from '../components/KeySelect';
@@ -9,12 +10,40 @@ import { useAppState } from '../state';
 
 const MODELS = ['gemini-3.5-flash-lite', 'gemini-3.1-flash-lite'];
 
+const num = (n: number) => n.toLocaleString('vi-VN', { maximumFractionDigits: 1 });
+const mb = (b: number) => (b < 1e6 ? `${Math.max(1, Math.round(b / 1e3))} KB` : b < 1e9 ? `${num(b / 1e6)} MB` : `${num(b / 1e9)} GB`);
+
+/** Trình duyệt có giữ dữ liệu lâu dài không, đang dùng bao nhiêu bộ nhớ */
+function useStorageInfo() {
+  const [info, setInfo] = useState<{ persisted: boolean | null; usage?: number; quota?: number }>({ persisted: null });
+  const refresh = async () => {
+    const st = typeof navigator !== 'undefined' ? navigator.storage : undefined;
+    const [persisted, est] = await Promise.all([
+      st?.persisted?.().catch(() => null) ?? null,
+      st?.estimate?.().catch(() => undefined),
+    ]);
+    setInfo({ persisted, usage: est?.usage, quota: est?.quota });
+  };
+  useEffect(() => { void refresh(); }, []);
+  const persist = async () => {
+    const ok = await navigator.storage?.persist?.().catch(() => false);
+    await refresh();
+    return !!ok;
+  };
+  return { ...info, refresh, persist };
+}
+
 export default function SettingsPage() {
   const { settings: s, update, toast } = useAppState();
   const fileRef = useRef<HTMLInputElement>(null);
   const [testing, setTesting] = useState(false);
   const [showKey, setShowKey] = useState(false);
   const count = useLiveQuery(() => db.songs.count(), []);
+  const storage = useStorageInfo();
+  const backup = useLiveQuery(async () => {
+    const [songs, meta] = await Promise.all([db.songs.toArray(), loadBackupMeta()]);
+    return backupStatus(songs, meta.lastBackupAt, null);
+  }, []);
   const usage = useLiveQuery(async () => {
     const rows = await db.aiLog.toArray();
     const from = new Date(); from.setDate(1); from.setHours(0, 0, 0, 0);
@@ -52,9 +81,14 @@ export default function SettingsPage() {
   };
 
   const doExport = async () => {
-    const data = await exportAll();
-    downloadJson(data, `harptabs-sao-luu-${new Date().toISOString().slice(0, 10)}.json`);
-    toast(`Đã xuất ${data.songs.length} bài`);
+    toast(`Đã xuất ${await downloadBackup()} bài`);
+    void storage.refresh();
+  };
+
+  const askPersist = async () => {
+    toast(await storage.persist()
+      ? 'Trình duyệt sẽ giữ dữ liệu, không tự xoá khi máy đầy bộ nhớ'
+      : 'Trình duyệt chưa đồng ý — cài app lên màn hình chính rồi thử lại, và nhớ xuất file sao lưu');
   };
 
   const doImport = async (f?: File) => {
@@ -164,6 +198,29 @@ export default function SettingsPage() {
       <section className="panel">
         <h2>Dữ liệu</h2>
         <p className="muted">{count ?? 0} bài đang lưu trên thiết bị này. Xoá dữ liệu trình duyệt sẽ mất bài, nên thỉnh thoảng hãy xuất file sao lưu.</p>
+        <dl className="storage-info">
+          <div>
+            <dt>Sao lưu gần nhất</dt>
+            <dd>
+              {backup?.lastBackupAt ? new Date(backup.lastBackupAt).toLocaleDateString('vi-VN') : 'Chưa sao lưu'}
+              {!!backup?.changed && <span className="muted"> · {backup.changed} bài mới / đã sửa sau đó</span>}
+            </dd>
+          </div>
+          <div>
+            <dt>Giữ dữ liệu lâu dài</dt>
+            <dd>
+              {storage.persisted === null ? 'Trình duyệt không hỗ trợ'
+                : storage.persisted ? 'Đã bật — trình duyệt không tự xoá khi máy đầy bộ nhớ'
+                : <>Chưa bật — trình duyệt có thể tự xoá khi máy đầy bộ nhớ <button type="button" className="link-btn" onClick={askPersist}>Bật</button></>}
+            </dd>
+          </div>
+          {storage.usage !== undefined && (
+            <div>
+              <dt>Bộ nhớ đang dùng</dt>
+              <dd>{mb(storage.usage)}{storage.quota ? <span className="muted"> · máy còn trống khoảng {mb(Math.max(0, storage.quota - storage.usage))}</span> : null}</dd>
+            </div>
+          )}
+        </dl>
         <div className="row gap wrap">
           <button type="button" className="btn btn-primary" onClick={doExport}><Icon name="download" size={18} /> Xuất file sao lưu</button>
           <button type="button" className="btn btn-ghost" onClick={() => fileRef.current?.click()}><Icon name="upload" size={18} /> Nhập file sao lưu</button>

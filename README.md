@@ -9,6 +9,7 @@ Bản đang chạy: https://harptabs.pages.dev
 | Phần | Chạy ở đâu | Nội dung |
 |---|---|---|
 | Thư viện bài | Offline (IndexedDB) | 43 bài mẫu, tìm kiếm không dấu, lọc theo loại kèn / tông / độ khó, sắp xếp A–Z đúng chữ tiếng Việt, yêu thích, xoá nhiều bài, xuất/nhập file `.json` |
+| Giữ an toàn dữ liệu | Offline | Tự lưu nháp khi sửa bài và quét nhạc (tắt app hay tải lại vẫn mở lại được), nhắc xuất file sao lưu khi có 10 bài mới / sửa hoặc 30 ngày chưa sao lưu, Cài đặt hiện bộ nhớ đang dùng và cho bật "giữ dữ liệu lâu dài". Có bản mới thì app hiện nút **Cập nhật**, không tự tải lại giữa chừng |
 | Xem & phát bài | Offline (Web Audio) | Tab tô màu thổi/hút/bend, lời dưới từng nốt, 9 nhạc cụ giai điệu (harmonica, piano, guitar, sáo trúc, violin, accordion, organ, sax, huýt sáo), 20 kiểu beat (rock, ballad, bolero, cha cha, valse, bossa…), tự chọn kiểu nhịp và nhạc cụ hợp với bài, đệm hợp âm, đếm vào, chỉnh tempo 40–160%, lặp đoạn |
 | Đệm hát | Offline | Tắt giai điệu, chỉ còn nhạc đệm (guitar gõ bo, guitar quạt chả, piano, ban nhạc) để hát theo; tuỳ chọn vuốt, rung, lắc |
 | Chờ nốt | Offline (micro) | App chỉ chuyển nốt khi bạn thổi đúng cao độ |

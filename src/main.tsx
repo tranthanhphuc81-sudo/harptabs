@@ -8,8 +8,21 @@ import '@fontsource/barlow-condensed/500.css';
 import '@fontsource/barlow-condensed/600.css';
 import './styles/app.css';
 import App from './App';
+import { setUpdateReady } from './lib/swUpdate';
 
-registerSW({ immediate: true });
+const updateSW = registerSW({
+  immediate: true,
+  // có bản mới: chờ người dùng bấm "Cập nhật" (xem components/AppNotices.tsx)
+  onNeedRefresh: () => setUpdateReady(() => {
+    void updateSW(true);
+    // trang chưa do service worker điều khiển (lần mở đầu) thì bản mới đã chạy sẵn, không có gì để kích hoạt: tự tải lại
+    window.setTimeout(() => location.reload(), 3000);
+  }),
+  // app mở cả ngày (nhất là bản Android) thì mỗi giờ hỏi máy chủ một lần
+  onRegisteredSW: (_url, reg) => {
+    if (reg) setInterval(() => { if (navigator.onLine) reg.update().catch(() => {}); }, 60 * 60 * 1000);
+  },
+});
 
 // Nội dung được chia sẻ vào app (?title=&text=&url=): cất tạm rồi mở thẳng "Dán tab"
 const shared = new URLSearchParams(location.search);

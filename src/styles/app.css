@@ -226,6 +226,25 @@ button, a, select { -webkit-tap-highlight-color: transparent; }
 }
 .brand-mark i { width: 5px; height: 4px; border-radius: 1px; background: var(--ink); }
 
+.notice {
+  max-width: 960px;
+  margin: 12px auto 0;
+  padding: 10px 14px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border-radius: var(--r-l);
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--line));
+  background: var(--accent-soft);
+  color: var(--ink);
+  font-size: 0.92rem;
+}
+.notice > span:first-child { flex: 1 1 260px; }
+.page > .notice { margin: 0; max-width: none; }
+.btn-sm { min-height: 34px; padding: 0 12px; font-size: 0.9rem; }
+
 .offline-pill {
   border: 1px solid var(--line);
   max-width: 960px;
@@ -685,6 +704,11 @@ button, a, select { -webkit-tap-highlight-color: transparent; }
 .panel > h2:first-child { font: 600 1.25rem/1.2 var(--font-cond); letter-spacing: 0.01em; }
 .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
 .about { text-align: center; padding: 8px 0; }
+.storage-info { display: grid; gap: 8px; margin: 0; font-size: 0.92rem; }
+.storage-info > div { display: grid; grid-template-columns: minmax(130px, 180px) 1fr; gap: 10px; }
+.storage-info dt { color: var(--ink-2); }
+.storage-info dd { margin: 0; }
+@media (max-width: 480px) { .storage-info > div { grid-template-columns: 1fr; gap: 0; } }
 
 /* ===== Learn ===== */
 .lesson-group { display: flex; flex-direction: column; gap: 8px; }

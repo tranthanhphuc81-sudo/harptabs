@@ -28,6 +28,9 @@ export interface SongScan {
   /** số lỗ kèn của từng nốt lúc lưu (id nốt → token) */
   tokens: Record<string, string | null>;
   pages: SavedScanPage[];
+  /** chỉ có ở bản quét dở (nháp): tên bài, tác giả đang gõ */
+  title?: string;
+  artist?: string;
 }
 
 export async function grayToBlob(g: Gray): Promise<Blob> {

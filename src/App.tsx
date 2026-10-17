@@ -5,6 +5,7 @@ import { ensureSeeded } from './lib/db';
 import { Icon } from './components/Icon';
 import { ThemeToggle } from './components/ThemeToggle';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { UpdateNotice } from './components/AppNotices';
 import Library from './pages/Library';
 import SongView from './pages/SongView';
 
@@ -56,6 +57,7 @@ function Shell() {
         <div className="nav-theme"><ThemeToggle /></div>
       </nav>
       <main className="main">
+        <UpdateNotice />
         {!online && <div className="offline-pill" role="status">Đang offline — mọi thứ vẫn dùng được, trừ phần nhờ AI</div>}
         {err && <div className="alert error">Không mở được kho dữ liệu trên máy: {err}. Hãy tắt chế độ ẩn danh hoặc cho phép lưu trữ.</div>}
         {ready && (

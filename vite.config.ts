@@ -7,7 +7,8 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      registerType: 'autoUpdate',
+      // không tự tải lại khi có bản mới: người dùng bấm "Cập nhật" khi xong việc
+      registerType: 'prompt',
       includeAssets: ['icon.svg'],
       manifest: {
         name: 'Sổ Tab Harmonica',
