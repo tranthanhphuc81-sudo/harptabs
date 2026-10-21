@@ -186,6 +186,7 @@ export default function FileImport({ onImages }: { onImages?: (files: File[]) =>
 
 /** Nơi tìm file nhạc dạng dữ liệu (MusicXML / MIDI) + mẹo chuyển PDF thành MusicXML */
 const SOURCES: { name: string; url: string; what: string }[] = [
+  { name: 'Cùng Tập Nhạc', url: 'https://cungtapnhac.com/nhac-midi', what: 'Kho nhạc MIDI và sheet nhạc Việt. Tìm tên bài → mở mục Nhạc MIDI → tải file .mid về máy.' },
   { name: 'MuseScore.com', url: 'https://musescore.com/sheetmusic', what: 'Kho lớn nhất, có nhiều bài Việt do người dùng soạn. Mở bài → Download → MusicXML hoặc MIDI (cần tài khoản miễn phí; một số bài chỉ dành cho gói Pro).' },
   { name: 'IMSLP', url: 'https://imslp.org', what: 'Thư viện nhạc cổ điển hết bản quyền. Phần lớn là PDF, một số bài có MusicXML / MIDI.' },
   { name: 'Mutopia Project', url: 'https://www.mutopiaproject.org', what: 'Nhạc cổ điển, dân ca hết bản quyền — có sẵn file MIDI.' },
@@ -193,21 +194,24 @@ const SOURCES: { name: string; url: string; what: string }[] = [
 
 function FileSources() {
   const [q, setQ] = useState('');
-  const search = (kind: 'musescore' | 'any') => {
+  const search = (kind: 'cungtapnhac' | 'any') => {
     const name = q.trim();
     if (!name) return;
-    const query = kind === 'musescore' ? `site:musescore.com ${name}` : `${name} musicxml OR mxl OR midi`;
-    window.open(`https://www.google.com/search?q=${encodeURIComponent(query)}`, '_blank', 'noopener');
+    // URLSearchParams ghi dấu cách thành "+": trang tìm của Cùng Tập Nhạc hiểu kiểu này
+    const url = kind === 'cungtapnhac'
+      ? `https://cungtapnhac.com/search?${new URLSearchParams({ searchword: name })}`
+      : `https://www.google.com/search?q=${encodeURIComponent(`${name} musicxml OR mxl OR midi`)}`;
+    window.open(url, '_blank', 'noopener');
   };
   return (
     <details className="syntax-help file-sources">
       <summary>Lấy file MusicXML / MIDI ở đâu?</summary>
-      <form className="row gap wrap end-align" onSubmit={(e) => { e.preventDefault(); search('musescore'); }}>
+      <form className="row gap wrap end-align" onSubmit={(e) => { e.preventDefault(); search('cungtapnhac'); }}>
         <label className="field grow">
           <span className="field-label">Tìm theo tên bài</span>
           <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Ví dụ: Diễm xưa" enterKeyHint="search" />
         </label>
-        <button type="submit" className="btn btn-ghost" disabled={!q.trim()}><Icon name="search" size={18} /> Trên MuseScore</button>
+        <button type="submit" className="btn btn-ghost" disabled={!q.trim()}><Icon name="search" size={18} /> Trên Cùng Tập Nhạc</button>
         <button type="button" className="btn btn-ghost" disabled={!q.trim()} onClick={() => search('any')}>Mọi trang</button>
       </form>
       <ul>
