@@ -147,3 +147,7 @@ Bản Android là **TWA** (Trusted Web Activity) do Bubblewrap tạo: mở https
 
 - Cấu hình: `android/twa-manifest.json`. Workflow `build-apk.yml` chỉ chạy khi file này đổi (hoặc bấm chạy tay), rồi đăng APK lên GitHub Releases.
 - Cần secret `ANDROID_KEYSTORE_BASE64` và `ANDROID_KEYSTORE_PASSWORD`. Vân tay SHA-256 của khoá ký phải khớp với `public/.well-known/assetlinks.json`, nếu không app sẽ hiện thanh địa chỉ trình duyệt.
+
+## Bản quyền
+
+© 2026 Trần Thanh Phúc. Liên hệ: 0913.65.65.39

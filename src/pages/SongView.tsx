@@ -367,7 +367,7 @@ function SongPlayerView({ song, original, fit, view, choice, onChoice }: {
       {showDiagram && <HarpDiagram harpKey={song.harpKey} harpType={harpType} highlight={activeToken ? [activeToken] : []} nameStyle={settings.noteNames} />}
 
       <ScanSection songId={song.id} />
-      <p className="print-only print-foot">In từ Sổ Tab Harmonica · harptabs.pages.dev</p>
+      <p className="print-only print-foot">In từ Sổ Tab Harmonica · harptabs.pages.dev · © Trần Thanh Phúc · 0913.65.65.39</p>
 
       <PlayerBar
         p={player}

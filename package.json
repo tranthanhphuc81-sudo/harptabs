@@ -3,6 +3,7 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
+  "author": "Trần Thanh Phúc (0913.65.65.39)",
   "description": "Sổ tab harmonica diatonic 10 lỗ — chạy offline, AI chỉ khi cần",
   "scripts": {
     "postinstall": "node scripts/copy-ocr.mjs",

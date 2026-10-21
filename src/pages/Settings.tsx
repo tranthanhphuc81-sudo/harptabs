@@ -243,7 +243,10 @@ export default function SettingsPage() {
         </div>
       </section>
 
-      <p className="muted small about">Sổ Tab Harmonica 1.0. Bài mẫu chỉ gồm nhạc thuộc phạm vi công cộng.</p>
+      <p className="muted small about">
+        Sổ Tab Harmonica 1.0. Bài mẫu chỉ gồm nhạc thuộc phạm vi công cộng.<br />
+        © {new Date().getFullYear()} Trần Thanh Phúc. Liên hệ: <a href="tel:+84913656539">0913.65.65.39</a>
+      </p>
     </div>
   );
 }
