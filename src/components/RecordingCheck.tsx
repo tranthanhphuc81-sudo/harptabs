@@ -12,7 +12,7 @@ const beatName = (b: number) => BEAT_NAMES[String(+b.toFixed(3))] ?? `${+b.toFix
 const sugKey = (s: Suggestion) => `${s.kind}:${'noteId' in s ? s.noteId : s.afterId}:${s.at}`;
 
 /** Đọc file ghi âm / bản thu thành mẫu âm thanh một kênh */
-async function decode(blob: Blob): Promise<{ samples: Float32Array; sampleRate: number }> {
+export async function decodeAudio(blob: Blob): Promise<{ samples: Float32Array; sampleRate: number }> {
   const AC = window.AudioContext ?? (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
   const ctx = new AC();
   try {
@@ -71,7 +71,7 @@ export function RecordingCheck({ score, meter, label, onApply, onFocus }: {
     setResult(null);
     try {
       setStatus('decoding');
-      const { samples, sampleRate } = await decode(blob);
+      const { samples, sampleRate } = await decodeAudio(blob);
       if (samples.length < sampleRate * 2) throw new Error('Bản thu quá ngắn — thu ít nhất vài câu nhạc');
       setStatus('analyzing');
       const r = await analyze(samples, sampleRate, score, meter, mode);

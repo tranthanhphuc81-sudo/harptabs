@@ -22,6 +22,7 @@ Bản đang chạy: https://harptabs.pages.dev
 | Dán tab từ mạng | Offline | Copy tab trên web (`4 -4`, `4↑ 4↓`, `B4 D4`, `-3b`, `(4)`…) dán vào, app tự nhận dòng tab, lời, tên bài, tông kèn và chuyển sang định dạng của app |
 | File nhạc | Offline | Nhập MIDI (`.mid`, `.kar` karaoke có lời), MusicXML (`.musicxml`, `.mxl`) → tab chính xác tuyệt đối; ảnh `.jpg/.png` và `.pdf` được chuyển sang Quét khuông nhạc |
 | Quét khuông nhạc | Offline | Chụp ảnh hoặc chọn PDF bản nhạc in (khoá Sol, một bè), máy tự đọc cao độ + trường độ + vạch nhịp ngay trên điện thoại, đọc tên bài (OCR tiếng Việt), hiện số lỗ trên từng nốt để chạm vào sửa |
+| Bản thu → tab | Offline | Thu âm trong app hoặc chọn file (tự hát / ngân nga / thổi kèn, hoặc bài hát MP3): máy dò giai điệu, đoán tempo, làm tròn theo phách rồi xếp tab cho loại kèn đã chọn. Bài có nhạc đệm chỉ là bản nháp |
 | Đối chiếu bản thu | Offline (micro / file âm thanh) | Hát, thổi hoặc mở bài gốc có nhạc đệm (MP3, M4A, WAV), app dò giai điệu và gợi ý sửa những nốt quét sai |
 | Nhập AI | Online (Gemini) | Nhờ AI đọc ảnh hoặc nhớ bài theo tên → app tự xếp tab, beat, ghép lời. Đọc ảnh bằng AI còn hay sai cao độ, bản in nên dùng Quét khuông nhạc |
 

@@ -91,7 +91,7 @@ export function midiName(midi: number, preferFlats = false): string {
 }
 
 /** Một nốt giai điệu đã xếp theo thời gian (phách đen tính từ đầu bài) */
-interface MelNote { start: number; beats: number; midi: number | null; lyric?: string; tieNext?: boolean }
+export interface MelNote { start: number; beats: number; midi: number | null; lyric?: string; tieNext?: boolean }
 
 /** Bè / track để người dùng chọn khi file có nhiều bè */
 export interface MusicPart { id: string; name: string; notes: number; low: number; high: number }
@@ -108,7 +108,7 @@ export interface MusicFile {
 }
 
 /** Gộp nốt luyến cùng cao độ, chèn dấu lặng vào chỗ trống, chia dòng theo ô nhịp */
-function toTranscription(
+export function toTranscription(
   notes: MelNote[], o: { title: string; artist?: string; songKey?: string; flats?: boolean; tempo?: number; timeSig: string; barBeats: number; pickupBeats: number; lineBreaks?: number[]; warnings?: string[] },
 ): AiTranscription {
   const out: MelNote[] = [];

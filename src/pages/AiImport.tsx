@@ -20,8 +20,9 @@ import { AI_ENABLED } from '../lib/features';
 // quét nhạc và đọc file nặng (OMR, MIDI, PDF): chỉ tải khi chọn
 const ScanImport = lazy(() => import('./ScanImport'));
 const FileImport = lazy(() => import('./FileImport'));
+const AudioImport = lazy(() => import('./AudioImport'));
 
-type Mode = 'scan' | 'file' | 'paste' | 'image' | 'name';
+type Mode = 'scan' | 'file' | 'paste' | 'audio' | 'image' | 'name';
 interface Img { id: string; mimeType: string; data: string; preview: string }
 
 function vnd(usd: number) {
@@ -155,7 +156,7 @@ export default function AiImport() {
       <header className="page-head">
         <div>
           <h1>{editScan ? 'Sửa nốt trên ảnh' : 'Nhập bài'}</h1>
-          <p className="muted">Mở file nhạc MIDI / MusicXML (chính xác nhất), chụp khuông nhạc để máy tự đọc nốt{AI_ENABLED ? ', dán tab copy từ mạng, hoặc nhờ AI đọc ảnh / nhớ bài theo tên.' : ', hoặc dán tab copy từ mạng.'}</p>
+          <p className="muted">Mở file nhạc MIDI / MusicXML (chính xác nhất), chụp khuông nhạc để máy tự đọc nốt{AI_ENABLED ? ', dán tab copy từ mạng, dò giai điệu từ bản thu, hoặc nhờ AI đọc ảnh / nhớ bài theo tên.' : ', dán tab copy từ mạng, hoặc dò giai điệu từ bản thu (tự hát / bài hát MP3).'}</p>
         </div>
       </header>
 
@@ -176,6 +177,9 @@ export default function AiImport() {
         <button type="button" role="tab" aria-selected={mode === 'paste'} className={mode === 'paste' ? 'on' : ''} onClick={() => setMode('paste')}>
           <Icon name="edit" size={18} /> Dán tab
         </button>
+        <button type="button" role="tab" aria-selected={mode === 'audio'} className={mode === 'audio' ? 'on' : ''} onClick={() => setMode('audio')}>
+          <Icon name="mic" size={18} /> Bản thu
+        </button>
         {AI_ENABLED && (
           <>
             <button type="button" role="tab" aria-selected={mode === 'image'} className={mode === 'image' ? 'on' : ''} onClick={() => setMode('image')}>
@@ -189,7 +193,7 @@ export default function AiImport() {
       </div>
 
       {mode === 'scan' ? <Suspense fallback={null}><ScanImport key={editScan ?? `new-${scanFiles?.n ?? 0}`} editSongId={editScan} initialFiles={scanFiles?.files} /></Suspense>
-        : mode === 'file' ? <Suspense fallback={null}><FileImport onImages={(files) => { setScanFiles((s) => ({ n: (s?.n ?? 0) + 1, files })); setMode('scan'); }} /></Suspense> : mode === 'paste' ? <PasteTab /> : <>
+        : mode === 'file' ? <Suspense fallback={null}><FileImport onImages={(files) => { setScanFiles((s) => ({ n: (s?.n ?? 0) + 1, files })); setMode('scan'); }} /></Suspense> : mode === 'paste' ? <PasteTab /> : mode === 'audio' ? <Suspense fallback={null}><AudioImport /></Suspense> : <>
       <div className="ai-form">
         {mode === 'image' ? (
           <>

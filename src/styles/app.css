@@ -915,3 +915,6 @@ button, a, select { -webkit-tap-highlight-color: transparent; }
   .tab-section-title { break-after: avoid; page-break-after: avoid; }
   .print-foot { display: block; margin-top: 14px; font-size: 8pt; color: #666; text-align: center; }
 }
+
+/* Nhập bài → Bản thu: nghe lại bản thu để so với tab */
+.audio-src { width: 100%; max-width: 520px; height: 40px; }
