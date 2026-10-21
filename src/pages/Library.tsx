@@ -156,10 +156,10 @@ export default function Library() {
         <div className="empty">
           {songs.length === 0 ? (
             <>
-              <p>Thư viện đang trống. Thêm bài đầu tiên bằng tay, hoặc chụp khuông nhạc để AI chuyển thành tab.</p>
+              <p>Thư viện đang trống. Thêm bài đầu tiên bằng tay, hoặc mở file nhạc / chụp khuông nhạc để app chuyển thành tab.</p>
               <div className="row gap">
                 <Link to="/new" className="btn btn-primary">Thêm bài</Link>
-                <Link to="/ai" className="btn btn-ghost">Nhập bằng AI</Link>
+                <Link to="/ai" className="btn btn-ghost">Nhập bài</Link>
               </div>
             </>
           ) : (

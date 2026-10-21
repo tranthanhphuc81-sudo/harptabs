@@ -382,7 +382,7 @@ export const LESSONS: Lesson[] = [
         '**Tuần 3**: lỗ 7–9 (đảo chiều), vibrato, wah-wah, nốt dài có biểu cảm. Bài: Amazing Grace, Happy Birthday.',
         '**Tuần 4**: bend lỗ 4 và lỗ 1, vị trí 2, thang âm blues, blues 12 ô nhịp. Bài: Jingle Bells, Thang âm blues.',
       ] },
-      { t: 'tip', text: 'Sau 30 ngày, dùng tính năng Nhập AI để chuyển những bài bạn yêu thích thành tab và tập tiếp.' },
+      { t: 'tip', text: 'Sau 30 ngày, dùng trang Nhập bài (file nhạc, quét khuông nhạc, dán tab) để chuyển những bài bạn yêu thích thành tab và tập tiếp.' },
     ],
   },
   // ---------------- KÈN CHROMATIC ----------------

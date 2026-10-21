@@ -15,6 +15,7 @@ import { usePlayer } from '../components/usePlayer';
 import { Icon } from '../components/Icon';
 import { useAppState, useOnline } from '../state';
 import PasteTab from './PasteTab';
+import { AI_ENABLED } from '../lib/features';
 
 // quét nhạc và đọc file nặng (OMR, MIDI, PDF): chỉ tải khi chọn
 const ScanImport = lazy(() => import('./ScanImport'));
@@ -35,7 +36,9 @@ export default function AiImport() {
   const [params] = useSearchParams();
   const editScan = params.get('scan') ?? undefined;
   // mặc định mở "File nhạc" (MIDI / MusicXML: chính xác tuyệt đối); link sửa bản quét / dán tab mở thẳng chế độ đó
-  const [mode, setMode] = useState<Mode>(params.get('paste') ? 'paste' : editScan ? 'scan' : 'file');
+  const [rawMode, setMode] = useState<Mode>(params.get('paste') ? 'paste' : editScan ? 'scan' : 'file');
+  // AI đang tạm khoá: không vào được chế độ Ảnh + AI / Tên bài
+  const mode: Mode = !AI_ENABLED && (rawMode === 'image' || rawMode === 'name') ? 'file' : rawMode;
   const [lastMode, setLastMode] = useState<Mode>('image'); // chế độ đã tạo ra kết quả đang hiện
   // ảnh khuông nhạc chọn ở ô "File nhạc" → mở "Quét nhạc" với sẵn các ảnh đó
   const [scanFiles, setScanFiles] = useState<{ n: number; files: File[] } | null>(null);
@@ -152,7 +155,7 @@ export default function AiImport() {
       <header className="page-head">
         <div>
           <h1>{editScan ? 'Sửa nốt trên ảnh' : 'Nhập bài'}</h1>
-          <p className="muted">Mở file nhạc MIDI / MusicXML (chính xác nhất), chụp khuông nhạc để máy tự đọc nốt, dán tab copy từ mạng, hoặc nhờ AI đọc ảnh / nhớ bài theo tên.</p>
+          <p className="muted">Mở file nhạc MIDI / MusicXML (chính xác nhất), chụp khuông nhạc để máy tự đọc nốt{AI_ENABLED ? ', dán tab copy từ mạng, hoặc nhờ AI đọc ảnh / nhớ bài theo tên.' : ', hoặc dán tab copy từ mạng.'}</p>
         </div>
       </header>
 
@@ -173,12 +176,16 @@ export default function AiImport() {
         <button type="button" role="tab" aria-selected={mode === 'paste'} className={mode === 'paste' ? 'on' : ''} onClick={() => setMode('paste')}>
           <Icon name="edit" size={18} /> Dán tab
         </button>
-        <button type="button" role="tab" aria-selected={mode === 'image'} className={mode === 'image' ? 'on' : ''} onClick={() => setMode('image')}>
-          <Icon name="camera" size={18} /> Ảnh + AI
-        </button>
-        <button type="button" role="tab" aria-selected={mode === 'name'} className={mode === 'name' ? 'on' : ''} onClick={() => setMode('name')}>
-          <Icon name="search" size={18} /> Tên bài
-        </button>
+        {AI_ENABLED && (
+          <>
+            <button type="button" role="tab" aria-selected={mode === 'image'} className={mode === 'image' ? 'on' : ''} onClick={() => setMode('image')}>
+              <Icon name="camera" size={18} /> Ảnh + AI
+            </button>
+            <button type="button" role="tab" aria-selected={mode === 'name'} className={mode === 'name' ? 'on' : ''} onClick={() => setMode('name')}>
+              <Icon name="search" size={18} /> Tên bài
+            </button>
+          </>
+        )}
       </div>
 
       {mode === 'scan' ? <Suspense fallback={null}><ScanImport key={editScan ?? `new-${scanFiles?.n ?? 0}`} editSongId={editScan} initialFiles={scanFiles?.files} /></Suspense>

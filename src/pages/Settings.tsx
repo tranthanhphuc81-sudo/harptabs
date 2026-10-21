@@ -4,6 +4,7 @@ import { db, ensureSeeded, importBackup } from '../lib/db';
 import { backupStatus, downloadBackup, loadBackupMeta } from '../lib/backup';
 import { HarpKey } from '../lib/harp';
 import { VND_PER_USD, geminiUrl } from '../../shared/ai';
+import { AI_ENABLED } from '../lib/features';
 import { HarpTypeSelect, KeySelect } from '../components/KeySelect';
 import { Icon } from '../components/Icon';
 import { ThemePicker } from '../components/ThemePicker';
@@ -149,7 +150,7 @@ export default function SettingsPage() {
         </div>
       </section>
 
-      <section className="panel">
+      {AI_ENABLED && <section className="panel">
         <h2>Kết nối AI</h2>
         <p className="muted">AI chỉ dùng khi bạn nhập bài mới. Mọi phần còn lại chạy offline.</p>
         <fieldset className="radio-group">
@@ -199,7 +200,7 @@ export default function SettingsPage() {
             </span>
           )}
         </div>
-      </section>
+      </section>}
 
       <section className="panel">
         <h2>Dữ liệu</h2>
