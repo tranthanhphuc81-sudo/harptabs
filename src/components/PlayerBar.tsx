@@ -153,7 +153,7 @@ export function PlayerBar({ p, loopLabel, onToggleLoop, extra, autoStyle, autoAp
   const eff = Math.round(opts.bpm * opts.tempoScale);
   const step = (d: number) => setOpts({ tempoScale: Math.min(1.6, Math.max(0.4, Math.round((opts.tempoScale + d) * 100) / 100)) });
   return (
-    <div className="playerbar" role="region" aria-label="Điều khiển phát">
+    <div className={`playerbar${tuner ? ' tuning' : ''}`} role="region" aria-label="Điều khiển phát">
       <div className="pb-main">
         <button type="button" className="pb-play" onClick={p.toggle} aria-label={p.playing ? 'Dừng' : 'Phát'}>
           <Icon name={p.playing ? 'stop' : 'play'} size={26} />

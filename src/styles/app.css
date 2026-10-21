@@ -464,8 +464,15 @@ button, a, select { -webkit-tap-highlight-color: transparent; }
   display: flex;
   flex-direction: column;
   gap: 8px;
+  /* không cao quá màn hình (dính ở dưới nên phần thừa sẽ trôi khỏi màn hình); vuốt trong thanh không cuộn trang tab phía sau */
+  max-height: calc(100vh - var(--nav-h) - env(safe-area-inset-bottom) - 24px);
+  max-height: calc(100dvh - var(--nav-h) - env(safe-area-inset-bottom) - 24px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
-@media (min-width: 900px) { .playerbar { bottom: 16px; } }
+@media (min-width: 900px) { .playerbar { bottom: 16px; max-height: calc(100dvh - 32px); } }
+/* mở bảng Chỉnh âm thanh: nền đặc, tab đang chạy phía sau không lộ qua làm rối mắt */
+.playerbar.tuning { background: var(--surface); -webkit-backdrop-filter: none; backdrop-filter: none; }
 .pb-main { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; }
 .pb-play {
   flex: none;
@@ -796,7 +803,11 @@ button, a, select { -webkit-tap-highlight-color: transparent; }
 }
 
 /* ===== Tuỳ chỉnh beat ===== */
-.beat-tuner { display: flex; flex-direction: column; gap: 10px; padding-top: 8px; border-top: 1px solid var(--line); }
+/* bảng Chỉnh âm thanh tự cuộn bên trong: nút Phát / tốc độ phía trên luôn nằm yên, không bị trang chạy nền kéo theo */
+.beat-tuner {
+  display: flex; flex-direction: column; gap: 10px; padding-top: 8px; border-top: 1px solid var(--line);
+  max-height: 45vh; max-height: 45dvh; overflow-y: auto; overscroll-behavior: contain; flex: none;
+}
 .bt-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
 .bt-label { font-size: 0.8rem; color: var(--ink-2); min-width: 5.5rem; }
 .bt-seg { display: flex; flex-wrap: wrap; gap: 6px; }
