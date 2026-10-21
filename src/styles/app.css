@@ -876,3 +876,31 @@ button, a, select { -webkit-tap-highlight-color: transparent; }
 .viewas-field select { max-width: 100%; }
 .viewas .segmented { align-self: flex-end; }
 .viewas-status { margin: 0; }
+
+
+/* ===== In / lưu PDF (nút In trong trang bài) ===== */
+.print-only { display: none; }
+@media print {
+  @page { margin: 14mm 12mm; }
+  html, body { background: #fff !important; }
+  .print-only { display: initial; }
+  .no-print,
+  .nav, .playerbar, .notice, .toast, dialog,
+  .song-head .back, .sh-actions, .viewas, .legend-chords,
+  .below-tab, .harp-diagram, .scan-saved, .wait-banner, .alert,
+  .page-song > .small.muted { display: none !important; }
+  .main { padding: 0 !important; }
+  .page { padding-top: 0; gap: 10px; animation: none; max-width: none; }
+  .song-head { grid-template-columns: auto 1fr; }
+  .sh-meta { color: #333; }
+  .legend { font-size: 9pt; }
+  .legend .print-only { flex-basis: auto; color: #333; }
+  /* giữ màu ô thổi / hút khi in */
+  .nt-hole, .lg, .keyplate { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .nt.is-active .nt-hole { background: var(--blow-fill); color: var(--blow); }
+  .nt.draw.is-active .nt-hole { background: var(--draw-fill); color: var(--draw); }
+  /* không cắt đôi dòng tab (kèm lời) hay tiêu đề đoạn sang trang sau */
+  .tabline, .nt-cell { break-inside: avoid; page-break-inside: avoid; }
+  .tab-section-title { break-after: avoid; page-break-after: avoid; }
+  .print-foot { display: block; margin-top: 14px; font-size: 8pt; color: #666; text-align: center; }
+}

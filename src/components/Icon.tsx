@@ -16,6 +16,7 @@ const PATHS: Record<string, string> = {
   back: 'M15 5l-7 7 7 7',
   trash: 'M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13',
   download: 'M12 4v11M7 10l5 5 5-5M5 20h14',
+  print: 'M7 9V3h10v6M7 17H4v-8h16v8h-3M7 14h10v7H7z',
   upload: 'M12 20V9M7 14l5-5 5 5M5 4h14',
   swap: 'M7 7h12l-3-3M17 17H5l3 3',
   loop: 'M17 2l3 3-3 3M4 11V9a4 4 0 0 1 4-4h12M7 22l-3-3 3-3M20 13v2a4 4 0 0 1-4 4H4',

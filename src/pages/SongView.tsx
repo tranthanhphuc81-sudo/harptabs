@@ -249,6 +249,20 @@ function SongPlayerView({ song, original, fit, view, choice, onChoice }: {
   const exportSong = () => downloadJson(exportOne(original), `${slugify(original.title)}.harptab.json`);
   // trình duyệt không cho chép tự động: hiện link để người dùng tự chép
   const [manualLink, setManualLink] = useState<string | null>(null);
+  /** In / lưu PDF bằng hộp thoại in của máy; tên bài làm tên file PDF */
+  const printSong = () => {
+    const prev = document.title;
+    const root = document.documentElement;
+    const theme = root.getAttribute('data-theme');
+    document.title = `${song.title || 'Bài hát'} – ${harpName(song.harpKey, harpType)}`;
+    root.setAttribute('data-theme', 'light'); // in nền trắng kể cả khi đang dùng giao diện tối
+    window.addEventListener('afterprint', () => {
+      document.title = prev;
+      if (theme === null) root.removeAttribute('data-theme'); else root.setAttribute('data-theme', theme);
+    }, { once: true });
+    window.print();
+  };
+
   const share = async () => {
     const r = await shareSong(original);
     if (r.status === 'copied') toast('Đã chép link bài — dán vào tin nhắn để gửi');
@@ -282,6 +296,7 @@ function SongPlayerView({ song, original, fit, view, choice, onChoice }: {
             <span>{stats.notes} nốt</span>
             {stats.bends > 0 && <span className="bend-count">{stats.bends} bend</span>}
             {stats.slides > 0 && <span className="bend-count">{stats.slides} nốt gạt</span>}
+            <span className="print-only">{song.bpm} bpm</span>
           </p>
         </div>
         <div className="sh-actions">
@@ -290,6 +305,7 @@ function SongPlayerView({ song, original, fit, view, choice, onChoice }: {
           </button>
           <button type="button" className="icon-btn" onClick={() => setRekeyOpen(true)} aria-label="Chuyển sang kèn khác"><Icon name="swap" /></button>
           <button type="button" className="icon-btn" onClick={share} aria-label="Chia sẻ bài"><Icon name="share" /></button>
+          <button type="button" className="icon-btn" onClick={printSong} aria-label="In / lưu PDF" title="In / lưu PDF"><Icon name="print" /></button>
           <button type="button" className="icon-btn" onClick={exportSong} aria-label="Xuất file bài"><Icon name="download" /></button>
           <Link to={`/song/${song.id}/edit`} className="icon-btn" aria-label="Sửa bài"><Icon name="edit" /></Link>
           <button type="button" className={confirmDel ? 'btn btn-danger del-confirm' : 'icon-btn'} onClick={removeSong}
@@ -310,7 +326,8 @@ function SongPlayerView({ song, original, fit, view, choice, onChoice }: {
         <span className="lg blow">4</span> thổi
         <span className="lg draw">−4</span> hút
         {trem ? null : chrom ? <><span className="lg bend">&lt;</span> bấm nút gạt</> : <><span className="lg bend">′</span> bend nửa cung</>}
-        <span className="muted">Chạm vào nốt để nghe, hoặc chọn chỗ bắt đầu phát.</span>
+        <span className="lg-dur print-only">Ô dài = giữ lâu hơn (ô thường 1 phách) · <strong>–</strong> nghỉ</span>
+        <span className="muted no-print">Chạm vào nốt để nghe, hoặc chọn chỗ bắt đầu phát.</span>
         <button type="button" className={`chip legend-chords${beatPrefs.showChords ? ' on' : ''}`} aria-pressed={beatPrefs.showChords}
           onClick={() => setBeatPrefs({ showChords: !beatPrefs.showChords })}>
           Hợp âm{manualCount > 0 ? ` (${manualCount} chọn tay)` : ''}
@@ -350,6 +367,7 @@ function SongPlayerView({ song, original, fit, view, choice, onChoice }: {
       {showDiagram && <HarpDiagram harpKey={song.harpKey} harpType={harpType} highlight={activeToken ? [activeToken] : []} nameStyle={settings.noteNames} />}
 
       <ScanSection songId={song.id} />
+      <p className="print-only print-foot">In từ Sổ Tab Harmonica · harptabs.pages.dev</p>
 
       <PlayerBar
         p={player}
