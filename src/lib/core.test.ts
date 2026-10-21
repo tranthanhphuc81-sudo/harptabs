@@ -137,6 +137,16 @@ describe('converter', () => {
     expect(fit.stats.bends).toBe(0);
   });
 
+  it('ưu tiên quãng giữa (lỗ 4–6) khi nhiều quãng tám đều chơi được', () => {
+    // Ode to Joy và Twinkle ở quãng C4–A4: lỗ 7–9 cũng chơi được (ít nhảy lỗ hơn) nhưng khó cho người mới
+    const ode = [64, 64, 65, 67, 67, 65, 64, 62, 60, 60, 62, 64, 64, 62, 62];
+    expect(fitToHarp(ode, 'C').tokens.join(' ')).toBe('5 5 -5 6 6 -5 5 -4 4 4 -4 5 5 -4 -4');
+    const twinkle = [60, 60, 67, 67, 69, 69, 67, 65, 65, 64, 64, 62, 62, 60];
+    expect(fitToHarp(twinkle, 'C').tokens.join(' ')).toBe('4 4 6 6 -6 -6 6 -5 -5 5 5 -4 -4 4');
+    // giai điệu chỉ nằm ở quãng cao vẫn giữ quãng cao khi quãng khác phải bend
+    expect(fitToHarp([84, 86, 88, 89, 91], 'C', { transpose: 'octave' }).stats.bends).toBe(0);
+  });
+
   it('gợi ý kèn đúng tông bài', () => {
     // giai điệu thang âm D trưởng
     const d = [62, 64, 66, 67, 69, 71, 73, 74].map((x) => x + 12);

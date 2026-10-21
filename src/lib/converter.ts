@@ -8,6 +8,13 @@ import { ParsedTab, TabSection, parseTab, serializeTab } from './tabText';
 
 const UNPLAYABLE_COST = 60;
 const MOVE_COST = 0.35;
+/**
+ * Diatonic: người mới chơi thoải mái nhất ở lỗ 4–6 (quãng giữa). Lỗ 7–10 đảo thổi/hút, lỗ 1–3 dễ
+ * bị bend ngoài ý muốn → phạt nhẹ mỗi nốt theo khoảng cách tới quãng giữa, để khi nhiều quãng tám
+ * đều chơi được với chi phí gần nhau thì chọn quãng giữa (vd. Ode to Joy: 5 5 -5 6 thay vì 8 8 -9 9).
+ */
+const REGISTER_COST = 0.05;
+const registerCost = (hole: number) => (hole < 4 ? 4 - hole : hole > 6 ? hole - 6 : 0) * REGISTER_COST;
 
 export interface TabFit {
   key: HarpKey;
@@ -40,6 +47,7 @@ export function bestTabs(midis: (number | null)[], key: HarpKey, shift = 0, type
 
   // tremolo: lỗ thổi (lẻ) và lỗ hút (chẵn) của một cặp nằm cùng chỗ trên kèn → khoảng cách tính theo cặp
   const place = isTremolo(type) ? (h: number) => Math.ceil(h / 2) : (h: number) => h;
+  const register = type === 'diatonic' ? registerCost : () => 0;
   midis.forEach((m, i) => {
     if (m === null) return;
     const target = m + shift;
@@ -48,7 +56,7 @@ export function bestTabs(midis: (number | null)[], key: HarpKey, shift = 0, type
     const col: State[] = [];
     const options: (HarpNote | null)[] = cands.length ? cands : [null];
     for (const c of options) {
-      const base = c ? techniqueCost(c) : UNPLAYABLE_COST;
+      const base = c ? techniqueCost(c) + register(c.hole) : UNPLAYABLE_COST;
       if (!prevCol) {
         col.push({ note: c, cost: base, prev: -1 });
         continue;
