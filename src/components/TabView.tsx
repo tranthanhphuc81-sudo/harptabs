@@ -94,6 +94,18 @@ const Line = memo(function Line({ events, si, li, index, active, clickable, onNo
   );
 });
 
+/** Khoảng màn hình không bị thanh điều khiển (.playerbar) và thanh menu (.nav) dính ở dưới che */
+function visibleBand(): [number, number] {
+  const h = window.innerHeight;
+  let bottom = h;
+  for (const sel of ['.playerbar', '.nav']) {
+    const r = document.querySelector(sel)?.getBoundingClientRect();
+    // chỉ tính khi thanh đang nằm ở nửa dưới màn hình (thanh điều khiển cuộn theo trang khi ở cuối bài)
+    if (r && r.height > 0 && r.top > h * 0.35 && r.top < bottom) bottom = r.top;
+  }
+  return [0, bottom];
+}
+
 function TabViewInner({ parsed, flat, active, onNoteClick, showNames, nameStyle = 'letter', size = 'm', compact, chords, onChordClick }: Props) {
   const ref = useRef<HTMLDivElement>(null);
   const lastLine = useRef<string>('');
@@ -130,13 +142,19 @@ function TabViewInner({ parsed, flat, active, onNoteClick, showNames, nameStyle 
     const f = flat[active];
     if (!f) return;
     const lineKey = `${f.sectionIndex}.${f.lineIndex}`;
-    if (lineKey === lastLine.current) return;
+    const lineChanged = lineKey !== lastLine.current;
     lastLine.current = lineKey;
     const el = ref.current.querySelector(`[data-i="${active}"]`);
-    if (el && 'scrollIntoView' in el) {
-      const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-      (el as HTMLElement).scrollIntoView({ block: 'center', behavior: reduce ? 'auto' : 'smooth' });
-    }
+    if (!el) return;
+    // vùng nhìn thấy thật: trừ thanh điều khiển và thanh menu dính ở cuối màn hình
+    const [top, bottom] = visibleBand();
+    const r = el.getBoundingClientRect();
+    const margin = Math.min(72, (bottom - top) / 4);
+    const hidden = r.top < top + margin || r.bottom > bottom - margin;
+    // sang dòng mới, hoặc nốt (dòng dài xuống hàng) trôi vào sau thanh điều khiển: đưa nốt về giữa vùng nhìn thấy
+    if (!lineChanged && !hidden) return;
+    const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    window.scrollBy({ top: (r.top + r.bottom) / 2 - (top + bottom) / 2, behavior: reduce ? 'auto' : 'smooth' });
   }, [active, flat]);
 
   if (!parsed.sections.length) return <p className="muted">Chưa có nốt nào.</p>;
