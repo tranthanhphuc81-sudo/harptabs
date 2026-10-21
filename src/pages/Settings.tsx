@@ -205,6 +205,13 @@ export default function SettingsPage() {
       <section className="panel">
         <h2>Dữ liệu</h2>
         <p className="muted">{count ?? 0} bài đang lưu trên thiết bị này. Xoá dữ liệu trình duyệt sẽ mất bài, nên thỉnh thoảng hãy xuất file sao lưu.</p>
+        <label className="check wide">
+          <input type="checkbox" checked={s.shareStats} onChange={(e) => update({ shareStats: e.target.checked })} />
+          <span>
+            Gửi thống kê ẩn danh
+            <span className="muted small" style={{ display: 'block' }}>Mỗi ngày một lần, app gửi một mã ngẫu nhiên của máy này, loại app (web / đã cài / Android) và số lần mở app, để tác giả biết có bao nhiêu người dùng. Không gửi bài hát, tên hay thông tin cá nhân.</span>
+          </span>
+        </label>
         <dl className="storage-info">
           <div>
             <dt>Sao lưu gần nhất</dt>

@@ -11,11 +11,14 @@
  *   DAILY_LIMIT      số lượt / IP / ngày (mặc định 30) — cần KV binding RATE
  *   ALLOWED_ORIGINS  danh sách origin được gọi, "*" = tất cả
  *   BURST            (binding Rate Limiting, tuỳ chọn) — chặn gọi dồn dập trong thời gian ngắn
+ *   STATS            (binding D1, tuỳ chọn) — thống kê ẩn danh lượt cài / lượt dùng (xem stats.ts)
+ *   STATS_PASSWORD   (secret) — mật khẩu trang /stats
  *
  * Lưu ý: app là PWA công khai nên APP_TOKEN và kiểm tra origin chỉ chặn được trang web khác
  * và người gọi tò mò; lớp bảo vệ chính là giới hạn lượt theo IP.
  */
 import { AiInput, buildGeminiRequest, geminiUrl, parseGeminiResponse, validateInput } from '../../shared/ai';
+import { D1, parsePing, passwordOk, readStats, recordPing, STATS_PAGE } from './stats';
 
 interface KV {
   get(key: string): Promise<string | null>;
@@ -36,6 +39,8 @@ export interface Env {
   ALLOWED_ORIGINS?: string;
   RATE?: KV;
   BURST?: RateLimiter;
+  STATS?: D1;
+  STATS_PASSWORD?: string;
 }
 
 const MAX_BODY = 14_000_000;
@@ -56,8 +61,8 @@ function cors(origin: string | null, env: Env): Record<string, string> {
   const allow = allowed.includes('*') ? '*' : origin && allowed.includes(origin) ? origin : allowed[0] ?? '';
   return {
     'access-control-allow-origin': allow,
-    'access-control-allow-methods': 'POST, OPTIONS',
-    'access-control-allow-headers': 'content-type, x-app-token',
+    'access-control-allow-methods': 'GET, POST, OPTIONS',
+    'access-control-allow-headers': 'content-type, x-app-token, authorization',
     'access-control-max-age': '86400',
     vary: 'origin',
   };
@@ -89,12 +94,42 @@ function json(data: unknown, status: number, headers: Record<string, string>) {
   return new Response(JSON.stringify(data), { status, headers: { ...headers, 'content-type': 'application/json; charset=utf-8' } });
 }
 
+/** App gửi mỗi ngày một lần; lỗi ghi cũng trả 204 để app không phải thử lại */
+async function handlePing(req: Request, env: Env, h: Record<string, string>): Promise<Response> {
+  if (!originAllowed(req.headers.get('origin'), env)) return json({ error: 'Không được phép' }, 403, h);
+  const raw = await readBody(req, 2000);
+  let ping = null;
+  try { ping = raw ? parsePing(JSON.parse(raw)) : null; } catch { /* JSON hỏng */ }
+  if (!ping) return json({ error: 'Dữ liệu không hợp lệ' }, 400, h);
+  if (env.STATS) {
+    try { await recordPing(env.STATS, ping); } catch (e) { console.error('ping failed', (e as Error).message); }
+  }
+  return new Response(null, { status: 204, headers: h });
+}
+
+async function handleStats(req: Request, env: Env, h: Record<string, string>): Promise<Response> {
+  const ip = req.headers.get('cf-connecting-ip') ?? 'unknown';
+  if (env.BURST && !(await env.BURST.limit({ key: `stats:${ip}` })).success) return json({ error: 'Thử nhiều quá, đợi một phút' }, 429, h);
+  if (!env.STATS_PASSWORD) return json({ error: 'Máy chủ chưa đặt STATS_PASSWORD' }, 500, h);
+  // trang /stats mã hoá mật khẩu (header không nhận chữ có dấu)
+  let given = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '') ?? null;
+  try { if (given) given = decodeURIComponent(given); } catch { given = null; }
+  if (!(await passwordOk(given, env.STATS_PASSWORD))) return json({ error: 'Sai mật khẩu' }, 401, h);
+  if (!env.STATS) return json({ error: 'Máy chủ chưa gắn cơ sở dữ liệu STATS' }, 500, h);
+  return json(await readStats(env.STATS), 200, { ...h, 'cache-control': 'no-store' });
+}
+
 export default {
   async fetch(req: Request, env: Env): Promise<Response> {
     const h = cors(req.headers.get('origin'), env);
     const url = new URL(req.url);
     if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: h });
     if (url.pathname === '/' || url.pathname === '/health') return json({ ok: true, service: 'harptabs-ai' }, 200, h);
+    if (url.pathname === '/v1/ping' && req.method === 'POST') return handlePing(req, env, h);
+    if (url.pathname === '/v1/stats' && req.method === 'GET') return handleStats(req, env, h);
+    if (url.pathname === '/stats' && req.method === 'GET') {
+      return new Response(STATS_PAGE, { headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store', 'x-robots-tag': 'noindex' } });
+    }
     if (url.pathname !== '/v1/transcribe' || req.method !== 'POST') return json({ error: 'Không tìm thấy' }, 404, h);
 
     const origin = req.headers.get('origin');

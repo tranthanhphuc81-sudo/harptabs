@@ -1,6 +1,7 @@
-import { createContext, ReactNode, useCallback, useContext, useEffect, useState } from 'react';
+import { createContext, ReactNode, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { loadSettings, saveSettings } from './lib/db';
 import { DEFAULT_SETTINGS, Settings } from './lib/types';
+import { startUsageStats } from './lib/usageStats';
 import { applyTheme } from './lib/themes';
 import { setSyncOffsetMs } from './audio/latency';
 
@@ -19,7 +20,12 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const [toastMsg, setToastMsg] = useState<string | null>(null);
 
   useEffect(() => {
-    loadSettings().then((s) => { setSettings(s); setReady(true); }).catch(() => setReady(true));
+    loadSettings().then((s) => {
+      setSettings(s);
+      setReady(true);
+      statsOn.current = s.shareStats;
+      startUsageStats(() => statsOn.current);
+    }).catch(() => setReady(true));
   }, []);
 
   useEffect(() => { setSyncOffsetMs(settings.syncOffsetMs); }, [settings.syncOffsetMs]);
@@ -34,6 +40,10 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     q.addEventListener('change', on);
     return () => q.removeEventListener('change', on);
   }, [ready, settings.palette, settings.theme]);
+
+  // đọc giá trị mới nhất khi gửi thống kê (người dùng có thể tắt giữa chừng)
+  const statsOn = useRef(true);
+  statsOn.current = settings.shareStats;
 
   const update = useCallback((p: Partial<Settings>) => {
     setSettings((prev) => {

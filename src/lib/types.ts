@@ -53,6 +53,8 @@ export interface Settings {
   keepAwake: boolean;
   /** bù trễ đèn nốt (ms): dương = đèn sáng muộn hơn; dùng khi loa / tai nghe Bluetooth trễ hơn máy báo */
   syncOffsetMs: number;
+  /** gửi thống kê ẩn danh lượt cài / lượt dùng (lib/usageStats.ts) */
+  shareStats: boolean;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -68,6 +70,7 @@ export const DEFAULT_SETTINGS: Settings = {
   palette: 'steel',
   defaultHarpKey: 'C',
   defaultHarpType: 'diatonic',
+  shareStats: true,
   keepAwake: true,
   syncOffsetMs: 0,
 };

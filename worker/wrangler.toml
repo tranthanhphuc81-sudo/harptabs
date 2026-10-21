@@ -13,6 +13,12 @@ DAILY_LIMIT = "30"
 ALLOWED_ORIGINS = "https://harptabs.pages.dev,http://localhost:5173,http://localhost:4173"
 
 # Giới hạn lượt/ngày theo IP
+# thống kê ẩn danh lượt cài / lượt dùng (schema.sql); mật khẩu trang /stats: npx wrangler secret put STATS_PASSWORD
+[[d1_databases]]
+binding = "STATS"
+database_name = "harptabs-stats"
+database_id = "9adcbb0f-6457-46d4-879b-5f7477b4c459"
+
 [[kv_namespaces]]
 binding = "RATE"
 id = "f0e8f88f16ad4781a922e5a3e65cd6c0"
