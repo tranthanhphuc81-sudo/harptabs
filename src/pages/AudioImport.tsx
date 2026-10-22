@@ -258,11 +258,11 @@ export default function AudioImport() {
               {stats && stats.unplayable > 0 && <li>Có nốt ngoài tầm kèn — thử chọn kèn khác hoặc cho phép dịch giọng.</li>}
               <li>Tab không có lời — thêm lời trong trang Sửa bài sau khi lưu.</li>
             </ul>
-            <div className="row gap">
+            <TabView parsed={parsed} flat={flat} active={player.active} size="s" showNames={settings.showNoteNames} nameStyle={settings.noteNames} />
+            <div className="row gap preview-actions">
               <MiniPlay p={player} />
               <button type="button" className="btn btn-primary" onClick={save}>Lưu vào thư viện</button>
             </div>
-            <TabView parsed={parsed} flat={flat} active={player.active} size="s" showNames={settings.showNoteNames} nameStyle={settings.noteNames} />
           </section>
         </>
       )}

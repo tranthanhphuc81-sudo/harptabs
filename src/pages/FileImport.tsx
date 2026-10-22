@@ -172,11 +172,11 @@ export default function FileImport({ onImages }: { onImages?: (files: File[]) =>
                 {noLyrics && <li>File không có lời — thêm lời trong trang Sửa bài nếu cần.</li>}
               </ul>
             )}
-            <div className="row gap">
+            <TabView parsed={parsed} flat={flat} active={player.active} size="s" showNames={settings.showNoteNames} nameStyle={settings.noteNames} />
+            <div className="row gap preview-actions">
               <MiniPlay p={player} />
               <button type="button" className="btn btn-primary" onClick={save}>Lưu vào thư viện</button>
             </div>
-            <TabView parsed={parsed} flat={flat} active={player.active} size="s" showNames={settings.showNoteNames} nameStyle={settings.noteNames} />
           </section>
         </>
       )}

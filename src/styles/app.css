@@ -918,3 +918,20 @@ button, a, select { -webkit-tap-highlight-color: transparent; }
 
 /* Nhập bài → Bản thu: nghe lại bản thu để so với tab */
 .audio-src { width: 100%; max-width: 520px; height: 40px; }
+
+/* Nút Nghe thử / Dừng / Lưu dưới bản xem trước tab: dính đáy màn hình (trên thanh menu) khi tab dài,
+   nốt đang sáng tự cuộn lên trên hàng nút (TabView tính vùng nhìn thấy trừ hàng này) */
+.preview-actions {
+  position: sticky;
+  bottom: calc(var(--nav-h) + env(safe-area-inset-bottom) + 8px);
+  z-index: 15;
+  align-self: flex-start;
+  width: fit-content;
+  max-width: 100%;
+  padding: 8px 10px;
+  border-radius: var(--r-l);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+}
+@media (min-width: 900px) { .preview-actions { bottom: 16px; } }

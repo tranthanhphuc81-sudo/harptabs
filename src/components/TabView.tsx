@@ -94,11 +94,11 @@ const Line = memo(function Line({ events, si, li, index, active, clickable, onNo
   );
 });
 
-/** Khoảng màn hình không bị thanh điều khiển (.playerbar) và thanh menu (.nav) dính ở dưới che */
+/** Khoảng màn hình không bị thanh điều khiển (.playerbar), hàng nút Nghe thử / Lưu (.preview-actions) và thanh menu (.nav) dính ở dưới che */
 function visibleBand(): [number, number] {
   const h = window.innerHeight;
   let bottom = h;
-  for (const sel of ['.playerbar', '.nav']) {
+  for (const sel of ['.playerbar', '.preview-actions', '.nav']) {
     const r = document.querySelector(sel)?.getBoundingClientRect();
     // chỉ tính khi thanh đang nằm ở nửa dưới màn hình (thanh điều khiển cuộn theo trang khi ở cuối bài)
     if (r && r.height > 0 && r.top > h * 0.35 && r.top < bottom) bottom = r.top;
