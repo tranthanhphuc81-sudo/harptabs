@@ -194,4 +194,28 @@ describe('nhập MIDI', () => {
       'G4:1:Tuổi', 'A4:1:đời', 'Bb4:1:chân', 'Bb4:1:đơn', 'C5:3:côi', 'R:1', 'D5:1:nhé',
     ]);
   });
+
+  it('MIDI giọng hát: bỏ nốt phụ cao, yếu chồng lên giọng chính', () => {
+    // giọng chính quanh 57–62 (velocity ~90), thỉnh thoảng có nốt hoạ âm 79–84 yếu (velocity ~45) kêu cùng lúc
+    const main = [57, 59, 60, 59, 57, 55, 57, 59, 60, 62, 60, 59];
+    const ev: [number, number[]][] = [];
+    main.forEach((n, i) => {
+      ev.push([i * Q, [0x90, n, 90]], [i * Q + Q - 20, [0x80, n, 0]]);
+      if (i % 3 === 1) ev.push([i * Q + 5, [0x90, n + 22, 45]], [i * Q + Q / 2, [0x80, n + 22, 0]]);
+    });
+    const f = parseMidi(midiFile([meta, track(ev)]));
+    const pitches = notesOf(f.transcribe(f.melodyPart)).filter((x) => !x.startsWith('R')).map((x) => x.split(':')[0]);
+    expect(pitches).toHaveLength(main.length);
+    expect(pitches.every((p) => /^[A-G][#b]?[34]$/.test(p))).toBe(true);
+  });
+
+  it('nhiều bè velocity ngang nhau: vẫn lấy bè trên như trước', () => {
+    const ev: [number, number[]][] = [];
+    [60, 62, 64, 65, 67, 65, 64, 62, 60, 62].forEach((n, i) => {
+      ev.push([i * Q, [0x90, n, 80]], [i * Q + Q - 20, [0x80, n, 0]], [i * Q, [0x90, n + 12, 80]], [i * Q + Q - 20, [0x80, n + 12, 0]]);
+    });
+    const f = parseMidi(midiFile([meta, track(ev)]));
+    const first = notesOf(f.transcribe(f.melodyPart)).find((x) => !x.startsWith('R'))!;
+    expect(first.startsWith('C5')).toBe(true);
+  });
 });

@@ -310,7 +310,7 @@ export function parseMusicXml(text: string, fileTitle = ''): MusicFile {
 
 // ───────────────────────── MIDI ─────────────────────────
 
-interface MidiNote { start: number; end: number; midi: number; ch: number }
+interface MidiNote { start: number; end: number; midi: number; ch: number; vel: number }
 interface MidiTrack { name: string; notes: MidiNote[]; lyrics: { t: number; text: string }[] }
 
 /** Đọc file MIDI chuẩn: các track (nốt, lời), nhịp độ, số chỉ nhịp, hoá biểu */
@@ -335,7 +335,7 @@ function readMidi(buf: Uint8Array) {
     const end = p + 8 + dv.getUint32(p + 4);
     let q = p + 8, tick = 0, status = 0;
     const tr: MidiTrack = { name: '', notes: [], lyrics: [] };
-    const on = new Map<number, number>(); // (kênh*128+nốt) → tick bắt đầu
+    const on = new Map<number, [number, number]>(); // (kênh*128+nốt) → [tick bắt đầu, velocity]
     const vlq = () => { let v = 0, b: number; do { b = buf[q++]; v = (v << 7) | (b & 0x7f); } while (b & 0x80 && q < end); return v; };
     while (q < end) {
       tick += vlq();
@@ -360,12 +360,12 @@ function readMidi(buf: Uint8Array) {
       if (kind === 0x90 && b > 0) {
         // đánh lại cùng phím khi nốt cũ chưa nhả (hay gặp ở file karaoke): nốt cũ dừng ở đây
         const prev = on.get(ch * 128 + a);
-        if (prev !== undefined && tick > prev) tr.notes.push({ start: prev / tpq, end: tick / tpq, midi: a, ch });
-        on.set(ch * 128 + a, tick);
+        if (prev !== undefined && tick > prev[0]) tr.notes.push({ start: prev[0] / tpq, end: tick / tpq, midi: a, ch, vel: prev[1] });
+        on.set(ch * 128 + a, [tick, b]);
       }
       else if (kind === 0x80 || (kind === 0x90 && b === 0)) {
         const s = on.get(ch * 128 + a);
-        if (s !== undefined) { tr.notes.push({ start: s / tpq, end: tick / tpq, midi: a, ch }); on.delete(ch * 128 + a); }
+        if (s !== undefined) { tr.notes.push({ start: s[0] / tpq, end: tick / tpq, midi: a, ch, vel: s[1] }); on.delete(ch * 128 + a); }
       }
     }
     tracks.push(tr);
@@ -417,9 +417,31 @@ export function parseMidi(buf: Uint8Array, fileTitle = ''): MusicFile {
   const allLyrics = tracks.flatMap((t) => t.lyrics);
   if (!groups.length) throw new Error('File MIDI không có nốt nào');
 
-  /** Giai điệu một bè: tại mỗi thời điểm lấy nốt cao nhất đang kêu (bè chính thường ở trên) */
-  const melodyOf = (notes: MidiNote[]) => {
-    const ns = [...notes].sort((a, b) => a.start - b.start || b.midi - a.midi);
+  /**
+   * Bỏ giọng phụ / hoạ âm: file dò từ giọng hát (Basic Pitch…) hay thêm các nốt cao, yếu chồng lên giọng chính.
+   * Giọng chính = các nốt mạnh; nốt yếu hơn hẳn mà lại cao hơn đường giọng chính quanh nó thì bỏ.
+   * File nhiều bè có velocity ngang nhau thì không bị đụng tới.
+   */
+  const dropBacking = (notes: MidiNote[]): MidiNote[] => {
+    if (notes.length < 8) return notes;
+    const medOf = (xs: number[]) => { const a = [...xs].sort((x, y) => x - y); return a.length ? a[a.length >> 1] : NaN; };
+    const velMid = medOf(notes.map((n) => n.vel));
+    const loud = notes.filter((n) => n.vel >= 0.75 * velMid); // notes đã xếp theo thời điểm bắt đầu nên loud cũng vậy
+    if (loud.length < 8) return notes;
+    const globalMid = medOf(loud.map((n) => n.midi));
+    let lo = 0, hi = 0; // cửa sổ ±8 phách trượt trên loud
+    return notes.filter((n) => {
+      while (loud[lo].start < n.start - 8) lo++;
+      while (hi < loud.length && loud[hi].start <= n.start + 8) hi++;
+      const near = loud.slice(lo, hi).map((o) => o.midi);
+      const contour = near.length >= 3 ? medOf(near) : globalMid;
+      return !(n.vel < 0.85 * velMid && n.midi - contour > 9);
+    });
+  };
+
+  /** Giai điệu một bè: tại mỗi thời điểm lấy nốt cao nhất đang kêu (bè chính thường ở trên), sau khi bỏ giọng phụ yếu */
+  const melodyOf = (all: MidiNote[]) => {
+    const ns = dropBacking([...all].sort((a, b) => a.start - b.start || b.midi - a.midi));
     const out: MidiNote[] = [];
     for (const n of ns) {
       const prev = out[out.length - 1];
