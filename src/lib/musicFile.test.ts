@@ -201,7 +201,7 @@ describe('nhập MIDI', () => {
     const ev: [number, number[]][] = [];
     main.forEach((n, i) => {
       ev.push([i * Q, [0x90, n, 90]], [i * Q + Q - 20, [0x80, n, 0]]);
-      if (i % 3 === 1) ev.push([i * Q + 5, [0x90, n + 22, 45]], [i * Q + Q / 2, [0x80, n + 22, 0]]);
+      if (i % 3 === 1) ev.push([i * Q + 60, [0x90, n + 22, 45]], [i * Q + Q / 2, [0x80, n + 22, 0]]);
     });
     const f = parseMidi(midiFile([meta, track(ev)]));
     const pitches = notesOf(f.transcribe(f.melodyPart)).filter((x) => !x.startsWith('R')).map((x) => x.split(':')[0]);
