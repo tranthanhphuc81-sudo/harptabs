@@ -19,9 +19,10 @@ import { useAppState } from '../state';
  * không phải đoán như đọc ảnh; chỉ cần chọn đúng bè giai điệu nếu file có nhiều bè.
  */
 /** ảnh khuông nhạc (jpg, png…) hoặc bản nhạc PDF: không phải file dữ liệu, chuyển sang quét */
+const isAudio = (f: File) => !/midi|\.(mid|midi|kar|rmi)$/i.test(f.type + f.name) && (f.type.startsWith('audio/') || /\.(mp3|m4a|wav|ogg|aac|flac|webm)$/i.test(f.name));
 const isImage = (f: File) => f.type.startsWith('image/') || f.type === 'application/pdf' || /\.(jpe?g|png|webp|pdf)$/i.test(f.name);
 
-export default function FileImport({ onImages }: { onImages?: (files: File[]) => void }) {
+export default function FileImport({ onImages, onAudio }: { onImages?: (files: File[]) => void; onAudio?: (file: File) => void }) {
   const { settings, toast } = useAppState();
   const nav = useNavigate();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -41,6 +42,8 @@ export default function FileImport({ onImages }: { onImages?: (files: File[]) =>
     if (inputRef.current) inputRef.current.value = '';
     const images = list.filter(isImage);
     if (images.length && onImages) { onImages(images); return; }
+    const audio = list.find(isAudio);
+    if (audio && onAudio) { onAudio(audio); return; }
     const f = list.find((x) => !isImage(x));
     if (!f) {
       if (images.length) setError('Ảnh / PDF bản nhạc hãy mở ở mục "Quét nhạc".');
@@ -106,7 +109,7 @@ export default function FileImport({ onImages }: { onImages?: (files: File[]) =>
       <p className="muted small">
         Chọn file <strong>MusicXML</strong> (<code>.musicxml</code>, <code>.mxl</code>, <code>.xml</code>) hoặc <strong>MIDI</strong> (<code>.mid</code>).
         File ghi sẵn từng nốt nên tab <strong>đúng tuyệt đối</strong>, không phải đoán như đọc ảnh.
-        Chọn <strong>ảnh khuông nhạc</strong> (<code>.jpg</code>, <code>.png</code>, chọn được nhiều trang) hoặc <strong>bản nhạc PDF</strong> (<code>.pdf</code>) thì app chuyển sang quét nốt ngay trên máy.
+        Chọn file <strong>âm thanh</strong> (<code>.mp3</code>, <code>.m4a</code>, <code>.wav</code>…) thì app chuyển sang "Bản thu" để dò giai điệu (chỉ là bản nháp). Chọn <strong>ảnh khuông nhạc</strong> (<code>.jpg</code>, <code>.png</code>, chọn được nhiều trang) hoặc <strong>bản nhạc PDF</strong> (<code>.pdf</code>) thì app chuyển sang quét nốt ngay trên máy.
         Tìm file này trên MuseScore, các diễn đàn nhạc, hoặc xuất từ phần mềm soạn nhạc (MuseScore, Sibelius, Finale…).
       </p>
       <div className="row gap wrap center">
@@ -115,7 +118,7 @@ export default function FileImport({ onImages }: { onImages?: (files: File[]) =>
         </button>
         {fileName && <span className="muted small">{fileName}</span>}
         <input ref={inputRef} type="file" hidden multiple={!!onImages} onChange={(e) => open(e.target.files)}
-          accept={`.mid,.midi,.kar,.rmi,.musicxml,.mxl,.xml,audio/midi,audio/x-midi,application/vnd.recordare.musicxml,application/vnd.recordare.musicxml+xml${onImages ? ',.jpg,.jpeg,.png,.webp,.pdf,image/jpeg,image/png,image/webp,application/pdf' : ''}`} />
+          accept={`.mid,.midi,.kar,.rmi,.musicxml,.mxl,.xml,audio/midi,audio/x-midi,application/vnd.recordare.musicxml,application/vnd.recordare.musicxml+xml${onImages ? ',.jpg,.jpeg,.png,.webp,.pdf,image/jpeg,image/png,image/webp,application/pdf' : ''}${onAudio ? ',.mp3,.m4a,.wav,.ogg,.aac,.flac' : ''}`} />
       </div>
       {error && <div className="alert error" role="alert">{error}</div>}
       <FileSources />

@@ -43,6 +43,8 @@ export default function AiImport() {
   const [lastMode, setLastMode] = useState<Mode>('image'); // chế độ đã tạo ra kết quả đang hiện
   // ảnh khuông nhạc chọn ở ô "File nhạc" → mở "Quét nhạc" với sẵn các ảnh đó
   const [scanFiles, setScanFiles] = useState<{ n: number; files: File[] } | null>(null);
+  // file mp3 chọn ở ô "File nhạc" → mở "Bản thu" và dò luôn
+  const [audioFile, setAudioFile] = useState<File | null>(null);
   const [images, setImages] = useState<Img[]>([]);
   const [title, setTitle] = useState('');
   const [artist, setArtist] = useState('');
@@ -193,7 +195,7 @@ export default function AiImport() {
       </div>
 
       {mode === 'scan' ? <Suspense fallback={null}><ScanImport key={editScan ?? `new-${scanFiles?.n ?? 0}`} editSongId={editScan} initialFiles={scanFiles?.files} /></Suspense>
-        : mode === 'file' ? <Suspense fallback={null}><FileImport onImages={(files) => { setScanFiles((s) => ({ n: (s?.n ?? 0) + 1, files })); setMode('scan'); }} /></Suspense> : mode === 'paste' ? <PasteTab /> : mode === 'audio' ? <Suspense fallback={null}><AudioImport /></Suspense> : <>
+        : mode === 'file' ? <Suspense fallback={null}><FileImport onImages={(files) => { setScanFiles((s) => ({ n: (s?.n ?? 0) + 1, files })); setMode('scan'); }} onAudio={(f) => { setAudioFile(f); setMode('audio'); }} /></Suspense> : mode === 'paste' ? <PasteTab /> : mode === 'audio' ? <Suspense fallback={null}><AudioImport initialFile={audioFile ?? undefined} /></Suspense> : <>
       <div className="ai-form">
         {mode === 'image' ? (
           <>

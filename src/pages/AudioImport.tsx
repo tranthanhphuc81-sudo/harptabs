@@ -40,10 +40,11 @@ function detect(samples: Float32Array, sampleRate: number, kind: RecordingKind):
   });
 }
 
-export default function AudioImport() {
+export default function AudioImport({ initialFile }: { initialFile?: File }) {
   const { settings, toast } = useAppState();
   const nav = useNavigate();
-  const [kind, setKind] = useState<RecordingKind>('solo');
+  // file đưa sang từ ô "File nhạc" thường là cả bài hát có nhạc đệm
+  const [kind, setKind] = useState<RecordingKind>(initialFile ? 'mix' : 'solo');
   const [status, setStatus] = useState<Status>('idle');
   const [error, setError] = useState('');
   const [secs, setSecs] = useState(0);
@@ -93,6 +94,15 @@ export default function AudioImport() {
       setStatus('error');
     }
   };
+
+  // có sẵn file (chọn từ ô "File nhạc"): dò ngay khi mở
+  const started = useRef(false);
+  useEffect(() => {
+    if (!initialFile || started.current) return;
+    started.current = true;
+    void run(initialFile, initialFile.name);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- chỉ chạy một lần cho file đưa sang
+  }, []);
 
   const start = async () => {
     setError('');
