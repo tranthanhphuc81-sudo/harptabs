@@ -63,7 +63,8 @@ export default function FileImport({ onImages }: { onImages?: (files: File[]) =>
     }
   };
 
-  const transcription = useMemo(() => (file && partId ? file.transcribe(partId) : null), [file, partId]);
+  const [backing, setBacking] = useState(2);
+  const transcription = useMemo(() => (file && partId ? file.transcribe(partId, { backing }) : null), [file, partId, backing]);
   const converted = useMemo(() => (transcription ? aiToTab(transcription, target, allowTranspose, harpType) : null), [transcription, target, allowTranspose, harpType]);
   const parsed = useMemo(() => (converted ? parseTab(converted.body, converted.harpKey, converted.harpType) : null), [converted]);
   const flat = useMemo(() => (parsed ? flatten(parsed) : []), [parsed]);
@@ -142,6 +143,13 @@ export default function FileImport({ onImages }: { onImages?: (files: File[]) =>
                     </option>
                   ))}
                 </select>
+              </label>
+            )}
+            {file.kind === 'midi' && (
+              <label className="field grow">
+                <span className="field-label">Lọc giọng phụ cao: {['tắt', 'nhẹ', 'vừa', 'mạnh'][backing]}</span>
+                <input type="range" min={0} max={3} step={1} value={backing} onChange={(e) => setBacking(Number(e.target.value))} aria-label="Mức lọc giọng phụ" />
+                <span className="small muted">Kéo lên nếu nghe có nốt cao vút lên đột ngột (giọng đệm / hoạ âm lẫn trong file).</span>
               </label>
             )}
             <HarpTypeSelect value={harpType} onChange={setHarpType} />

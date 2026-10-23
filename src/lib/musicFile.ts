@@ -104,7 +104,8 @@ export interface MusicFile {
   /** bè đoán là giai điệu chính */
   melodyPart: string;
   /** cấu trúc chuyển tab của một bè */
-  transcribe(partId: string): AiTranscription;
+  /** backing (chỉ MIDI): mức lọc giọng phụ 0 (tắt) … 3 (mạnh), mặc định 2 */
+  transcribe(partId: string, opts?: { backing?: number }): AiTranscription;
 }
 
 /** Gộp nốt luyến cùng cao độ, chèn dấu lặng vào chỗ trống, chia dòng theo ô nhịp */
@@ -404,6 +405,9 @@ const quant = (t: number) => {
   return Math.abs(q3 - t) + 0.02 < Math.abs(q4 - t) ? q3 : q4;
 };
 
+/** Mức lọc giọng phụ 1…3: [nốt yếu hơn mấy lần velocity giữa, cao hơn đường giọng chính mấy nửa cung] */
+const BACKING_LEVELS: [number, number][] = [[0.7, 12], [0.85, 9], [1, 6]];
+
 export function parseMidi(buf: Uint8Array, fileTitle = ''): MusicFile {
   const { tracks, tempo, timeSig, key, seqName } = readMidi(buf);
   // file định dạng 0 (một track nhiều kênh) → tách theo kênh; bỏ kênh trống (kênh 10)
@@ -422,8 +426,9 @@ export function parseMidi(buf: Uint8Array, fileTitle = ''): MusicFile {
    * Giọng chính = các nốt mạnh; nốt yếu hơn hẳn mà lại cao hơn đường giọng chính quanh nó thì bỏ.
    * File nhiều bè có velocity ngang nhau thì không bị đụng tới.
    */
-  const dropBacking = (notes: MidiNote[]): MidiNote[] => {
-    if (notes.length < 8) return notes;
+  const dropBacking = (notes: MidiNote[], level: number): MidiNote[] => {
+    if (level <= 0 || notes.length < 8) return notes;
+    const [quietBelow, farAbove] = BACKING_LEVELS[Math.min(3, Math.round(level)) - 1];
     const medOf = (xs: number[]) => { const a = [...xs].sort((x, y) => x - y); return a.length ? a[a.length >> 1] : NaN; };
     const velMid = medOf(notes.map((n) => n.vel));
     const loud = notes.filter((n) => n.vel >= 0.75 * velMid); // notes đã xếp theo thời điểm bắt đầu nên loud cũng vậy
@@ -435,13 +440,13 @@ export function parseMidi(buf: Uint8Array, fileTitle = ''): MusicFile {
       while (hi < loud.length && loud[hi].start <= n.start + 8) hi++;
       const near = loud.slice(lo, hi).map((o) => o.midi);
       const contour = near.length >= 3 ? medOf(near) : globalMid;
-      return !(n.vel < 0.85 * velMid && n.midi - contour > 9);
+      return !(n.vel < quietBelow * velMid && n.midi - contour > farAbove);
     });
   };
 
   /** Giai điệu một bè: tại mỗi thời điểm lấy nốt cao nhất đang kêu (bè chính thường ở trên), sau khi bỏ giọng phụ yếu */
-  const melodyOf = (all: MidiNote[]) => {
-    const ns = dropBacking([...all].sort((a, b) => a.start - b.start || b.midi - a.midi));
+  const melodyOf = (all: MidiNote[], level = 2) => {
+    const ns = dropBacking([...all].sort((a, b) => a.start - b.start || b.midi - a.midi), level);
     const out: MidiNote[] = [];
     for (const n of ns) {
       const prev = out[out.length - 1];
@@ -475,9 +480,9 @@ export function parseMidi(buf: Uint8Array, fileTitle = ''): MusicFile {
   const songKey = key ? keyFromFifths(key[0], key[1]) : undefined;
   return {
     kind: 'midi', title, parts, melodyPart,
-    transcribe(partId) {
+    transcribe(partId, opts) {
       const g = groups.find((x) => x.id === partId) ?? groups[0];
-      const mel = melodyOf(g.notes).filter((n) => n.end - n.start > 0.05);
+      const mel = melodyOf(g.notes, opts?.backing ?? 2).filter((n) => n.end - n.start > 0.05);
       // lượng tử hoá; nốt bị cắt còn quá ngắn thì bỏ
       const notes: MelNote[] = [];
       mel.forEach((n, i) => {

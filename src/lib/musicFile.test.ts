@@ -207,6 +207,9 @@ describe('nhập MIDI', () => {
     const pitches = notesOf(f.transcribe(f.melodyPart)).filter((x) => !x.startsWith('R')).map((x) => x.split(':')[0]);
     expect(pitches).toHaveLength(main.length);
     expect(pitches.every((p) => /^[A-G][#b]?[34]$/.test(p))).toBe(true);
+    // mức lọc 0 = tắt: quay về lấy nốt cao nhất
+    const off = notesOf(f.transcribe(f.melodyPart, { backing: 0 })).filter((x) => !x.startsWith('R')).map((x) => x.split(':')[0]);
+    expect(off.some((p) => /[56]$/.test(p))).toBe(true);
   });
 
   it('nhiều bè velocity ngang nhau: vẫn lấy bè trên như trước', () => {
