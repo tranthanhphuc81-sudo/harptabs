@@ -194,7 +194,7 @@ function SongPlayerView({ song, original, fit, view, choice, onChoice }: {
   const onNoteClick = (fi: number) => {
     if (editMode && !waitMode) {
       setFocus(fi);
-      if (!p.playing && flat[fi]?.midi != null) previewNote(flat[fi].midi!, 0.5);
+      if (flat[fi]?.midi != null) previewNote(flat[fi].midi!, 0.5); // chạm là nghe luôn, kể cả đang phát
       return;
     }
     setFocus(fi);
@@ -427,7 +427,7 @@ function SongPlayerView({ song, original, fit, view, choice, onChoice }: {
             harpType={harpType}
             nameStyle={settings.noteNames}
             playing={p.playing}
-            onToken={(token) => applyEdit({ kind: 'token', token })}
+            onToken={(token) => { applyEdit({ kind: 'token', token }); if (token) { const n = parseToken(token, original.harpKey, harpTypeOf(original)); if (n) previewNote(n.midi, 0.5); } }}
             onBeats={(beats) => applyEdit({ kind: 'beats', beats })}
             onRemove={() => applyEdit({ kind: 'remove' }, focus != null ? Math.min(focus, flat.length - 2) : null)}
             onDuplicate={() => applyEdit({ kind: 'duplicate' }, focus != null ? focus + 1 : null)}
@@ -437,7 +437,6 @@ function SongPlayerView({ song, original, fit, view, choice, onChoice }: {
             onPickPlaying={() => { if (p.active != null) setFocus(p.active); }}
             onHearToken={(t) => { const n = parseToken(t, original.harpKey, harpTypeOf(original)); if (n) previewNote(n.midi, 0.6); }}
             onInsert={(token) => applyEdit({ kind: 'insert', token }, focus != null ? focus + 1 : null)}
-            onHear={() => { const m = focus != null ? flat[focus]?.midi : null; if (m != null) previewNote(m, 0.6); }}
             onClose={() => setEditMode(false)}
           />
         ) : (

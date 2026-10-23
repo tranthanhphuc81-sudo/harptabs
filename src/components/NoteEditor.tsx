@@ -20,7 +20,6 @@ interface Props {
   onUndo: () => void;
   /** chọn nốt đang vang (khi vừa nghe thấy nốt sai) */
   onPickPlaying: () => void;
-  onHear: () => void;
   /** nghe thử một nốt (token) trước khi thay / chèn */
   onHearToken: (token: string) => void;
   /** chèn nốt mới ngay sau nốt đang chọn */
@@ -33,7 +32,7 @@ const BEAT_CHOICES: { v: number; label: string }[] = [
 ];
 
 /** Bảng sửa một nốt ngay khi đang nghe: nhạc vẫn chạy, chạm nốt trên tab rồi đổi lỗ / độ dài tại chỗ */
-export function NoteEditor({ note, harpType, nameStyle, playing, onToken, onBeats, onRemove, onDuplicate, onStep, canUndo, onUndo, onPickPlaying, onHear, onHearToken, onInsert, onClose }: Props) {
+export function NoteEditor({ note, harpType, nameStyle, playing, onToken, onBeats, onRemove, onDuplicate, onStep, canUndo, onUndo, onPickPlaying, onHearToken, onInsert, onClose }: Props) {
   const trem = isTremolo(harpType);
   const chrom = isChromatic(harpType);
   const holes = Array.from({ length: holeCount(harpType) }, (_, i) => i + 1);
@@ -116,7 +115,6 @@ export function NoteEditor({ note, harpType, nameStyle, playing, onToken, onBeat
             ))}
           </div>
           <div className="ne-row">
-            <button type="button" className="btn btn-ghost btn-sm" onClick={onHear} disabled={note.midi == null}>Nghe nốt này</button>
             <button type="button" className="btn btn-ghost btn-sm" onClick={onDuplicate}>Thêm nốt giống sau nó</button>
             <button type="button" className="btn btn-ghost btn-sm" onClick={onRemove}>Xoá nốt</button>
           </div>
