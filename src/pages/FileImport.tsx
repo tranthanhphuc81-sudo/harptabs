@@ -149,7 +149,7 @@ export default function FileImport({ onImages }: { onImages?: (files: File[]) =>
               <label className="field grow">
                 <span className="field-label">Lọc giọng phụ cao: {['tắt', 'nhẹ', 'vừa', 'mạnh'][backing]}</span>
                 <input type="range" min={0} max={3} step={1} value={backing} onChange={(e) => setBacking(Number(e.target.value))} aria-label="Mức lọc giọng phụ" />
-                <span className="small muted">Kéo lên nếu nghe có nốt cao vút lên đột ngột (giọng đệm / hoạ âm lẫn trong file).</span>
+                <span className="small muted">Kéo lên nếu nghe có nốt cao vút lên đột ngột (giọng đệm / hoạ âm lẫn trong file). Mức mạnh còn nối các nốt ngắn lặp lại (nghe như nói lắp) thành một nốt.</span>
               </label>
             )}
             <HarpTypeSelect value={harpType} onChange={setHarpType} />

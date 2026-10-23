@@ -221,4 +221,17 @@ describe('nhập MIDI', () => {
     const first = notesOf(f.transcribe(f.melodyPart)).find((x) => !x.startsWith('R'))!;
     expect(first.startsWith('C5')).toBe(true);
   });
+
+  it('nốt ngân bị dò vỡ thành nhiều nốt ngắn cùng cao độ: nối lại, không nghe như nói lắp', () => {
+    // mỗi chữ: nốt dài rồi đánh lại ngay cùng cao độ rất ngắn
+    const ev: [number, number[]][] = [];
+    [60, 62, 64, 62, 60, 64, 65, 64, 62, 60].forEach((n, i) => {
+      const t = i * 2 * Q;
+      ev.push([t, [0x90, n, 90]], [t + Q, [0x80, n, 0]], [t + Q + 40, [0x90, n, 80]], [t + Q + 40 + Q * 0.4, [0x80, n, 0]]);
+    });
+    const f = parseMidi(midiFile([meta, track(ev)]));
+    const count = (backing: number) => notesOf(f.transcribe(f.melodyPart, { backing })).filter((x) => !x.startsWith('R')).length;
+    expect(count(0)).toBe(20);
+    expect(count(3)).toBe(10);
+  });
 });

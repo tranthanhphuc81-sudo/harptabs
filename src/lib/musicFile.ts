@@ -405,6 +405,22 @@ const quant = (t: number) => {
   return Math.abs(q3 - t) + 0.02 < Math.abs(q4 - t) ? q3 : q4;
 };
 
+/**
+ * Nốt bị dò vỡ thành nhiều nốt ngắn lặp lại (nghe như nói lắp): nối các nốt cùng cao độ liền nhau lại,
+ * và bỏ nốt chớp rất ngắn kẹp giữa hai nốt cùng cao độ. Nốt lặp thật (cả hai đủ dài) được giữ nguyên; nốt đánh lại ngắn (< nửa phách) ngay sau nốt cùng cao độ thì coi là tiếng ngân bị dò vỡ.
+ */
+function mergeRepeats(mel: MidiNote[]): MidiNote[] {
+  const dur = (n: MidiNote) => n.end - n.start;
+  const cleaned = mel.filter((n, i) => !(dur(n) < 0.15 && mel[i - 1] && mel[i + 1] && mel[i - 1].midi === mel[i + 1].midi && mel[i - 1].midi !== n.midi));
+  const out: MidiNote[] = [];
+  for (const n of cleaned) {
+    const prev = out[out.length - 1];
+    if (prev && prev.midi === n.midi && n.start - prev.end <= 0.35 && (dur(prev) < 0.35 || dur(n) < 0.55)) prev.end = Math.max(prev.end, n.end);
+    else out.push({ ...n });
+  }
+  return out;
+}
+
 /** Mức lọc giọng phụ 1…3: [nốt yếu hơn mấy lần velocity giữa, cao hơn đường giọng chính mấy nửa cung] */
 const BACKING_LEVELS: [number, number][] = [[0.7, 12], [0.85, 9], [1, 6]];
 
@@ -482,7 +498,10 @@ export function parseMidi(buf: Uint8Array, fileTitle = ''): MusicFile {
     kind: 'midi', title, parts, melodyPart,
     transcribe(partId, opts) {
       const g = groups.find((x) => x.id === partId) ?? groups[0];
-      const mel = melodyOf(g.notes, opts?.backing ?? 2).filter((n) => n.end - n.start > 0.05);
+      const level = opts?.backing ?? 2;
+      const raw = melodyOf(g.notes, level).filter((n) => n.end - n.start > 0.05);
+      // chỉ ở mức mạnh: file karaoke có nhiều chữ liền nhau cùng cao độ, không được nối
+      const mel = level >= 3 ? mergeRepeats(raw) : raw;
       // lượng tử hoá; nốt bị cắt còn quá ngắn thì bỏ
       const notes: MelNote[] = [];
       mel.forEach((n, i) => {
