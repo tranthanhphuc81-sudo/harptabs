@@ -450,16 +450,16 @@ button, a, select { -webkit-tap-highlight-color: transparent; }
 
 /* nốt đang chọn để sửa */
 .nt.is-selected .nt-hole { outline: 3px solid var(--accent, var(--ink)); outline-offset: 2px; }
-.note-editor { display: flex; flex-direction: column; gap: 8px; padding-bottom: 8px; border-bottom: 1px dashed var(--line); }
+.note-editor { max-height: 42vh; max-height: 42dvh; overflow-y: auto; overscroll-behavior: contain; display: flex; flex-direction: column; gap: 8px; padding-bottom: 8px; border-bottom: 1px dashed var(--line); }
 .ne-head { display: flex; align-items: center; gap: 8px 12px; flex-wrap: wrap; }
 .ne-cur { font-weight: 600; }
 .ne-nav { margin-left: auto; display: flex; gap: 4px; }
-.ne-keys button.on { outline: 3px solid var(--ink); outline-offset: 1px; }
-.ne-keys { gap: 3px; }
-.ne-keys button { min-width: 34px; height: 34px; font-size: 0.9rem; }
+.keypad.ne-keys button.on { outline: 3px solid var(--ink); outline-offset: 1px; }
+.keypad.ne-keys { display: grid; grid-template-columns: repeat(auto-fill, minmax(29px, 1fr)); gap: 3px; }
+.keypad.ne-keys button { min-width: 0; height: 32px; padding: 0; font-size: 0.85rem; }
 .ne-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
 
-/* ===== Player bar =====
+/* ===== Player bar ===== */
 .playerbar {
   position: sticky;
   bottom: calc(var(--nav-h) + env(safe-area-inset-bottom) + 8px);

@@ -156,7 +156,6 @@ export function PlayerBar({ p, loopLabel, onToggleLoop, extra, above, autoStyle,
   const step = (d: number) => setOpts({ tempoScale: Math.min(1.6, Math.max(0.4, Math.round((opts.tempoScale + d) * 100) / 100)) });
   return (
     <div className={`playerbar${tuner ? ' tuning' : ''}`} role="region" aria-label="Điều khiển phát">
-      {above}
       <div className="pb-main">
         <button type="button" className="pb-play" onClick={p.toggle} aria-label={p.playing ? 'Dừng' : 'Phát'}>
           <Icon name={p.playing ? 'stop' : 'play'} size={26} />
@@ -190,12 +189,13 @@ export function PlayerBar({ p, loopLabel, onToggleLoop, extra, above, autoStyle,
           <Icon name="sliders" size={20} />
         </button>
       </div>
-      {autoPicked && autoStyle && opts.style === autoStyle.style && (
+      {above}
+      {!above && autoPicked && autoStyle && opts.style === autoStyle.style && (
         <p className="pb-auto" role="status">✨ Tự chọn: <strong>{styleLabel(autoStyle.style)}</strong> — {autoStyle.reason}</p>
       )}
-      <TempoHint style={opts.style} bpm={opts.bpm} tempoScale={opts.tempoScale} auto={prefs.auto} label={styleLabel(opts.style)}
-        onSet={(scale) => setOpts({ tempoScale: scale })} />
-      <div className="pb-chips">
+      {!above && <TempoHint style={opts.style} bpm={opts.bpm} tempoScale={opts.tempoScale} auto={prefs.auto} label={styleLabel(opts.style)}
+        onSet={(scale) => setOpts({ tempoScale: scale })} />}
+      {!above && <div className="pb-chips">
         <Toggle on={!!opts.sing} onClick={() => setOpts({ sing: !opts.sing })}>🎤 Đệm hát</Toggle>
         <Toggle on={opts.melody && !opts.sing} onClick={() => setOpts(opts.sing ? { sing: false, melody: true } : { melody: !opts.melody })}>Giai điệu</Toggle>
         {!opts.sing && <Toggle on={opts.beat} onClick={() => setOpts({ beat: !opts.beat })}>Beat</Toggle>}
@@ -207,8 +207,8 @@ export function PlayerBar({ p, loopLabel, onToggleLoop, extra, above, autoStyle,
           </Toggle>
         )}
         {extra}
-      </div>
-      {opts.sing && (
+      </div>}
+      {!above && opts.sing && (
         <div className="pb-sing" role="group" aria-label="Nhạc cụ đệm hát">
           <span className="bt-label">Đệm bằng</span>
           <div className="pb-chips">
@@ -216,7 +216,7 @@ export function PlayerBar({ p, loopLabel, onToggleLoop, extra, above, autoStyle,
           </div>
         </div>
       )}
-      {opts.sing && (prefs.accomp === 'gobo' || prefs.accomp === 'strum') && (
+      {!above && opts.sing && (prefs.accomp === 'gobo' || prefs.accomp === 'strum') && (
         <div className="pb-sing" role="group" aria-label="Kỹ thuật tay guitar">
           <span className="bt-label">Kỹ thuật</span>
           <div className="pb-chips">
@@ -226,13 +226,13 @@ export function PlayerBar({ p, loopLabel, onToggleLoop, extra, above, autoStyle,
           </div>
         </div>
       )}
-      {opts.sing && (prefs.accomp === 'gobo' || prefs.accomp === 'strum') && (prefs.gRake || prefs.gTrem || prefs.gShake) && (
+      {!above && opts.sing && (prefs.accomp === 'gobo' || prefs.accomp === 'strum') && (prefs.gRake || prefs.gTrem || prefs.gShake) && (
         <p className="pb-auto">
           {[prefs.gRake && 'vuốt dây khi mở câu mới', prefs.gTrem && 'rung dây ở chỗ ngân cuối ô', prefs.gShake && 'lắc cổ tay "rrà" ở chỗ hết câu'].filter(Boolean).join(' · ')}
         </p>
       )}
-      {opts.sing && prefs.accomp !== 'band' && p.accompNote && <p className="pb-auto" role="status">✨ Đệm theo bài: {p.accompNote}</p>}
-      {tuner && <BeatTuner style={opts.style} styleName={styleLabel(opts.style)} autoInstrument={autoInstrument} sing={!!opts.sing} />}
+      {!above && opts.sing && prefs.accomp !== 'band' && p.accompNote && <p className="pb-auto" role="status">✨ Đệm theo bài: {p.accompNote}</p>}
+      {!above && tuner && <BeatTuner style={opts.style} styleName={styleLabel(opts.style)} autoInstrument={autoInstrument} sing={!!opts.sing} />}
     </div>
   );
 }

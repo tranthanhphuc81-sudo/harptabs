@@ -425,7 +425,7 @@ function SongPlayerView({ song, original, fit, view, choice, onChoice }: {
             onClose={() => setEditMode(false)}
           />
         ) : (
-          <p className="small muted">Đang xem bản đã đổi sang kèn khác — chọn “Kèn gốc” ở trên để sửa nốt.</p>
+          <p className="small muted">Đang xem bản đã đổi sang kèn khác — chọn “Kèn gốc” ở trên để sửa nốt. <button type="button" className="link-btn" onClick={() => setEditMode(false)}>Đóng</button></p>
         ))}
         extra={<>
           <button type="button" className={`chip${editMode ? ' on' : ''}`} aria-pressed={editMode} onClick={() => setEditMode((v) => !v)}>

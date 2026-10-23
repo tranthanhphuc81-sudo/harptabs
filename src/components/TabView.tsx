@@ -104,7 +104,7 @@ function visibleBand(): [number, number] {
   for (const sel of ['.playerbar', '.preview-actions', '.nav']) {
     const r = document.querySelector(sel)?.getBoundingClientRect();
     // chỉ tính khi thanh đang nằm ở nửa dưới màn hình (thanh điều khiển cuộn theo trang khi ở cuối bài)
-    if (r && r.height > 0 && r.top > h * 0.35 && r.top < bottom) bottom = r.top;
+    if (r && r.height > 0 && r.top > h * 0.15 && r.top < bottom) bottom = r.top;
   }
   return [0, bottom];
 }
