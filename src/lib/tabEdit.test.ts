@@ -18,6 +18,11 @@ describe('editNote', () => {
     expect(editNote(body, 'C', 'diatonic', pos(3), { kind: 'duplicate' })).toContain('5 5');
     expect(editNote(body, 'C', 'diatonic', pos(1), { kind: 'remove' })).toContain('4 -4:2 5');
   });
+  it('chèn nốt mới sau nốt đang chọn, không đè nốt cũ', () => {
+    const out = editNote(body, 'C', 'diatonic', pos(1), { kind: 'insert', token: '-6' })!;
+    expect(out).toContain('4 4 -6 -4:2 5');
+    expect(editNote(body, 'C', 'diatonic', pos(1), { kind: 'insert', token: '99' })).toBeNull();
+  });
   it('nốt thành dấu nghỉ', () => {
     expect(editNote(body, 'C', 'diatonic', pos(1), { kind: 'token', token: null })).toContain('4 r -4:2 5');
   });

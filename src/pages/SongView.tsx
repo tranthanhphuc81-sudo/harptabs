@@ -2,7 +2,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { db, deleteSongs, downloadJson, exportOne, newId, slugify } from '../lib/db';
-import { HARP_KEYS, HARP_TYPES, HARP_TYPE_LABEL, HarpKey, HarpType, harpName, harpTypeOf, isChromatic, isTremolo, midiToName, songTonality } from '../lib/harp';
+import { HARP_KEYS, HARP_TYPES, HARP_TYPE_LABEL, HarpKey, HarpType, harpName, harpTypeOf, isChromatic, isTremolo, midiToName, parseToken, songTonality } from '../lib/harp';
 import { countTechniques, flatten, parseTab } from '../lib/tabText';
 import { rekeyBody } from '../lib/converter';
 import { beatsPerBar, Song } from '../lib/types';
@@ -421,6 +421,8 @@ function SongPlayerView({ song, original, fit, view, choice, onChoice }: {
             onDuplicate={() => applyEdit({ kind: 'duplicate' }, focus != null ? focus + 1 : null)}
             onStep={stepFocus}
             onPickPlaying={() => { if (p.active != null) setFocus(p.active); }}
+            onHearToken={(t) => { const n = parseToken(t, original.harpKey, harpTypeOf(original)); if (n) previewNote(n.midi, 0.6); }}
+            onInsert={(token) => applyEdit({ kind: 'insert', token }, focus != null ? focus + 1 : null)}
             onHear={() => { const m = focus != null ? flat[focus]?.midi : null; if (m != null) previewNote(m, 0.6); }}
             onClose={() => setEditMode(false)}
           />

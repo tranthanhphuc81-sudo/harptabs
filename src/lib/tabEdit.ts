@@ -6,7 +6,9 @@ export type NoteEdit =
   | { kind: 'token'; token: string | null }
   | { kind: 'beats'; beats: number }
   | { kind: 'remove' }
-  | { kind: 'duplicate' };
+  | { kind: 'duplicate' }
+  /** chèn một nốt mới ngay sau nốt đang chọn (độ dài mặc định bằng nốt đó) */
+  | { kind: 'insert'; token: string; beats?: number };
 
 export interface NotePos { sectionIndex: number; lineIndex: number; eventIndex: number }
 
@@ -35,6 +37,12 @@ export function editNote(body: string, key: HarpKey, type: HarpType, pos: NotePo
       // dòng hết nốt thì bỏ luôn dòng đó để không để lại dòng trống
       if (!line.events.length) parsed.sections[pos.sectionIndex].lines.splice(pos.lineIndex, 1);
       break;
+    case 'insert': {
+      const note = parseToken(edit.token, key, type);
+      if (!note) return null;
+      line.events.splice(pos.eventIndex + 1, 0, { token: note.token, midi: note.midi, beats: edit.beats ?? ev.beats });
+      break;
+    }
     case 'duplicate': {
       const copy: TabEvent = { ...ev, lyric: undefined, hyphen: undefined };
       line.events.splice(pos.eventIndex + 1, 0, copy);
