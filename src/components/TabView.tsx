@@ -7,6 +7,8 @@ interface Props {
   parsed: ParsedTab;
   flat: FlatEvent[];
   active?: number | null;
+  /** nốt đang được chọn để sửa (viền riêng, không đổi theo nhạc đang chạy) */
+  selected?: number | null;
   onNoteClick?: (flatIndex: number) => void;
   showNames?: boolean;
   nameStyle?: NoteNameStyle;
@@ -38,6 +40,7 @@ interface LineProps {
   index: Map<string, number>;
   /** nốt đang sáng nếu nằm trong dòng này, không thì -1 (dòng khác giữ nguyên, không vẽ lại) */
   active: number;
+  selected: number;
   clickable: boolean;
   onNote: (fi: number) => void;
   showNames?: boolean;
@@ -46,7 +49,7 @@ interface LineProps {
   onChord: (seg: ChordSegment) => void;
 }
 
-const Line = memo(function Line({ events, si, li, index, active, clickable, onNote, showNames, nameStyle, chordsAt, onChord }: LineProps) {
+const Line = memo(function Line({ events, si, li, index, active, selected, clickable, onNote, showNames, nameStyle, chordsAt, onChord }: LineProps) {
   return (
     <div className="tabline">
       {events.map((ev, ei) => {
@@ -54,7 +57,7 @@ const Line = memo(function Line({ events, si, li, index, active, clickable, onNo
         const isRest = ev.token === null;
         const draw = !!ev.token?.startsWith('-');
         const bad = !isRest && ev.midi === null;
-        const cls = ['nt', isRest ? 'rest' : draw ? 'draw' : 'blow', bad ? 'bad' : '', fi === active ? 'is-active' : '']
+        const cls = ['nt', isRest ? 'rest' : draw ? 'draw' : 'blow', bad ? 'bad' : '', fi === active ? 'is-active' : '', fi === selected ? 'is-selected' : '']
           .filter(Boolean).join(' ');
         const label = isRest ? `nghỉ ${ev.beats} phách` : `${draw ? 'hút' : 'thổi'} lỗ ${ev.token!.replace('-', '').replace('<', ' bấm gạt')}${ev.lyric ? `, ${ev.lyric}` : ''}`;
         const note = (
@@ -106,7 +109,7 @@ function visibleBand(): [number, number] {
   return [0, bottom];
 }
 
-function TabViewInner({ parsed, flat, active, onNoteClick, showNames, nameStyle = 'letter', size = 'm', compact, chords, onChordClick }: Props) {
+function TabViewInner({ parsed, flat, active, selected, onNoteClick, showNames, nameStyle = 'letter', size = 'm', compact, chords, onChordClick }: Props) {
   const ref = useRef<HTMLDivElement>(null);
   const lastLine = useRef<string>('');
   // hàm bấm nốt / hợp âm giữ cố định giữa các lần vẽ (trang cha tạo hàm mới mỗi lần) để các dòng không phải vẽ lại
@@ -159,6 +162,7 @@ function TabViewInner({ parsed, flat, active, onNoteClick, showNames, nameStyle 
 
   if (!parsed.sections.length) return <p className="muted">Chưa có nốt nào.</p>;
   const act = active != null ? flat[active] : undefined;
+  const sel = selected != null ? flat[selected] : undefined;
 
   return (
     <div ref={ref} className={`tabview size-${size}${compact ? ' compact' : ''}`}>
@@ -171,6 +175,7 @@ function TabViewInner({ parsed, flat, active, onNoteClick, showNames, nameStyle 
             ) : (
               <Line key={li} events={line.events} si={si} li={li} index={index}
                 active={act && act.sectionIndex === si && act.lineIndex === li ? active! : -1}
+                selected={sel && sel.sectionIndex === si && sel.lineIndex === li ? selected! : -1}
                 clickable={!!onNoteClick} onNote={onNote} showNames={showNames} nameStyle={nameStyle}
                 chordsAt={chordsAt} onChord={onChord} />
             ),

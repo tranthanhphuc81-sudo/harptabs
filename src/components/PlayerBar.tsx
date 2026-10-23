@@ -11,6 +11,8 @@ interface Props {
   loopLabel?: string | null;
   onToggleLoop?: () => void;
   extra?: ReactNode;
+  /** khung phụ nằm trên cùng thanh (ví dụ bảng sửa nốt) */
+  above?: ReactNode;
   /** kiểu nhịp app tự chọn cho bài (hiện lựa chọn "Tự chọn theo bài") */
   autoStyle?: StyleSuggestion | null;
   /** mở bài đã áp sẵn kiểu nhịp tự chọn */
@@ -143,7 +145,7 @@ function BeatTuner({ style, styleName, autoInstrument, sing }: { style: BeatStyl
   );
 }
 
-export function PlayerBar({ p, loopLabel, onToggleLoop, extra, autoStyle, autoApplied = false, autoInstrument }: Props) {
+export function PlayerBar({ p, loopLabel, onToggleLoop, extra, above, autoStyle, autoApplied = false, autoInstrument }: Props) {
   const { opts, setOpts } = p;
   const [tuner, setTuner] = useState(false);
   const [autoPicked, setAutoPicked] = useState(autoApplied);
@@ -154,6 +156,7 @@ export function PlayerBar({ p, loopLabel, onToggleLoop, extra, autoStyle, autoAp
   const step = (d: number) => setOpts({ tempoScale: Math.min(1.6, Math.max(0.4, Math.round((opts.tempoScale + d) * 100) / 100)) });
   return (
     <div className={`playerbar${tuner ? ' tuning' : ''}`} role="region" aria-label="Điều khiển phát">
+      {above}
       <div className="pb-main">
         <button type="button" className="pb-play" onClick={p.toggle} aria-label={p.playing ? 'Dừng' : 'Phát'}>
           <Icon name={p.playing ? 'stop' : 'play'} size={26} />

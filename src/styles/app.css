@@ -448,7 +448,16 @@ button, a, select { -webkit-tap-highlight-color: transparent; }
 .nt.is-active .nt-lyric { font-weight: 600; }
 .nt:hover:not(.is-active) .nt-hole { filter: brightness(0.96); }
 
-/* ===== Player bar ===== */
+/* nốt đang chọn để sửa */
+.nt.is-selected .nt-hole { outline: 3px solid var(--accent, var(--ink)); outline-offset: 2px; }
+.note-editor { display: flex; flex-direction: column; gap: 8px; padding-bottom: 8px; border-bottom: 1px dashed var(--line); }
+.ne-head { display: flex; align-items: center; gap: 8px 12px; flex-wrap: wrap; }
+.ne-cur { font-weight: 600; }
+.ne-nav { margin-left: auto; display: flex; gap: 4px; }
+.ne-keys button.on { outline: 3px solid var(--ink); outline-offset: 1px; }
+.ne-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+
+/* ===== Player bar =====
 .playerbar {
   position: sticky;
   bottom: calc(var(--nav-h) + env(safe-area-inset-bottom) + 8px);

@@ -26,6 +26,8 @@ import { previewNote } from '../audio/engine';
 import { ChordSegment, harmonizeSegments, parseTonality, segKey, transposeChords } from '../audio/harmony';
 import { setBeatPrefs, setSongInstrument, useBeatPrefs } from '../audio/beatPrefs';
 import { ChordPicker } from '../components/ChordPicker';
+import { NoteEditor } from '../components/NoteEditor';
+import { editNote, NoteEdit } from '../lib/tabEdit';
 import { suggestInstrument, suggestStyle } from '../audio/suggest';
 
 export default function SongView() {
@@ -154,7 +156,35 @@ function SongPlayerView({ song, original, fit, view, choice, onChoice }: {
     },
   };
 
+  // ----- sửa nốt ngay khi nghe: chạm nốt sai trên tab rồi đổi tại chỗ, nhạc vẫn chạy -----
+  const [editMode, setEditMode] = useState(false);
+  const keepPlaying = useRef(false);
+  /** chỉ sửa được khi đang xem đúng bản gốc (bản đã dịch sang kèn khác không ứng với văn bản lưu) */
+  const canEdit = fit === null && song === original;
+  const applyEdit = (edit: NoteEdit, nextFocus?: number | null) => {
+    const f = focus != null ? flat[focus] : null;
+    if (!f) return;
+    const body = editNote(original.body, original.harpKey, harpTypeOf(original), f, edit);
+    if (body === null) { toast('Kèn này không có nốt đó'); return; }
+    if (body === original.body) return;
+    keepPlaying.current = true;
+    window.setTimeout(() => { keepPlaying.current = false; }, 1500);
+    void db.songs.update(original.id, { body, updatedAt: Date.now() });
+    if (nextFocus !== undefined) setFocus(nextFocus);
+  };
+  const stepFocus = (dir: -1 | 1) => {
+    if (focus == null) return;
+    const k = Math.min(flat.length - 1, Math.max(0, focus + dir));
+    setFocus(k);
+    if (flat[k]?.midi != null) previewNote(flat[k].midi!, 0.4);
+  };
+
   const onNoteClick = (fi: number) => {
+    if (editMode && !waitMode) {
+      setFocus(fi);
+      if (!p.playing && flat[fi]?.midi != null) previewNote(flat[fi].midi!, 0.5);
+      return;
+    }
     setFocus(fi);
     if (waitMode) {
       const k = playable.indexOf(fi);
@@ -235,6 +265,8 @@ function SongPlayerView({ song, original, fit, view, choice, onChoice }: {
   useEffect(() => {
     if (lastViewKey.current === viewKey) return;
     lastViewKey.current = viewKey;
+    // đang sửa nốt tại chỗ: giữ nhạc chạy và nốt đang chọn
+    if (keepPlaying.current) { keepPlaying.current = false; return; }
     p.stop();
     scorer.current = null;
     stopMic();
@@ -351,6 +383,7 @@ function SongPlayerView({ song, original, fit, view, choice, onChoice }: {
         parsed={parsed}
         flat={flat}
         active={activeIdx}
+        selected={editMode && canEdit ? focus : null}
         onNoteClick={onNoteClick}
         showNames={settings.showNoteNames}
         nameStyle={settings.noteNames}
@@ -376,11 +409,32 @@ function SongPlayerView({ song, original, fit, view, choice, onChoice }: {
         autoStyle={autoStyle}
         autoApplied={autoApplied}
         autoInstrument={autoInstrument}
-        extra={
+        above={editMode && (canEdit ? (
+          <NoteEditor
+            note={focus != null ? flat[focus] ?? null : null}
+            harpType={harpType}
+            nameStyle={settings.noteNames}
+            playing={p.playing}
+            onToken={(token) => applyEdit({ kind: 'token', token })}
+            onBeats={(beats) => applyEdit({ kind: 'beats', beats })}
+            onRemove={() => applyEdit({ kind: 'remove' }, focus != null ? Math.min(focus, flat.length - 2) : null)}
+            onDuplicate={() => applyEdit({ kind: 'duplicate' }, focus != null ? focus + 1 : null)}
+            onStep={stepFocus}
+            onPickPlaying={() => { if (p.active != null) setFocus(p.active); }}
+            onHear={() => { const m = focus != null ? flat[focus]?.midi : null; if (m != null) previewNote(m, 0.6); }}
+            onClose={() => setEditMode(false)}
+          />
+        ) : (
+          <p className="small muted">Đang xem bản đã đổi sang kèn khác — chọn “Kèn gốc” ở trên để sửa nốt.</p>
+        ))}
+        extra={<>
+          <button type="button" className={`chip${editMode ? ' on' : ''}`} aria-pressed={editMode} onClick={() => setEditMode((v) => !v)}>
+            <Icon name="edit" size={15} /> Sửa nốt
+          </button>
           <button type="button" className={`chip${waitMode ? ' on' : ''}`} aria-pressed={waitMode} onClick={() => (waitMode ? stopWait() : startWait())}>
             <Icon name="mic" size={15} /> Chờ nốt
           </button>
-        }
+        </>}
       />
 
       {chordEdit && (
