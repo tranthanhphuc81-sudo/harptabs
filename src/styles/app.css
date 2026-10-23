@@ -455,6 +455,8 @@ button, a, select { -webkit-tap-highlight-color: transparent; }
 .ne-cur { font-weight: 600; }
 .ne-nav { margin-left: auto; display: flex; gap: 4px; }
 .ne-keys button.on { outline: 3px solid var(--ink); outline-offset: 1px; }
+.ne-keys { gap: 3px; }
+.ne-keys button { min-width: 34px; height: 34px; font-size: 0.9rem; }
 .ne-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
 
 /* ===== Player bar =====

@@ -160,6 +160,19 @@ function TabViewInner({ parsed, flat, active, selected, onNoteClick, showNames, 
     window.scrollBy({ top: (r.top + r.bottom) / 2 - (top + bottom) / 2, behavior: reduce ? 'auto' : 'smooth' });
   }, [active, flat]);
 
+  // nốt vừa chọn để sửa: đưa lên vùng nhìn thấy, không để thanh điều khiển / bảng sửa che
+  useEffect(() => {
+    if (selected == null || !ref.current) return;
+    const el = ref.current.querySelector(`[data-i="${selected}"]`);
+    if (!el) return;
+    const [top, bottom] = visibleBand();
+    const r = el.getBoundingClientRect();
+    const margin = Math.min(72, (bottom - top) / 4);
+    if (r.top >= top + margin && r.bottom <= bottom - margin) return;
+    const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    window.scrollBy({ top: (r.top + r.bottom) / 2 - (top + bottom) / 2, behavior: reduce ? 'auto' : 'smooth' });
+  }, [selected]);
+
   if (!parsed.sections.length) return <p className="muted">Chưa có nốt nào.</p>;
   const act = active != null ? flat[active] : undefined;
   const sel = selected != null ? flat[selected] : undefined;
