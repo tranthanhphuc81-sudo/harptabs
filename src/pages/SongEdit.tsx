@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { blankSong, db, deleteSongs } from '../lib/db';
-import { HarpKey, HarpType, harpTypeOf, holeCount, isChromatic, isTremolo, normalizeKey, songTonality, tremoloDir } from '../lib/harp';
+import { HarpKey, HarpType, harpTypeOf, holeCount, isChromatic, isTremolo, midiToName, normalizeKey, parseToken, songTonality, tremoloDir } from '../lib/harp';
 import { flatten, parseTab } from '../lib/tabText';
 import { beatsPerBar, Song } from '../lib/types';
 import { STYLE_OPTIONS, BeatStyle } from '../audio/patterns';
@@ -11,6 +11,7 @@ import { TabView } from '../components/TabView';
 import { Icon } from '../components/Icon';
 import { MiniPlay } from '../components/PlayerBar';
 import { usePlayer } from '../components/usePlayer';
+import { previewNote } from '../audio/engine';
 import { useAppState } from '../state';
 import { clearDraft, loadDraft, saveDraft, SongDraft } from '../lib/drafts';
 
@@ -108,6 +109,36 @@ function Editor({ initial, isNew, draft }: { initial: Song; isNew: boolean; draf
       ta.focus();
       ta.selectionStart = ta.selectionEnd = a + ins.length;
     });
+  };
+
+  // nghe thử nốt trước khi thêm vào tab: chạm lỗ chỉ chọn + phát tiếng, bấm "Thêm" mới ghi vào
+  const [hearFirst, setHearFirst] = useState(() => { try { return localStorage.getItem('harptabs.hearFirst') !== '0'; } catch { return true; } });
+  const toggleHearFirst = () => {
+    setHearFirst(!hearFirst);
+    setPend(null);
+    try { localStorage.setItem('harptabs.hearFirst', hearFirst ? '0' : '1'); } catch { /* không lưu được thì thôi */ }
+  };
+  const [pend, setPend] = useState<{ token: string; dur: string } | null>(null);
+  const pendNote = pend ? parseToken(pend.token, s.harpKey, harpType) : null;
+  const hear = (token: string) => { const n = parseToken(token, s.harpKey, harpType); if (n) previewNote(n.midi, 0.6); };
+  const stage = (token: string, dur = pend?.dur ?? '') => { setPend({ token, dur }); hear(token); };
+  const pickHole = (token: string) => (hearFirst ? stage(token, '') : (hear(token), insert(token)));
+  const addPending = () => {
+    if (!pend || !pendNote) return;
+    insert(pend.token + pend.dur);
+    setPend(null);
+  };
+  /** bend ′ / nút gạt: đổi nốt đang chọn khi nghe trước, không thì chèn ngay */
+  const pickMod = (mod: string) => {
+    if (!hearFirst || !pend) return insert(mod);
+    if (mod === "'") {
+      const m = /^(.*?)('*)$/.exec(pend.token)!;
+      stage(m[2].length >= 2 ? m[1] : pend.token + "'");
+    } else stage(pend.token.endsWith(mod) ? pend.token.slice(0, -mod.length) : pend.token + mod);
+  };
+  const pickDur = (d: string) => {
+    if (!hearFirst || !pend) return insert(d);
+    setPend({ ...pend, dur: pend.dur === d ? '' : d });
   };
 
   const errors = parsed.issues.filter((i) => i.level === 'error');
@@ -254,22 +285,33 @@ function Editor({ initial, isNew, draft }: { initial: Song; isNew: boolean; draf
           <div className={`keypad${trem ? ' tremolo' : ''}`} role="toolbar" aria-label="Bàn phím tab">
             {trem ? holes.map((h) => {
               const d = tremoloDir(h) === 'draw';
-              return <button type="button" key={h} className={d ? 'draw' : 'blow'} onClick={() => insert(`${d ? '-' : ''}${h}`)} aria-label={`Lỗ ${h} ${d ? 'hút' : 'thổi'}`}>{d ? `−${h}` : h}</button>;
+              return <button type="button" key={h} className={d ? 'draw' : 'blow'} onClick={() => pickHole(`${d ? '-' : ''}${h}`)} aria-label={`Lỗ ${h} ${d ? 'hút' : 'thổi'}`}>{d ? `−${h}` : h}</button>;
             }) : <>
               <button type="button" className={`kp-mode${draw ? ' draw' : ''}`} onClick={() => setDraw(!draw)} aria-pressed={draw}>
                 {draw ? 'Hút' : 'Thổi'}
               </button>
               {holes.map((h) => (
-                <button type="button" key={h} className={draw ? 'draw' : 'blow'} onClick={() => insert(`${draw ? '-' : ''}${h}`)}>{draw ? `−${h}` : h}</button>
+                <button type="button" key={h} className={draw ? 'draw' : 'blow'} onClick={() => pickHole(`${draw ? '-' : ''}${h}`)}>{draw ? `−${h}` : h}</button>
               ))}
             </>}
             {trem ? null : chrom
-              ? <button type="button" onClick={() => insert('<')} aria-label="Bấm nút gạt">&lt;</button>
-              : <button type="button" onClick={() => insert("'")} aria-label="Thêm bend">′</button>}
-            <button type="button" onClick={() => insert(':2')}>:2</button>
-            <button type="button" onClick={() => insert(':0.5')}>:½</button>
+              ? <button type="button" onClick={() => pickMod('<')} aria-label="Bấm nút gạt">&lt;</button>
+              : <button type="button" onClick={() => pickMod("'")} aria-label="Thêm bend">′</button>}
+            <button type="button" onClick={() => pickDur(':2')}>:2</button>
+            <button type="button" onClick={() => pickDur(':0.5')}>:½</button>
             <button type="button" onClick={() => insert('r')}>nghỉ</button>
             <button type="button" onClick={() => insert('\n')} aria-label="Xuống dòng">↵</button>
+          </div>
+          <div className="hear-row row gap wrap center">
+            <button type="button" className={`chip${hearFirst ? ' on' : ''}`} aria-pressed={hearFirst} onClick={toggleHearFirst}>Nghe trước khi thêm</button>
+            {hearFirst && (pend ? (
+              <>
+                <span className="hear-cur">{pend.token}{pend.dur}{pendNote ? <span className="muted"> ({midiToName(pendNote.midi, settings.noteNames)})</span> : <span className="danger"> — kèn này không có nốt đó</span>}</span>
+                <button type="button" className="btn btn-ghost btn-sm" onClick={() => hear(pend.token)} disabled={!pendNote}>Nghe lại</button>
+                <button type="button" className="btn btn-primary btn-sm" onClick={addPending} disabled={!pendNote}>Thêm vào tab</button>
+                <button type="button" className="btn btn-ghost btn-sm" onClick={() => setPend(null)}>Bỏ</button>
+              </>
+            ) : <span className="muted small">Chạm lỗ để nghe, rồi bấm “Thêm vào tab”.</span>)}
           </div>
           <textarea
             ref={taRef}
