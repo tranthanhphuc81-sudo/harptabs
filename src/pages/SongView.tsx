@@ -161,6 +161,17 @@ function SongPlayerView({ song, original, fit, view, choice, onChoice }: {
   const keepPlaying = useRef(false);
   /** chỉ sửa được khi đang xem đúng bản gốc (bản đã dịch sang kèn khác không ứng với văn bản lưu) */
   const canEdit = fit === null && song === original;
+  // lịch sử để hoàn tác: nội dung bài và nốt đang chọn trước mỗi lần sửa
+  const [history, setHistory] = useState<{ body: string; focus: number | null }[]>([]);
+  const undo = () => {
+    const last = history[history.length - 1];
+    if (!last) return;
+    keepPlaying.current = true;
+    window.setTimeout(() => { keepPlaying.current = false; }, 1500);
+    void db.songs.update(original.id, { body: last.body, updatedAt: Date.now() });
+    setHistory((h) => h.slice(0, -1));
+    setFocus(last.focus);
+  };
   const applyEdit = (edit: NoteEdit, nextFocus?: number | null) => {
     const f = focus != null ? flat[focus] : null;
     if (!f) return;
@@ -169,6 +180,7 @@ function SongPlayerView({ song, original, fit, view, choice, onChoice }: {
     if (body === original.body) return;
     keepPlaying.current = true;
     window.setTimeout(() => { keepPlaying.current = false; }, 1500);
+    setHistory((h) => [...h.slice(-49), { body: original.body, focus }]);
     void db.songs.update(original.id, { body, updatedAt: Date.now() });
     if (nextFocus !== undefined) setFocus(nextFocus);
   };
@@ -420,6 +432,8 @@ function SongPlayerView({ song, original, fit, view, choice, onChoice }: {
             onRemove={() => applyEdit({ kind: 'remove' }, focus != null ? Math.min(focus, flat.length - 2) : null)}
             onDuplicate={() => applyEdit({ kind: 'duplicate' }, focus != null ? focus + 1 : null)}
             onStep={stepFocus}
+            canUndo={history.length > 0}
+            onUndo={undo}
             onPickPlaying={() => { if (p.active != null) setFocus(p.active); }}
             onHearToken={(t) => { const n = parseToken(t, original.harpKey, harpTypeOf(original)); if (n) previewNote(n.midi, 0.6); }}
             onInsert={(token) => applyEdit({ kind: 'insert', token }, focus != null ? focus + 1 : null)}

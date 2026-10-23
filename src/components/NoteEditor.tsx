@@ -16,6 +16,8 @@ interface Props {
   onRemove: () => void;
   onDuplicate: () => void;
   onStep: (dir: -1 | 1) => void;
+  canUndo: boolean;
+  onUndo: () => void;
   /** chọn nốt đang vang (khi vừa nghe thấy nốt sai) */
   onPickPlaying: () => void;
   onHear: () => void;
@@ -31,7 +33,7 @@ const BEAT_CHOICES: { v: number; label: string }[] = [
 ];
 
 /** Bảng sửa một nốt ngay khi đang nghe: nhạc vẫn chạy, chạm nốt trên tab rồi đổi lỗ / độ dài tại chỗ */
-export function NoteEditor({ note, harpType, nameStyle, playing, onToken, onBeats, onRemove, onDuplicate, onStep, onPickPlaying, onHear, onHearToken, onInsert, onClose }: Props) {
+export function NoteEditor({ note, harpType, nameStyle, playing, onToken, onBeats, onRemove, onDuplicate, onStep, canUndo, onUndo, onPickPlaying, onHear, onHearToken, onInsert, onClose }: Props) {
   const trem = isTremolo(harpType);
   const chrom = isChromatic(harpType);
   const holes = Array.from({ length: holeCount(harpType) }, (_, i) => i + 1);
@@ -69,6 +71,7 @@ export function NoteEditor({ note, harpType, nameStyle, playing, onToken, onBeat
         <span className="ne-nav">
           <button type="button" className="icon-btn" onClick={() => onStep(-1)} disabled={!note} aria-label="Nốt trước">‹</button>
           <button type="button" className="icon-btn" onClick={() => onStep(1)} disabled={!note} aria-label="Nốt sau">›</button>
+          <button type="button" className="btn btn-ghost btn-sm" onClick={onUndo} disabled={!canUndo} aria-label="Hoàn tác lần sửa trước">↶ Hoàn tác</button>
           <button type="button" className="icon-btn" onClick={onClose} aria-label="Tắt chế độ sửa nốt"><Icon name="check" size={18} /></button>
         </span>
       </div>
