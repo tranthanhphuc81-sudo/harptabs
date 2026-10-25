@@ -1,6 +1,6 @@
 /** Sửa từng nốt của bài ngay trên tab đang xem (không phải mở trình sửa văn bản) */
 import { HarpKey, HarpType, parseToken } from './harp';
-import { parseTab, serializeTab, TabEvent } from './tabText';
+import { parseTab, serializeTab, splitLyrics, TabEvent } from './tabText';
 
 export type NoteEdit =
   | { kind: 'token'; token: string | null }
@@ -61,4 +61,45 @@ export function splitToken(token: string | null): { draw: boolean; hole: number 
 
 export function joinToken(t: { draw: boolean; hole: number; bend?: number; over?: boolean; slide?: boolean }): string {
   return `${t.draw ? '-' : ''}${t.hole}${"'".repeat(t.bend ?? 0)}${t.over ? 'o' : ''}${t.slide ? '<' : ''}`;
+}
+
+/** một dòng tab và lời của nó (để sửa lời theo từng dòng) */
+export interface LyricLine { sectionIndex: number; lineIndex: number; sectionTitle?: string; tokens: string[]; text: string }
+
+/** lời của một dòng tab, viết như trong văn bản bài: gạch nối nối âm tiết cùng từ, "_" là nốt luyến */
+function lyricTextOf(events: TabEvent[]): string {
+  const playable = events.filter((e) => e.token !== null);
+  if (!playable.some((e) => e.lyric)) return '';
+  let s = '';
+  playable.forEach((e, i) => {
+    s += e.lyric ? e.lyric : '_';
+    if (i < playable.length - 1) s += e.lyric && e.hyphen && playable[i + 1].lyric ? '-' : ' ';
+  });
+  // nốt luyến ở cuối dòng không cần ghi
+  return s.replace(/(\s+_)+$/, '');
+}
+
+export function lyricLines(body: string, key: HarpKey, type: HarpType): LyricLine[] {
+  const out: LyricLine[] = [];
+  parseTab(body, key, type).sections.forEach((sec, si) => sec.lines.forEach((line, li) => {
+    if (line.kind !== 'tab') return;
+    out.push({ sectionIndex: si, lineIndex: li, sectionTitle: sec.title, tokens: line.events.filter((e) => e.token !== null).map((e) => e.token!), text: lyricTextOf(line.events) });
+  }));
+  return out;
+}
+
+/** Thay lời các dòng (khoá "đoạn.dòng"); chữ thứ mấy vào nốt thứ mấy của dòng, thừa thì bỏ */
+export function setLyrics(body: string, key: HarpKey, type: HarpType, texts: Map<string, string>): string {
+  const parsed = parseTab(body, key, type);
+  parsed.sections.forEach((sec, si) => sec.lines.forEach((line, li) => {
+    const text = texts.get(`${si}.${li}`);
+    if (line.kind !== 'tab' || text === undefined) return;
+    const syl = splitLyrics(text);
+    line.events.filter((e) => e.token !== null).forEach((e, i) => {
+      const s = syl[i];
+      e.lyric = s && !s.melisma ? s.text : undefined;
+      e.hyphen = s && !s.melisma && s.hyphen ? true : undefined;
+    });
+  }));
+  return serializeTab(parsed.sections);
 }

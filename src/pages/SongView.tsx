@@ -27,6 +27,7 @@ import { ChordSegment, harmonizeSegments, parseTonality, segKey, transposeChords
 import { setBeatPrefs, setSongInstrument, useBeatPrefs } from '../audio/beatPrefs';
 import { ChordPicker } from '../components/ChordPicker';
 import { NoteEditor } from '../components/NoteEditor';
+import { LyricEditor } from '../components/LyricEditor';
 import { editNote, NoteEdit } from '../lib/tabEdit';
 import { suggestInstrument, suggestStyle } from '../audio/suggest';
 
@@ -162,6 +163,7 @@ function SongPlayerView({ song, original, fit, view, choice, onChoice }: {
   // ----- sửa nốt ngay khi nghe: chạm nốt sai trên tab rồi đổi tại chỗ, nhạc vẫn chạy -----
   const [editMode, setEditMode] = useState(false);
   const [karaoke, setKaraoke] = useState(false);
+  const [lyricEdit, setLyricEdit] = useState(false);
   const keepPlaying = useRef(false);
   /** chỉ sửa được khi đang xem đúng bản gốc (bản đã dịch sang kèn khác không ứng với văn bản lưu) */
   const canEdit = fit === null && song === original;
@@ -450,6 +452,9 @@ function SongPlayerView({ song, original, fit, view, choice, onChoice }: {
           <button type="button" className={`chip${editMode ? ' on' : ''}`} aria-pressed={editMode} onClick={() => setEditMode((v) => !v)}>
             <Icon name="edit" size={15} /> Sửa nốt
           </button>
+          <button type="button" className="chip" onClick={() => (canEdit ? setLyricEdit(true) : toast('Đang xem bản đã đổi sang kèn khác — chọn “Kèn gốc” ở trên để sửa lời'))}>
+            📝 Sửa lời
+          </button>
           <button type="button" className={`chip${waitMode ? ' on' : ''}`} aria-pressed={waitMode} onClick={() => (waitMode ? stopWait() : startWait())}>
             <Icon name="mic" size={15} /> Chờ nốt
           </button>
@@ -458,6 +463,18 @@ function SongPlayerView({ song, original, fit, view, choice, onChoice }: {
           </button>
         </>}
       />
+
+      {lyricEdit && (
+        <LyricEditor body={original.body} harpKey={original.harpKey} harpType={harpTypeOf(original)}
+          onSave={(body) => {
+            keepPlaying.current = true;
+            window.setTimeout(() => { keepPlaying.current = false; }, 1500);
+            setHistory((h) => [...h.slice(-49), { body: original.body, focus }]);
+            void db.songs.update(original.id, { body, updatedAt: Date.now() });
+            toast('Đã lưu lời');
+          }}
+          onClose={() => setLyricEdit(false)} />
+      )}
 
       {karaoke && (
         <Suspense fallback={null}>
