@@ -29,7 +29,10 @@ vi.mock('./engine', () => ({
   crash: count('crash'),
   tom: count('tom'),
   click: count('click'),
+  arrangeBus: () => null,
+  playToneAs: (inst: string, midi: number, when: number) => { count(`arr:${inst}`)(); arrNotes.push({ midi, when }); },
 }));
+const arrNotes: { midi: number; when: number }[] = [];
 
 const { Player } = await import('./player');
 const { setSyncOffsetMs } = await import('./latency');
@@ -148,3 +151,40 @@ describe('đổi tông khi phát (karaoke)', () => {
   });
 });
 
+
+describe('bản phối MIDI gốc (karaoke)', () => {
+  it('phát cả đoạn dạo trước câu đầu, thay hẳn phần đệm tự tạo, đổi tông theo karaoke (trừ trống), hết bản phối mới dừng', () => {
+    for (const k of Object.keys(calls)) delete calls[k];
+    arrNotes.length = 0;
+    bassNotes.length = 0;
+    clock.t = 0;
+    const arrangement = {
+      start: -4, end: 9, parts: [],
+      notes: [
+        { beat: -4, dur: 1, midi: 36, vel: 1, voice: 'drum' as const },
+        { beat: -4, dur: 2, midi: 60, vel: 0.8, voice: 'piano' as const },
+        { beat: -2, dur: 1, midi: 40, vel: 0.8, voice: 'bass' as const },
+        { beat: 1, dur: 1, midi: 38, vel: 1, voice: 'drum' as const },
+        { beat: 8, dur: 1, midi: 64, vel: 0.8, voice: 'guitar' as const },
+      ],
+    };
+    const p = new Player({ bpm: 120, tempoScale: 1, beatsPerBar: 4, pickupBeats: 0, style: 'ballad', melody: true, sing: true, beat: true, click: false, countIn: true, loop: null, songKey: 'C', transpose: 2, arrangement });
+    p.load(Array.from({ length: 4 }, (_, i) => ({ token: '4', midi: 60, beats: 1, start: i, sectionIndex: 0, lineIndex: 0, eventIndex: i })));
+    p.start(0);
+    // từ đầu bài: bắt đầu ở đoạn dạo, không đếm vào
+    expect(p.currentBeat() ?? -4).toBeLessThan(-3);
+    const tick = (p as unknown as { tick: () => void }).tick.bind(p);
+    for (let s = 0; s < 8; s += 0.05) { clock.t = s; tick(); }
+    p.stop();
+    expect(calls.kick).toBe(1);
+    expect(calls.snare).toBe(1);
+    expect(calls.click ?? 0).toBe(0);
+    expect(calls['arr:piano']).toBe(1);
+    expect(calls['arr:guitar']).toBe(1);
+    expect(arrNotes.map((n) => n.midi)).toEqual([62, 66]);
+    expect(bassNotes.map((n) => n.midi)).toEqual([42]);
+    // không có tiếng đệm tự tạo (bass chỉ là nốt của bản phối, không strum / beat)
+    expect(calls.comp ?? 0).toBe(0);
+    expect(calls.hat ?? 0).toBe(0);
+  });
+});

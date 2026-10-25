@@ -102,7 +102,8 @@ export function countdownAt(lines: KLine[], beat: number): number | null {
   if (next < 0) return null;
   const line = lines[next];
   if (line.instrumental) return null;
-  const prevEnd = next > 0 ? lines[next - 1].end : 0;
+  // câu đầu: trước đó là đoạn dạo (phách âm khi phát nhạc nền / bản phối gốc) — luôn đếm vào
+  const prevEnd = next > 0 ? lines[next - 1].end : -Infinity;
   if (beat < prevEnd - 1e-9 || line.start - prevEnd < 2) return null;
   const left = line.start - beat;
   return left <= 4 ? Math.max(1, Math.ceil(left - 1e-9)) : null;

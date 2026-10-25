@@ -2,7 +2,7 @@
 import Dexie, { Table } from 'dexie';
 import { FIRST_SAMPLE_IDS, SAMPLE_SONGS } from '../data/samples';
 import { HARP_TYPES, normalizeKey } from './harp';
-import { AiLogEntry, Backing, DEFAULT_SETTINGS, Recording, Settings, Song } from './types';
+import { AiLogEntry, Backing, DEFAULT_SETTINGS, MidiSource, Recording, Settings, Song } from './types';
 import type { SongScan } from './scanStore';
 import { BeatStyle, PATTERNS } from '../audio/patterns';
 
@@ -18,6 +18,8 @@ class HarpDB extends Dexie {
   recordings!: Table<Recording, number>;
   /** nhạc nền MP3 cho karaoke (khoá = id bài) — không vào sao lưu / link chia sẻ / AI */
   backings!: Table<Backing, string>;
+  /** file MIDI gốc của bài nhập từ MIDI (khoá = id bài) — không vào sao lưu / link chia sẻ / AI */
+  midiSources!: Table<MidiSource, string>;
   constructor() {
     super('harptabs');
     this.version(1).stores({
@@ -28,6 +30,7 @@ class HarpDB extends Dexie {
     this.version(2).stores({ scans: 'songId' });
     this.version(3).stores({ recordings: '++id, songId, createdAt' });
     this.version(4).stores({ backings: 'songId' });
+    this.version(5).stores({ midiSources: 'songId' });
   }
 }
 
@@ -40,9 +43,10 @@ export function newId(): string {
 
 /** Xoá bài (kèm ảnh quét, bản nháp, bản thu karaoke của bài). Bài mẫu đã xoá không tự xuất hiện lại. */
 export async function deleteSongs(ids: string[]): Promise<void> {
-  await db.transaction('rw', [db.songs, db.scans, db.kv, db.recordings, db.backings], async () => {
+  await db.transaction('rw', [db.songs, db.scans, db.kv, db.recordings, db.backings, db.midiSources], async () => {
     await db.recordings.where('songId').anyOf(ids).delete();
     await db.backings.bulkDelete(ids);
+    await db.midiSources.bulkDelete(ids);
     await db.songs.bulkDelete(ids);
     // khoá nháp: xem lib/drafts.ts
     await db.scans.bulkDelete([...ids, ...ids.map((id) => `draft:scan:${id}`)]);

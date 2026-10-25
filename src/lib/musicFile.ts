@@ -105,7 +105,8 @@ export interface MusicFile {
   melodyPart: string;
   /** cấu trúc chuyển tab của một bè */
   /** backing (chỉ MIDI): mức lọc giọng phụ 0 (tắt) … 3 (mạnh), mặc định 2 */
-  transcribe(partId: string, opts?: { backing?: number }): AiTranscription;
+  /** `startBeat`: (MIDI) phách trong file của nốt đầu tab — để phát kèm bản phối gốc */
+  transcribe(partId: string, opts?: { backing?: number }): AiTranscription & { startBeat?: number };
 }
 
 /** Gộp nốt luyến cùng cao độ, chèn dấu lặng vào chỗ trống, chia dòng theo ô nhịp */
@@ -333,8 +334,8 @@ export function parseMusicXml(text: string, fileTitle = ''): MusicFile {
 
 // ───────────────────────── MIDI ─────────────────────────
 
-interface MidiNote { start: number; end: number; midi: number; ch: number; vel: number }
-interface MidiTrack { name: string; notes: MidiNote[]; lyrics: { t: number; text: string }[] }
+export interface MidiNote { start: number; end: number; midi: number; ch: number; vel: number; /** nhạc cụ GM (0–127) lúc đánh nốt */ prog?: number }
+export interface MidiTrack { name: string; notes: MidiNote[]; lyrics: { t: number; text: string }[] }
 
 const utf8 = new TextDecoder('utf-8');
 let cp1258: TextDecoder | null | undefined;
@@ -362,8 +363,8 @@ export function legacyText(bytes: Uint8Array, isCp1258 = looksCp1258(bytes)): st
   return String.fromCharCode(...bytes);
 }
 
-/** Đọc file MIDI chuẩn: các track (nốt, lời), nhịp độ, số chỉ nhịp, hoá biểu */
-function readMidi(buf: Uint8Array) {
+/** Đọc file MIDI chuẩn: các track (nốt, lời, nhạc cụ), nhịp độ, số chỉ nhịp, hoá biểu */
+export function readMidi(buf: Uint8Array) {
   const dv = new DataView(buf.buffer, buf.byteOffset, buf.byteLength);
   const str = (p: number, n: number) => String.fromCharCode(...buf.subarray(p, p + n));
   if (str(0, 4) !== 'MThd') throw new Error('Không phải file MIDI');
@@ -376,6 +377,8 @@ function readMidi(buf: Uint8Array) {
   // lời và tên: giải mã sau khi đọc hết file, để đoán bảng mã theo cả file
   const texts: { bytes: Uint8Array; set: (s: string) => void }[] = [];
   const later = (bytes: Uint8Array, set: (s: string) => void) => texts.push({ bytes, set });
+  // đổi nhạc cụ có tác dụng cho cả kênh, ở mọi track: gom lại, gán cho nốt sau khi đọc hết
+  const programs: { t: number; ch: number; prog: number }[] = [];
   for (let ti = 0; ti < ntrk && p + 8 <= buf.length; ti++) {
     if (str(p, 4) !== 'MTrk') break;
     const end = p + 8 + dv.getUint32(p + 4);
@@ -400,6 +403,7 @@ function readMidi(buf: Uint8Array) {
       if (st === 0xf0 || st === 0xf7) { q += vlq(); continue; }
       status = st;
       const kind = st & 0xf0, ch = st & 0x0f;
+      if (kind === 0xc0) programs.push({ t: tick / tpq, ch, prog: buf[q] & 0x7f });
       if (kind === 0xc0 || kind === 0xd0) { q += 1; continue; }
       const a = buf[q], b = buf[q + 1];
       q += 2;
@@ -419,6 +423,12 @@ function readMidi(buf: Uint8Array) {
   }
   const fileCp1258 = texts.some((x) => looksCp1258(x.bytes));
   for (const x of texts) x.set(legacyText(x.bytes, fileCp1258));
+  if (programs.length) {
+    programs.sort((a, b) => a.t - b.t);
+    for (const tr of tracks) for (const n of tr.notes) {
+      for (const pc of programs) { if (pc.t > n.start + 1e-6) break; if (pc.ch === n.ch) n.prog = pc.prog; }
+    }
+  }
   return { tracks, tempo, timeSig, key, seqName };
 }
 
@@ -610,12 +620,19 @@ export function parseMidi(buf: Uint8Array, fileTitle = ''): MusicFile {
       const t0 = notes.length ? notes[0].start : 0;
       const off = Math.round((t0 % barBeats) * 1000) / 1000;
       const pickup = off > 0.01 ? Math.round((barBeats - off) * 1000) / 1000 : 0;
-      return toTranscription(notes, { title, songKey, flats: !!key && key[0] < 0, tempo, timeSig: `${num}/${den}`, barBeats, pickupBeats: pickup });
+      return { ...toTranscription(notes, { title, songKey, flats: !!key && key[0] < 0, tempo, timeSig: `${num}/${den}`, barBeats, pickupBeats: pickup }), startBeat: t0 };
     },
   };
 }
 
 // ───────────────────────── vào ─────────────────────────
+
+/** phần MIDI chuẩn (MThd…) trong file; file .rmi bọc RIFF thì bóc ra */
+export function midiPayload(bytes: Uint8Array): Uint8Array {
+  if (String.fromCharCode(...bytes.subarray(0, 4)) === 'MThd') return bytes;
+  const i = bytes.findIndex((_, k) => bytes[k] === 0x4d && bytes[k + 1] === 0x54 && bytes[k + 2] === 0x68 && bytes[k + 3] === 0x64);
+  return i > 0 ? bytes.subarray(i) : bytes;
+}
 
 /** Đọc file nhạc theo nội dung (không tin đuôi file) */
 export async function readMusicFile(bytes: Uint8Array, fileName = ''): Promise<MusicFile> {
@@ -623,8 +640,8 @@ export async function readMusicFile(bytes: Uint8Array, fileName = ''): Promise<M
   const head = String.fromCharCode(...bytes.subarray(0, 4));
   if (head === 'MThd') return parseMidi(bytes, fileTitle);
   if (head === 'RIFF' && String.fromCharCode(...bytes.subarray(8, 12)) === 'RMID') {
-    const i = bytes.findIndex((_, k) => bytes[k] === 0x4d && bytes[k + 1] === 0x54 && bytes[k + 2] === 0x68 && bytes[k + 3] === 0x64);
-    if (i > 0) return parseMidi(bytes.subarray(i), fileTitle);
+    const m = midiPayload(bytes);
+    if (m !== bytes) return parseMidi(m, fileTitle);
   }
   if (head.startsWith('PK')) {
     const files = await unzip(bytes);

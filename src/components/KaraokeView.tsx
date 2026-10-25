@@ -10,7 +10,9 @@ import { RecordingsPanel } from './RecordingsPanel';
 import { BackingSetup } from './BackingSetup';
 import { useBackingPlayer } from './useBackingPlayer';
 import { loadBacking, tabSig } from '../lib/backings';
-import type { Backing } from '../lib/types';
+import type { Backing, MidiSource } from '../lib/types';
+import { loadMidiSource, midiBytes, saveMidiSource } from '../lib/midiSources';
+import { Arrangement, buildArrangement, matchMidiToTab } from '../lib/midiArrange';
 import { harpName, harpTypeOf, shiftKey } from '../lib/harp';
 import { buildKaraoke, countdownAt, holesFor, KLine, locate } from '../lib/karaoke';
 import { DEFAULT_KARAOKE, KaraokeHoles, KaraokePrefs, loadKaraokePrefs, MAX_TRANSPOSE, saveKaraokePrefs } from '../lib/karaokePrefs';
@@ -80,15 +82,28 @@ export default function KaraokeView({ song, original, flat, p, chordSegs, onClos
 
   // mở karaoke: bật Đệm hát (tắt giai điệu kèn) và đổi tông; đóng thì trả lại như cũ
   const { setOpts } = p;
-  // nhạc nền MP3 của bài (nếu có): mặc định dùng khi đã cài
+  // nguồn nhạc: đệm tự tạo, bản phối MIDI gốc (bài nhập từ MIDI), nhạc nền MP3 — mặc định cái "thật" nhất đang có
   const [backing, setBacking] = useState<Backing | null>(null);
-  const [useMp3, setUseMp3] = useState(false);
+  const [midiSrc, setMidiSrc] = useState<MidiSource | null>(null);
+  const [arr, setArr] = useState<Arrangement | null>(null);
+  const [src, setSrc] = useState<'synth' | 'midi' | 'mp3'>('synth');
   const [showBacking, setShowBacking] = useState(false);
   useEffect(() => {
-    void loadBacking(original.id).then((b) => { setBacking(b); setUseMp3(!!b); }).catch(() => {});
+    void Promise.all([loadBacking(original.id).catch(() => null), loadMidiSource(original.id).catch(() => null)]).then(([b, m]) => {
+      setBacking(b);
+      setMidiSrc(m);
+      setSrc(b ? 'mp3' : m ? 'midi' : 'synth');
+    });
   }, [original.id]);
+  useEffect(() => {
+    setArr(null);
+    if (!midiSrc) return;
+    try { setArr(buildArrangement(midiBytes(midiSrc), midiSrc)); } catch { /* file hỏng: dùng đệm tự tạo */ }
+  }, [midiSrc]);
+  const useMp3 = src === 'mp3';
   const bk = useBackingPlayer(backing, flat);
   const mp3 = useMp3 && !!backing && bk.status === 'ready';
+  const midi = src === 'midi' && !!arr;
   /** bộ phát đang dùng: nhạc nền MP3 hoặc tiếng tổng hợp — chữ chạy, chấm điểm, thu âm đều theo nó */
   const tp = mp3 ? bk : p;
   // trang bài tạo lại đối tượng bộ phát mỗi lần vẽ: giữ bản mới nhất trong ref để vòng chữ chạy không khởi động lại
@@ -96,13 +111,14 @@ export default function KaraokeView({ song, original, flat, p, chordSegs, onClos
   pRef.current = tp;
   // đổi nguồn nhạc giữa chừng: dừng cả hai
   const synthStop = p.stop;
-  useEffect(() => { synthStop(); bk.stop(); }, [mp3]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { synthStop(); bk.stop(); }, [mp3, midi]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { setOpts({ arrangement: midi ? arr : null }); }, [midi, arr, setOpts]);
   const wasSing = useRef(!!p.opts.sing);
   useEffect(() => {
     const prev = wasSing.current;
     setOpts({ sing: true });
     void fs.enter();
-    return () => { pRef.current.stop(); setOpts({ sing: prev, transpose: 0 }); void fs.exit(); };
+    return () => { pRef.current.stop(); setOpts({ sing: prev, transpose: 0, arrangement: null }); void fs.exit(); };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- chỉ khi mở / đóng
   }, []);
   useEffect(() => { setOpts({ transpose: t }); }, [t, setOpts]);
@@ -306,6 +322,24 @@ export default function KaraokeView({ song, original, flat, p, chordSegs, onClos
     return () => window.removeEventListener('keydown', onKey);
   }, [onClose]);
 
+  // bài nhập từ MIDI trước khi app giữ file gốc: chọn lại file đó, máy dò bè hát và chỗ khớp với tab
+  const midiInput = useRef<HTMLInputElement>(null);
+  const linkMidi = async (f: File | undefined) => {
+    if (midiInput.current) midiInput.current.value = '';
+    if (!f) return;
+    try {
+      const bytes = new Uint8Array(await f.arrayBuffer());
+      const link = matchMidiToTab(bytes, lyricFlat);
+      if (!link) { toast('File MIDI này không khớp với tab của bài'); return; }
+      await saveMidiSource(original.id, f.name, bytes, link, tabSig(lyricFlat));
+      const m = await loadMidiSource(original.id);
+      setMidiSrc(m);
+      if (m) { setSrc('midi'); toast('Đã nối bản phối gốc'); }
+    } catch (e) {
+      toast((e as Error).message || 'Không đọc được file MIDI');
+    }
+  };
+
   const startFrom = (li: number) => {
     const first = lines[li]?.syls[0]?.fi[0];
     shownRef.current = li;
@@ -369,12 +403,17 @@ export default function KaraokeView({ song, original, flat, p, chordSegs, onClos
             {(Object.keys(HOLES_LABEL) as KaraokeHoles[]).map((k) => <option key={k} value={k}>{HOLES_LABEL[k]}</option>)}
           </select>
           <button type="button" className={`chip${prefs.chords ? ' on' : ''}`} aria-pressed={prefs.chords} onClick={() => update({ chords: !prefs.chords })}>Hợp âm</button>
-          {backing && (
+          {(backing || midiSrc) && (
             <div className="segmented" role="radiogroup" aria-label="Nguồn nhạc">
-              <button type="button" role="radio" aria-checked={!useMp3} className={!useMp3 ? 'on' : ''} onClick={() => setUseMp3(false)}>Tổng hợp</button>
-              <button type="button" role="radio" aria-checked={useMp3} className={useMp3 ? 'on' : ''} onClick={() => setUseMp3(true)}>MP3</button>
+              <button type="button" role="radio" aria-checked={src === 'synth'} className={src === 'synth' ? 'on' : ''} onClick={() => setSrc('synth')}>Tự đệm</button>
+              {midiSrc && <button type="button" role="radio" aria-checked={src === 'midi'} className={src === 'midi' ? 'on' : ''} onClick={() => setSrc('midi')}>MIDI gốc</button>}
+              {backing && <button type="button" role="radio" aria-checked={src === 'mp3'} className={src === 'mp3' ? 'on' : ''} onClick={() => setSrc('mp3')}>MP3</button>}
             </div>
           )}
+          {!midiSrc && original.tags?.includes('MIDI') && (
+            <button type="button" className="chip" onClick={() => { tp.stop(); midiInput.current?.click(); }}>🎹 Nối file MIDI gốc</button>
+          )}
+          <input ref={midiInput} type="file" hidden accept=".mid,.midi,.kar,.rmi,audio/midi,audio/x-midi" onChange={(e) => void linkMidi(e.target.files?.[0])} />
           <button type="button" className="chip" onClick={() => { tp.stop(); setShowBacking(true); }}>🎵 {backing ? 'Nhạc nền' : 'Thêm nhạc MP3'}</button>
           <button type="button" className={`chip${scoring ? ' on' : ''}`} aria-pressed={scoring} onClick={() => setScoring((v) => !v)}>
             <Icon name="mic" size={15} /> Chấm điểm{scoring && live !== null ? ` · ${live}` : ''}
@@ -387,6 +426,9 @@ export default function KaraokeView({ song, original, flat, p, chordSegs, onClos
         </div>
       </header>
       {micErr && <p className="kara-note small danger" role="alert">{micErr}</p>}
+      {midi && midiSrc!.tabSig !== tabSig(lyricFlat) && (
+        <p className="kara-note small">Tab đã sửa sau khi nhập — bản phối gốc có thể lệch với lời.</p>
+      )}
       {useMp3 && backing && bk.status === 'loading' && <p className="kara-note small">Đang mở nhạc nền…</p>}
       {useMp3 && backing && bk.status === 'error' && <p className="kara-note small danger" role="alert">{bk.error}</p>}
       {mp3 && backing!.tabSig !== tabSig(lyricFlat) && (
@@ -450,7 +492,7 @@ export default function KaraokeView({ song, original, flat, p, chordSegs, onClos
           flat={lyricFlat}
           lines={lines}
           existing={backing}
-          onSaved={(b) => { setBacking(b); setUseMp3(!!b); }}
+          onSaved={(b) => { setBacking(b); setSrc(b ? 'mp3' : midiSrc ? 'midi' : 'synth'); }}
           onClose={() => setShowBacking(false)}
         />
       )}

@@ -59,6 +59,6 @@ describe('màn hình karaoke', () => {
     const { r, setOpts, p } = setup({ v: 0 });
     r.unmount();
     expect(p.stop).toHaveBeenCalled();
-    expect(setOpts).toHaveBeenLastCalledWith({ sing: false, transpose: 0 });
+    expect(setOpts).toHaveBeenLastCalledWith({ sing: false, transpose: 0, arrangement: null });
   });
 });

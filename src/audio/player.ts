@@ -9,6 +9,8 @@ import { bassMidi, Chord, chordAt, chordVoicing, ChordOverrides, ChordSpan, harm
 import { BeatPattern, BeatStyle, boPattern, lacPattern, resolvePattern, strumPattern } from './patterns';
 import { AccompPlan, barTrack, planAccomp } from './accompPlan';
 import { heardTime } from './latency';
+import type { Arrangement } from '../lib/midiArrange';
+import { playArrNote } from './arrangePlay';
 
 export interface PlayerOptions {
   bpm: number;
@@ -30,12 +32,16 @@ export interface PlayerOptions {
   chordOverrides?: ChordOverrides;
   /** đổi tông khi phát (nửa cung, karaoke: hợp giọng người hát); tab không đổi */
   transpose?: number;
+  /** karaoke: phát bản phối MIDI gốc thay cho phần đệm tự tạo (kể cả đoạn dạo trước câu hát đầu) */
+  arrangement?: Arrangement | null;
   loop: { start: number; end: number } | null;
 }
 
 interface Marker { time: number; beat: number; spb: number }
 
 const EPS = 1e-6;
+/** bản phối dày (nhiều bè, hợp âm): giới hạn số nốt mỗi ô lưới cho máy yếu khỏi rè */
+const MAX_ARR_PER_STEP = 28;
 /** lên lịch trước bao lâu (giây): đủ dài để máy khựng một lúc vẫn không trễ nhịp */
 const LOOKAHEAD = 0.25;
 
@@ -138,6 +144,7 @@ export class Player {
   }
 
   private subdiv() {
+    if (this.opts.arrangement) return 2;
     const acc = this.accomp();
     if (acc && acc !== 'band') return strumPattern(this.opts.style, this.opts.beatsPerBar).subdiv;
     return resolvePattern(this.beatStyle(), this.opts.beatsPerBar)?.subdiv ?? 2;
@@ -153,11 +160,16 @@ export class Player {
     this.stop();
     const c = audio();
     const spb = this.spb();
-    const from = this.snap(Math.max(0, fromBeat));
+    const arr = this.opts.arrangement;
+    const first = this.events[0]?.start ?? 0;
+    // bản phối gốc: từ đầu bài thì phát cả đoạn dạo, từ câu giữa bài thì lùi một ô nhịp cho kịp vào
+    const from = arr
+      ? this.snap(Math.max(arr.start, fromBeat <= first + EPS ? arr.start : fromBeat - this.opts.beatsPerBar))
+      : this.snap(Math.max(0, fromBeat));
     // âm thanh vừa khởi động (lần phát đầu): đồng hồ chưa chạy đều, cho bắt đầu chậm hơn một chút
     let t = c.currentTime + (c.state === 'running' && c.currentTime > 0.5 ? 0.08 : 0.3);
     this.markers = [];
-    if (this.opts.countIn) {
+    if (this.opts.countIn && !arr) {
       const n = this.opts.beatsPerBar;
       for (let i = 0; i < n; i++) {
         click(t + i * spb, i === 0);
@@ -307,8 +319,10 @@ export class Player {
     const o = this.opts;
     const acc = this.accomp();
     const style = this.beatStyle();
-    const strum = acc && acc !== 'band' ? strumPattern(o.style, o.beatsPerBar) : null;
-    const pattern = strum ? null : resolvePattern(style, o.beatsPerBar);
+    const arr = o.arrangement;
+    const strum = !arr && acc && acc !== 'band' ? strumPattern(o.style, o.beatsPerBar) : null;
+    const pattern = strum || arr ? null : resolvePattern(style, o.beatsPerBar);
+    if (arr) setHumanVelocity(0);
     const subdiv = strum?.subdiv ?? pattern?.subdiv ?? 2;
     const step = 1 / subdiv;
     // đổi lưới giữa chừng (bật/tắt đệm hát, đổi nhạc cụ đệm): nhích con trỏ tới ô kế tiếp của lưới mới
@@ -332,6 +346,16 @@ export class Player {
           if (ev.start >= b0 - EPS && ev.midi !== null && ev.token) {
             playTone(ev.midi + (o.transpose ?? 0), t0 + (ev.start - b0) * spb, ev.beats * spb * 0.9);
           }
+        }
+      }
+
+      if (arr) {
+        // nốt đầu tiên của ô lưới này (tìm nhị phân)
+        let lo = 0, hi = arr.notes.length;
+        while (lo < hi) { const mid = (lo + hi) >> 1; if (arr.notes[mid].beat < b0 - EPS) lo = mid + 1; else hi = mid; }
+        for (let i = lo, n = 0; i < arr.notes.length && arr.notes[i].beat < b1 - EPS && n < MAX_ARR_PER_STEP; i++, n++) {
+          const an = arr.notes[i];
+          playArrNote(an, t0 + (an.beat - b0) * spb, an.dur * spb, o.transpose ?? 0);
         }
       }
 
@@ -418,7 +442,7 @@ export class Player {
       this.cursorBeat = b1;
       this.cursorTime = t0 + step * spb;
 
-      const end = o.loop ? o.loop.end : this.endBeat;
+      const end = o.loop ? o.loop.end : Math.max(this.endBeat, arr?.end ?? 0);
       if (this.cursorBeat >= end - EPS) {
         if (o.loop && o.loop.end > o.loop.start) {
           this.cursorBeat = this.snap(o.loop.start);

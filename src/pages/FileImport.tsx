@@ -13,6 +13,8 @@ import { MiniPlay } from '../components/PlayerBar';
 import { usePlayer } from '../components/usePlayer';
 import { Icon } from '../components/Icon';
 import { useAppState } from '../state';
+import { saveMidiSource } from '../lib/midiSources';
+import { tabSig } from '../lib/backings';
 
 /**
  * Nhập file nhạc dạng dữ liệu (MusicXML / MIDI) → tab. File ghi sẵn từng nốt nên chính xác tuyệt đối,
@@ -28,6 +30,8 @@ export default function FileImport({ onImages, onAudio }: { onImages?: (files: F
   const inputRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<MusicFile | null>(null);
   const [fileName, setFileName] = useState('');
+  // file MIDI gốc: giữ lại khi lưu bài để karaoke phát bản phối gốc
+  const [bytes, setBytes] = useState<Uint8Array | null>(null);
   const [partId, setPartId] = useState('');
   const [title, setTitle] = useState('');
   const [artist, setArtist] = useState('');
@@ -52,8 +56,10 @@ export default function FileImport({ onImages, onAudio }: { onImages?: (files: F
     setBusy(true);
     setError(null);
     try {
-      const mf = await readMusicFile(new Uint8Array(await f.arrayBuffer()), f.name);
+      const data = new Uint8Array(await f.arrayBuffer());
+      const mf = await readMusicFile(data, f.name);
       setFile(mf);
+      setBytes(mf.kind === 'midi' ? data : null);
       setFileName(f.name);
       setPartId(mf.melodyPart);
       setTitle(mf.title);
@@ -97,6 +103,10 @@ export default function FileImport({ onImages, onAudio }: { onImages?: (files: F
         : undefined,
     });
     await db.songs.put(song);
+    if (file.kind === 'midi' && bytes && transcription?.startBeat !== undefined) {
+      // không giữ được file gốc thì bài vẫn lưu bình thường (karaoke dùng đệm tự tạo)
+      await saveMidiSource(song.id, fileName, bytes, { melodyPart: partId, startBeat: transcription.startBeat, shift: converted.fit.shift }, tabSig(flat)).catch(() => {});
+    }
     toast('Đã lưu vào thư viện');
     nav(`/song/${song.id}`);
   };

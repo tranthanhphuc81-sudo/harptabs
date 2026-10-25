@@ -113,6 +113,24 @@ export interface Recording {
 }
 
 /** Nhạc nền MP3 cho karaoke (bảng backings, khoá = id bài). File người dùng tự có; chỉ lưu trên máy. */
+/** File MIDI gốc của bài nhập từ MIDI (karaoke phát bản phối gốc) — chỉ nằm trên máy */
+export interface MidiSource {
+  songId: string;
+  name: string;
+  /** nội dung file (vài chục KB — lưu thẳng, không cần Blob) */
+  data: ArrayBuffer;
+  size: number;
+  /** bè hát (id bè lúc nhập) — không phát lại vì người hát thay */
+  melodyPart: string;
+  /** phách trong file MIDI của nốt đầu tab */
+  startBeat: number;
+  /** tab lệch file bao nhiêu nửa cung (dịch giọng cho vừa kèn) */
+  shift: number;
+  /** dấu vân tay tab lúc nối — tab sửa sau đó thì nhạc có thể lệch */
+  tabSig: string;
+  createdAt: number;
+}
+
 export interface Backing {
   songId: string;
   name: string;

@@ -67,7 +67,8 @@ export function usePlayer(flat: FlatEvent[], init: Omit<PlayerOptions, 'loop'> &
     const f = flatRef.current;
     if (b === null) return;
     const first = f[0]?.start ?? 0;
-    if (b < first - 1e-3 && !player.options.loop) {
+    // bản phối gốc có đoạn dạo: không đếm số to suốt đoạn dạo (màn karaoke tự đếm vào câu)
+    if (b < first - 1e-3 && !player.options.loop && !player.options.arrangement) {
       setCountIn(Math.ceil(first - b));
     } else setCountIn(null);
     const idx = findIndex(f, b);

@@ -171,10 +171,23 @@ let instrument: Instrument = 'harmonica';
 
 /** Phát một nốt giai điệu bằng nhạc cụ đang chọn */
 export function playTone(midi: number, when: number, dur: number, velocity = 1, out?: AudioNode): void {
+  playToneAs(instrument, midi, when, dur, velocity, out);
+}
+
+/** kênh bản phối MIDI gốc (karaoke): vào master + hồi âm như giai điệu */
+let arrangeGain: GainNode | null = null;
+export function arrangeBus(): GainNode {
+  const c = audio();
+  if (!arrangeGain) { arrangeGain = c.createGain(); arrangeGain.gain.value = 0.55; arrangeGain.connect(master); arrangeGain.connect(melodySend); }
+  return arrangeGain;
+}
+
+/** Phát một nốt bằng nhạc cụ chỉ định (không đổi nhạc cụ đang chọn) */
+export function playToneAs(inst: Instrument, midi: number, when: number, dur: number, velocity = 1, out?: AudioNode): void {
   const c = audio();
   const t = Math.max(when, c.currentTime);
   const dest = out ?? melodyBus;
-  switch (instrument) {
+  switch (inst) {
     case 'piano': return pianoTone(c, midi, t, dur, velocity, dest);
     case 'guitar': return guitarTone(c, midi, t, dur, velocity, dest);
     case 'flute': return fluteTone(c, midi, t, dur, velocity, dest);
