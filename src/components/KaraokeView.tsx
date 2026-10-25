@@ -1,4 +1,6 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
+import { db } from '../lib/db';
+import { fixGarbled } from '../lib/vnEncoding';
 import { useAppState } from '../state';
 import { MicPitch, VOICE_MIC } from '../audio/pitch';
 import { KaraokeScorer, KaraokeSummary } from '../lib/karaokeScore';
@@ -362,6 +364,36 @@ export default function KaraokeView({ song, original, flat, p, chordSegs, onClos
     }
   };
 
+  // lời lưu từ trước bị vỡ dấu (file MIDI bảng mã cũ): sửa ngay tại đây, không phải vào Sửa bài
+  const garbled = useMemo(() => fixGarbled(original.body, original.title, original.artist ?? ''), [original.body, original.title, original.artist]);
+  const fixFont = async () => {
+    if (!garbled) return;
+    tp.stop();
+    const fixed = { ...original, body: garbled.fix(original.body), title: garbled.fix(original.title), artist: original.artist && garbled.fix(original.artist), updatedAt: Date.now() };
+    try { await db.songs.put(fixed); toast('Đã sửa lỗi font chữ'); } catch { toast('Không lưu được'); }
+  };
+
+  // câu quá dài / chữ chỉnh to: tự thu nhỏ cho vừa khung (không tràn đè lên các nút)
+  const stageRef = useRef<HTMLElement>(null);
+  const [fit, setFit] = useState(1);
+  useLayoutEffect(() => {
+    const el = stageRef.current;
+    if (!el) return;
+    const measure = () => {
+      el.style.setProperty('--kara-fit', '1');
+      let f = 1;
+      for (let i = 0; i < 4 && el.scrollHeight > el.clientHeight + 1 && f > 0.4; i++) {
+        f = Math.max(0.4, f * Math.min(0.95, (el.clientHeight / el.scrollHeight) ** 0.6));
+        el.style.setProperty('--kara-fit', String(f));
+      }
+      setFit(f);
+    };
+    measure();
+    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(measure) : null;
+    ro?.observe(el);
+    return () => ro?.disconnect();
+  }, [shown, lines, sizes, prefs.holes, prefs.chords, scoring, holeFlat, chordMap]);
+
   const startFrom = (li: number) => {
     const first = lines[li]?.syls[0]?.fi[0];
     shownRef.current = li;
@@ -504,6 +536,11 @@ export default function KaraokeView({ song, original, flat, p, chordSegs, onClos
         </div>
       )}
       {micErr && <p className="kara-note small danger" role="alert">{micErr}</p>}
+      {garbled && (
+        <p className="kara-note small" role="status">
+          Lời bị lỗi font chữ Việt. <button type="button" className="link-btn" onClick={() => void fixFont()}>Sửa lỗi font</button>
+        </p>
+      )}
       {midi && midiSrc!.tabSig !== tabSig(lyricFlat) && (
         <p className="kara-note small">Tab đã sửa sau khi nhập — bản phối gốc có thể lệch với lời.</p>
       )}
@@ -524,7 +561,7 @@ export default function KaraokeView({ song, original, flat, p, chordSegs, onClos
         </p>
       )}
 
-      <main className="kara-stage" onClick={() => !tp.playing && startFrom(shown)}>
+      <main ref={stageRef} className="kara-stage" style={{ '--kara-fit': fit } as CSSProperties} onClick={() => !tp.playing && startFrom(shown)}>
         {noLyrics && <p className="kara-hint">Bài chưa có lời — thêm lời dưới dòng tab trong Sửa bài để hát karaoke.</p>}
         {tp.countIn != null
           ? <div className="kara-count big" aria-live="assertive">{tp.countIn}</div>

@@ -2,7 +2,7 @@
 import 'fake-indexeddb/auto';
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { blankSong } from '../lib/db';
+import { blankSong, db } from '../lib/db';
 import { flatten, parseTab } from '../lib/tabText';
 import KaraokeView from './KaraokeView';
 import type { PlayerState } from './usePlayer';
@@ -82,4 +82,21 @@ describe('màn hình karaoke', () => {
     fireEvent.click(screen.getByText('Mặc định'));
     expect(root2.style.getPropertyValue('--kara-lyric')).toBe('1');
   });
+
+  it('lời lưu từ trước bị vỡ dấu (Windows-1258 đọc nhầm): sửa ngay trong karaoke, lưu vào bài', async () => {
+    // "hời thương em đừng" theo Windows-1258 nhưng từng byte bị đọc thành Latin-1
+    const body = ['-4 5 -5 6', 'hõÌi thýõng em ðýÌng'].join('\n');
+    const song = blankSong({ id: 'garb', title: 'X', body, harpKey: 'C' });
+    await db.songs.put(song);
+    const flat = flatten(parseTab(body, 'C'));
+    const p = {
+      playing: false, active: null, countIn: null, chord: null, accompNote: null,
+      opts: { sing: false } as PlayerState['opts'],
+      setOpts: vi.fn(), play: vi.fn(), stop: vi.fn(), toggle: vi.fn(), beatAt: () => null,
+    } as unknown as PlayerState;
+    render(<KaraokeView song={song} original={song} flat={flat} p={p} chordSegs={null} onClose={() => {}} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Sửa lỗi font' }));
+    await waitFor(async () => expect((await db.songs.get('garb'))?.body.split('\n')[1]).toBe('hời thương em đừng'));
+  });
 });
+

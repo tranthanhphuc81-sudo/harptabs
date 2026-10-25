@@ -965,19 +965,21 @@ button, a, select { -webkit-tap-highlight-color: transparent; }
 .kara-key-val { min-width: 4.5em; text-align: center; font-weight: 600; font-variant-numeric: tabular-nums; }
 .kara-note { margin: 0 auto; max-width: 900px; text-align: center; color: var(--ink-2); }
 .kara-stage {
-  flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center;
+  flex: 1; display: flex; flex-direction: column; justify-content: safe center; align-items: center;
   gap: clamp(18px, 5vh, 48px); text-align: center; cursor: default; min-height: 0;
+  /* câu quá dài: chữ tự thu nhỏ (--kara-fit); vẫn còn dài thì cuộn trong khung, không tràn đè lên nút */
+  overflow-y: auto; overflow-x: hidden;
 }
 .kara-hint { color: var(--ink-2); max-width: 30em; }
 .kara-line { display: flex; flex-wrap: wrap; justify-content: center; align-items: flex-end; gap: 0.15em 0.32em; max-width: min(1100px, 100%); line-height: 1.15; }
-.kara-line.current { font: 600 calc(clamp(1.9rem, 6.5vw, 4.2rem) * var(--kara-lyric, 1)) / 1.15 var(--font); }
-.kara-line.next { font: 500 calc(clamp(1.2rem, 3.6vw, 2.2rem) * var(--kara-lyric, 1)) / 1.15 var(--font); opacity: 0.45; }
+.kara-line.current { font: 600 calc(clamp(1.9rem, 6.5vw, 4.2rem) * var(--kara-lyric, 1) * var(--kara-fit, 1)) / 1.15 var(--font); }
+.kara-line.next { font: 500 calc(clamp(1.2rem, 3.6vw, 2.2rem) * var(--kara-lyric, 1) * var(--kara-fit, 1)) / 1.15 var(--font); opacity: 0.45; }
 .kara-line.instrumental .ks-word { letter-spacing: 0.1em; }
 .kara-empty { min-height: 1em; }
 .ks { display: inline-flex; flex-direction: column; align-items: center; position: relative; --p: 0; }
 /* số lỗ + hợp âm: cỡ riêng, không theo cỡ lời (người thổi kèn hay cần số lỗ to, lời nhỏ) */
-.ks-top { display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: calc(clamp(0.8rem, 2.1vw, 1.35rem) * var(--kara-holes, 1)); line-height: 1.1; margin-bottom: 0.15em; }
-.kara-line.next .ks-top { font-size: calc(clamp(0.7rem, 1.2vw, 0.9rem) * var(--kara-holes, 1)); }
+.ks-top { display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: calc(clamp(0.8rem, 2.1vw, 1.35rem) * var(--kara-holes, 1) * var(--kara-fit, 1)); line-height: 1.1; margin-bottom: 0.15em; }
+.kara-line.next .ks-top { font-size: calc(clamp(0.7rem, 1.2vw, 0.9rem) * var(--kara-holes, 1) * var(--kara-fit, 1)); }
 .kara-sizes { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px 18px; padding: 8px 12px; margin: 0 auto 4px; max-width: 900px; border: 1px solid var(--line); border-radius: var(--r-m); background: var(--surface); }
 .kara-size { display: inline-flex; align-items: center; gap: 8px; font-size: 0.92rem; }
 .kara-size input { width: min(160px, 36vw); }
