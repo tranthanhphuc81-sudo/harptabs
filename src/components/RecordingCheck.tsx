@@ -11,24 +11,9 @@ const BEAT_NAMES: Record<string, string> = { '0.25': 'móc kép', '0.333': 'móc
 const beatName = (b: number) => BEAT_NAMES[String(+b.toFixed(3))] ?? `${+b.toFixed(2)} phách`;
 const sugKey = (s: Suggestion) => `${s.kind}:${'noteId' in s ? s.noteId : s.afterId}:${s.at}`;
 
-/** Đọc file ghi âm / bản thu thành mẫu âm thanh một kênh */
-export async function decodeAudio(blob: Blob): Promise<{ samples: Float32Array; sampleRate: number }> {
-  const AC = window.AudioContext ?? (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-  const ctx = new AC();
-  try {
-    const buf = await ctx.decodeAudioData(await blob.arrayBuffer());
-    const out = new Float32Array(buf.length);
-    for (let c = 0; c < buf.numberOfChannels; c++) {
-      const d = buf.getChannelData(c);
-      for (let i = 0; i < d.length; i++) out[i] += d[i] / buf.numberOfChannels;
-    }
-    return { samples: out, sampleRate: buf.sampleRate };
-  } catch {
-    throw new Error('Không đọc được file âm thanh này — thử file .mp3, .m4a hoặc .wav');
-  } finally {
-    ctx.close();
-  }
-}
+// đọc file âm thanh: chuyển sang lib/decode.ts (dùng chung với bản thu karaoke)
+export { decodeAudio } from '../lib/decode';
+import { decodeAudio } from '../lib/decode';
 
 function analyze(samples: Float32Array, sampleRate: number, score: ScoreNote[], meter: number, mode: Mode): Promise<Comparison> {
   return new Promise((resolve, reject) => {

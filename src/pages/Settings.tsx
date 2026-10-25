@@ -2,6 +2,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { useEffect, useRef, useState } from 'react';
 import { db, ensureSeeded, importBackup } from '../lib/db';
 import { backupStatus, downloadBackup, loadBackupMeta } from '../lib/backup';
+import { deleteAllRecordings } from '../lib/recordings';
 import { HarpKey } from '../lib/harp';
 import { VND_PER_USD, geminiUrl } from '../../shared/ai';
 import { AI_ENABLED } from '../lib/features';
@@ -43,6 +44,20 @@ export default function SettingsPage() {
   const [showKey, setShowKey] = useState(false);
   const count = useLiveQuery(() => db.songs.count(), []);
   const storage = useStorageInfo();
+  // bản thu karaoke: đếm theo bảng (cập nhật khi thêm / xoá)
+  const recs = useLiveQuery(async () => {
+    let count = 0, bytes = 0;
+    await db.recordings.each((r) => { count++; bytes += r.size || 0; });
+    return { count, bytes };
+  }, []);
+  const [confirmRecs, setConfirmRecs] = useState(false);
+  const clearRecs = async () => {
+    if (!confirmRecs) { setConfirmRecs(true); setTimeout(() => setConfirmRecs(false), 4000); return; }
+    await deleteAllRecordings();
+    setConfirmRecs(false);
+    void storage.refresh();
+    toast('Đã xoá hết bản thu karaoke');
+  };
   const backup = useLiveQuery(async () => {
     const [songs, meta] = await Promise.all([db.songs.toArray(), loadBackupMeta()]);
     return backupStatus(songs, meta.lastBackupAt, null);
@@ -239,6 +254,13 @@ export default function SettingsPage() {
               <dd>{mb(storage.usage)}{storage.quota ? <span className="muted"> · máy còn trống khoảng {mb(Math.max(0, storage.quota - storage.usage))}</span> : null}</dd>
             </div>
           )}
+          <div>
+            <dt>Bản thu karaoke</dt>
+            <dd>
+              {recs?.count ? <>{recs.count} bản · {mb(recs.bytes)} <button type="button" className="link-btn" onClick={() => void clearRecs()}>{confirmRecs ? 'Xoá thật?' : 'Xoá hết'}</button></> : 'Chưa có'}
+              <span className="muted small" style={{ display: 'block' }}>Chỉ lưu trên máy này — không có trong file sao lưu.</span>
+            </dd>
+          </div>
         </dl>
         <div className="row gap wrap">
           <button type="button" className="btn btn-primary" onClick={doExport}><Icon name="download" size={18} /> Xuất file sao lưu</button>

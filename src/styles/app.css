@@ -1003,3 +1003,12 @@ button, a, select { -webkit-tap-highlight-color: transparent; }
   .kara-foot .btn { padding: 0 12px; }
 }
 .kara-pitch { width: min(900px, 100%); height: clamp(70px, 14vh, 130px); border-radius: var(--r-m); background: var(--surface); border: 1px solid var(--line); }
+.kara-rec { display: inline-flex; align-items: center; gap: 6px; }
+.kara-rec.on { color: var(--bend); font-weight: 600; font-variant-numeric: tabular-nums; padding: 0 8px; }
+.kara-rec-dot { width: 12px; height: 12px; border-radius: 50%; background: var(--bend); display: inline-block; }
+.kara-rec.on .kara-rec-dot { animation: rec-pulse 1s ease-in-out infinite; }
+@keyframes rec-pulse { 50% { opacity: 0.3; } }
+.rec-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; max-height: 55vh; overflow: auto; }
+.rec-list li { border: 1px solid var(--line); border-radius: var(--r-m); padding: 10px 12px; background: var(--surface); }
+.rec-list li.on { border-color: var(--accent); }
+.rec-controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 8px 14px; margin-top: 10px; }

@@ -3,6 +3,8 @@ import { midiToHz } from '../lib/harp';
 
 let ctx: AudioContext | null = null;
 let master: GainNode;
+/** tiếng ra loa sau bộ nén — điểm lấy nhạc đệm để thu âm karaoke */
+let outNode: AudioNode;
 export let melodyBus: GainNode;
 export let drumBus: GainNode;
 export let clickBus: GainNode;
@@ -30,6 +32,12 @@ function roomImpulse(c: AudioContext, seconds = 1.1): AudioBuffer {
   return b;
 }
 
+/** nút phát ra loa (sau bộ nén): nối thêm vào đây để thu lại đúng những gì đang phát */
+export function outputTap(): AudioNode {
+  audio();
+  return outNode;
+}
+
 export function audio(): AudioContext {
   if (!ctx) {
     const AC = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
@@ -41,6 +49,7 @@ export function audio(): AudioContext {
     comp.threshold.value = -14;
     comp.ratio.value = 4;
     master.connect(comp).connect(ctx.destination);
+    outNode = comp;
     melodyBus = ctx.createGain();
     drumBus = ctx.createGain();
     clickBus = ctx.createGain();

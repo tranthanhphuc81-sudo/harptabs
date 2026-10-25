@@ -4,6 +4,9 @@ import { MicPitch, VOICE_MIC } from '../audio/pitch';
 import { KaraokeScorer, KaraokeSummary } from '../lib/karaokeScore';
 import { loadBest, PracticeRecord, recordBest } from '../lib/practiceScore';
 import { PitchStrip } from './PitchStrip';
+import { KaraokeRecorder, recorderSupported } from '../audio/karaokeRecorder';
+import { addRecording, listRecordings } from '../lib/recordings';
+import { RecordingsPanel } from './RecordingsPanel';
 import { harpName, harpTypeOf, shiftKey } from '../lib/harp';
 import { buildKaraoke, countdownAt, holesFor, KLine, locate } from '../lib/karaoke';
 import { DEFAULT_KARAOKE, KaraokeHoles, KaraokePrefs, loadKaraokePrefs, MAX_TRANSPOSE, saveKaraokePrefs } from '../lib/karaokePrefs';
@@ -143,8 +146,69 @@ export default function KaraokeView({ song, original, flat, p, chordSegs, onClos
     const rec = saved?.rec ?? await loadBest(scoreKey).catch(() => null);
     setResult({ s, rec, newBest: !!saved?.newBest });
   };
+  // ----- thu âm lượt hát (nhạc đệm + giọng) -----
+  const { toast } = useAppState();
+  const recorder = useRef<KaraokeRecorder | null>(null);
+  const [recording, setRecording] = useState(false);
+  const [recStart, setRecStart] = useState(0);
+  const [recElapsed, setRecElapsed] = useState(0);
+  const [showRecs, setShowRecs] = useState(false);
+  const [recCount, setRecCount] = useState(0);
+  const [recRefresh, setRecRefresh] = useState(0);
+  useEffect(() => { void listRecordings(original.id).then((r) => setRecCount(r.length)).catch(() => {}); }, [original.id, recRefresh]);
+  useEffect(() => {
+    if (!recording) return;
+    const id = window.setInterval(() => setRecElapsed((performance.now() - recStart) / 1000), 500);
+    return () => window.clearInterval(id);
+  }, [recording, recStart]);
+
+  const saveTake = async (score?: number) => {
+    const rec = recorder.current;
+    recorder.current = null;
+    setRecording(false);
+    if (!rec) return;
+    const take = await rec.stop();
+    if (!take || take.durationSec < 2) return;
+    try {
+      await addRecording({
+        songId: original.id, title: original.title || 'Karaoke', createdAt: Date.now(), durationSec: take.durationSec,
+        mime: take.mime, blob: take.blob, voiceLagMs: take.voiceLagMs, transpose: t, score,
+      });
+      setRecRefresh((n) => n + 1);
+      toast('Đã lưu bản thu — bấm "Bản thu" để nghe lại');
+    } catch (e) {
+      toast((e as Error).message || 'Không lưu được bản thu');
+    }
+  };
+
+  const startRecording = async () => {
+    if (recorder.current) return;
+    const rec = new KaraokeRecorder();
+    try {
+      await rec.start(!prefs.headphones, (settings.micLatencyMs ?? 60) + (settings.syncOffsetMs ?? 0));
+    } catch (e) {
+      const err = e as Error;
+      setMicErr(err.name === 'NotAllowedError' ? 'Cần cho phép dùng micro để thu âm' : err.message || 'Không mở được micro');
+      return;
+    }
+    rec.onLimit = () => pRef.current.stop();
+    recorder.current = rec;
+    setMicErr(null);
+    setRecStart(performance.now());
+    setRecElapsed(0);
+    setRecording(true);
+    startFrom(shown);
+  };
+  // thoát karaoke giữa chừng: vẫn giữ lượt đang thu
+  useEffect(() => () => { if (recorder.current) void saveTake(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   useEffect(() => {
     if (p.playing && !wasPlaying.current && scoring) { setResult(null); newScorer(); }
+    if (!p.playing && wasPlaying.current && recorder.current) {
+      // điểm của lượt này (nếu đang chấm) lưu kèm bản thu — đọc trước khi tổng kết xoá bộ chấm
+      const sm = scoring ? scorer.current?.summary() : undefined;
+      void saveTake(sm && sm.done >= 3 ? sm.score : undefined);
+    }
     if (!p.playing && wasPlaying.current) void finish();
     wasPlaying.current = p.playing;
     // eslint-disable-next-line react-hooks/exhaustive-deps -- chỉ khi bắt đầu / dừng phát
@@ -337,7 +401,18 @@ export default function KaraokeView({ song, original, flat, p, chordSegs, onClos
         <button type="button" className="btn btn-ghost" onClick={() => startFrom(0)} aria-label="Hát lại từ đầu">
           <Icon name="loop" size={18} /> Từ đầu
         </button>
+        {recorderSupported() && (
+          recording
+            ? <span className="kara-rec on" role="status"><span className="kara-rec-dot" aria-hidden="true" /> Đang thu {Math.floor(recElapsed / 60)}:{String(Math.floor(recElapsed % 60)).padStart(2, '0')}</span>
+            : <button type="button" className="btn btn-ghost kara-rec" onClick={() => void startRecording()} disabled={p.playing} aria-label="Vừa hát vừa thu âm">
+                <span className="kara-rec-dot" aria-hidden="true" /> Thu
+              </button>
+        )}
+        <button type="button" className="btn btn-ghost" onClick={() => setShowRecs(true)}>
+          Bản thu{recCount ? ` (${recCount})` : ''}
+        </button>
       </footer>
+      {showRecs && <RecordingsPanel songId={original.id} refreshKey={recRefresh} onClose={() => { setShowRecs(false); setRecRefresh((n) => n + 1); }} />}
     </div>
   );
 }

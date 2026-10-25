@@ -93,3 +93,21 @@ export function beatsPerBar(timeSig: string): number {
   const n = Number(timeSig.split('/')[0]);
   return n >= 1 && n <= 12 ? n : 4;
 }
+
+/** Bản thu karaoke (bảng recordings): một file stereo — kênh trái nhạc đệm, kênh phải giọng hát. Chỉ lưu trên máy. */
+export interface Recording {
+  id?: number;
+  songId: string;
+  title: string;
+  createdAt: number;
+  durationSec: number;
+  mime: string;
+  blob: Blob;
+  /** giọng thu trễ hơn nhạc đệm bao nhiêu (ms): độ trễ loa + micro + bù tay; nghe lại / xuất thì đẩy giọng sớm lại */
+  voiceLagMs: number;
+  /** nửa cung đã đổi tông lúc thu */
+  transpose: number;
+  /** điểm chấm (nếu bật chấm điểm khi thu) */
+  score?: number;
+  size: number;
+}
