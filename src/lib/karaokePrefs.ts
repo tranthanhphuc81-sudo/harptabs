@@ -37,3 +37,29 @@ export async function loadKaraokePrefs(songId: string): Promise<KaraokePrefs> {
 export async function saveKaraokePrefs(songId: string, p: KaraokePrefs): Promise<void> {
   await db.kv.put({ key: key(songId), value: p });
 }
+
+/** Cỡ chữ màn karaoke — chung cho mọi bài (theo máy / mắt người dùng), kv `karaokeView` */
+export interface KaraokeView {
+  /** cỡ lời so với mặc định (0,6 … 1,8) */
+  lyric: number;
+  /** cỡ số lỗ kèn + tên hợp âm so với mặc định (0,6 … 2,2) */
+  holes: number;
+}
+
+export const DEFAULT_KARAOKE_VIEW: KaraokeView = { lyric: 1, holes: 1 };
+export const LYRIC_SIZES = { min: 0.6, max: 1.8 };
+export const HOLE_SIZES = { min: 0.6, max: 2.2 };
+
+const clampTo = (v: unknown, r: { min: number; max: number }) => {
+  const n = Number(v);
+  return Number.isFinite(n) ? Math.max(r.min, Math.min(r.max, Math.round(n * 10) / 10)) : 1;
+};
+
+export async function loadKaraokeView(): Promise<KaraokeView> {
+  const v = (await db.kv.get('karaokeView'))?.value as Partial<KaraokeView> | undefined;
+  return { lyric: clampTo(v?.lyric ?? 1, LYRIC_SIZES), holes: clampTo(v?.holes ?? 1, HOLE_SIZES) };
+}
+
+export async function saveKaraokeView(v: KaraokeView): Promise<void> {
+  await db.kv.put({ key: 'karaokeView', value: v });
+}

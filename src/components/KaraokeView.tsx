@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { useAppState } from '../state';
 import { MicPitch, VOICE_MIC } from '../audio/pitch';
 import { KaraokeScorer, KaraokeSummary } from '../lib/karaokeScore';
@@ -15,7 +15,7 @@ import { loadMidiSource, midiBytes, saveMidiSource } from '../lib/midiSources';
 import { Arrangement, buildArrangement, matchMidiToTab } from '../lib/midiArrange';
 import { harpName, harpTypeOf, shiftKey } from '../lib/harp';
 import { buildKaraoke, countdownAt, holesFor, KLine, locate } from '../lib/karaoke';
-import { DEFAULT_KARAOKE, KaraokeHoles, KaraokePrefs, loadKaraokePrefs, MAX_TRANSPOSE, saveKaraokePrefs } from '../lib/karaokePrefs';
+import { DEFAULT_KARAOKE, DEFAULT_KARAOKE_VIEW, HOLE_SIZES, KaraokeHoles, KaraokePrefs, KaraokeView as ViewSizes, loadKaraokePrefs, loadKaraokeView, LYRIC_SIZES, MAX_TRANSPOSE, saveKaraokePrefs, saveKaraokeView } from '../lib/karaokePrefs';
 import { FlatEvent, flatten, parseTab } from '../lib/tabText';
 import type { Song } from '../lib/types';
 import { viewSong } from '../lib/viewAs';
@@ -79,6 +79,18 @@ export default function KaraokeView({ song, original, flat, p, chordSegs, onClos
     return next;
   });
   const t = prefs.transpose;
+
+  // cỡ lời / cỡ số lỗ: chung cho mọi bài
+  const [sizes, setSizes] = useState<ViewSizes>(DEFAULT_KARAOKE_VIEW);
+  const [showSizes, setShowSizes] = useState(false);
+  const sizesTouched = useRef(false);
+  useEffect(() => { void loadKaraokeView().then((v) => { if (!sizesTouched.current) setSizes(v); }).catch(() => {}); }, []);
+  const updateSizes = (patch: Partial<ViewSizes>) => setSizes((cur) => {
+    sizesTouched.current = true;
+    const next = { ...cur, ...patch };
+    void saveKaraokeView(next).catch(() => {});
+    return next;
+  });
 
   // mở karaoke: bật Đệm hát (tắt giai điệu kèn) và đổi tông; đóng thì trả lại như cũ
   const { setOpts } = p;
@@ -386,7 +398,8 @@ export default function KaraokeView({ song, original, flat, p, chordSegs, onClos
   const playHarp = t ? harpName(shiftKey(song.harpKey, t), type) : null;
 
   return (
-    <div ref={rootRef} className="karaoke" role="dialog" aria-modal="true" aria-label={`Karaoke: ${original.title}`}>
+    <div ref={rootRef} className="karaoke" role="dialog" aria-modal="true" aria-label={`Karaoke: ${original.title}`}
+      style={{ '--kara-lyric': sizes.lyric, '--kara-holes': sizes.holes } as CSSProperties}>
       <header className="kara-head">
         <button type="button" className="icon-btn" onClick={onClose} aria-label="Thoát karaoke"><Icon name="back" /></button>
         <div className="kara-title">
@@ -403,6 +416,7 @@ export default function KaraokeView({ song, original, flat, p, chordSegs, onClos
             {(Object.keys(HOLES_LABEL) as KaraokeHoles[]).map((k) => <option key={k} value={k}>{HOLES_LABEL[k]}</option>)}
           </select>
           <button type="button" className={`chip${prefs.chords ? ' on' : ''}`} aria-pressed={prefs.chords} onClick={() => update({ chords: !prefs.chords })}>Hợp âm</button>
+          <button type="button" className={`chip${showSizes ? ' on' : ''}`} aria-expanded={showSizes} aria-controls="kara-sizes" onClick={() => setShowSizes((v) => !v)} title="Cỡ chữ">Aa</button>
           {(backing || midiSrc) && (
             <div className="segmented" role="radiogroup" aria-label="Nguồn nhạc">
               <button type="button" role="radio" aria-checked={src === 'synth'} className={src === 'synth' ? 'on' : ''} onClick={() => setSrc('synth')}>Tự đệm</button>
@@ -425,6 +439,24 @@ export default function KaraokeView({ song, original, flat, p, chordSegs, onClos
           )}
         </div>
       </header>
+      {showSizes && (
+        <div id="kara-sizes" className="kara-sizes" role="group" aria-label="Cỡ chữ">
+          <label className="kara-size">
+            <span>Cỡ lời</span>
+            <input type="range" min={LYRIC_SIZES.min} max={LYRIC_SIZES.max} step={0.1} value={sizes.lyric}
+              onChange={(e) => updateSizes({ lyric: Number(e.target.value) })} aria-valuetext={`${Math.round(sizes.lyric * 100)}%`} />
+            <output>{Math.round(sizes.lyric * 100)}%</output>
+          </label>
+          <label className="kara-size">
+            <span>Cỡ số lỗ</span>
+            <input type="range" min={HOLE_SIZES.min} max={HOLE_SIZES.max} step={0.1} value={sizes.holes}
+              onChange={(e) => updateSizes({ holes: Number(e.target.value) })} aria-valuetext={`${Math.round(sizes.holes * 100)}%`} />
+            <output>{Math.round(sizes.holes * 100)}%</output>
+          </label>
+          <button type="button" className="btn btn-ghost btn-sm" onClick={() => updateSizes(DEFAULT_KARAOKE_VIEW)}
+            disabled={sizes.lyric === 1 && sizes.holes === 1}>Mặc định</button>
+        </div>
+      )}
       {micErr && <p className="kara-note small danger" role="alert">{micErr}</p>}
       {midi && midiSrc!.tabSig !== tabSig(lyricFlat) && (
         <p className="kara-note small">Tab đã sửa sau khi nhập — bản phối gốc có thể lệch với lời.</p>

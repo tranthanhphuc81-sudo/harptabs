@@ -970,12 +970,18 @@ button, a, select { -webkit-tap-highlight-color: transparent; }
 }
 .kara-hint { color: var(--ink-2); max-width: 30em; }
 .kara-line { display: flex; flex-wrap: wrap; justify-content: center; align-items: flex-end; gap: 0.15em 0.32em; max-width: min(1100px, 100%); line-height: 1.15; }
-.kara-line.current { font: 600 clamp(1.9rem, 6.5vw, 4.2rem) / 1.15 var(--font); }
-.kara-line.next { font: 500 clamp(1.2rem, 3.6vw, 2.2rem) / 1.15 var(--font); opacity: 0.45; }
+.kara-line.current { font: 600 calc(clamp(1.9rem, 6.5vw, 4.2rem) * var(--kara-lyric, 1)) / 1.15 var(--font); }
+.kara-line.next { font: 500 calc(clamp(1.2rem, 3.6vw, 2.2rem) * var(--kara-lyric, 1)) / 1.15 var(--font); opacity: 0.45; }
 .kara-line.instrumental .ks-word { letter-spacing: 0.1em; }
 .kara-empty { min-height: 1em; }
 .ks { display: inline-flex; flex-direction: column; align-items: center; position: relative; --p: 0; }
-.ks-top { display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: max(0.32em, 0.8rem); line-height: 1.1; margin-bottom: 0.15em; }
+/* số lỗ + hợp âm: cỡ riêng, không theo cỡ lời (người thổi kèn hay cần số lỗ to, lời nhỏ) */
+.ks-top { display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: calc(clamp(0.8rem, 2.1vw, 1.35rem) * var(--kara-holes, 1)); line-height: 1.1; margin-bottom: 0.15em; }
+.kara-line.next .ks-top { font-size: calc(clamp(0.7rem, 1.2vw, 0.9rem) * var(--kara-holes, 1)); }
+.kara-sizes { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px 18px; padding: 8px 12px; margin: 0 auto 4px; max-width: 900px; border: 1px solid var(--line); border-radius: var(--r-m); background: var(--surface); }
+.kara-size { display: inline-flex; align-items: center; gap: 8px; font-size: 0.92rem; }
+.kara-size input { width: min(160px, 36vw); }
+.kara-size output { min-width: 3.2em; text-align: right; font-variant-numeric: tabular-nums; color: var(--ink-2); }
 .ks-chord { font-weight: 700; color: var(--accent); }
 .ks-holes { display: inline-flex; gap: 0.25em; font-family: var(--font-cond); font-weight: 600; }
 .ks-holes .blow { color: var(--blow); }

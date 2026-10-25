@@ -61,4 +61,25 @@ describe('màn hình karaoke', () => {
     expect(p.stop).toHaveBeenCalled();
     expect(setOpts).toHaveBeenLastCalledWith({ sing: false, transpose: 0, arrangement: null });
   });
+
+  it('chỉnh cỡ lời / cỡ số lỗ: áp ngay, nhớ cho lần mở sau (mọi bài)', async () => {
+    const { r } = setup({ v: null });
+    const root = r.container.querySelector<HTMLElement>('.karaoke')!;
+    expect(root.style.getPropertyValue('--kara-lyric')).toBe('1');
+    fireEvent.click(screen.getByTitle('Cỡ chữ'));
+    fireEvent.change(screen.getByLabelText('Cỡ lời'), { target: { value: '1.4' } });
+    fireEvent.change(screen.getByLabelText('Cỡ số lỗ'), { target: { value: '2' } });
+    expect(root.style.getPropertyValue('--kara-lyric')).toBe('1.4');
+    expect(root.style.getPropertyValue('--kara-holes')).toBe('2');
+    expect(screen.getByText('140%')).toBeTruthy();
+    r.unmount();
+    const again = setup({ v: null });
+    const root2 = again.r.container.querySelector<HTMLElement>('.karaoke')!;
+    await waitFor(() => expect(root2.style.getPropertyValue('--kara-holes')).toBe('2'));
+    expect(root2.style.getPropertyValue('--kara-lyric')).toBe('1.4');
+    // về mặc định
+    fireEvent.click(screen.getByTitle('Cỡ chữ'));
+    fireEvent.click(screen.getByText('Mặc định'));
+    expect(root2.style.getPropertyValue('--kara-lyric')).toBe('1');
+  });
 });
