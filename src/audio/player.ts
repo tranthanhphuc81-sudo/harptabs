@@ -5,7 +5,7 @@
 import { FlatEvent } from '../lib/tabText';
 import { getEffectivePrefs, setActiveStyle } from './beatPrefs';
 import { Accomp, accompHit, audio, bass, bongo, chordStab, clap, clave, click, cowbell, conga, crash, guiro, hat, kick, playTone, ride, rim, setHumanVelocity, shaker, snare, surdo, tom } from './engine';
-import { bassMidi, Chord, chordAt, chordVoicing, ChordOverrides, ChordSpan, harmonize, parseTonality, walkingNote } from './harmony';
+import { bassMidi, Chord, chordAt, chordVoicing, ChordOverrides, ChordSpan, harmonize, parseTonality, transposeSpans, walkingNote } from './harmony';
 import { BeatPattern, BeatStyle, boPattern, lacPattern, resolvePattern, strumPattern } from './patterns';
 import { AccompPlan, barTrack, planAccomp } from './accompPlan';
 import { heardTime } from './latency';
@@ -28,6 +28,8 @@ export interface PlayerOptions {
   songKey?: string;
   /** hợp âm chọn tay (ghi đè hợp âm tự đoán) */
   chordOverrides?: ChordOverrides;
+  /** đổi tông khi phát (nửa cung, karaoke: hợp giọng người hát); tab không đổi */
+  transpose?: number;
   loop: { start: number; end: number } | null;
 }
 
@@ -90,10 +92,11 @@ export class Player {
 
   private updateChords() {
     const o = this.opts;
-    const k = `${o.beatsPerBar}|${o.pickupBeats}|${o.songKey ?? ''}|${JSON.stringify(o.chordOverrides ?? {})}|${o.bpm}|${(o.sections ?? []).join('')}`;
+    const k = `${o.beatsPerBar}|${o.pickupBeats}|${o.songKey ?? ''}|${JSON.stringify(o.chordOverrides ?? {})}|${o.bpm}|${(o.sections ?? []).join('')}|${o.transpose ?? 0}`;
     if (k === this.chordKey) return;
     this.chordKey = k;
-    this.chords = harmonize(this.events, o.beatsPerBar, o.pickupBeats, parseTonality(o.songKey), o.chordOverrides);
+    // hợp âm tính theo giai điệu gốc rồi dịch theo tông đang phát
+    this.chords = transposeSpans(harmonize(this.events, o.beatsPerBar, o.pickupBeats, parseTonality(o.songKey), o.chordOverrides), o.transpose ?? 0);
     this.plan = planAccomp(this.events, this.chords, { bpm: o.bpm, beatsPerBar: o.beatsPerBar, pickupBeats: o.pickupBeats, sections: o.sections });
     this.barTracks.clear();
   }
@@ -327,7 +330,7 @@ export class Player {
         for (const ev of this.events) {
           if (ev.start >= b1 - EPS) break;
           if (ev.start >= b0 - EPS && ev.midi !== null && ev.token) {
-            playTone(ev.midi, t0 + (ev.start - b0) * spb, ev.beats * spb * 0.9);
+            playTone(ev.midi + (o.transpose ?? 0), t0 + (ev.start - b0) * spb, ev.beats * spb * 0.9);
           }
         }
       }

@@ -89,6 +89,12 @@ const KEY_ALIASES: Record<string, HarpKey> = {
   'G#': 'Ab', 'A#': 'Bb', 'C#': 'Db', 'D#': 'Eb', Gb: 'F#', Cb: 'B', 'E#': 'F', Fb: 'E', 'B#': 'C',
 };
 
+/** tông kèn cao hơn `semitones` nửa cung (cùng số lỗ trên kèn đó cho giai điệu đã dịch giọng) */
+export function shiftKey(k: HarpKey, semitones: number): HarpKey {
+  const i = HARP_KEYS.indexOf(k);
+  return HARP_KEYS[(((i + semitones) % 12) + 12) % 12];
+}
+
 export function normalizeKey(k: string | undefined | null): HarpKey | null {
   if (!k) return null;
   const s = k.trim().replace('♯', '#').replace('♭', 'b');

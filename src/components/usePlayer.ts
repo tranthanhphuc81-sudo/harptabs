@@ -17,6 +17,8 @@ export interface PlayerState {
   play: (fromIndex?: number) => void;
   stop: () => void;
   toggle: () => void;
+  /** phách đang vang ra loa (có phần lẻ, đã trừ độ trễ âm thanh); null khi dừng — đọc mỗi khung hình, không gây vẽ lại */
+  beatAt: () => number | null;
 }
 
 function findIndex(flat: FlatEvent[], beat: number): number | null {
@@ -100,6 +102,7 @@ export function usePlayer(flat: FlatEvent[], init: Omit<PlayerOptions, 'loop'> &
   useEffect(() => () => { player.stop(); cancelAnimationFrame(raf.current); }, [player]);
 
   const setOpts = useCallback((p: Partial<PlayerOptions>) => setOptsState((o) => ({ ...o, ...p })), []);
+  const beatAt = useCallback(() => player.currentBeat(), [player]);
 
-  return { playing, active, countIn, chord, accompNote, opts, setOpts, play, stop, toggle };
+  return { playing, active, countIn, chord, accompNote, opts, setOpts, play, stop, toggle, beatAt };
 }

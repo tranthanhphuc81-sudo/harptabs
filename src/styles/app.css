@@ -946,3 +946,59 @@ button, a, select { -webkit-tap-highlight-color: transparent; }
   box-shadow: var(--shadow);
 }
 @media (min-width: 900px) { .preview-actions { bottom: 16px; } }
+
+/* ===== Karaoke ===== */
+.karaoke {
+  position: fixed; inset: 0; z-index: 1000;
+  display: flex; flex-direction: column;
+  background: var(--bg); color: var(--ink);
+  padding: env(safe-area-inset-top) 16px env(safe-area-inset-bottom);
+  overscroll-behavior: contain;
+}
+.kara-head { display: flex; align-items: center; gap: 10px; padding: 10px 0; flex-wrap: wrap; }
+.kara-title { flex: 1 1 180px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 1.05rem; }
+.kara-tools { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.kara-key { display: inline-flex; align-items: center; gap: 2px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); }
+.kara-key-val { min-width: 4.5em; text-align: center; font-weight: 600; font-variant-numeric: tabular-nums; }
+.kara-note { margin: 0 auto; max-width: 900px; text-align: center; color: var(--ink-2); }
+.kara-stage {
+  flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center;
+  gap: clamp(18px, 5vh, 48px); text-align: center; cursor: default; min-height: 0;
+}
+.kara-hint { color: var(--ink-2); max-width: 30em; }
+.kara-line { display: flex; flex-wrap: wrap; justify-content: center; align-items: flex-end; gap: 0.15em 0.32em; max-width: min(1100px, 100%); line-height: 1.15; }
+.kara-line.current { font: 600 clamp(1.9rem, 6.5vw, 4.2rem) / 1.15 var(--font); }
+.kara-line.next { font: 500 clamp(1.2rem, 3.6vw, 2.2rem) / 1.15 var(--font); opacity: 0.45; }
+.kara-line.instrumental .ks-word { letter-spacing: 0.1em; }
+.kara-empty { min-height: 1em; }
+.ks { display: inline-flex; flex-direction: column; align-items: center; position: relative; --p: 0; }
+.ks-top { display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: max(0.32em, 0.8rem); line-height: 1.1; margin-bottom: 0.15em; }
+.ks-chord { font-weight: 700; color: var(--accent); }
+.ks-holes { display: inline-flex; gap: 0.25em; font-family: var(--font-cond); font-weight: 600; }
+.ks-holes .blow { color: var(--blow); }
+.ks-holes .draw { color: var(--draw); }
+.ks-word { position: relative; display: inline-block; white-space: nowrap; }
+.ks-base { color: var(--ink); }
+.kara-line.next .ks-base { color: var(--ink-2); }
+/* chữ đổi màu chạy: lớp màu nhấn phủ lên, cắt theo --p (0..1) */
+.ks-fill {
+  position: absolute; inset: 0; color: var(--accent);
+  clip-path: inset(0 calc((1 - var(--p)) * 100%) 0 0);
+  text-shadow: 0 0 18px color-mix(in srgb, var(--accent) 35%, transparent);
+}
+.ks-row { display: inline-flex; align-items: baseline; }
+.ks-hy { color: var(--ink-2); margin-left: 0.05em; }
+.kara-count { font: 700 clamp(1.2rem, 4vw, 2rem) / 1 var(--font-cond); color: var(--accent); letter-spacing: 0.3em; min-height: 1em; }
+.kara-count.big { font-size: clamp(3rem, 12vw, 6rem); letter-spacing: 0; }
+.kara-foot { display: flex; align-items: center; justify-content: center; gap: 14px; padding: 12px 0 16px; flex-wrap: wrap; }
+.kara-play {
+  width: 72px; height: 72px; border-radius: 50%; border: 0; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 85%, #fff), var(--accent)); color: var(--accent-ink);
+  box-shadow: 0 8px 22px -8px color-mix(in srgb, var(--accent) 80%, transparent);
+}
+.kara-play:active { transform: scale(0.96); }
+@media (max-width: 520px) {
+  .kara-tools { width: 100%; justify-content: space-between; }
+  .kara-foot .btn { padding: 0 12px; }
+}

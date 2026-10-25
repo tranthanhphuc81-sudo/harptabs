@@ -5,11 +5,12 @@ const clock = { t: 0, lat: 0 };
 const calls: Record<string, number> = {};
 const count = (name: string) => () => { calls[name] = (calls[name] ?? 0) + 1; };
 const bassNotes: { midi: number; when: number }[] = [];
+const melodyNotes: number[] = [];
 vi.mock('./engine', () => ({
   audio: () => ({ currentTime: clock.t, outputLatency: clock.lat }),
   applyMix: () => {},
   setHumanVelocity: () => {},
-  playTone: count('melody'),
+  playTone: (midi: number) => { count('melody')(); melodyNotes.push(midi); },
   bass: (midi: number, when: number) => { count('bass')(); bassNotes.push({ midi, when }); },
   chordStab: count('comp'),
   kick: count('kick'),
@@ -120,6 +121,30 @@ describe('đèn nốt khớp với tiếng', () => {
 
   it('máy báo độ trễ vô lý thì bỏ qua', () => {
     expect(at(0.9, 5)).toBeCloseTo(1.2, 2);
+  });
+});
+
+describe('đổi tông khi phát (karaoke)', () => {
+  const play = (transpose: number) => {
+    melodyNotes.length = 0; bassNotes.length = 0; clock.t = 0;
+    const p = new Player({ bpm: 120, tempoScale: 1, beatsPerBar: 4, pickupBeats: 0, style: 'ballad', melody: true, beat: true, click: false, countIn: false, loop: null, songKey: 'C', transpose });
+    p.load(Array.from({ length: 8 }, (_, i) => ({ token: '4', midi: [60, 64, 67, 72][i % 4], beats: 1, start: i, sectionIndex: 0, lineIndex: 0, eventIndex: i })));
+    p.start(0);
+    const tick = (p as unknown as { tick: () => void }).tick.bind(p);
+    for (let s = 0; s < 3; s += 0.05) { clock.t = s; tick(); }
+    const chord = p.chordAt(0.5)?.name;
+    p.stop();
+    return { melody: [...new Set(melodyNotes)].sort((a, b) => a - b), bass: bassNotes.map((b) => b.midi % 12), chord };
+  };
+
+  it('giai điệu, hợp âm và bass cùng dịch, tab không đổi', () => {
+    const base = play(0), up = play(2);
+    expect(base.melody).toEqual([60, 64, 67, 72]);
+    expect(up.melody).toEqual([62, 66, 69, 74]);
+    expect(base.chord).toBe('C');
+    expect(up.chord).toBe('D');
+    expect(up.bass.length).toBeGreaterThan(0);
+    expect(up.bass.every((pc, i) => pc === (base.bass[i] + 2) % 12)).toBe(true);
   });
 });
 

@@ -1,5 +1,5 @@
 import { useLiveQuery } from 'dexie-react-hooks';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { db, deleteSongs, downloadJson, exportOne, newId, slugify } from '../lib/db';
 import { HARP_KEYS, HARP_TYPES, HARP_TYPE_LABEL, HarpKey, HarpType, harpName, harpTypeOf, isChromatic, isTremolo, midiToName, parseToken, songTonality } from '../lib/harp';
@@ -29,6 +29,9 @@ import { ChordPicker } from '../components/ChordPicker';
 import { NoteEditor } from '../components/NoteEditor';
 import { editNote, NoteEdit } from '../lib/tabEdit';
 import { suggestInstrument, suggestStyle } from '../audio/suggest';
+
+// màn hình karaoke: tải khi mở
+const KaraokeView = lazy(() => import('../components/KaraokeView'));
 
 export default function SongView() {
   const { id } = useParams();
@@ -158,6 +161,7 @@ function SongPlayerView({ song, original, fit, view, choice, onChoice }: {
 
   // ----- sửa nốt ngay khi nghe: chạm nốt sai trên tab rồi đổi tại chỗ, nhạc vẫn chạy -----
   const [editMode, setEditMode] = useState(false);
+  const [karaoke, setKaraoke] = useState(false);
   const keepPlaying = useRef(false);
   /** chỉ sửa được khi đang xem đúng bản gốc (bản đã dịch sang kèn khác không ứng với văn bản lưu) */
   const canEdit = fit === null && song === original;
@@ -449,8 +453,17 @@ function SongPlayerView({ song, original, fit, view, choice, onChoice }: {
           <button type="button" className={`chip${waitMode ? ' on' : ''}`} aria-pressed={waitMode} onClick={() => (waitMode ? stopWait() : startWait())}>
             <Icon name="mic" size={15} /> Chờ nốt
           </button>
+          <button type="button" className="chip" onClick={() => { if (waitMode) stopWait(); setEditMode(false); setKaraoke(true); }}>
+            🎤 Karaoke
+          </button>
         </>}
       />
+
+      {karaoke && (
+        <Suspense fallback={null}>
+          <KaraokeView song={song} original={original} flat={flat} p={player} chordSegs={chordSegs} onClose={() => setKaraoke(false)} />
+        </Suspense>
+      )}
 
       {chordEdit && (
         <ChordPicker

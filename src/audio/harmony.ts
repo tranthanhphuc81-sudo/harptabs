@@ -248,6 +248,18 @@ export function bassMidi(chord: Chord, fifth = false): number {
   return 40 + mod12(pc - 4);
 }
 
+/**
+ * Dịch các khúc hợp âm đi `semitones` nửa cung (đổi tông khi phát cho hợp giọng người hát).
+ * N.C. giữ nguyên; bass / thế bấm tính theo lớp cao độ nên vẫn nằm đúng quãng.
+ */
+export function transposeSpans<T extends ChordSpan>(spans: T[], semitones: number, flats = false): T[] {
+  if (!semitones) return spans;
+  return spans.map((s) => (s.chord.root < 0 ? s : {
+    ...s,
+    chord: { root: mod12(s.chord.root + semitones), minor: s.chord.minor, name: chordName(s.chord.root + semitones, s.chord.minor, flats) },
+  }));
+}
+
 /** Dịch hợp âm chọn tay khi bài bị dịch giọng `semitones` nửa cung */
 export function transposeChords(chords: ChordOverrides | undefined, semitones: number, flats = false): ChordOverrides | undefined {
   if (!chords || semitones % 12 === 0) return chords;

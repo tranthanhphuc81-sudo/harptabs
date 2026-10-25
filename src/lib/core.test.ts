@@ -180,3 +180,14 @@ describe('bài tập trong bài học', () => {
     it(`${l.id}: ${b.caption ?? 'tab'}`, () => expect(parseTab(b.body, b.harpKey ?? 'C', b.harpType).issues).toEqual([]));
   }
 });
+
+describe('shiftKey', () => {
+  it('tông kèn cao / thấp hơn n nửa cung, vòng quanh 12 tông', async () => {
+    const { shiftKey } = await import('./harp');
+    expect(shiftKey('C', 2)).toBe('D');
+    expect(shiftKey('C', -1)).toBe('B');
+    expect(shiftKey('F#', 1)).toBe('G');
+    expect(shiftKey('G', -1)).toBe('F#');
+    expect(shiftKey('A', 12)).toBe('A');
+  });
+});

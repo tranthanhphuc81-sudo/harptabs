@@ -109,3 +109,17 @@ describe('đệm hợp âm', () => {
     expect(transposeChords({ '0': 'C' }, 12)).toEqual({ '0': 'C' });
   });
 });
+
+describe('dịch khúc hợp âm khi đổi tông', () => {
+  it('dịch tên và gốc hợp âm, giữ N.C., không đổi khi dịch 0', async () => {
+    const { transposeSpans } = await import('./harmony');
+    const spans = [
+      { start: 0, end: 2, chord: { root: 0, minor: false, name: 'C' } },
+      { start: 2, end: 4, chord: { root: 9, minor: true, name: 'Am' } },
+      { start: 4, end: 6, chord: { root: -1, minor: false, name: 'N.C.' } },
+    ];
+    expect(transposeSpans(spans, 0)).toBe(spans);
+    expect(transposeSpans(spans, 3).map((s) => s.chord.name)).toEqual(['Eb', 'Cm', 'N.C.']);
+    expect(transposeSpans(spans, -2).map((s) => s.chord.root)).toEqual([10, 7, -1]);
+  });
+});

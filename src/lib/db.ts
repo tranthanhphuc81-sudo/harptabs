@@ -38,7 +38,7 @@ export async function deleteSongs(ids: string[]): Promise<void> {
     await db.songs.bulkDelete(ids);
     // khoá nháp: xem lib/drafts.ts
     await db.scans.bulkDelete([...ids, ...ids.map((id) => `draft:scan:${id}`)]);
-    await db.kv.bulkDelete(ids.flatMap((id) => [`draft:${id}`, `practice:${id}`]));
+    await db.kv.bulkDelete(ids.flatMap((id) => [`draft:${id}`, `practice:${id}`, `karaoke:${id}`]));
   });
 }
 
