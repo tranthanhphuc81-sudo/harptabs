@@ -195,6 +195,25 @@ describe('nhập MIDI', () => {
     ]);
   });
 
+  it.each([
+    ['dấu "/" "\\" đầu chữ', ['\\Một', 'hai', 'ba', 'bốn', 'năm', 'sáu', '/Bảy', 'tám', 'chín', 'mười', '/Mười', 'một']],
+    ['xuống dòng cuối chữ', ['Một', 'hai', 'ba', 'bốn', 'năm', 'sáu\r', 'Bảy', 'tám', 'chín', 'mười\r\n', 'Mười', 'một']],
+  ])('file karaoke: xuống dòng theo câu lời của file (%s), dạo nhạc vẫn 4 ô nhịp', (_, words) => {
+    const ev: [number, number[]][] = [[0, [0xff, 0x03, 6, ...text('Melody')]]];
+    const note = (beat: number, len: number, n: number, w?: string) => {
+      ev.push([beat * Q, [0x90, n, 90]], [(beat + len) * Q - 20, [0x80, n, 0]]);
+      if (w) ev.push([beat * Q, [0xff, 0x05, ...vlq(text(w).length), ...text(w)]]);
+    };
+    // dạo 8 ô nhịp 3/4 không lời
+    for (let b = 3; b < 27; b++) note(b, 1, b % 2 ? 60 : 62);
+    // ba câu, câu nào cũng vào giữa ô nhịp
+    const beats = [28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 40, 41];
+    beats.forEach((b, i) => note(b, i === 9 ? 2 : i === 11 ? 3 : 1, 64 + (i % 5), words[i]));
+    const f = parseMidi(midiFile([meta, track(ev)]));
+    const lines = f.transcribe(f.melodyPart).sections.flatMap((s) => s.lines).map((l) => l.notes.map((n) => n.lyric).filter(Boolean).join(' '));
+    expect(lines).toEqual(['', '', 'Một hai ba bốn năm sáu', 'Bảy tám chín mười', 'Mười một']);
+  });
+
   it('MIDI giọng hát: bỏ nốt phụ cao, yếu chồng lên giọng chính', () => {
     // giọng chính quanh 57–62 (velocity ~90), thỉnh thoảng có nốt hoạ âm 79–84 yếu (velocity ~45) kêu cùng lúc
     const main = [57, 59, 60, 59, 57, 55, 57, 59, 60, 62, 60, 59];

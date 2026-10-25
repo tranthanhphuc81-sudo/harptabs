@@ -91,7 +91,7 @@ export function midiName(midi: number, preferFlats = false): string {
 }
 
 /** Một nốt giai điệu đã xếp theo thời gian (phách đen tính từ đầu bài) */
-export interface MelNote { start: number; beats: number; midi: number | null; lyric?: string; tieNext?: boolean }
+export interface MelNote { start: number; beats: number; midi: number | null; lyric?: string; tieNext?: boolean; /** lời karaoke xuống dòng trước nốt này */ lineStart?: boolean }
 
 /** Bè / track để người dùng chọn khi file có nhiều bè */
 export interface MusicPart { id: string; name: string; notes: number; low: number; high: number }
@@ -124,22 +124,44 @@ export function toTranscription(
     } else out.push({ ...n });
     t = Math.max(t, n.start + n.beats);
   }
-  // chia dòng: theo chỗ xuống dòng của bản gốc (nếu có), không thì 4 ô nhịp một dòng
+  // chia dòng: theo chỗ xuống dòng của bản gốc (nếu có), theo câu lời karaoke ("/" "\"), không thì 4 ô nhịp một dòng
   const t0 = out.length ? out[0].start : 0;
   const barOf = (start: number) => Math.floor((start - t0 + (o.barBeats - o.pickupBeats) % o.barBeats + 1e-6) / o.barBeats);
   const breaks = new Set(o.lineBreaks ?? []);
+  const lyricBreaks = !o.lineBreaks?.length && out.filter((n) => n.lineStart).length >= 2;
+  // nốt nằm trong một câu lời: từ nốt mở câu tới chữ cuối trước câu sau — đoạn dạo / gian tấu ngoài câu vẫn chia 4 ô nhịp
+  const inLine = new Array<boolean>(out.length).fill(false);
+  if (lyricBreaks) {
+    let open = out.findIndex((n) => n.lyric);
+    const close = (end: number) => {
+      if (open < 0) return;
+      let last = -1;
+      for (let i = open; i < end; i++) if (out[i].lyric) last = i;
+      // chữ cuối ngân luyến qua vài nốt liền (chưa có dấu lặng) vẫn thuộc câu
+      while (last >= 0 && last + 1 < end && out[last + 1].midi !== null) last++;
+      for (let i = open; i <= last; i++) inLine[i] = true;
+    };
+    out.forEach((n, i) => { if (n.lineStart && i > open) { close(i); open = i; } });
+    close(out.length);
+  }
   const lines: { notes: AiNote[] }[] = [];
-  let cur: AiNote[] = [], curBar = -1, barsInLine = 0;
-  for (const n of out) {
+  let cur: AiNote[] = [], curBar = -1, barsInLine = 0, curLyric = false;
+  out.forEach((n, i) => {
     const bar = barOf(n.start);
+    // câu lời mới, kể cả câu đầu không đánh dấu ngay sau đoạn dạo
+    let brk = lyricBreaks && (!!n.lineStart || (inLine[i] && !inLine[i - 1]));
     if (bar !== curBar) {
       if (curBar >= 0) barsInLine += bar - curBar;
-      const brk = o.lineBreaks?.length ? breaks.has(bar) : barsInLine >= 4;
-      if (cur.length && brk && n.midi !== null) { lines.push({ notes: cur }); cur = []; barsInLine = 0; }
+      if (o.lineBreaks?.length) brk = breaks.has(bar);
+      // câu lời quá dài (file chỉ đánh dấu đoạn): vẫn ngắt sau 8 ô nhịp
+      else if (lyricBreaks) brk ||= (!inLine[i] && (curLyric || barsInLine >= 4)) || barsInLine >= 8;
+      else brk = barsInLine >= 4;
       curBar = bar;
     }
+    if (cur.length && brk && n.midi !== null) { lines.push({ notes: cur }); cur = []; barsInLine = 0; curLyric = false; }
+    if (n.lyric) curLyric = true;
     cur.push({ pitch: n.midi === null ? 'R' : midiName(n.midi, !!o.flats), beats: Math.round(n.beats * 10000) / 10000, lyric: n.lyric ?? '' });
-  }
+  });
   if (cur.length) lines.push({ notes: cur });
   return {
     title: o.title || 'Bài nhập từ file',
@@ -402,22 +424,35 @@ function readMidi(buf: Uint8Array) {
 
 /**
  * Lời karaoke tách theo từng ký tự (Soft Karaoke kiểu Việt: "T" "u" "ổ" "i" " " "đ" "ờ" "i"…) → gom lại
- * thành từng chữ: chữ mới bắt đầu sau dấu cách hoặc "/" "\\" (xuống dòng). File tách theo âm tiết thì giữ nguyên.
+ * thành từng chữ: chữ mới bắt đầu sau dấu cách hoặc "/" "\\" (xuống dòng). File tách theo âm tiết thì giữ nguyên chữ.
+ * Chữ mở đầu dòng lời ("/" "\\" đứng trước, hoặc xuống dòng ở cuối chữ trước) được đánh dấu `brk`.
  */
-function syllables(lyrics: { t: number; text: string }[]): { t: number; text: string }[] {
+function syllables(lyrics: { t: number; text: string }[]): { t: number; text: string; brk?: boolean }[] {
   const body = lyrics.filter((l) => !l.text.startsWith('@'));
   const core = (s: string) => s.replace(/^[/\\\s]+/, '').replace(/\s+$/, '');
+  const lead = (s: string) => /^\s*[/\\\r\n]/.test(s), tail = (s: string) => /[\r\n]\s*$/.test(s);
   const chars = body.map((l) => core(l.text)).filter(Boolean);
   const short = chars.filter((c) => [...c].length <= 1).length;
-  if (chars.length < 8 || short / chars.length < 0.6) return lyrics;
-  const out: { t: number; text: string }[] = [];
-  let cur: { t: number; text: string } | null = null;
+  const out: { t: number; text: string; brk?: boolean }[] = [];
+  let pending = false;
+  if (chars.length < 8 || short / chars.length < 0.6) {
+    for (const l of body) {
+      if (lead(l.text)) pending = true;
+      const c = core(l.text).replace(/[\r\n]+/g, ' ');
+      if (c) { out.push({ t: l.t, text: c, brk: pending || undefined }); pending = false; }
+      if (tail(l.text)) pending = true;
+    }
+    return out;
+  }
+  let cur: { t: number; text: string; brk?: boolean } | null = null;
   for (const l of body) {
+    if (lead(l.text)) pending = true;
     // dấu cách / "/" / "\" đứng trước: chữ trước đã hết
     if (/^[/\\\s]/.test(l.text) && cur) { out.push(cur); cur = null; }
     const c = core(l.text);
     // chữ mới tính giờ từ ký tự đầu tiên của nó
-    if (c) { if (cur) cur.text += c; else cur = { t: l.t, text: c }; }
+    if (c) { if (cur) cur.text += c; else { cur = { t: l.t, text: c, brk: pending || undefined }; pending = false; } }
+    if (tail(l.text)) pending = true;
     if (/\s$/.test(l.text) && cur) { out.push(cur); cur = null; }
   }
   if (cur) out.push(cur);
@@ -568,6 +603,8 @@ export function parseMidi(buf: Uint8Array, fileTitle = ''): MusicFile {
         if (!text || text.startsWith('@')) continue;
         const n = notes.reduce<MelNote | null>((best, x) => (Math.abs(x.start - l.t) < 0.3 && (!best || Math.abs(x.start - l.t) < Math.abs(best.start - l.t)) ? x : best), null);
         if (n && !n.lyric) n.lyric = text.endsWith('-') ? text : text.replace(/\s+$/, '');
+        else if (l.brk) { const nx = notes.find((x) => x.start >= l.t - 0.3 && !x.lyric); if (nx) nx.lineStart = true; continue; }
+        if (n && l.brk) n.lineStart = true;
       }
       // ô nhịp lấy đà: bỏ các ô trống đầu bài, phần dư là nhịp lấy đà
       const t0 = notes.length ? notes[0].start : 0;
