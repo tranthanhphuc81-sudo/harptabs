@@ -314,6 +314,32 @@ export function parseMusicXml(text: string, fileTitle = ''): MusicFile {
 interface MidiNote { start: number; end: number; midi: number; ch: number; vel: number }
 interface MidiTrack { name: string; notes: MidiNote[]; lyrics: { t: number; text: string }[] }
 
+const utf8 = new TextDecoder('utf-8');
+let cp1258: TextDecoder | null | undefined;
+/** byte dấu thanh rời của Windows-1258: huyền, sắc, hỏi, ngã, nặng */
+const CP1258_TONES = new Set([0xcc, 0xec, 0xd2, 0xde, 0xf2]);
+
+/** có dấu thanh rời kiểu Windows-1258 ngay sau một chữ cái → nhiều khả năng là bảng mã này */
+export function looksCp1258(bytes: Uint8Array): boolean {
+  return bytes.some((b, i) => i > 0 && CP1258_TONES.has(b) && (/[A-Za-z]/.test(String.fromCharCode(bytes[i - 1])) || bytes[i - 1] >= 0xc0));
+}
+
+/**
+ * Chữ trong file MIDI cũ: UTF-8; không phải thì đọc theo bảng mã cũ.
+ * Windows-1258 (file Việt hay gặp) ghi dấu thanh RỜI sau chữ cái: "Ờ" = Ơ (0xD5) + huyền (0xCC), "đ" = 0xF0.
+ * `isCp1258`: cả file dùng Windows-1258 — lời karaoke mỗi sự kiện chỉ 1–2 byte nên phải đoán theo cả file.
+ * Còn lại đọc kiểu Latin-1 như trước.
+ */
+export function legacyText(bytes: Uint8Array, isCp1258 = looksCp1258(bytes)): string {
+  const s = utf8.decode(bytes);
+  if (!s.includes('�')) return s;
+  if (isCp1258) {
+    if (cp1258 === undefined) { try { cp1258 = new TextDecoder('windows-1258'); } catch { cp1258 = null; } }
+    if (cp1258) return cp1258.decode(bytes).normalize('NFC');
+  }
+  return String.fromCharCode(...bytes);
+}
+
 /** Đọc file MIDI chuẩn: các track (nốt, lời), nhịp độ, số chỉ nhịp, hoá biểu */
 function readMidi(buf: Uint8Array) {
   const dv = new DataView(buf.buffer, buf.byteOffset, buf.byteLength);
@@ -325,12 +351,9 @@ function readMidi(buf: Uint8Array) {
   let p = 8 + dv.getUint32(4);
   let tempo: number | undefined, timeSig: [number, number] | undefined, key: [number, boolean] | undefined, seqName = '';
   const tracks: MidiTrack[] = [];
-  const dec = new TextDecoder('utf-8');
-  const textOf = (bytes: Uint8Array) => {
-    // lời karaoke cũ hay là Latin-1; UTF-8 sai thì đọc lại kiểu Latin-1
-    const s = dec.decode(bytes);
-    return s.includes('�') ? String.fromCharCode(...bytes) : s;
-  };
+  // lời và tên: giải mã sau khi đọc hết file, để đoán bảng mã theo cả file
+  const texts: { bytes: Uint8Array; set: (s: string) => void }[] = [];
+  const later = (bytes: Uint8Array, set: (s: string) => void) => texts.push({ bytes, set });
   for (let ti = 0; ti < ntrk && p + 8 <= buf.length; ti++) {
     if (str(p, 4) !== 'MTrk') break;
     const end = p + 8 + dv.getUint32(p + 4);
@@ -348,8 +371,8 @@ function readMidi(buf: Uint8Array) {
         if (type === 0x51 && tempo === undefined) tempo = 60000000 / ((data[0] << 16) | (data[1] << 8) | data[2]);
         else if (type === 0x58 && !timeSig) timeSig = [data[0], 2 ** data[1]];
         else if (type === 0x59 && !key) key = [(data[0] << 24) >> 24, data[1] === 1];
-        else if (type === 0x03) { tr.name = textOf(data).trim(); if (ti === 0 && !seqName) seqName = tr.name; }
-        else if (type === 0x05 || (type === 0x01 && tick > 0)) tr.lyrics.push({ t: tick / tpq, text: textOf(data) });
+        else if (type === 0x03) later(data, (s) => { tr.name = s.trim(); if (ti === 0 && !seqName) seqName = tr.name; });
+        else if (type === 0x05 || (type === 0x01 && tick > 0)) { const l = { t: tick / tpq, text: '' }; tr.lyrics.push(l); later(data, (s) => { l.text = s; }); }
         continue;
       }
       if (st === 0xf0 || st === 0xf7) { q += vlq(); continue; }
@@ -372,6 +395,8 @@ function readMidi(buf: Uint8Array) {
     tracks.push(tr);
     p = end;
   }
+  const fileCp1258 = texts.some((x) => looksCp1258(x.bytes));
+  for (const x of texts) x.set(legacyText(x.bytes, fileCp1258));
   return { tracks, tempo, timeSig, key, seqName };
 }
 
@@ -396,7 +421,8 @@ function syllables(lyrics: { t: number; text: string }[]): { t: number; text: st
     if (/\s$/.test(l.text) && cur) { out.push(cur); cur = null; }
   }
   if (cur) out.push(cur);
-  return out;
+  // chữ cái và dấu thanh có thể nằm ở hai sự kiện: chuẩn hoá sau khi ghép
+  return out.map((l) => ({ ...l, text: l.text.normalize('NFC') }));
 }
 
 /** Lượng tử hoá vị trí theo lưới móc kép (1/4 phách) hoặc móc đơn liên ba (1/3 phách), chọn lưới gần hơn */
@@ -452,7 +478,8 @@ export function parseMidi(buf: Uint8Array, fileTitle = ''): MusicFile {
     const globalMid = medOf(loud.map((n) => n.midi));
     let lo = 0, hi = 0; // cửa sổ ±8 phách trượt trên loud
     return notes.filter((n) => {
-      while (loud[lo].start < n.start - 8) lo++;
+      // nốt yếu ở xa sau nốt mạnh cuối cùng (đoạn kết, đệm cuối bài): cửa sổ chạy hết danh sách, không được vượt quá
+      while (lo < loud.length && loud[lo].start < n.start - 8) lo++;
       while (hi < loud.length && loud[hi].start <= n.start + 8) hi++;
       const near = loud.slice(lo, hi).map((o) => o.midi);
       const contour = near.length >= 3 ? medOf(near) : globalMid;
@@ -479,14 +506,30 @@ export function parseMidi(buf: Uint8Array, fileTitle = ''): MusicFile {
     const m = melodyOf(g.notes);
     return { id: g.id, name: g.name, notes: m.length, low: Math.min(...m.map((n) => n.midi)), high: Math.max(...m.map((n) => n.midi)) };
   });
-  // bè giai điệu: tên gợi ý → bè có lời → bè nhiều nốt, ít hợp âm, tầm cao
+  /**
+   * File karaoke: chữ lời gắn đúng lúc giọng hát vào nốt → bè giai điệu là bè có nhiều nốt bắt đầu trùng thời điểm các chữ.
+   * (File một track nhiều kênh thì lời thuộc cả track, nên không dựa vào "track có lời" được.)
+   */
+  const lyricTimes = syllables(allLyrics).filter((l) => l.text.replace(/^[/\@\s]+/, '').trim()).map((l) => l.t);
+  const lyricMatch = (m: MidiNote[]) => {
+    if (lyricTimes.length < 8) return 0;
+    const starts = m.map((n) => n.start);
+    let hit = 0, j = 0;
+    for (const t of lyricTimes) {
+      while (j < starts.length - 1 && starts[j + 1] <= t) j++;
+      const near = Math.min(Math.abs(starts[j] - t), j + 1 < starts.length ? Math.abs(starts[j + 1] - t) : Infinity);
+      if (near < 0.2) hit++;
+    }
+    return hit / lyricTimes.length;
+  };
+  // bè giai điệu: khớp lời karaoke → tên gợi ý → bè có lời → bè nhiều nốt, ít hợp âm, tầm cao
   const scoreOf = (g: (typeof groups)[number]) => {
     const m = melodyOf(g.notes);
     if (m.length < 8) return -Infinity;
     const avg = m.reduce((t, n) => t + n.midi, 0) / m.length;
     const poly = 1 - m.length / g.notes.length;
     const named = /voice|vocal|voc|sing|melod|lead|giọng|hát|giai điệu|solo/i.test(g.name) ? 40 : 0;
-    return named + (g.lyrics.length ? 25 : 0) + avg - 30 * poly + Math.min(20, m.length / 10);
+    return 100 * lyricMatch(m) + named + (g.lyrics.length ? 25 : 0) + avg - 30 * poly + Math.min(20, m.length / 10);
   };
   const melodyPart = [...groups].sort((a, b) => scoreOf(b) - scoreOf(a))[0].id;
 

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { aiToTab } from './ai';
-import { parseMidi, parseMusicXml, parseXml, readMusicFile } from './musicFile';
+import { legacyText, parseMidi, parseMusicXml, parseXml, readMusicFile } from './musicFile';
 
 const notesOf = (t: ReturnType<ReturnType<typeof parseMusicXml>['transcribe']>) =>
   t.sections.flatMap((s) => s.lines.flatMap((l) => l.notes)).map((n) => `${n.pitch}:${+n.beats.toFixed(3)}${n.lyric ? `:${n.lyric}` : ''}`);
@@ -233,5 +233,54 @@ describe('nhập MIDI', () => {
     const count = (backing: number) => notesOf(f.transcribe(f.melodyPart, { backing })).filter((x) => !x.startsWith('R')).length;
     expect(count(0)).toBe(20);
     expect(count(3)).toBe(10);
+  });
+});
+
+describe('nhập MIDI: nốt yếu ở xa sau nốt mạnh cuối cùng', () => {
+  it('không lỗi (trước đây văng "Cannot read properties of undefined") và vẫn giữ giai điệu', () => {
+    const Q = 480;
+    // 10 nốt mạnh liền nhau, rồi 20 phách sau có 2 nốt yếu (đoạn kết / đệm cuối bài)
+    const ev: [number, number[]][] = [];
+    for (let i = 0; i < 10; i++) ev.push([i * Q, [0x90, 60 + (i % 5), 100]], [(i + 1) * Q - 10, [0x80, 60 + (i % 5), 0]]);
+    for (const [k, n] of [[30, 67], [31, 65]]) ev.push([k * Q, [0x90, n, 30]], [(k + 1) * Q - 10, [0x80, n, 0]]);
+    const f = parseMidi(midiFile([track(ev)], Q), 'x');
+    const t = f.transcribe(f.melodyPart);
+    const pitched = t.sections.flatMap((s) => s.lines.flatMap((l) => l.notes)).filter((n) => n.pitch !== 'R');
+    expect(pitched.length).toBeGreaterThanOrEqual(10);
+  });
+});
+
+describe('nhập MIDI karaoke Việt: bảng mã Windows-1258 và chọn đúng bè hát', () => {
+  // "BÂY GIỜ" theo Windows-1258: Â = 0xC2, Ơ = 0xD5 + dấu huyền rời 0xCC; "đêm" = 0xF0 0xEA m
+  const title1258 = [0x42, 0xc2, 0x59, 0x20, 0x47, 0x49, 0xd5, 0xcc];
+
+  it('giải mã Windows-1258 (dấu thanh rời), kể cả chữ "đ" đứng riêng một sự kiện', () => {
+    expect(legacyText(new Uint8Array(title1258))).toBe('BÂY GIỜ');
+    expect(legacyText(new Uint8Array([0xf0, 0xea, 0x6d]), true)).toBe('đêm');
+    // không có dấu hiệu 1258 thì vẫn Latin-1 như cũ
+    expect(legacyText(new Uint8Array([0x43, 0x61, 0x66, 0xe9]))).toBe('Café');
+  });
+
+  it('file một track nhiều kênh: bè có nốt trùng thời điểm chữ lời là giai điệu, dù có bè sáo cao hơn', () => {
+    const Q = 480;
+    const ev: [number, number[]][] = [[0, [0xff, 0x03, title1258.length, ...title1258]]];
+    // kênh 1: giọng hát, mỗi phách một nốt, kèm chữ (mỗi chữ 1 sự kiện, "đ" đứng riêng)
+    const words: number[][] = [[0x42, 0xe2, 0x79], [0xf0], [0xea, 0x6d], [0x6e, 0x61, 0x79]];
+    for (let i = 0; i < 16; i++) {
+      const t = (4 + i) * Q;
+      ev.push([t, [0x90, 62 + (i % 5), 100]], [t + Q - 20, [0x80, 62 + (i % 5), 0]]);
+      const w = words[i % words.length];
+      ev.push([t, [0xff, 0x05, w.length, ...w]]);
+    }
+    // kênh 4: sáo cao, chơi lệch nửa phách so với lời
+    for (let i = 0; i < 24; i++) {
+      const t = Math.round((4.5 + i * 0.75) * Q);
+      ev.push([t, [0x93, 84 + (i % 7), 80]], [t + Q / 2, [0x83, 84 + (i % 7), 0]]);
+    }
+    const f = parseMidi(midiFile([track(ev)], Q), 'x');
+    expect(f.title).toBe('BÂY GIỜ');
+    expect(f.melodyPart).toBe('0:0');
+    const lyrics = f.transcribe(f.melodyPart).sections.flatMap((s) => s.lines.flatMap((l) => l.notes)).map((n) => n.lyric).filter(Boolean);
+    expect(lyrics.length).toBeGreaterThan(8);
   });
 });
