@@ -4,6 +4,7 @@ import { aiToTab } from '../lib/ai';
 import { blankSong, db } from '../lib/db';
 import { HarpKey, HarpType, harpName, midiToName } from '../lib/harp';
 import { MusicFile, readMusicFile } from '../lib/musicFile';
+import { VN_ENCODINGS, VnEncoding } from '../lib/vnEncoding';
 import { flatten, parseTab } from '../lib/tabText';
 import { beatsPerBar } from '../lib/types';
 import { HarpTypeSelect, KeySelect } from '../components/KeySelect';
@@ -69,6 +70,18 @@ export default function FileImport({ onImages, onAudio }: { onImages?: (files: F
       setError((e as Error).message || 'Không đọc được file');
     } finally {
       setBusy(false);
+    }
+  };
+
+  // lời / tên bị vỡ dấu: đọc lại file theo bảng mã người dùng chọn (giữ bè, mức lọc đang chọn)
+  const reencode = async (encoding: VnEncoding) => {
+    if (!bytes) return;
+    try {
+      const mf = await readMusicFile(bytes, fileName, { encoding });
+      setFile(mf);
+      if (!title.trim() || title === file?.title) setTitle(mf.title);
+    } catch (e) {
+      setError((e as Error).message || 'Không đọc được file');
     }
   };
 
@@ -163,6 +176,15 @@ export default function FileImport({ onImages, onAudio }: { onImages?: (files: F
                 <span className="field-label">Lọc giọng phụ cao: {['tắt', 'nhẹ', 'vừa', 'mạnh'][backing]}</span>
                 <input type="range" min={0} max={3} step={1} value={backing} onChange={(e) => setBacking(Number(e.target.value))} aria-label="Mức lọc giọng phụ" />
                 <span className="small muted">Kéo lên nếu nghe có nốt cao vút lên đột ngột (giọng đệm / hoạ âm lẫn trong file). Mức mạnh còn nối các nốt ngắn lặp lại (nghe như nói lắp) thành một nốt.</span>
+              </label>
+            )}
+            {file.encoding && (
+              <label className="field">
+                <span className="field-label">Bảng mã lời</span>
+                <select value={file.encoding} onChange={(e) => void reencode(e.target.value as VnEncoding)}>
+                  {VN_ENCODINGS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                </select>
+                <span className="small muted">Lời bị vỡ dấu (kiểu “Toâi”, “T«i”) thì chọn bảng mã khác.</span>
               </label>
             )}
             <HarpTypeSelect value={harpType} onChange={setHarpType} />

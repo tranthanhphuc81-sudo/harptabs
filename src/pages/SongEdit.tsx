@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { fixGarbled, VN_ENCODINGS } from '../lib/vnEncoding';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { blankSong, db, deleteSongs } from '../lib/db';
 import { HarpKey, HarpType, harpTypeOf, holeCount, isChromatic, isTremolo, midiToName, normalizeKey, parseToken, songTonality, tremoloDir } from '../lib/harp';
@@ -141,6 +142,19 @@ function Editor({ initial, isNew, draft }: { initial: Song; isNew: boolean; draf
     setPend({ ...pend, dur: pend.dur === d ? '' : d });
   };
 
+  // lời / tên bị vỡ dấu (bài MIDI nhập trước khi app đọc được VNI / TCVN3): gợi ý sửa một lần bấm
+  const garbled = useMemo(() => fixGarbled(s.body, s.title, s.artist ?? ''), [s.body, s.title, s.artist]);
+  const garbledSample = useMemo(() => {
+    if (!garbled) return null;
+    const w = `${s.title} ${s.body}`.split(/\s+/).find((x) => /[\u0080-\u00ff]/.test(x) && garbled.fix(x) !== x);
+    return w ? { from: w, to: garbled.fix(w) } : null;
+  }, [garbled, s.title, s.body]);
+  const fixFont = () => {
+    if (!garbled) return;
+    setS((prev) => ({ ...prev, body: garbled.fix(prev.body), title: garbled.fix(prev.title), artist: prev.artist && garbled.fix(prev.artist) }));
+    toast('Đã sửa lỗi font — xem lại rồi bấm Lưu bài');
+  };
+
   const errors = parsed.issues.filter((i) => i.level === 'error');
   const warnings = parsed.issues.filter((i) => i.level === 'warning');
 
@@ -191,6 +205,16 @@ function Editor({ initial, isNew, draft }: { initial: Song; isNew: boolean; draf
             <button type="button" className="btn btn-primary btn-sm" onClick={restoreDraft}>Mở lại</button>
             <button type="button" className="btn btn-ghost btn-sm" onClick={discardDraft}>Bỏ</button>
           </span>
+        </div>
+      )}
+
+      {garbled && (
+        <div className="notice" role="status">
+          <span>
+            Lời / tên bài có vẻ bị lỗi font chữ Việt (bảng mã {VN_ENCODINGS.find((e) => e.value === garbled.enc)?.label ?? garbled.enc})
+            {garbledSample && <>, ví dụ “{garbledSample.from}” → “<strong>{garbledSample.to}</strong>”</>}.
+          </span>
+          <button type="button" className="btn btn-primary btn-sm" onClick={fixFont}>Sửa lỗi font</button>
         </div>
       )}
 

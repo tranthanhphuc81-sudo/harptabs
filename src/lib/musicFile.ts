@@ -4,6 +4,7 @@
  * File đã ghi sẵn từng nốt và trường độ nên không phải đoán như đọc ảnh.
  * Không phụ thuộc DOM (tự đọc XML, tự giải nén zip) → chạy được cả trong test Node.
  */
+import { detectVn, VnEncoding, vnDecoder } from './vnEncoding';
 import type { AiNote, AiTranscription } from '../../shared/ai';
 
 // ───────────────────────── XML tối giản ─────────────────────────
@@ -103,6 +104,8 @@ export interface MusicFile {
   parts: MusicPart[];
   /** bè đoán là giai điệu chính */
   melodyPart: string;
+  /** (MIDI có chữ có dấu) bảng mã đã dùng để đọc lời / tên */
+  encoding?: VnEncoding;
   /** cấu trúc chuyển tab của một bè */
   /** backing (chỉ MIDI): mức lọc giọng phụ 0 (tắt) … 3 (mạnh), mặc định 2 */
   /** `startBeat`: (MIDI) phách trong file của nốt đầu tab — để phát kèm bản phối gốc */
@@ -364,7 +367,7 @@ export function legacyText(bytes: Uint8Array, isCp1258 = looksCp1258(bytes)): st
 }
 
 /** Đọc file MIDI chuẩn: các track (nốt, lời, nhạc cụ), nhịp độ, số chỉ nhịp, hoá biểu */
-export function readMidi(buf: Uint8Array) {
+export function readMidi(buf: Uint8Array, encoding?: VnEncoding) {
   const dv = new DataView(buf.buffer, buf.byteOffset, buf.byteLength);
   const str = (p: number, n: number) => String.fromCharCode(...buf.subarray(p, p + n));
   if (str(0, 4) !== 'MThd') throw new Error('Không phải file MIDI');
@@ -421,15 +424,21 @@ export function readMidi(buf: Uint8Array) {
     tracks.push(tr);
     p = end;
   }
-  const fileCp1258 = texts.some((x) => looksCp1258(x.bytes));
-  for (const x of texts) x.set(legacyText(x.bytes, fileCp1258));
+  // bảng mã chữ (Unicode / Windows-1258 / VNI / TCVN3): đoán theo cả file, hoặc theo người dùng chọn
+  const enc = encoding ?? detectVn(texts.map((x) => x.bytes));
+  const dec = vnDecoder(enc);
+  for (const x of texts) {
+    const s = dec(x.bytes);
+    x.set(enc === 'utf8' && s.includes('�') ? legacyText(x.bytes) : s);
+  }
+  const hasText = texts.some((x) => x.bytes.some((b) => b >= 0x80));
   if (programs.length) {
     programs.sort((a, b) => a.t - b.t);
     for (const tr of tracks) for (const n of tr.notes) {
       for (const pc of programs) { if (pc.t > n.start + 1e-6) break; if (pc.ch === n.ch) n.prog = pc.prog; }
     }
   }
-  return { tracks, tempo, timeSig, key, seqName };
+  return { tracks, tempo, timeSig, key, seqName, encoding: enc, hasText };
 }
 
 /**
@@ -495,8 +504,8 @@ function mergeRepeats(mel: MidiNote[]): MidiNote[] {
 /** Mức lọc giọng phụ 1…3: [nốt yếu hơn mấy lần velocity giữa, cao hơn đường giọng chính mấy nửa cung] */
 const BACKING_LEVELS: [number, number][] = [[0.7, 12], [0.85, 9], [1, 6]];
 
-export function parseMidi(buf: Uint8Array, fileTitle = ''): MusicFile {
-  const { tracks, tempo, timeSig, key, seqName } = readMidi(buf);
+export function parseMidi(buf: Uint8Array, fileTitle = '', opts?: { encoding?: VnEncoding }): MusicFile {
+  const { tracks, tempo, timeSig, key, seqName, encoding, hasText } = readMidi(buf, opts?.encoding);
   // file định dạng 0 (một track nhiều kênh) → tách theo kênh; bỏ kênh trống (kênh 10)
   const groups: { id: string; name: string; notes: MidiNote[]; lyrics: MidiTrack['lyrics'] }[] = [];
   tracks.forEach((tr, i) => {
@@ -583,7 +592,7 @@ export function parseMidi(buf: Uint8Array, fileTitle = ''): MusicFile {
   const title = (seqName && !/^(untitled|track\s*\d*|sequence|seq-?\d*)$/i.test(seqName) ? seqName : '') || fileTitle;
   const songKey = key ? keyFromFifths(key[0], key[1]) : undefined;
   return {
-    kind: 'midi', title, parts, melodyPart,
+    kind: 'midi', title, parts, melodyPart, encoding: hasText ? encoding : undefined,
     transcribe(partId, opts) {
       const g = groups.find((x) => x.id === partId) ?? groups[0];
       const level = opts?.backing ?? 2;
@@ -635,13 +644,13 @@ export function midiPayload(bytes: Uint8Array): Uint8Array {
 }
 
 /** Đọc file nhạc theo nội dung (không tin đuôi file) */
-export async function readMusicFile(bytes: Uint8Array, fileName = ''): Promise<MusicFile> {
+export async function readMusicFile(bytes: Uint8Array, fileName = '', opts?: { encoding?: VnEncoding }): Promise<MusicFile> {
   const fileTitle = fileName.replace(/\.[a-z0-9]{2,8}$/i, '').replace(/[_]+/g, ' ').trim();
   const head = String.fromCharCode(...bytes.subarray(0, 4));
-  if (head === 'MThd') return parseMidi(bytes, fileTitle);
+  if (head === 'MThd') return parseMidi(bytes, fileTitle, opts);
   if (head === 'RIFF' && String.fromCharCode(...bytes.subarray(8, 12)) === 'RMID') {
     const m = midiPayload(bytes);
-    if (m !== bytes) return parseMidi(m, fileTitle);
+    if (m !== bytes) return parseMidi(m, fileTitle, opts);
   }
   if (head.startsWith('PK')) {
     const files = await unzip(bytes);
