@@ -1002,3 +1002,4 @@ button, a, select { -webkit-tap-highlight-color: transparent; }
   .kara-tools { width: 100%; justify-content: space-between; }
   .kara-foot .btn { padding: 0 12px; }
 }
+.kara-pitch { width: min(900px, 100%); height: clamp(70px, 14vh, 130px); border-radius: var(--r-m); background: var(--surface); border: 1px solid var(--line); }

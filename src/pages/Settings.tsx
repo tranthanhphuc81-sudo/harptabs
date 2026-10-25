@@ -147,6 +147,11 @@ export default function SettingsPage() {
             Giữ màn hình sáng khi đang phát bài, chờ nốt hoặc dò nốt
           </label>
           <SyncCalibrator value={s.syncOffsetMs} onChange={(syncOffsetMs) => update({ syncOffsetMs })} />
+          <label className="field wide">
+            <span className="field-label">Độ trễ micro khi chấm điểm karaoke: {s.micLatencyMs} ms</span>
+            <input type="range" min={0} max={300} step={10} value={s.micLatencyMs} onChange={(e) => update({ micLatencyMs: Number(e.target.value) })} />
+            <span className="help">Hát đúng mà điểm "vào nhịp" thấp (nhất là micro Bluetooth): tăng số này.</span>
+          </label>
         </div>
       </section>
 

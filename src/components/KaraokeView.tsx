@@ -1,4 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useAppState } from '../state';
+import { MicPitch, VOICE_MIC } from '../audio/pitch';
+import { KaraokeScorer, KaraokeSummary } from '../lib/karaokeScore';
+import { loadBest, PracticeRecord, recordBest } from '../lib/practiceScore';
+import { PitchStrip } from './PitchStrip';
 import { harpName, harpTypeOf, shiftKey } from '../lib/harp';
 import { buildKaraoke, countdownAt, holesFor, KLine, locate } from '../lib/karaoke';
 import { DEFAULT_KARAOKE, KaraokeHoles, KaraokePrefs, loadKaraokePrefs, MAX_TRANSPOSE, saveKaraokePrefs } from '../lib/karaokePrefs';
@@ -87,6 +92,78 @@ export default function KaraokeView({ song, original, flat, p, chordSegs, onClos
     return f.length === flat.length ? f : flat;
   }, [original, flat]);
   const lines = useMemo(() => buildKaraoke(lyricFlat), [lyricFlat]);
+
+  // ----- chấm điểm giọng hát qua micro -----
+  const { settings } = useAppState();
+  const [scoring, setScoring] = useState(false);
+  const [micErr, setMicErr] = useState<string | null>(null);
+  const [live, setLive] = useState<number | null>(null);
+  const [result, setResult] = useState<{ s: KaraokeSummary; rec: PracticeRecord | null; newBest: boolean } | null>(null);
+  const scorer = useRef<KaraokeScorer | null>(null);
+  const spb = 60 / Math.max(20, p.opts.bpm * p.opts.tempoScale);
+  const spbRef = useRef(spb);
+  spbRef.current = spb;
+  const lagRef = useRef(0.06);
+  lagRef.current = (settings.micLatencyMs ?? 60) / 1000;
+  const scoreKey = `karaokeScore:${original.id}`;
+  const newScorer = () => { scorer.current = new KaraokeScorer(lines, lyricFlat, spbRef.current, t); setLive(null); };
+
+  // bật / tắt micro theo nút Chấm điểm; đổi "đeo tai nghe" thì mở lại micro (bật / tắt khử tiếng vọng)
+  useEffect(() => {
+    if (!scoring) return;
+    const mic = new MicPitch({ ...VOICE_MIC, echoCancellation: !prefs.headphones });
+    mic.onReading = (r) => {
+      const sc = scorer.current, b = pRef.current.beatAt();
+      if (!sc || b === null) return;
+      // tiếng hát tới bộ dò trễ một chút: độ trễ micro + nửa cửa sổ phân tích
+      sc.feed(r ? r.midi : null, b - (lagRef.current + mic.windowDelay) / spbRef.current);
+    };
+    let alive = true;
+    mic.start()
+      .then(() => { if (!alive) mic.stop(); else setMicErr(null); })
+      .catch((e: Error) => {
+        if (!alive) return;
+        setMicErr(e.name === 'NotAllowedError' ? 'Cần cho phép dùng micro để chấm điểm' : e.message || 'Không mở được micro');
+        setScoring(false);
+      });
+    return () => { alive = false; mic.stop(); };
+  }, [scoring, prefs.headphones]);
+
+  // bắt đầu hát: bộ chấm mới; dừng: tổng kết (hát quá ít thì thôi)
+  const wasPlaying = useRef(false);
+  const finish = async () => {
+    const sc = scorer.current;
+    scorer.current = null;
+    setLive(null);
+    if (!sc) return;
+    const s0 = sc.summary();
+    if (s0.done < 3) return;
+    const s = { ...s0, finished: s0.done >= s0.total };
+    const saved = s.finished ? await recordBest(scoreKey, s.score).catch(() => null) : null;
+    const rec = saved?.rec ?? await loadBest(scoreKey).catch(() => null);
+    setResult({ s, rec, newBest: !!saved?.newBest });
+  };
+  useEffect(() => {
+    if (p.playing && !wasPlaying.current && scoring) { setResult(null); newScorer(); }
+    if (!p.playing && wasPlaying.current) void finish();
+    wasPlaying.current = p.playing;
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- chỉ khi bắt đầu / dừng phát
+  }, [p.playing]);
+  // bật chấm điểm khi đang hát, hoặc đổi tông giữa chừng: chấm lại từ đây
+  useEffect(() => {
+    if (!scoring) { scorer.current = null; setLive(null); return; }
+    if (pRef.current.playing) newScorer();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- chỉ khi bật chấm điểm / đổi tông
+  }, [scoring, t]);
+  // điểm tạm thời trong lúc hát
+  useEffect(() => {
+    if (!scoring || !p.playing) return;
+    const id = window.setInterval(() => {
+      const sm = scorer.current?.summary();
+      setLive(sm && sm.done > 0 ? sm.score : null);
+    }, 500);
+    return () => window.clearInterval(id);
+  }, [scoring, p.playing]);
 
   // số lỗ: giữ nguyên (thổi bằng kèn lệch tông tương ứng), hoặc xếp lại cho kèn đang xem
   const type = harpTypeOf(song);
@@ -208,8 +285,20 @@ export default function KaraokeView({ song, original, flat, p, chordSegs, onClos
             {(Object.keys(HOLES_LABEL) as KaraokeHoles[]).map((k) => <option key={k} value={k}>{HOLES_LABEL[k]}</option>)}
           </select>
           <button type="button" className={`chip${prefs.chords ? ' on' : ''}`} aria-pressed={prefs.chords} onClick={() => update({ chords: !prefs.chords })}>Hợp âm</button>
+          <button type="button" className={`chip${scoring ? ' on' : ''}`} aria-pressed={scoring} onClick={() => setScoring((v) => !v)}>
+            <Icon name="mic" size={15} /> Chấm điểm{scoring && live !== null ? ` · ${live}` : ''}
+          </button>
+          {scoring && (
+            <button type="button" className={`chip${prefs.headphones ? ' on' : ''}`} aria-pressed={prefs.headphones} onClick={() => update({ headphones: !prefs.headphones })}>
+              🎧 Đeo tai nghe
+            </button>
+          )}
         </div>
       </header>
+      {micErr && <p className="kara-note small danger" role="alert">{micErr}</p>}
+      {scoring && !prefs.headphones && (
+        <p className="kara-note small">Không đeo tai nghe: micro nghe lẫn nhạc đệm từ loa, máy đã bật khử tiếng vọng. Đeo tai nghe để chấm chính xác hơn.</p>
+      )}
 
       {t !== 0 && prefs.holes !== 'hide' && (
         <p className="kara-note small">
@@ -224,9 +313,19 @@ export default function KaraokeView({ song, original, flat, p, chordSegs, onClos
         {p.countIn != null
           ? <div className="kara-count big" aria-live="assertive">{p.countIn}</div>
           : count != null && <div className="kara-count" aria-hidden="true">{'●'.repeat(count)}</div>}
+        {scoring && <PitchStrip lines={lines} scorer={scorer} getBeat={p.beatAt} spb={spb} />}
         {renderLine(shown, true)}
         {renderLine(shown + 1, false)}
       </main>
+
+      {result && (
+        <KaraokeResult
+          r={result}
+          onRetry={() => { setResult(null); startFrom(0); }}
+          onPick={(li) => { setResult(null); startFrom(li); }}
+          onClose={() => setResult(null)}
+        />
+      )}
 
       <footer className="kara-foot">
         <button type="button" className="btn btn-ghost" onClick={() => startFrom(Math.max(0, shown - 1))} disabled={shown === 0} aria-label="Câu trước">
@@ -242,3 +341,50 @@ export default function KaraokeView({ song, original, flat, p, chordSegs, onClos
     </div>
   );
 }
+
+const verdict = (n: number) => (n >= 90 ? 'Hát hay quá!' : n >= 75 ? 'Tốt lắm!' : n >= 50 ? 'Khá rồi, tập thêm chút nữa' : 'Cứ hát chậm từng câu nhé');
+
+/** Kết quả một lượt hát karaoke có chấm điểm */
+function KaraokeResult({ r, onRetry, onPick, onClose }: {
+  r: { s: KaraokeSummary; rec: PracticeRecord | null; newBest: boolean };
+  onRetry: () => void;
+  onPick: (line: number) => void;
+  onClose: () => void;
+}) {
+  const ref = useRef<HTMLDialogElement>(null);
+  useEffect(() => { ref.current?.showModal?.(); }, []);
+  const { s, rec, newBest } = r;
+  return (
+    <dialog ref={ref} className="sheet practice-result" onClose={onClose} aria-labelledby="kr-title">
+      <h2 id="kr-title">{s.finished ? 'Hát hết bài' : `Đã hát ${s.done}/${s.total} chữ`}</h2>
+      <div className="pr-score" aria-label={`${s.score} điểm`}><strong>{s.score}</strong><span>điểm</span></div>
+      <p className="pr-verdict">
+        {verdict(s.score)}
+        {s.finished && newBest && rec && rec.times > 1 && <span className="pr-best"> Điểm cao nhất mới!</span>}
+      </p>
+      <dl className="storage-info">
+        <div><dt>Đúng cao độ</dt><dd>{Math.round(s.pitch * 100)}%</dd></div>
+        <div><dt>Vào nhịp, đủ hơi</dt><dd>{Math.round(s.timing * 100)}%</dd></div>
+        {rec && <div><dt>Bài này</dt><dd>cao nhất {rec.best} điểm · đã hát hết {rec.times} lần</dd></div>}
+        {!s.finished && <div><dt>Lưu ý</dt><dd className="muted">Chỉ lượt hát hết bài mới được ghi điểm.</dd></div>}
+      </dl>
+      {s.weak.length > 0 && (
+        <div>
+          <p className="field-label">Chữ hát chưa chuẩn — chạm để hát lại từ câu đó</p>
+          <div className="row gap wrap">
+            {s.weak.map((w) => (
+              <button key={`${w.li}.${w.si}`} type="button" className="chip" onClick={() => onPick(w.li)}>
+                <strong>{w.text}</strong> <span className="muted">· {w.score}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+      <div className="row gap end">
+        <button type="button" className="btn btn-ghost" onClick={() => ref.current?.close()}>Đóng</button>
+        <button type="button" className="btn btn-primary" onClick={onRetry}>Hát lại từ đầu</button>
+      </div>
+    </dialog>
+  );
+}
+

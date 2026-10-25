@@ -49,13 +49,40 @@ export function yin(buf: Float32Array, sampleRate: number, minHz = 150, maxHz = 
   return { hz: sampleRate / better, clarity: 1 - cmnd[tau] };
 }
 
+export interface MicOptions {
+  /** tầm cao độ dò (Hz) — mặc định cho kèn; giọng hát: 75–1100 */
+  minHz?: number;
+  maxHz?: number;
+  /** độ rõ tối thiểu (0..1) để nhận một lần đọc */
+  minClarity?: number;
+  /** âm lượng tối thiểu (RMS) — nhỏ hơn coi là im lặng */
+  minRms?: number;
+  /** khử tiếng vọng: bật khi không đeo tai nghe để micro bớt nghe nhạc đệm từ loa */
+  echoCancellation?: boolean;
+}
+
+/** mặc định giữ đúng như trước (dò nốt kèn, chờ nốt) */
+const KEN: Required<MicOptions> = { minHz: 150, maxHz: 3400, minClarity: 0.8, minRms: 0.012, echoCancellation: false };
+/** giọng hát: xuống tới giọng nam trầm (~75 Hz), chấp nhận tiếng hơi rè / có rung */
+export const VOICE_MIC: MicOptions = { minHz: 75, maxHz: 1100, minClarity: 0.7, minRms: 0.01 };
+
 export class MicPitch {
   private stream: MediaStream | null = null;
   private ctx: AudioContext | null = null;
   private analyser: AnalyserNode | null = null;
   private raf = 0;
   private buf = new Float32Array(2048);
+  private o: Required<MicOptions>;
   onReading?: (r: PitchReading | null) => void;
+
+  constructor(opts: MicOptions = {}) {
+    this.o = { ...KEN, ...opts };
+  }
+
+  /** nửa cửa sổ phân tích (giây): cao độ đọc được là của khoảng giữa cửa sổ, tức trễ hơn chút so với lúc đọc */
+  get windowDelay(): number {
+    return this.ctx ? this.buf.length / 2 / this.ctx.sampleRate : 0.021;
+  }
 
   get active() {
     return !!this.stream;
@@ -65,7 +92,7 @@ export class MicPitch {
     if (this.stream) return;
     if (!navigator.mediaDevices?.getUserMedia) throw new Error('Thiết bị không hỗ trợ micro trong trình duyệt này');
     this.stream = await navigator.mediaDevices.getUserMedia({
-      audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false },
+      audio: { echoCancellation: this.o.echoCancellation, noiseSuppression: false, autoGainControl: false },
     });
     const AC = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
     this.ctx = new AC();
@@ -79,9 +106,9 @@ export class MicPitch {
       let rms = 0;
       for (let i = 0; i < this.buf.length; i++) rms += this.buf[i] * this.buf[i];
       rms = Math.sqrt(rms / this.buf.length);
-      if (rms < 0.012) { this.onReading?.(null); return; }
-      const r = yin(this.buf, this.ctx!.sampleRate);
-      if (!r || r.clarity < 0.8) { this.onReading?.(null); return; }
+      if (rms < this.o.minRms) { this.onReading?.(null); return; }
+      const r = yin(this.buf, this.ctx!.sampleRate, this.o.minHz, this.o.maxHz);
+      if (!r || r.clarity < this.o.minClarity) { this.onReading?.(null); return; }
       const midi = hzToMidiFloat(r.hz);
       const nearest = Math.round(midi);
       this.onReading?.({ hz: r.hz, midi, nearest, cents: (midi - nearest) * 100, rms, clarity: r.clarity });

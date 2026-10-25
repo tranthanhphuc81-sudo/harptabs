@@ -97,14 +97,23 @@ export interface PracticeRecord { best: number; last: number; at: number; times:
 
 const key = (songId: string) => `practice:${songId}`;
 
+/** điểm cao nhất / lần gần nhất theo khoá kv bất kỳ (chờ nốt: `practice:<id>`, karaoke: `karaokeScore:<id>`) */
+export async function loadBest(kvKey: string): Promise<PracticeRecord | null> {
+  return ((await db.kv.get(kvKey))?.value as PracticeRecord | undefined) ?? null;
+}
+
+export async function recordBest(kvKey: string, score: number, now = Date.now()): Promise<{ rec: PracticeRecord; newBest: boolean }> {
+  const old = await loadBest(kvKey);
+  const rec = { best: Math.max(old?.best ?? 0, score), last: score, at: now, times: (old?.times ?? 0) + 1 };
+  await db.kv.put({ key: kvKey, value: rec });
+  return { rec, newBest: !old || score > old.best };
+}
+
 export async function loadPractice(songId: string): Promise<PracticeRecord | null> {
-  return ((await db.kv.get(key(songId)))?.value as PracticeRecord | undefined) ?? null;
+  return loadBest(key(songId));
 }
 
 /** chỉ lưu khi tập hết bài; trả về bản ghi mới và có phải điểm cao nhất mới không */
 export async function recordPractice(songId: string, score: number, now = Date.now()): Promise<{ rec: PracticeRecord; newBest: boolean }> {
-  const old = await loadPractice(songId);
-  const rec = { best: Math.max(old?.best ?? 0, score), last: score, at: now, times: (old?.times ?? 0) + 1 };
-  await db.kv.put({ key: key(songId), value: rec });
-  return { rec, newBest: !old || score > old.best };
+  return recordBest(key(songId), score, now);
 }

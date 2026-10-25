@@ -53,6 +53,8 @@ export interface Settings {
   keepAwake: boolean;
   /** bù trễ đèn nốt (ms): dương = đèn sáng muộn hơn; dùng khi loa / tai nghe Bluetooth trễ hơn máy báo */
   syncOffsetMs: number;
+  /** độ trễ micro (ms) khi chấm điểm karaoke: giọng hát tới bộ dò trễ chừng này */
+  micLatencyMs: number;
   /** gửi thống kê ẩn danh lượt cài / lượt dùng (lib/usageStats.ts) */
   shareStats: boolean;
 }
@@ -73,6 +75,7 @@ export const DEFAULT_SETTINGS: Settings = {
   shareStats: true,
   keepAwake: true,
   syncOffsetMs: 0,
+  micLatencyMs: 60,
 };
 
 export interface AiLogEntry {

@@ -14,9 +14,11 @@ export interface KaraokePrefs {
   transpose: number;
   holes: KaraokeHoles;
   chords: boolean;
+  /** đang đeo tai nghe: tắt khử tiếng vọng để micro thu giọng tốt hơn (không đeo thì micro nghe cả nhạc đệm từ loa) */
+  headphones: boolean;
 }
 
-export const DEFAULT_KARAOKE: KaraokePrefs = { transpose: 0, holes: 'same', chords: true };
+export const DEFAULT_KARAOKE: KaraokePrefs = { transpose: 0, holes: 'same', chords: true, headphones: false };
 export const MAX_TRANSPOSE = 6;
 
 const key = (songId: string) => `karaoke:${songId}`;
@@ -28,6 +30,7 @@ export async function loadKaraokePrefs(songId: string): Promise<KaraokePrefs> {
     transpose: Number.isFinite(t) ? Math.max(-MAX_TRANSPOSE, Math.min(MAX_TRANSPOSE, Math.round(t))) : 0,
     holes: v?.holes === 'myHarp' || v?.holes === 'hide' ? v.holes : 'same',
     chords: v?.chords !== false,
+    headphones: v?.headphones === true,
   };
 }
 
