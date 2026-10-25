@@ -19,7 +19,18 @@ export interface ArrNote {
   voice: ArrVoice;
 }
 
-export interface ArrPart { id: string; name: string; voice: ArrVoice; notes: number }
+export interface ArrPart {
+  id: string;
+  name: string;
+  /** nhạc cụ máy tự chọn theo file */
+  voice: ArrVoice;
+  /** nhạc cụ đang dùng (người dùng đổi), 'off' = tắt bè này */
+  chosen: ArrVoice | 'off';
+  notes: number;
+}
+
+/** người dùng đổi nhạc cụ / tắt từng bè (khoá = id bè) */
+export type ArrVoices = Record<string, ArrVoice | 'off'>;
 
 export interface Arrangement {
   notes: ArrNote[];
@@ -59,7 +70,7 @@ export function gmVoice(prog: number): ArrVoice | null {
 }
 
 /** Các bè đệm của file (bỏ bè hát), xếp theo phách tab */
-export function buildArrangement(bytes: Uint8Array, link: MidiLink): Arrangement {
+export function buildArrangement(bytes: Uint8Array, link: MidiLink, voices: ArrVoices = {}): Arrangement {
   const { tracks } = readMidi(midiPayload(bytes));
   const ks = keyShift(link.shift);
   const notes: ArrNote[] = [];
@@ -70,11 +81,15 @@ export function buildArrangement(bytes: Uint8Array, link: MidiLink): Arrangement
       if (id === link.melodyPart) continue;
       const own = tr.notes.filter((n) => n.ch === ch);
       let count = 0, first: ArrVoice | null = null;
+      // trống chỉ bật / tắt được; bè khác đổi được sang nhạc cụ bất kỳ
+      const pick = voices[id] === 'off' || (ch !== 9 && voices[id] && voices[id] !== 'drum') ? voices[id] : undefined;
       for (const n of own) {
-        const voice = ch === 9 ? 'drum' : gmVoice(n.prog ?? 0);
-        if (!voice) continue;
-        first ??= voice;
+        const auto = ch === 9 ? 'drum' : gmVoice(n.prog ?? 0);
+        if (!auto) continue;
+        first ??= auto;
         count++;
+        if (pick === 'off') continue;
+        const voice = pick ?? auto;
         notes.push({
           beat: n.start - link.startBeat,
           dur: Math.max(0.05, n.end - n.start),
@@ -83,7 +98,7 @@ export function buildArrangement(bytes: Uint8Array, link: MidiLink): Arrangement
           voice,
         });
       }
-      if (count) parts.push({ id, name: tr.name || (ch === 9 ? 'Trống' : `Kênh ${ch + 1}`), voice: first!, notes: count });
+      if (count) parts.push({ id, name: tr.name || (ch === 9 ? 'Trống' : `Kênh ${ch + 1}`), voice: first!, chosen: pick ?? first!, notes: count });
     }
   });
   notes.sort((a, b) => a.beat - b.beat);

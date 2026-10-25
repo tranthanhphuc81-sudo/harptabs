@@ -11,8 +11,9 @@ import { BackingSetup } from './BackingSetup';
 import { useBackingPlayer } from './useBackingPlayer';
 import { loadBacking, tabSig } from '../lib/backings';
 import type { Backing, MidiSource } from '../lib/types';
-import { loadMidiSource, midiBytes, saveMidiSource } from '../lib/midiSources';
-import { Arrangement, buildArrangement, matchMidiToTab } from '../lib/midiArrange';
+import { loadMidiSource, midiBytes, saveMidiSource, updateMidiSound } from '../lib/midiSources';
+import { INSTRUMENT_GROUPS, INSTRUMENT_OPTIONS, setArrangeSoft } from '../audio/engine';
+import { Arrangement, ArrVoice, ArrVoices, buildArrangement, matchMidiToTab } from '../lib/midiArrange';
 import { harpName, harpTypeOf, shiftKey } from '../lib/harp';
 import { buildKaraoke, countdownAt, holesFor, KLine, locate } from '../lib/karaoke';
 import { DEFAULT_KARAOKE, DEFAULT_KARAOKE_VIEW, HOLE_SIZES, KaraokeHoles, KaraokePrefs, KaraokeView as ViewSizes, loadKaraokePrefs, loadKaraokeView, LYRIC_SIZES, MAX_TRANSPOSE, saveKaraokePrefs, saveKaraokeView } from '../lib/karaokePrefs';
@@ -110,8 +111,17 @@ export default function KaraokeView({ song, original, flat, p, chordSegs, onClos
   useEffect(() => {
     setArr(null);
     if (!midiSrc) return;
-    try { setArr(buildArrangement(midiBytes(midiSrc), midiSrc)); } catch { /* file hỏng: dùng đệm tự tạo */ }
+    try { setArr(buildArrangement(midiBytes(midiSrc), midiSrc, (midiSrc.voices ?? {}) as ArrVoices)); } catch { /* file hỏng: dùng đệm tự tạo */ }
+    setArrangeSoft(midiSrc.soft !== false);
   }, [midiSrc]);
+  // đổi nhạc cụ / tắt từng bè, dịu tiếng: áp ngay (cả khi đang phát), nhớ theo bài
+  const [showVoices, setShowVoices] = useState(false);
+  const setSound = (patch: { voices?: Record<string, string>; soft?: boolean }) => {
+    if (!midiSrc) return;
+    const next = { ...midiSrc, ...patch };
+    setMidiSrc(next);
+    void updateMidiSound(original.id, { voices: next.voices, soft: next.soft }).catch(() => {});
+  };
   const useMp3 = src === 'mp3';
   const bk = useBackingPlayer(backing, flat);
   const mp3 = useMp3 && !!backing && bk.status === 'ready';
@@ -424,6 +434,9 @@ export default function KaraokeView({ song, original, flat, p, chordSegs, onClos
               {backing && <button type="button" role="radio" aria-checked={src === 'mp3'} className={src === 'mp3' ? 'on' : ''} onClick={() => setSrc('mp3')}>MP3</button>}
             </div>
           )}
+          {midi && (
+            <button type="button" className={`chip${showVoices ? ' on' : ''}`} aria-expanded={showVoices} aria-controls="kara-voices" onClick={() => setShowVoices((v) => !v)}>🎹 Nhạc cụ</button>
+          )}
           {!midiSrc && original.tags?.includes('MIDI') && (
             <button type="button" className="chip" onClick={() => { tp.stop(); midiInput.current?.click(); }}>🎹 Nối file MIDI gốc</button>
           )}
@@ -439,6 +452,39 @@ export default function KaraokeView({ song, original, flat, p, chordSegs, onClos
           )}
         </div>
       </header>
+      {showVoices && midi && arr && midiSrc && (
+        <div id="kara-voices" className="kara-sizes kara-voices" role="group" aria-label="Nhạc cụ từng bè">
+          {arr.parts.map((part) => (
+            <label key={part.id} className="kara-size">
+              <span className="kv-name" title={part.name}>{part.name}</span>
+              <select className="chip-select" value={midiSrc.voices?.[part.id] ?? ''}
+                onChange={(e) => {
+                  const v = { ...(midiSrc.voices ?? {}) };
+                  if (e.target.value) v[part.id] = e.target.value; else delete v[part.id];
+                  setSound({ voices: v });
+                }}>
+                <option value="">Tự chọn ({voiceLabel(part.voice)})</option>
+                <option value="off">Tắt bè này</option>
+                {part.voice !== 'drum' && <>
+                  <option value="bass">Bass</option>
+                  {INSTRUMENT_GROUPS.map((g) => (
+                    <optgroup key={g.label} label={g.label}>
+                      {g.items.map((it) => <option key={it} value={it}>{voiceLabel(it)}</option>)}
+                    </optgroup>
+                  ))}
+                </>}
+              </select>
+            </label>
+          ))}
+          <label className="check">
+            <input type="checkbox" checked={midiSrc.soft !== false} onChange={(e) => setSound({ soft: e.target.checked })} />
+            Dịu tiếng (bớt chói)
+          </label>
+          {midiSrc.voices && Object.keys(midiSrc.voices).length > 0 && (
+            <button type="button" className="btn btn-ghost btn-sm" onClick={() => setSound({ voices: {} })}>Trả về tự chọn</button>
+          )}
+        </div>
+      )}
       {showSizes && (
         <div id="kara-sizes" className="kara-sizes" role="group" aria-label="Cỡ chữ">
           <label className="kara-size">
@@ -531,6 +577,13 @@ export default function KaraokeView({ song, original, flat, p, chordSegs, onClos
       {showRecs && <RecordingsPanel songId={original.id} refreshKey={recRefresh} onClose={() => { setShowRecs(false); setRecRefresh((n) => n + 1); }} />}
     </div>
   );
+}
+
+/** tên nhạc cụ hiện cho người dùng */
+function voiceLabel(v: ArrVoice): string {
+  if (v === 'bass') return 'Bass';
+  if (v === 'drum') return 'Trống';
+  return INSTRUMENT_OPTIONS.find((o) => o.value === v)?.label ?? v;
 }
 
 const verdict = (n: number) => (n >= 90 ? 'Hát hay quá!' : n >= 75 ? 'Tốt lắm!' : n >= 50 ? 'Khá rồi, tập thêm chút nữa' : 'Cứ hát chậm từng câu nhé');

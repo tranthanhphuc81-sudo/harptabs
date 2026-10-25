@@ -982,6 +982,8 @@ button, a, select { -webkit-tap-highlight-color: transparent; }
 .kara-size { display: inline-flex; align-items: center; gap: 8px; font-size: 0.92rem; }
 .kara-size input { width: min(160px, 36vw); }
 .kara-size output { min-width: 3.2em; text-align: right; font-variant-numeric: tabular-nums; color: var(--ink-2); }
+.kara-voices { max-height: 40vh; overflow-y: auto; }
+.kara-voices .kv-name { min-width: 6em; max-width: 12em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ks-chord { font-weight: 700; color: var(--accent); }
 .ks-holes { display: inline-flex; gap: 0.25em; font-family: var(--font-cond); font-weight: 600; }
 .ks-holes .blow { color: var(--blow); }

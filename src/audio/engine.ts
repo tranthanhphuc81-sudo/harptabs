@@ -174,12 +174,30 @@ export function playTone(midi: number, when: number, dur: number, velocity = 1, 
   playToneAs(instrument, midi, when, dur, velocity, out);
 }
 
-/** kênh bản phối MIDI gốc (karaoke): vào master + hồi âm như giai điệu */
+/** kênh bản phối MIDI gốc (karaoke): qua bộ lọc dịu tiếng rồi vào master + hồi âm như giai điệu */
 let arrangeGain: GainNode | null = null;
+let arrangeTone: BiquadFilterNode | null = null;
+let arrangeSoft = true;
 export function arrangeBus(): GainNode {
   const c = audio();
-  if (!arrangeGain) { arrangeGain = c.createGain(); arrangeGain.gain.value = 0.55; arrangeGain.connect(master); arrangeGain.connect(melodySend); }
+  if (!arrangeGain) {
+    arrangeGain = c.createGain();
+    arrangeGain.gain.value = 0.55;
+    arrangeTone = c.createBiquadFilter();
+    arrangeTone.type = 'lowpass';
+    arrangeTone.Q.value = 0.5;
+    arrangeTone.frequency.value = arrangeSoft ? 2800 : 16000;
+    arrangeGain.connect(arrangeTone);
+    arrangeTone.connect(master);
+    arrangeTone.connect(melodySend);
+  }
   return arrangeGain;
+}
+
+/** Dịu tiếng bản phối: cắt bớt hoạ âm cao (tiếng tổng hợp nhiều bè cùng lúc dễ chói) */
+export function setArrangeSoft(on: boolean) {
+  arrangeSoft = on;
+  if (arrangeTone && ctx) arrangeTone.frequency.setTargetAtTime(on ? 2800 : 16000, ctx.currentTime, 0.05);
 }
 
 /** Phát một nốt bằng nhạc cụ chỉ định (không đổi nhạc cụ đang chọn) */

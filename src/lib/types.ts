@@ -129,6 +129,10 @@ export interface MidiSource {
   /** dấu vân tay tab lúc nối — tab sửa sau đó thì nhạc có thể lệch */
   tabSig: string;
   createdAt: number;
+  /** người dùng đổi nhạc cụ / tắt từng bè (khoá = id bè; giá trị: nhạc cụ, 'bass', 'drum' hoặc 'off') */
+  voices?: Record<string, string>;
+  /** lọc bớt tiếng cao cho dịu (mặc định bật) */
+  soft?: boolean;
 }
 
 export interface Backing {

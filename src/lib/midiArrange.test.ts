@@ -80,4 +80,18 @@ describe('bản phối MIDI gốc', () => {
     const other = flatten(parseTab('4 5 6 -6 6 5 4 -4 4 -4', 'C', 'diatonic'));
     expect(matchMidiToTab(bytes, other)).toBeNull();
   });
+
+  it('đổi nhạc cụ / tắt từng bè: trống chỉ tắt được, bè khác đổi sang nhạc cụ bất kỳ', () => {
+    const { f, tr, conv } = importTab('auto');
+    const link = { melodyPart: f.melodyPart, startBeat: tr.startBeat!, shift: conv.fit.shift };
+    const auto = buildArrangement(bytes, link);
+    const piano = auto.parts.find((p) => p.voice === 'piano')!, drum = auto.parts.find((p) => p.voice === 'drum')!, bass = auto.parts.find((p) => p.voice === 'bass')!;
+    const a = buildArrangement(bytes, link, { [piano.id]: 'guitar', [drum.id]: 'piano' as never, [bass.id]: 'off' });
+    expect(a.notes.some((n) => n.voice === 'piano')).toBe(false);
+    expect(a.notes.filter((n) => n.voice === 'guitar').length).toBe(piano.notes);
+    expect(a.notes.filter((n) => n.voice === 'drum').length).toBe(drum.notes);
+    expect(a.notes.some((n) => n.voice === 'bass')).toBe(false);
+    expect(a.parts.map((p) => [p.voice, p.chosen])).toEqual(expect.arrayContaining([['piano', 'guitar'], ['bass', 'off'], ['drum', 'drum']]));
+  });
 });
+

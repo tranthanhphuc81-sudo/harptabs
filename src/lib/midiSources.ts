@@ -20,6 +20,11 @@ export async function deleteMidiSource(songId: string): Promise<void> {
   await db.midiSources.delete(songId);
 }
 
+/** lưu lựa chọn nhạc cụ từng bè / dịu tiếng */
+export async function updateMidiSound(songId: string, patch: Pick<MidiSource, 'voices' | 'soft'>): Promise<void> {
+  await db.midiSources.update(songId, patch);
+}
+
 export function midiBytes(src: MidiSource): Uint8Array {
   return new Uint8Array(src.data);
 }

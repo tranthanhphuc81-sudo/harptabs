@@ -6,7 +6,7 @@ import { blankSong } from '../lib/db';
 import { saveBacking, tabSig } from '../lib/backings';
 import { flatten, parseTab } from '../lib/tabText';
 import type { PlayerState } from './usePlayer';
-import { saveMidiSource } from '../lib/midiSources';
+import { loadMidiSource, saveMidiSource } from '../lib/midiSources';
 
 const started: number[] = [];
 vi.mock('../audio/backingPlayer', () => ({
@@ -84,6 +84,12 @@ describe('karaoke với bản phối MIDI gốc', () => {
     const arr = setOpts.mock.calls.map(([o]) => o.arrangement).find((a) => a)!;
     expect(arr.notes[0]).toMatchObject({ midi: 48, voice: 'piano', beat: 0 });
     expect((screen.getByLabelText('Nâng tông') as HTMLButtonElement).disabled).toBe(false);
+    // đổi nhạc cụ bè piano sang guitar: bản phối dựng lại, nhớ theo bài
+    fireEvent.click(screen.getByRole('button', { name: /Nhạc cụ/ }));
+    const sel = screen.getByRole('combobox', { name: /Kênh 2|Track/ }) as HTMLSelectElement;
+    fireEvent.change(sel, { target: { value: 'guitar' } });
+    await waitFor(() => expect(setOpts.mock.calls.some(([o]) => o.arrangement?.notes?.[0]?.voice === 'guitar')).toBe(true));
+    await waitFor(async () => expect((await loadMidiSource('mid'))?.voices).toEqual({ '1:1': 'guitar' }));
     fireEvent.click(screen.getByRole('radio', { name: 'Tự đệm' }));
     await waitFor(() => expect(setOpts).toHaveBeenLastCalledWith({ arrangement: null }));
     unmount();
