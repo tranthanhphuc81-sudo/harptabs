@@ -510,7 +510,7 @@ export function parseMidi(buf: Uint8Array, fileTitle = ''): MusicFile {
    * File karaoke: chữ lời gắn đúng lúc giọng hát vào nốt → bè giai điệu là bè có nhiều nốt bắt đầu trùng thời điểm các chữ.
    * (File một track nhiều kênh thì lời thuộc cả track, nên không dựa vào "track có lời" được.)
    */
-  const lyricTimes = syllables(allLyrics).filter((l) => l.text.replace(/^[/\@\s]+/, '').trim()).map((l) => l.t);
+  const lyricTimes = syllables(allLyrics).filter((l) => l.text.replace(/^[/\\@\s]+/, '').trim()).map((l) => l.t);
   const lyricMatch = (m: MidiNote[]) => {
     if (lyricTimes.length < 8) return 0;
     const starts = m.map((n) => n.start);
