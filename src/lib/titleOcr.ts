@@ -51,8 +51,8 @@ export function titleFromFilename(name: string): string {
 /** Có dấu tiếng Việt / chữ ngoài ASCII → người đặt tên file gõ đàng hoàng, tin hơn máy đọc */
 export const hasDiacritics = (t: string) => /[\u0080-￿]/.test(t);
 
-/** Vẽ vùng tiêu đề (ảnh xám) ra canvas */
-export function cropToCanvas(g: Gray, b: TitleBox): HTMLCanvasElement {
+/** Vẽ vùng tiêu đề (ảnh xám) ra canvas; `scale` > 1 phóng to (chữ nhỏ máy đọc chính xác hơn) */
+export function cropToCanvas(g: Gray, b: TitleBox, scale = 1): HTMLCanvasElement {
   const w = b.x1 - b.x0, h = b.y1 - b.y0;
   const canvas = document.createElement('canvas');
   canvas.width = w; canvas.height = h;
@@ -64,7 +64,13 @@ export function cropToCanvas(g: Gray, b: TitleBox): HTMLCanvasElement {
     img.data[i + 3] = 255;
   }
   ctx.putImageData(img, 0, 0);
-  return canvas;
+  if (scale === 1) return canvas;
+  const big = document.createElement('canvas');
+  big.width = Math.round(w * scale); big.height = Math.round(h * scale);
+  const bctx = big.getContext('2d')!;
+  bctx.imageSmoothingEnabled = true;
+  bctx.drawImage(canvas, 0, 0, big.width, big.height);
+  return big;
 }
 
 type TessWorker = import('tesseract.js').Worker;
@@ -84,6 +90,21 @@ function getWorker(): Promise<TessWorker> {
     worker.catch(() => { worker = null; }); // lỗi (vd chưa có mạng lần đầu) → lần sau thử lại
   }
   return worker;
+}
+
+/**
+ * Đọc một dòng chữ kèm vị trí từng chữ (lời dưới khuông). Ảnh nên phóng to trước khi đọc;
+ * `scale` = hệ số đã phóng, toạ độ trả về chia lại theo đó. null nếu không tải được bộ đọc.
+ */
+export async function readWords(canvas: HTMLCanvasElement, scale = 1): Promise<{ text: string; x0: number; x1: number; confidence: number }[] | null> {
+  try {
+    const w = await getWorker();
+    const { data } = await w.recognize(canvas, {}, { blocks: true });
+    const words = (data.blocks ?? []).flatMap((b) => b.paragraphs.flatMap((p) => p.lines.flatMap((l) => l.words)));
+    return words.map((wd) => ({ text: wd.text, x0: wd.bbox.x0 / scale, x1: wd.bbox.x1 / scale, confidence: wd.confidence }));
+  } catch {
+    return null;
+  }
 }
 
 /** Đọc một dòng chữ (tên bài / tác giả). null nếu không tải được bộ đọc */

@@ -5,7 +5,8 @@ import { aiToTab } from '../lib/ai';
 import { blankSong, db } from '../lib/db';
 import { HarpKey, HarpType, harpName } from '../lib/harp';
 import { Gray, OmrNote, OmrPage, findHeaderBoxes, keyName, midiToStep, notePitch, readSheet, toGray, toTranscription } from '../lib/omr';
-import { MIN_CONFIDENCE, cleanArtist, cleanTitle, cropToCanvas, hasDiacritics, looksLikeTitle, readLine, titleFromFilename } from '../lib/titleOcr';
+import { MIN_CONFIDENCE, cleanArtist, cleanTitle, cropToCanvas, hasDiacritics, looksLikeTitle, readLine, readWords, titleFromFilename } from '../lib/titleOcr';
+import { assignSyllables, looksLikeLyrics, lyricBands, lyricSlots, relyric, staffLyrics, toSyllables } from '../lib/lyricOcr';
 import { loadScanPages, saveScan, SongScan } from '../lib/scanStore';
 import { scanDraftId } from '../lib/drafts';
 import { isPdf, pdfToImages } from '../lib/pdf';
@@ -192,6 +193,43 @@ export default function ScanImport({ editSongId, initialFiles }: { editSongId?: 
     return () => { alive = false; };
   }, [editSongId]);
 
+  // ───── lời bài hát in dưới khuông: máy đọc chữ ngay trên máy, gắn từng âm tiết vào nốt ─────
+  const [lyricProgress, setLyricProgress] = useState<{ done: number; total: number } | null>(null);
+  const [lyricMsg, setLyricMsg] = useState<string | null>(null);
+  const lyricRun = useRef(0);
+  const setLyrics = (lyrics: Map<string, string>) => setPages((ps) => ps.map((p) => (
+    p.notes.some((n) => lyrics.has(n.id))
+      ? { ...p, notes: p.notes.map((n) => (lyrics.has(n.id) ? { ...n, lyric: lyrics.get(n.id) || undefined } : n)) }
+      : p
+  )));
+  const readLyrics = async (ps: OmrPage[]) => {
+    const run = ++lyricRun.current;
+    const jobs = ps.flatMap((p) => p.staves.map((_, si) => ({ p, si })));
+    setLyricMsg(null);
+    setLyricProgress({ done: 0, total: jobs.length });
+    let found = 0;
+    for (let k = 0; k < jobs.length; k++) {
+      const { p, si } = jobs[k];
+      for (const band of lyricBands(p, si)) {
+        const words = await readWords(cropToCanvas(p.image, band, 2), 2);
+        if (run !== lyricRun.current) return;
+        if (!words) { setLyricProgress(null); setLyricMsg('Chưa tải được bộ đọc chữ (cần mạng lần đầu) — thử lại sau, hoặc gõ lời vào ô bên dưới.'); return; }
+        const syls = toSyllables(words.map((w) => ({ ...w, x0: w.x0 + band.x0, x1: w.x1 + band.x0 })));
+        if (!looksLikeLyrics(syls)) continue;
+        const lyrics = assignSyllables(lyricSlots(p.notes, si), syls);
+        // khuông này: nốt không nhận âm tiết nào thì xoá lời cũ
+        for (const n of lyricSlots(p.notes, si)) if (!lyrics.has(n.id)) lyrics.set(n.id, '');
+        setLyrics(lyrics);
+        found++;
+        break;
+      }
+      setLyricProgress({ done: k + 1, total: jobs.length });
+    }
+    if (run !== lyricRun.current) return;
+    setLyricProgress(null);
+    setLyricMsg(found ? null : 'Không thấy lời in dưới khuông — gõ lời vào ô bên dưới nếu cần.');
+  };
+
   const read = (list: Gray[]) => {
     setBusy(true);
     setError(null);
@@ -204,6 +242,7 @@ export default function ScanImport({ editSongId, initialFiles }: { editSongId?: 
           setError('Không tìm thấy khuông nhạc. Hãy chụp thẳng, đủ sáng, thấy rõ cả 5 dòng kẻ và lấp đầy khung hình bằng bản nhạc.');
         } else {
           setPages(r.pages);
+          void readLyrics(r.pages);
           setKeySig(r.keySig);
           setTimeSig(r.timeSig);
           if (r.pages.length < list.length) toast(`Có ${list.length - r.pages.length} ảnh không thấy khuông nhạc, đã bỏ qua`);
@@ -264,6 +303,8 @@ export default function ScanImport({ editSongId, initialFiles }: { editSongId?: 
 
   const reset = () => {
     void db.scans.delete(draftKey).catch(() => {});
+    lyricRun.current++;
+    setLyricProgress(null); setLyricMsg(null);
     markBaseline([]);
     setGrays([]); setPages([]); setSelected(null); setError(null); setFromStore(false); setTitleShot(null); setArtistShot(null);
     if (title === autoTitle.current) setTitle('');
@@ -597,6 +638,25 @@ export default function ScanImport({ editSongId, initialFiles }: { editSongId?: 
             </div>
           )}
 
+          <section className="scan-lyrics" aria-label="Lời bài hát">
+            <div className="row between center wrap gap">
+              <strong>Lời bài hát</strong>
+              {lyricProgress
+                ? <span className="muted small" role="status">Đang đọc lời… {lyricProgress.done}/{lyricProgress.total} khuông</span>
+                : <button type="button" className="btn btn-ghost btn-sm" onClick={() => void readLyrics(pages)}>Đọc lời trên ảnh</button>}
+            </div>
+            <p className="muted small">
+              {lyricMsg ?? 'Mỗi ô là lời dưới một khuông, các chữ cách nhau bằng dấu cách — chữ thứ mấy vào nốt có lời thứ mấy. Máy đọc có thể sai dấu: sửa lại cho đúng rồi nghe thử.'}
+            </p>
+            {pages.map((p, pi) => p.staves.map((_, si) => {
+              const no = pages.slice(0, pi).reduce((t, q) => t + q.staves.length, 0) + si + 1;
+              return (
+                <LyricRow key={`${pi}:${si}`} label={`Khuông ${no}`} value={staffLyrics(p.notes, si)}
+                  onCommit={(text) => setLyrics(relyric(lyricSlots(p.notes, si), text))} />
+              );
+            }))}
+          </section>
+
           <div className="row gap wrap end-align">
             <label className="field grow">
               <span className="field-label">Tên bài</span>
@@ -660,6 +720,24 @@ export default function ScanImport({ editSongId, initialFiles }: { editSongId?: 
         </>
       )}
     </div>
+  );
+}
+
+/** Lời một khuông: gõ thoải mái, rời ô (hoặc Enter) mới chia lại vào các nốt */
+function LyricRow({ label, value, onCommit }: { label: string; value: string; onCommit: (text: string) => void }) {
+  const [draft, setDraft] = useState(value);
+  const editing = useRef(false);
+  useEffect(() => { if (!editing.current) setDraft(value); }, [value]);
+  const commit = () => { editing.current = false; if (draft.trim() !== value) onCommit(draft); };
+  return (
+    <label className="field lyric-row">
+      <span className="field-label">{label}</span>
+      <input value={draft} placeholder="(không có lời)" lang="vi"
+        onFocus={() => { editing.current = true; }}
+        onChange={(e) => setDraft(e.target.value)}
+        onBlur={commit}
+        onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); (e.target as HTMLInputElement).blur(); } }} />
+    </label>
   );
 }
 

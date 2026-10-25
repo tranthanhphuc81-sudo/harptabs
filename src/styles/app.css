@@ -783,6 +783,9 @@ button, a, select { -webkit-tap-highlight-color: transparent; }
 }
 @media (min-width: 900px) { .scan-tools { bottom: 12px; } }
 .scan-tools .chip { min-height: 36px; }
+.scan-lyrics { display: flex; flex-direction: column; gap: 8px; padding: 12px; border: 1px solid var(--line); border-radius: var(--r-l); }
+.scan-lyrics p { margin: 0; }
+.lyric-row input { width: 100%; }
 @media (max-width: 480px) { .segmented button svg { display: none; } .segmented button { padding: 0 10px; } }
 .scan-saved { border: 1px solid var(--line); border-radius: var(--r-m); background: var(--surface); padding: 10px 14px; }
 .scan-saved summary { cursor: pointer; font-weight: 600; min-height: 32px; display: flex; align-items: center; }

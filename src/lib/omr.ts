@@ -36,6 +36,8 @@ export interface OmrNote {
   tied?: boolean;
   /** dấu lặng máy tự chèn vào ô thiếu phách (không thấy trên ảnh) — có thể là nốt bị sót */
   guess?: boolean;
+  /** âm tiết lời in dưới nốt (máy đọc chữ, người dùng sửa được) */
+  lyric?: string;
 }
 
 export interface OmrStaff {
@@ -1679,7 +1681,7 @@ export function toTranscription(
       const pitch = notePitch(n, opts.keySig);
       // nốt nối (kể cả nối sang khuông sau) cộng trường độ vào nốt trước
       if (n.tied && !n.rest && last && last.pitch === pitch) { last.beats += n.beats; continue; }
-      const e = { pitch, beats: n.beats, lyric: '' };
+      const e = { pitch, beats: n.beats, lyric: n.rest ? '' : n.lyric ?? '' };
       notes.push(e);
       last = n.rest ? null : e;
     }
