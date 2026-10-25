@@ -509,8 +509,8 @@ button, a, select { -webkit-tap-highlight-color: transparent; }
 .pb-countin { font: 600 2rem/1 var(--font-cond); color: var(--blow); min-width: 1ch; }
 .pb-style { margin-left: auto; min-width: 8rem; flex: 1 1 8rem; max-width: 12rem; }
 .pb-style select { width: 100%; min-height: 38px; border-radius: 999px; border: 1px solid var(--line-strong); background: var(--surface); padding: 0 12px; cursor: pointer; }
-.pb-chips { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; padding-bottom: 1px; }
-.pb-chips::-webkit-scrollbar { display: none; }
+/* các nút bật / tắt xuống dòng khi chật (không cuộn ngang: nút cuối bị che, người dùng không biết còn nút) */
+.pb-chips { display: flex; flex-wrap: wrap; gap: 6px; }
 
 .wait-banner {
   display: flex;
