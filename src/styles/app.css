@@ -750,6 +750,8 @@ button, a, select { -webkit-tap-highlight-color: transparent; }
   z-index: 50;
 }
 .toast[data-show] { opacity: 1; transform: translate(-50%, 0); }
+/* trong màn karaoke (lớp trên cùng, có thể đang toàn màn hình): nằm trên nút Hát */
+.karaoke .kara-toast { bottom: calc(env(safe-area-inset-bottom) + 110px); left: 50%; z-index: 5; text-align: center; border-radius: var(--r-l); }
 @media (min-width: 900px) { .toast { bottom: 24px; left: calc(50% + 100px); } }
 
 /* ───── quét khuông nhạc (offline) ───── */

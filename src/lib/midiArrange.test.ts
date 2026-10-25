@@ -25,13 +25,14 @@ const note = (ch: number, beat: number, len: number, n: number, vel = 90): [numb
 // bài karaoke: dạo 8 phách (piano + bass + trống), giọng hát vào ở phách 8 với lời
 const meta = track([[0, [0xff, 0x58, 4, 4, 2, 24, 8]], [0, [0xff, 0x51, 3, 0x07, 0xa1, 0x20]]]);
 const words = ['Một', 'hai', 'ba', 'bốn', 'năm', 'sáu', 'bảy', 'tám', 'chín', 'mười'];
-const tune = [64, 65, 67, 69, 67, 65, 64, 62, 60, 62];
+// 24 nốt (đủ dài để dò theo chuỗi cao độ)
+const tune = [64, 65, 67, 69, 67, 65, 64, 62, 60, 62, 64, 67, 72, 71, 69, 67, 65, 64, 62, 64, 65, 62, 60, 60];
 const vocal = track([
   [0, [0xff, 0x03, 5, ...text('Vocal')]],
-  ...tune.flatMap((n, i) => [...note(0, 8 + i, 1, n), [Math.round((8 + i) * Q), [0xff, 0x05, ...vlq(text(words[i]).length), ...text(words[i])]] as [number, number[]]]),
+  ...tune.flatMap((n, i) => [...note(0, 8 + i, 1, n), [Math.round((8 + i) * Q), [0xff, 0x05, ...vlq(text(words[i % words.length]).length), ...text(words[i % words.length])]] as [number, number[]]]),
 ]);
-const piano = track([[0, [0xc1, 0]], ...[0, 4, 8, 12, 16].flatMap((b) => [48, 52, 55].flatMap((n) => note(1, b, 4, n, 60)))]);
-const bassTr = track([[0, [0xc2, 33]], ...[0, 4, 8, 12, 16].flatMap((b) => note(2, b, 2, 36))]);
+const piano = track([[0, [0xc1, 0]], ...[0, 4, 8, 12, 16, 20, 24, 28].flatMap((b) => [48, 52, 55].flatMap((n) => note(1, b, 4, n, 60)))]);
+const bassTr = track([[0, [0xc2, 33]], ...[0, 4, 8, 12, 16, 20, 24, 28].flatMap((b) => note(2, b, 2, 36))]);
 const drums = track([...[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].flatMap((b) => note(9, b, 0.25, b % 2 ? 38 : 36))]);
 const bytes = midiFile([meta, vocal, piano, bassTr, drums]);
 
@@ -92,6 +93,19 @@ describe('bản phối MIDI gốc', () => {
     expect(a.notes.filter((n) => n.voice === 'drum').length).toBe(drum.notes);
     expect(a.notes.some((n) => n.voice === 'bass')).toBe(false);
     expect(a.parts.map((p) => [p.voice, p.chosen])).toEqual(expect.arrayContaining([['piano', 'guitar'], ['bass', 'off'], ['drum', 'drum']]));
+  });
+
+  it('nối lại bài nhập bằng bản app cũ / đã sửa tab: dò theo chuỗi cao độ, tìm đúng chỗ bắt đầu', () => {
+    const { f, tr, conv } = importTab('auto');
+    // người dùng xoá 2 nốt đầu và sửa một nốt giữa bài: vị trí mọi nốt lệch 2 phách so với lúc nhập
+    const body = conv.body;
+    const flat = flatten(parseTab(body, conv.harpKey, conv.harpType));
+    const edited = flat.slice(2).map((e, i) => ({ ...e, start: e.start - 2, midi: i === 4 ? (e.midi ?? 0) + 1 : e.midi }));
+    const link = matchMidiToTab(bytes, edited)!;
+    expect(link).not.toBeNull();
+    expect(link.melodyPart).toBe(f.melodyPart);
+    expect(link.startBeat).toBeCloseTo(tr.startBeat! + 2, 5);
+    expect(keyShift(link.shift)).toBe(keyShift(conv.fit.shift));
   });
 });
 

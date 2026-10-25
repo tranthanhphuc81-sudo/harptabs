@@ -109,37 +109,90 @@ export function buildArrangement(bytes: Uint8Array, link: MidiLink, voices: ArrV
 
 /**
  * Tìm cách nối file MIDI với một tab đã có (bài nhập trước khi app biết giữ file gốc):
- * thử từng bè, từng mức lọc giọng phụ; tab khớp khi phần lớn nốt cùng vị trí và lệch cùng một số nửa cung.
+ * thử từng bè, từng mức lọc giọng phụ. Trước hết so khớp đúng vị trí từng nốt; bài nhập bằng bản app cũ
+ * (cách làm tròn khác, vài nốt sửa tay, nốt ngoài tầm kèn thành dấu lặng) thì dò theo chuỗi cao độ.
  */
 export function matchMidiToTab(bytes: Uint8Array, flat: FlatEvent[]): MidiLink | null {
   const file = parseMidi(midiPayload(bytes));
-  const tab = new Map<number, number>();
-  for (const f of flat) if (f.midi !== null) tab.set(Math.round(f.start * 1000), f.midi);
-  if (tab.size < 4) return null;
-  let best: (MidiLink & { score: number }) | null = null;
-  for (const part of [...file.parts].sort((a, b) => +(b.id === file.melodyPart) - +(a.id === file.melodyPart))) {
-    for (const backing of [2, 0, 1, 3]) {
+  const tabNotes = flat.filter((f) => f.midi !== null).map((f) => ({ t: f.start, m: f.midi! }));
+  if (tabNotes.length < 4) return null;
+  const tab = new Map(tabNotes.map((n) => [Math.round(n.t * 1000), n.m]));
+  const parts = [...file.parts].sort((a, b) => +(b.id === file.melodyPart) - +(a.id === file.melodyPart));
+  const tries: { part: string; backing: number }[] = [];
+  for (const p of parts) for (const backing of p.id === file.melodyPart ? [2, 0, 1, 3] : [2, 0]) tries.push({ part: p.id, backing });
+  const melodies = new Map<string, { t: number; m: number }[] & { startBeat?: number }>();
+  const melodyOf = (k: { part: string; backing: number }) => {
+    const key = `${k.part}|${k.backing}`;
+    if (!melodies.has(key)) {
       let tr;
-      try { tr = file.transcribe(part.id, { backing }); } catch { continue; }
-      if (tr.startBeat === undefined) continue;
-      const diffs = new Map<number, number>();
-      let at = 0, pitched = 0;
-      for (const s of tr.sections) for (const l of s.lines) for (const n of l.notes) {
-        const m = n.pitch.toUpperCase() === 'R' ? null : nameToMidi(n.pitch);
-        if (m !== null) {
-          pitched++;
-          const t = tab.get(Math.round(at * 1000));
-          if (t !== undefined) diffs.set(t - m, (diffs.get(t - m) ?? 0) + 1);
+      try { tr = file.transcribe(k.part, { backing: k.backing }); } catch { tr = null; }
+      const out: { t: number; m: number }[] & { startBeat?: number } = [];
+      if (tr && tr.startBeat !== undefined) {
+        out.startBeat = tr.startBeat;
+        let at = 0;
+        for (const sec of tr.sections) for (const l of sec.lines) for (const n of l.notes) {
+          const m = n.pitch.toUpperCase() === 'R' ? null : nameToMidi(n.pitch);
+          if (m !== null) out.push({ t: at, m });
+          at += n.beats;
         }
-        at += n.beats;
       }
-      let shift = 0, hits = 0;
-      for (const [d, c] of diffs) if (c > hits) { hits = c; shift = d; }
-      const score = hits / Math.max(pitched, tab.size);
-      if (!best || score > best.score) best = { melodyPart: part.id, startBeat: tr.startBeat, shift, score };
-      if (score > 0.95) break;
+      melodies.set(key, out);
     }
-    if (best && best.score > 0.95) break;
+    return melodies.get(key)!;
+  };
+
+  // 1) khớp đúng vị trí (bài nhập bằng bản app hiện tại)
+  let best: (MidiLink & { score: number }) | null = null;
+  for (const k of tries) {
+    const mel = melodyOf(k);
+    if (mel.startBeat === undefined) continue;
+    const diffs = new Map<number, number>();
+    for (const n of mel) {
+      const t = tab.get(Math.round(n.t * 1000));
+      if (t !== undefined) diffs.set(t - n.m, (diffs.get(t - n.m) ?? 0) + 1);
+    }
+    let shift = 0, hits = 0;
+    for (const [d, c] of diffs) if (c > hits) { hits = c; shift = d; }
+    const score = hits / Math.max(mel.length, tabNotes.length);
+    if (!best || score > best.score) best = { melodyPart: k.part, startBeat: mel.startBeat, shift, score };
+    if (score > 0.95) break;
   }
-  return best && best.score >= 0.7 ? { melodyPart: best.melodyPart, startBeat: best.startBeat, shift: best.shift } : null;
+  if (best && best.score >= 0.7) return { melodyPart: best.melodyPart, startBeat: best.startBeat, shift: best.shift };
+
+  // 2) dò theo chuỗi cao độ: so dãy nốt (bỏ qua quãng tám) bằng dãy con chung dài nhất,
+  //    các cặp nốt khớp phải lệch thời điểm đều nhau → phách đầu tab nằm ở đâu trong file
+  // (tab quá ngắn thì giai điệu bài khác cũng dễ trùng: không đoán)
+  if (tabNotes.length < 16) return null;
+  let alt: (MidiLink & { score: number }) | null = null;
+  for (const k of tries) {
+    const mel = melodyOf(k);
+    if (mel.startBeat === undefined || mel.length < 4) continue;
+    for (let s = 0; s < 12; s++) {
+      const pairs = lcsPairs(tabNotes.map((n) => n.m % 12), mel.map((n) => (n.m + s) % 12));
+      if (pairs.length < tabNotes.length * 0.7) continue;
+      const d = pairs.map(([i, j]) => mel[j].t - tabNotes[i].t).sort((a, b) => a - b);
+      const off = d[d.length >> 1];
+      const steady = d.filter((x) => Math.abs(x - off) <= 0.26).length;
+      const score = steady / tabNotes.length;
+      if (!alt || score > alt.score) alt = { melodyPart: k.part, startBeat: mel.startBeat + off, shift: s, score };
+    }
+    if (alt && alt.score > 0.9) break;
+  }
+  return alt && alt.score >= 0.7 ? { melodyPart: alt.melodyPart, startBeat: alt.startBeat, shift: alt.shift } : null;
+}
+
+/** dãy con chung dài nhất của hai dãy số: các cặp chỉ số [i trong a, j trong b] khớp nhau */
+function lcsPairs(a: number[], b: number[]): [number, number][] {
+  const n = a.length, m = b.length, w = m + 1;
+  const dp = new Uint16Array((n + 1) * w);
+  for (let i = n - 1; i >= 0; i--) for (let j = m - 1; j >= 0; j--) {
+    dp[i * w + j] = a[i] === b[j] ? dp[(i + 1) * w + j + 1] + 1 : Math.max(dp[(i + 1) * w + j], dp[i * w + j + 1]);
+  }
+  const out: [number, number][] = [];
+  for (let i = 0, j = 0; i < n && j < m;) {
+    if (a[i] === b[j]) { out.push([i, j]); i++; j++; }
+    else if (dp[(i + 1) * w + j] >= dp[i * w + j + 1]) i++;
+    else j++;
+  }
+  return out;
 }

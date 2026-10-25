@@ -207,7 +207,15 @@ export default function KaraokeView({ song, original, flat, p, chordSegs, onClos
     setResult({ s, rec, newBest: !!saved?.newBest });
   };
   // ----- thu âm lượt hát (nhạc đệm + giọng) -----
-  const { toast } = useAppState();
+  // thông báo riêng của màn karaoke: thông báo chung của app nằm dưới lớp karaoke (và ngoài khung toàn màn hình) nên không thấy
+  const [toastMsg, setToastMsg] = useState<string | null>(null);
+  const toastTimer = useRef(0);
+  const toast = (msg: string) => {
+    setToastMsg(msg);
+    window.clearTimeout(toastTimer.current);
+    toastTimer.current = window.setTimeout(() => setToastMsg(null), 3500);
+  };
+  useEffect(() => () => window.clearTimeout(toastTimer.current), []);
   const recorder = useRef<KaraokeRecorder | null>(null);
   const [recording, setRecording] = useState(false);
   const [recStart, setRecStart] = useState(0);
@@ -354,7 +362,7 @@ export default function KaraokeView({ song, original, flat, p, chordSegs, onClos
     try {
       const bytes = new Uint8Array(await f.arrayBuffer());
       const link = matchMidiToTab(bytes, lyricFlat);
-      if (!link) { toast('File MIDI này không khớp với tab của bài'); return; }
+      if (!link) { toast('File MIDI này không khớp với tab của bài — chọn đúng file đã dùng để nhập bài này'); return; }
       await saveMidiSource(original.id, f.name, bytes, link, tabSig(lyricFlat));
       const m = await loadMidiSource(original.id);
       setMidiSrc(m);
@@ -472,7 +480,8 @@ export default function KaraokeView({ song, original, flat, p, chordSegs, onClos
           {!midiSrc && original.tags?.includes('MIDI') && (
             <button type="button" className="chip" onClick={() => { tp.stop(); midiInput.current?.click(); }}>🎹 Nối file MIDI gốc</button>
           )}
-          <input ref={midiInput} type="file" hidden accept=".mid,.midi,.kar,.rmi,audio/midi,audio/x-midi" onChange={(e) => void linkMidi(e.target.files?.[0])} />
+          {/* không giới hạn loại file: nhiều máy Android không nhận ra .mid / .kar và làm mờ không cho chọn */}
+          <input ref={midiInput} type="file" hidden onChange={(e) => void linkMidi(e.target.files?.[0])} />
           <button type="button" className="chip" onClick={() => { tp.stop(); setShowBacking(true); }}>🎵 {backing ? 'Nhạc nền' : 'Thêm nhạc MP3'}</button>
           <button type="button" className={`chip${scoring ? ' on' : ''}`} aria-pressed={scoring} onClick={() => setScoring((v) => !v)}>
             <Icon name="mic" size={15} /> Chấm điểm{scoring && live !== null ? ` · ${live}` : ''}
@@ -611,6 +620,7 @@ export default function KaraokeView({ song, original, flat, p, chordSegs, onClos
           onClose={() => setShowBacking(false)}
         />
       )}
+      <div className="toast kara-toast" role="status" aria-live="polite" data-show={toastMsg ? '' : undefined}>{toastMsg}</div>
       {showRecs && <RecordingsPanel songId={original.id} refreshKey={recRefresh} onClose={() => { setShowRecs(false); setRecRefresh((n) => n + 1); }} />}
     </div>
   );
