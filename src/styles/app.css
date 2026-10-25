@@ -1012,3 +1012,12 @@ button, a, select { -webkit-tap-highlight-color: transparent; }
 .rec-list li { border: 1px solid var(--line); border-radius: var(--r-m); padding: 10px 12px; background: var(--surface); }
 .rec-list li.on { border-color: var(--accent); }
 .rec-controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 8px 14px; margin-top: 10px; }
+
+/* ===== Nhạc nền MP3 ===== */
+.backing-setup { max-width: 560px; }
+.bk-preview { display: flex; flex-direction: column; gap: 10px; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--r-m); background: var(--surface); }
+.bk-line { font: 600 1.2rem/1.4 var(--font); margin: 0; }
+.bk-line span { color: var(--ink-2); }
+.bk-line span.done { color: var(--ink); }
+.bk-line span.on { color: var(--accent); }
+.bk-tap-line { font: 600 clamp(1.2rem, 4vw, 1.6rem)/1.3 var(--font); text-align: center; margin: 8px 0; }

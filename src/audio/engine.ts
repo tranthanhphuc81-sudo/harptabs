@@ -32,6 +32,14 @@ function roomImpulse(c: AudioContext, seconds = 1.1): AudioBuffer {
   return b;
 }
 
+/** đường nhạc nền MP3 (karaoke): vào master như mọi tiếng khác, nên thu âm thu được cả nhạc nền */
+let backingGain: GainNode | null = null;
+export function backingBus(): GainNode {
+  const c = audio();
+  if (!backingGain) { backingGain = c.createGain(); backingGain.gain.value = 0.9; backingGain.connect(master); }
+  return backingGain;
+}
+
 /** nút phát ra loa (sau bộ nén): nối thêm vào đây để thu lại đúng những gì đang phát */
 export function outputTap(): AudioNode {
   audio();

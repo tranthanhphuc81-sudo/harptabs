@@ -111,3 +111,27 @@ export interface Recording {
   score?: number;
   size: number;
 }
+
+/** Nhạc nền MP3 cho karaoke (bảng backings, khoá = id bài). File người dùng tự có; chỉ lưu trên máy. */
+export interface Backing {
+  songId: string;
+  name: string;
+  mime: string;
+  blob: Blob;
+  size: number;
+  durationSec: number;
+  /** bản đồ nhịp: phách trong tab ↔ giây trong file (tăng dần) */
+  points: { beat: number; sec: number }[];
+  /** giây mỗi phách (trung vị) — ngoại suy ngoài các mốc */
+  spb: number;
+  /** chỉnh tay cả bài (ms): dương = lời chạy muộn hơn nhạc */
+  offsetMs: number;
+  /** giọng bài gốc lệch so với tab (nửa cung) — lời / chấm điểm theo đó */
+  keyOffset: number;
+  source: 'auto' | 'tap' | 'bpm';
+  /** tự đồng bộ: tỉ lệ nốt khớp được (0..1) */
+  confidence: number;
+  /** dấu vân tay tab lúc đồng bộ — tab sửa sau đó thì cần đồng bộ lại */
+  tabSig: string;
+  createdAt: number;
+}

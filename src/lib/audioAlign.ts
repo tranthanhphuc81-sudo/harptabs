@@ -132,6 +132,8 @@ export interface Comparison {
   scoreNotes: number;
   audioNotes: number;
   suggestions: Suggestion[];
+  /** cặp nốt khớp chắc (cùng cao độ): phách trong tab ↔ giây trong bản thu — dựng bản đồ nhịp cho nhạc nền MP3 */
+  anchors: { beat: number; sec: number }[];
 }
 
 const NICE = [0.25, 1 / 3, 0.5, 2 / 3, 0.75, 1, 1.5, 2, 3, 4];
@@ -149,7 +151,7 @@ export function compareWithAudio(score: ScoreNote[], audio: AudioNote[], meter?:
   const S = score.map((n, i) => ({ ...n, i, at: onset[i] })).filter((n) => n.midi !== null) as (ScoreNote & { i: number; at: number; midi: number })[];
   const A = audio;
   const n = S.length, m = A.length;
-  const empty: Comparison = { offset: 0, matched: 0, scoreNotes: n, audioNotes: m, suggestions: [] };
+  const empty: Comparison = { offset: 0, matched: 0, scoreNotes: n, audioNotes: m, suggestions: [], anchors: [] };
   if (!n || !m) return empty;
 
   const dur = (a: AudioNote) => a.end - a.start;
@@ -277,7 +279,7 @@ export function compareWithAudio(score: ScoreNote[], audio: AudioNote[], meter?:
     }
   }
   sugg.sort((a, b) => a.at - b.at);
-  return { offset: k, matched: anchors.length, scoreNotes: n, audioNotes: m, suggestions: sugg };
+  return { offset: k, matched: anchors.length, scoreNotes: n, audioNotes: m, suggestions: sugg, anchors };
 }
 
 /**

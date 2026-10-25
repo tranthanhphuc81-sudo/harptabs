@@ -7,6 +7,10 @@ import { PitchStrip } from './PitchStrip';
 import { KaraokeRecorder, recorderSupported } from '../audio/karaokeRecorder';
 import { addRecording, listRecordings } from '../lib/recordings';
 import { RecordingsPanel } from './RecordingsPanel';
+import { BackingSetup } from './BackingSetup';
+import { useBackingPlayer } from './useBackingPlayer';
+import { loadBacking, tabSig } from '../lib/backings';
+import type { Backing } from '../lib/types';
 import { harpName, harpTypeOf, shiftKey } from '../lib/harp';
 import { buildKaraoke, countdownAt, holesFor, KLine, locate } from '../lib/karaoke';
 import { DEFAULT_KARAOKE, KaraokeHoles, KaraokePrefs, loadKaraokePrefs, MAX_TRANSPOSE, saveKaraokePrefs } from '../lib/karaokePrefs';
@@ -76,9 +80,23 @@ export default function KaraokeView({ song, original, flat, p, chordSegs, onClos
 
   // mở karaoke: bật Đệm hát (tắt giai điệu kèn) và đổi tông; đóng thì trả lại như cũ
   const { setOpts } = p;
+  // nhạc nền MP3 của bài (nếu có): mặc định dùng khi đã cài
+  const [backing, setBacking] = useState<Backing | null>(null);
+  const [useMp3, setUseMp3] = useState(false);
+  const [showBacking, setShowBacking] = useState(false);
+  useEffect(() => {
+    void loadBacking(original.id).then((b) => { setBacking(b); setUseMp3(!!b); }).catch(() => {});
+  }, [original.id]);
+  const bk = useBackingPlayer(backing, flat);
+  const mp3 = useMp3 && !!backing && bk.status === 'ready';
+  /** bộ phát đang dùng: nhạc nền MP3 hoặc tiếng tổng hợp — chữ chạy, chấm điểm, thu âm đều theo nó */
+  const tp = mp3 ? bk : p;
   // trang bài tạo lại đối tượng bộ phát mỗi lần vẽ: giữ bản mới nhất trong ref để vòng chữ chạy không khởi động lại
-  const pRef = useRef(p);
-  pRef.current = p;
+  const pRef = useRef(tp);
+  pRef.current = tp;
+  // đổi nguồn nhạc giữa chừng: dừng cả hai
+  const synthStop = p.stop;
+  useEffect(() => { synthStop(); bk.stop(); }, [mp3]); // eslint-disable-line react-hooks/exhaustive-deps
   const wasSing = useRef(!!p.opts.sing);
   useEffect(() => {
     const prev = wasSing.current;
@@ -103,13 +121,15 @@ export default function KaraokeView({ song, original, flat, p, chordSegs, onClos
   const [live, setLive] = useState<number | null>(null);
   const [result, setResult] = useState<{ s: KaraokeSummary; rec: PracticeRecord | null; newBest: boolean } | null>(null);
   const scorer = useRef<KaraokeScorer | null>(null);
-  const spb = 60 / Math.max(20, p.opts.bpm * p.opts.tempoScale);
+  const spb = mp3 ? bk.spb : 60 / Math.max(20, p.opts.bpm * p.opts.tempoScale);
+  /** tông đang hát: nhạc tổng hợp = tông chọn; nhạc nền MP3 = giọng của file so với tab */
+  const et = mp3 ? backing!.keyOffset : t;
   const spbRef = useRef(spb);
   spbRef.current = spb;
   const lagRef = useRef(0.06);
   lagRef.current = (settings.micLatencyMs ?? 60) / 1000;
   const scoreKey = `karaokeScore:${original.id}`;
-  const newScorer = () => { scorer.current = new KaraokeScorer(lines, lyricFlat, spbRef.current, t); setLive(null); };
+  const newScorer = () => { scorer.current = new KaraokeScorer(lines, lyricFlat, spbRef.current, et); setLive(null); };
 
   // bật / tắt micro theo nút Chấm điểm; đổi "đeo tai nghe" thì mở lại micro (bật / tắt khử tiếng vọng)
   useEffect(() => {
@@ -203,31 +223,31 @@ export default function KaraokeView({ song, original, flat, p, chordSegs, onClos
   useEffect(() => () => { if (recorder.current) void saveTake(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    if (p.playing && !wasPlaying.current && scoring) { setResult(null); newScorer(); }
-    if (!p.playing && wasPlaying.current && recorder.current) {
+    if (tp.playing && !wasPlaying.current && scoring) { setResult(null); newScorer(); }
+    if (!tp.playing && wasPlaying.current && recorder.current) {
       // điểm của lượt này (nếu đang chấm) lưu kèm bản thu — đọc trước khi tổng kết xoá bộ chấm
       const sm = scoring ? scorer.current?.summary() : undefined;
       void saveTake(sm && sm.done >= 3 ? sm.score : undefined);
     }
-    if (!p.playing && wasPlaying.current) void finish();
-    wasPlaying.current = p.playing;
+    if (!tp.playing && wasPlaying.current) void finish();
+    wasPlaying.current = tp.playing;
     // eslint-disable-next-line react-hooks/exhaustive-deps -- chỉ khi bắt đầu / dừng phát
-  }, [p.playing]);
+  }, [tp.playing]);
   // bật chấm điểm khi đang hát, hoặc đổi tông giữa chừng: chấm lại từ đây
   useEffect(() => {
     if (!scoring) { scorer.current = null; setLive(null); return; }
     if (pRef.current.playing) newScorer();
     // eslint-disable-next-line react-hooks/exhaustive-deps -- chỉ khi bật chấm điểm / đổi tông
-  }, [scoring, t]);
+  }, [scoring, et]);
   // điểm tạm thời trong lúc hát
   useEffect(() => {
-    if (!scoring || !p.playing) return;
+    if (!scoring || !tp.playing) return;
     const id = window.setInterval(() => {
       const sm = scorer.current?.summary();
       setLive(sm && sm.done > 0 ? sm.score : null);
     }, 500);
     return () => window.clearInterval(id);
-  }, [scoring, p.playing]);
+  }, [scoring, tp.playing]);
 
   // số lỗ: giữ nguyên (thổi bằng kèn lệch tông tương ứng), hoặc xếp lại cho kèn đang xem
   const type = harpTypeOf(song);
@@ -239,8 +259,8 @@ export default function KaraokeView({ song, original, flat, p, chordSegs, onClos
   const missing = useMemo(() => holeFlat.filter((f, i) => f.token === null && flat[i]?.token).length, [holeFlat, flat]);
 
   const chordMap = useMemo(
-    () => (prefs.chords && chordSegs ? chordsByLine(lines, transposeSpans(chordSegs, t)) : new Map<string, string>()),
-    [prefs.chords, chordSegs, lines, t],
+    () => (prefs.chords && chordSegs ? chordsByLine(lines, transposeSpans(chordSegs, et)) : new Map<string, string>()),
+    [prefs.chords, chordSegs, lines, et],
   );
 
   // ----- chữ chạy: đọc phách mỗi khung hình, ghi thẳng --p vào âm tiết (không vẽ lại React) -----
@@ -271,10 +291,10 @@ export default function KaraokeView({ song, original, flat, p, chordSegs, onClos
   }, [lines]);
   // dừng phát: chữ về trạng thái chưa hát
   useEffect(() => {
-    if (p.playing) return;
+    if (tp.playing) return;
     lineRef.current?.querySelectorAll<HTMLElement>('[data-s]').forEach((el) => el.style.setProperty('--p', '0'));
     setCount(null);
-  }, [p.playing, shown]);
+  }, [tp.playing, shown]);
 
   // phím tắt: cách = phát / dừng, Esc = thoát
   useEffect(() => {
@@ -290,7 +310,7 @@ export default function KaraokeView({ song, original, flat, p, chordSegs, onClos
     const first = lines[li]?.syls[0]?.fi[0];
     shownRef.current = li;
     setShown(li);
-    p.play(first);
+    tp.play(first);
   };
 
   const renderLine = (li: number, big: boolean) => {
@@ -341,14 +361,21 @@ export default function KaraokeView({ song, original, flat, p, chordSegs, onClos
         </div>
         <div className="kara-tools">
           <div className="kara-key" role="group" aria-label="Đổi tông cho hợp giọng">
-            <button type="button" className="icon-btn" disabled={t <= -MAX_TRANSPOSE} onClick={() => update({ transpose: t - 1 })} aria-label="Hạ tông"><Icon name="minus" size={18} /></button>
-            <span className="kara-key-val" aria-live="polite">Tông {t > 0 ? `+${t}` : t}</span>
-            <button type="button" className="icon-btn" disabled={t >= MAX_TRANSPOSE} onClick={() => update({ transpose: t + 1 })} aria-label="Nâng tông"><Icon name="plus" size={18} /></button>
+            <button type="button" className="icon-btn" disabled={mp3 || t <= -MAX_TRANSPOSE} onClick={() => update({ transpose: t - 1 })} aria-label="Hạ tông"><Icon name="minus" size={18} /></button>
+            <span className="kara-key-val" aria-live="polite">{mp3 ? 'Tông theo nhạc' : `Tông ${t > 0 ? `+${t}` : t}`}</span>
+            <button type="button" className="icon-btn" disabled={mp3 || t >= MAX_TRANSPOSE} onClick={() => update({ transpose: t + 1 })} aria-label="Nâng tông"><Icon name="plus" size={18} /></button>
           </div>
           <select className="chip-select" value={prefs.holes} onChange={(e) => update({ holes: e.target.value as KaraokeHoles })} aria-label="Số lỗ kèn">
             {(Object.keys(HOLES_LABEL) as KaraokeHoles[]).map((k) => <option key={k} value={k}>{HOLES_LABEL[k]}</option>)}
           </select>
           <button type="button" className={`chip${prefs.chords ? ' on' : ''}`} aria-pressed={prefs.chords} onClick={() => update({ chords: !prefs.chords })}>Hợp âm</button>
+          {backing && (
+            <div className="segmented" role="radiogroup" aria-label="Nguồn nhạc">
+              <button type="button" role="radio" aria-checked={!useMp3} className={!useMp3 ? 'on' : ''} onClick={() => setUseMp3(false)}>Tổng hợp</button>
+              <button type="button" role="radio" aria-checked={useMp3} className={useMp3 ? 'on' : ''} onClick={() => setUseMp3(true)}>MP3</button>
+            </div>
+          )}
+          <button type="button" className="chip" onClick={() => { tp.stop(); setShowBacking(true); }}>🎵 {backing ? 'Nhạc nền' : 'Thêm nhạc MP3'}</button>
           <button type="button" className={`chip${scoring ? ' on' : ''}`} aria-pressed={scoring} onClick={() => setScoring((v) => !v)}>
             <Icon name="mic" size={15} /> Chấm điểm{scoring && live !== null ? ` · ${live}` : ''}
           </button>
@@ -360,6 +387,11 @@ export default function KaraokeView({ song, original, flat, p, chordSegs, onClos
         </div>
       </header>
       {micErr && <p className="kara-note small danger" role="alert">{micErr}</p>}
+      {useMp3 && backing && bk.status === 'loading' && <p className="kara-note small">Đang mở nhạc nền…</p>}
+      {useMp3 && backing && bk.status === 'error' && <p className="kara-note small danger" role="alert">{bk.error}</p>}
+      {mp3 && backing!.tabSig !== tabSig(lyricFlat) && (
+        <p className="kara-note small">Tab đã sửa sau khi đồng bộ nhạc nền — lời có thể lệch. <button type="button" className="link-btn" onClick={() => setShowBacking(true)}>Đồng bộ lại</button></p>
+      )}
       {scoring && !prefs.headphones && (
         <p className="kara-note small">Không đeo tai nghe: micro nghe lẫn nhạc đệm từ loa, máy đã bật khử tiếng vọng. Đeo tai nghe để chấm chính xác hơn.</p>
       )}
@@ -372,12 +404,12 @@ export default function KaraokeView({ song, original, flat, p, chordSegs, onClos
         </p>
       )}
 
-      <main className="kara-stage" onClick={() => !p.playing && startFrom(shown)}>
+      <main className="kara-stage" onClick={() => !tp.playing && startFrom(shown)}>
         {noLyrics && <p className="kara-hint">Bài chưa có lời — thêm lời dưới dòng tab trong Sửa bài để hát karaoke.</p>}
-        {p.countIn != null
-          ? <div className="kara-count big" aria-live="assertive">{p.countIn}</div>
+        {tp.countIn != null
+          ? <div className="kara-count big" aria-live="assertive">{tp.countIn}</div>
           : count != null && <div className="kara-count" aria-hidden="true">{'●'.repeat(count)}</div>}
-        {scoring && <PitchStrip lines={lines} scorer={scorer} getBeat={p.beatAt} spb={spb} />}
+        {scoring && <PitchStrip lines={lines} scorer={scorer} getBeat={tp.beatAt} spb={spb} />}
         {renderLine(shown, true)}
         {renderLine(shown + 1, false)}
       </main>
@@ -395,8 +427,8 @@ export default function KaraokeView({ song, original, flat, p, chordSegs, onClos
         <button type="button" className="btn btn-ghost" onClick={() => startFrom(Math.max(0, shown - 1))} disabled={shown === 0} aria-label="Câu trước">
           <Icon name="back" size={18} /> Câu trước
         </button>
-        <button type="button" className="kara-play" onClick={() => (p.playing ? p.stop() : startFrom(shown))} aria-label={p.playing ? 'Dừng' : 'Hát'}>
-          <Icon name={p.playing ? 'stop' : 'play'} size={30} />
+        <button type="button" className="kara-play" onClick={() => (tp.playing ? tp.stop() : startFrom(shown))} aria-label={tp.playing ? 'Dừng' : 'Hát'} disabled={useMp3 && !!backing && bk.status === 'loading'}>
+          <Icon name={tp.playing ? 'stop' : 'play'} size={30} />
         </button>
         <button type="button" className="btn btn-ghost" onClick={() => startFrom(0)} aria-label="Hát lại từ đầu">
           <Icon name="loop" size={18} /> Từ đầu
@@ -404,7 +436,7 @@ export default function KaraokeView({ song, original, flat, p, chordSegs, onClos
         {recorderSupported() && (
           recording
             ? <span className="kara-rec on" role="status"><span className="kara-rec-dot" aria-hidden="true" /> Đang thu {Math.floor(recElapsed / 60)}:{String(Math.floor(recElapsed % 60)).padStart(2, '0')}</span>
-            : <button type="button" className="btn btn-ghost kara-rec" onClick={() => void startRecording()} disabled={p.playing} aria-label="Vừa hát vừa thu âm">
+            : <button type="button" className="btn btn-ghost kara-rec" onClick={() => void startRecording()} disabled={tp.playing} aria-label="Vừa hát vừa thu âm">
                 <span className="kara-rec-dot" aria-hidden="true" /> Thu
               </button>
         )}
@@ -412,6 +444,16 @@ export default function KaraokeView({ song, original, flat, p, chordSegs, onClos
           Bản thu{recCount ? ` (${recCount})` : ''}
         </button>
       </footer>
+      {showBacking && (
+        <BackingSetup
+          song={original}
+          flat={lyricFlat}
+          lines={lines}
+          existing={backing}
+          onSaved={(b) => { setBacking(b); setUseMp3(!!b); }}
+          onClose={() => setShowBacking(false)}
+        />
+      )}
       {showRecs && <RecordingsPanel songId={original.id} refreshKey={recRefresh} onClose={() => { setShowRecs(false); setRecRefresh((n) => n + 1); }} />}
     </div>
   );
