@@ -39,7 +39,7 @@ export function viewSong(song: Song, v: ViewAs | null): SongView {
   }
   const shifted = fit.shift % 12 !== 0;
   // giọng bài: dịch theo số nửa cung đã đổi (để đệm hợp âm đúng giọng)
-  const tonality = song.songKey || songTonality(song.harpKey, song.position);
+  const tonality = song.songKey || songTonality(song.harpKey, song.position, harpTypeOf(song));
   const songKey = shifted ? transposeChords({ 0: tonality }, fit.shift)?.['0'] ?? undefined : song.songKey;
   return {
     song: {

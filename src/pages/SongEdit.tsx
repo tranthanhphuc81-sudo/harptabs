@@ -63,7 +63,7 @@ function Editor({ initial, isNew, draft }: { initial: Song; isNew: boolean; draf
   const preview = usePlayer(flat, {
     bpm: s.bpm, tempoScale: 1, beatsPerBar: beatsPerBar(s.timeSig), pickupBeats: s.pickupBeats,
     style: s.style, melody: true, beat: true, click: false, countIn: false,
-    songKey: s.songKey || songTonality(s.harpKey, s.position),
+    songKey: s.songKey || songTonality(s.harpKey, s.position, harpType),
   });
 
   const set = <K extends keyof Song>(k: K, v: Song[K]) => setS((prev) => ({ ...prev, [k]: v }));
@@ -229,7 +229,7 @@ function Editor({ initial, isNew, draft }: { initial: Song; isNew: boolean; draf
             <input value={s.artist ?? ''} onChange={(e) => set('artist', e.target.value || undefined)} />
           </label>
           <HarpTypeSelect value={harpType} onChange={(t: HarpType) => setS((prev) => ({ ...prev, harpType: t === 'diatonic' ? undefined : t, position: t === 'diatonic' ? prev.position : 1 }))} />
-          <KeySelect value={s.harpKey} onChange={(k) => set('harpKey', k as HarpKey)} />
+          <KeySelect value={s.harpKey} onChange={(k) => set('harpKey', k as HarpKey)} harpType={harpType} />
           {!chrom && !trem && (
             <label className="field">
               <span className="field-label">Vị trí</span>

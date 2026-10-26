@@ -138,7 +138,7 @@ export default function PasteTab() {
                 <input value={songTitle} onChange={(e) => setTitle(e.target.value)} placeholder="Tên bài hát" />
               </label>
               <HarpTypeSelect value={harpType} onChange={setType} label="Loại kèn trong bài" />
-              <KeySelect value={harpKey} onChange={(k) => k !== 'auto' && setKey(k)} label="Kèn trong bài" />
+              <KeySelect value={harpKey} onChange={(k) => k !== 'auto' && setKey(k)} label="Kèn trong bài" harpType={harpType} />
               <label className="field">
                 <span className="field-label">Tốc độ (bpm)</span>
                 <input type="number" inputMode="numeric" min={30} max={260} value={tempo} onChange={(e) => setTempo(Math.min(260, Math.max(30, Number(e.target.value) || 90)))} />

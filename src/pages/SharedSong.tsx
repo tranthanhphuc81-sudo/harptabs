@@ -45,7 +45,7 @@ function Preview({ song }: { song: Song }) {
   const player = usePlayer(flat, {
     bpm: song.bpm, tempoScale: 1, beatsPerBar: beatsPerBar(song.timeSig), pickupBeats: song.pickupBeats,
     style: song.style, melody: true, beat: song.style !== 'none', click: false, countIn: false,
-    songKey: song.songKey || songTonality(song.harpKey, song.position), chordOverrides: song.chords,
+    songKey: song.songKey || songTonality(song.harpKey, song.position, type), chordOverrides: song.chords,
   });
   const notes = flat.filter((f) => f.midi !== null).length;
 

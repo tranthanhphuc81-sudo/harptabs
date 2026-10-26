@@ -60,3 +60,16 @@ describe('tiếng kèn tremolo', () => {
     expect(suggestInstrument({ ...song, harpType: undefined }, [], 'ballad').instrument).not.toBe('tremolo');
   });
 });
+
+describe('tremolo giọng thứ', () => {
+  it('kèn Am: thổi La Đô Mi, hút Si Rê Fa Sol; tên "Kèn Am"', async () => {
+    const { harpLayout, harpName, songTonality, midiToName } = await import('./harp');
+    const lay = harpLayout('A', 'tremolo24m');
+    expect(lay).toHaveLength(24);
+    const name = (h: number) => midiToName(lay.find((n) => n.hole === h)!.midi, 'letter');
+    expect([1, 3, 5, 7].map(name)).toEqual(['E3', 'A3', 'C4', 'E4']);
+    expect([2, 4, 6, 8].map(name)).toEqual(['B3', 'D4', 'F4', 'G4']);
+    expect(harpName('A', 'tremolo24m')).toBe('Kèn Am tremolo 24 lỗ');
+    expect(songTonality('A', 1, 'tremolo24m')).toBe('Am');
+  });
+});

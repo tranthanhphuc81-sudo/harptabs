@@ -152,7 +152,7 @@ export default function SettingsPage() {
             </select>
           </label>
           <HarpTypeSelect value={s.defaultHarpType} onChange={(t) => update({ defaultHarpType: t })} label="Loại kèn mặc định" />
-          <KeySelect value={s.defaultHarpKey} onChange={(k) => update({ defaultHarpKey: k as HarpKey })} label="Kèn mặc định" />
+          <KeySelect value={s.defaultHarpKey} onChange={(k) => update({ defaultHarpKey: k as HarpKey })} label="Kèn mặc định" harpType={s.defaultHarpType} />
           <label className="check wide">
             <input type="checkbox" checked={s.showNoteNames} onChange={(e) => update({ showNoteNames: e.target.checked })} />
             Hiện tên nốt phía trên tab

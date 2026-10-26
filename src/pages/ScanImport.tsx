@@ -687,7 +687,7 @@ export default function ScanImport({ editSongId, initialFiles }: { editSongId?: 
           </div>
           <div className="row gap wrap end-align">
             <HarpTypeSelect value={harpType} onChange={setHarpType} />
-            <KeySelect value={target} onChange={setTarget} allowAuto label="Chơi trên kèn" />
+            <KeySelect value={target} onChange={setTarget} allowAuto label="Chơi trên kèn" harpType={harpType} />
             {target !== 'auto' && (
               <label className="check">
                 <input type="checkbox" checked={allowTranspose} onChange={(e) => setAllowTranspose(e.target.checked)} />

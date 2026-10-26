@@ -15,14 +15,15 @@
  * Kèn tremolo kiểu châu Á (21 / 24 lỗ): mỗi số lỗ chỉ có MỘT nốt — lỗ lẻ thổi, lỗ chẵn hút.
  * App ghi lỗ hút có dấu trừ cho dễ nhìn (-4), nhưng nhận cả cách ghi chỉ có số (4) như sách tremolo.
  * Kèn này không có nốt thăng giáng, không bend.
+ * Tremolo giọng thứ (Am, Dm…, thứ tự nhiên): lỗ thổi là hợp âm thứ (La Đô Mi), lỗ hút là các nốt còn lại.
  */
 
 export type Direction = 'blow' | 'draw';
 export type Technique = 'blow' | 'draw' | 'drawBend' | 'blowBend' | 'overblow' | 'overdraw' | 'blowSlide' | 'drawSlide';
 
 /** Loại kèn. Bài cũ không ghi loại là diatonic. */
-export type HarpType = 'diatonic' | 'chromatic' | 'chromatic16' | 'tremolo24' | 'tremolo21';
-export const HARP_TYPES: readonly HarpType[] = ['diatonic', 'chromatic', 'chromatic16', 'tremolo24', 'tremolo21'];
+export type HarpType = 'diatonic' | 'chromatic' | 'chromatic16' | 'tremolo24' | 'tremolo21' | 'tremolo24m' | 'tremolo21m';
+export const HARP_TYPES: readonly HarpType[] = ['diatonic', 'chromatic', 'chromatic16', 'tremolo24', 'tremolo21', 'tremolo24m', 'tremolo21m'];
 
 export const HARP_TYPE_LABEL: Record<HarpType, string> = {
   diatonic: 'Diatonic 10 lỗ',
@@ -30,6 +31,8 @@ export const HARP_TYPE_LABEL: Record<HarpType, string> = {
   chromatic16: 'Chromatic 16 lỗ',
   tremolo24: 'Tremolo 24 lỗ',
   tremolo21: 'Tremolo 21 lỗ',
+  tremolo24m: 'Tremolo 24 lỗ giọng thứ (Am, Dm…)',
+  tremolo21m: 'Tremolo 21 lỗ giọng thứ (Am, Dm…)',
 };
 
 export function isChromatic(t: HarpType | undefined): boolean {
@@ -37,15 +40,25 @@ export function isChromatic(t: HarpType | undefined): boolean {
 }
 
 export function isTremolo(t: HarpType | undefined): boolean {
-  return t === 'tremolo24' || t === 'tremolo21';
+  return t === 'tremolo24' || t === 'tremolo21' || t === 'tremolo24m' || t === 'tremolo21m';
+}
+
+/** kèn tremolo lên dây giọng thứ: tên kèn là giọng thứ (kèn "Am" = tông A, loại giọng thứ) */
+export function isMinorHarp(t: HarpType | undefined): boolean {
+  return t === 'tremolo24m' || t === 'tremolo21m';
+}
+
+/** tên tông kèn để hiện: "C", hoặc "Am" với kèn giọng thứ */
+export function harpKeyLabel(key: string, t?: HarpType): string {
+  return key + (isMinorHarp(t) ? 'm' : '');
 }
 
 export function holeCount(t: HarpType = 'diatonic'): number {
   switch (t) {
     case 'chromatic16': return 16;
     case 'chromatic': return 12;
-    case 'tremolo24': return 24;
-    case 'tremolo21': return 21;
+    case 'tremolo24': case 'tremolo24m': return 24;
+    case 'tremolo21': case 'tremolo21m': return 21;
     default: return 10;
   }
 }
@@ -59,7 +72,7 @@ export function harpTypeOf(s: { harpType?: HarpType }): HarpType {
 
 /** "Kèn C" hoặc "Kèn C chromatic" */
 export function harpName(key: string, t: HarpType = 'diatonic'): string {
-  if (isTremolo(t)) return `Kèn ${key} tremolo ${holeCount(t)} lỗ`;
+  if (isTremolo(t)) return `Kèn ${harpKeyLabel(key, t)} tremolo ${holeCount(t)} lỗ`;
   return t === 'diatonic' ? `Kèn ${key}` : t === 'chromatic16' ? `Kèn ${key} chromatic 16 lỗ` : `Kèn ${key} chromatic`;
 }
 
@@ -121,6 +134,9 @@ const CHROM_DRAW = [2, 5, 9, 11];
 // Nguồn: bảng "Common tuning in East Asia", https://en.wikipedia.org/wiki/Tremolo_harmonica
 const TREM_BLOW = [55, 60, 64, 67, 72, 76, 79, 84, 88, 91, 96, 100]; // G3 C4 E4 G4 C5 E5 G5 C6 E6 G6 C7 E7
 const TREM_DRAW = [62, 65, 69, 71, 74, 77, 81, 83, 86, 89, 93, 95]; // D4 F4 A4 B4 D5 F5 A5 B5 D6 F6 A6 B6
+// Tremolo giọng thứ tự nhiên, tính cho tông Đô thứ (Cm) rồi dịch theo tông kèn như kèn trưởng: kèn Am = thổi Mi3 La3 Đô4 Mi4…, hút Si3 Rê4 Fa4 Sol4…
+const TREM_MINOR_BLOW = [55, 60, 63, 67, 72, 75, 79, 84, 87, 91, 96, 99]; // G3 C4 Eb4 G4 C5 Eb5 …
+const TREM_MINOR_DRAW = [62, 65, 68, 70, 74, 77, 80, 82, 86, 89, 92, 94]; // D4 F4 Ab4 Bb4 D5 F5 …
 
 export function makeToken(hole: number, dir: Direction, bend: number, over: boolean, slide = false): string {
   return `${dir === 'draw' ? '-' : ''}${hole}${over ? 'o' : "'".repeat(bend)}${slide ? '<' : ''}`;
@@ -139,10 +155,11 @@ export function harpLayout(key: HarpKey, type: HarpType = 'diatonic'): HarpNote[
     notes.push({ hole, dir, bend, over, slide, midi: midi + off, technique, token: makeToken(hole, dir, bend, over, slide) });
 
   if (isTremolo(type)) {
+    const [blowRow, drawRow] = isMinorHarp(type) ? [TREM_MINOR_BLOW, TREM_MINOR_DRAW] : [TREM_BLOW, TREM_DRAW];
     for (let hole = 1; hole <= holeCount(type); hole++) {
       const i = Math.floor((hole - 1) / 2);
-      if (tremoloDir(hole) === 'blow') push(hole, 'blow', 0, false, TREM_BLOW[i], 'blow');
-      else push(hole, 'draw', 0, false, TREM_DRAW[i], 'draw');
+      if (tremoloDir(hole) === 'blow') push(hole, 'blow', 0, false, blowRow[i], 'blow');
+      else push(hole, 'draw', 0, false, drawRow[i], 'draw');
     }
     layoutCache.set(ck, notes);
     return notes;
@@ -308,6 +325,7 @@ export function harpForSongKey(songKey: string, position: 1 | 2 | 3): HarpKey | 
 }
 
 /** Tông để đệm hợp âm khi bài không ghi tông: vị trí 3 (Dorian) nghe như giọng thứ */
-export function songTonality(harp: HarpKey, position: 1 | 2 | 3 = 1): string {
+export function songTonality(harp: HarpKey, position: 1 | 2 | 3 = 1, type?: HarpType): string {
+  if (isMinorHarp(type)) return pitchClassName(KEY_OFFSET[harp]) + 'm';
   return positionKey(harp, position) + (position === 3 ? 'm' : '');
 }

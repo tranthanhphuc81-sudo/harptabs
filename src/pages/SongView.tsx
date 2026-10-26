@@ -2,7 +2,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { db, deleteSongs, downloadJson, exportOne, newId, slugify } from '../lib/db';
-import { HARP_KEYS, HARP_TYPES, HARP_TYPE_LABEL, HarpKey, HarpType, harpName, harpTypeOf, isChromatic, isTremolo, midiToName, parseToken, songTonality } from '../lib/harp';
+import { HARP_KEYS, HARP_TYPES, HARP_TYPE_LABEL, HarpKey, harpKeyLabel, HarpType, harpName, harpTypeOf, isChromatic, isTremolo, midiToName, parseToken, songTonality } from '../lib/harp';
 import { countTechniques, flatten, parseTab } from '../lib/tabText';
 import { rekeyBody } from '../lib/converter';
 import { beatsPerBar, Song } from '../lib/types';
@@ -79,7 +79,7 @@ function SongPlayerView({ song, original, fit, view, choice, onChoice }: {
   const p = usePlayer(flat, {
     bpm: song.bpm, tempoScale: 1, beatsPerBar: bpb, pickupBeats: song.pickupBeats,
     style: autoApplied ? autoStyle.style : song.style, melody: true, beat: song.style !== 'none', click: false, countIn: true,
-    songKey: song.songKey || songTonality(song.harpKey, song.position),
+    songKey: song.songKey || songTonality(song.harpKey, song.position, harpType),
     chordOverrides: song.chords,
     sections,
   });
@@ -89,7 +89,7 @@ function SongPlayerView({ song, original, fit, view, choice, onChoice }: {
   useEffect(() => () => setSongInstrument(null), []);
 
   // ----- hợp âm đệm: hiện trên tab, chọn tay khi máy đoán sai -----
-  const tonality = useMemo(() => parseTonality(song.songKey || songTonality(song.harpKey, song.position))!, [song.songKey, song.harpKey, song.position]);
+  const tonality = useMemo(() => parseTonality(song.songKey || songTonality(song.harpKey, song.position, harpType))!, [song.songKey, song.harpKey, song.position, harpType]);
   // đệm hát: luôn hiện hợp âm trên lời để hát theo
   const showChords = beatPrefs.showChords || !!p.opts.sing;
   const chordSegs = useMemo(
@@ -557,7 +557,7 @@ function RekeyDialog({ song, onClose, onDone }: { song: Song; onClose: () => voi
       <label className="field">
         <span className="field-label">Kèn bạn có</span>
         <select value={target} onChange={(e) => setTarget(e.target.value as HarpKey)}>
-          {HARP_KEYS.map((k) => <option key={k} value={k}>Kèn {k}</option>)}
+          {HARP_KEYS.map((k) => <option key={k} value={k}>Kèn {harpKeyLabel(k, toType)}</option>)}
         </select>
       </label>
       <fieldset className="radio-group">
@@ -692,7 +692,7 @@ function ViewAsBar({ original, viewed, view, fit, choice, onChoice, onSaved }: {
           <label className="field viewas-field">
             <span className="field-label">Tông kèn</span>
             <select value={key} onChange={(e) => set({ key: e.target.value as HarpKey })}>
-              {HARP_KEYS.map((k) => <option key={k} value={k}>Kèn {k}</option>)}
+              {HARP_KEYS.map((k) => <option key={k} value={k}>Kèn {harpKeyLabel(k, type)}</option>)}
             </select>
           </label>
         )}
