@@ -15,6 +15,7 @@ const AiImport = lazy(() => import('./pages/AiImport'));
 const Learn = lazy(() => import('./pages/Learn'));
 const LessonPage = lazy(() => import('./pages/Learn').then((m) => ({ default: m.LessonPage })));
 const Tuner = lazy(() => import('./pages/Tuner'));
+const Jam = lazy(() => import('./pages/Jam'));
 const SettingsPage = lazy(() => import('./pages/Settings'));
 const SharedSong = lazy(() => import('./pages/SharedSong'));
 
@@ -73,6 +74,7 @@ function Shell() {
             <Route path="/learn" element={<Learn />} />
             <Route path="/learn/:lessonId" element={<LessonPage />} />
             <Route path="/tuner" element={<Tuner />} />
+            <Route path="/jam" element={<Jam />} />
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/shared" element={<SharedSong />} />
             <Route path="*" element={<Library />} />

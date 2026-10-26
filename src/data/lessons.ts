@@ -10,7 +10,9 @@ export type Block =
   | { t: 'warn'; text: string }
   | { t: 'tab'; body: string; caption?: string; harpKey?: HarpKey; harpType?: HarpType; bpm?: number; style?: BeatStyle; timeSig?: string }
   | { t: 'diagram'; harpKey?: HarpKey; harpType?: HarpType; advanced?: boolean }
-  | { t: 'positions' };
+  | { t: 'positions' }
+  /** nút dẫn sang một trang khác của app (ví dụ trang tập ngẫu hứng) */
+  | { t: 'link'; to: string; label: string; text?: string };
 
 export interface Lesson {
   id: string;
@@ -280,6 +282,7 @@ export const LESSONS: Lesson[] = [
       { t: 'p', text: 'Cách nhớ vị trí 2: đếm lên 5 nốt từ tông kèn (C, D, E, F, **G**), hoặc lấy tông bài lùi xuống 5 nốt để ra kèn cần dùng.' },
       { t: 'positions' },
       { t: 'tip', text: 'Bài trong thư viện có giọng gốc khác với kèn của bạn? Dùng nút đổi kèn ở trang bài hát: app tự chọn lỗ dễ thổi nhất.' },
+      { t: 'link', to: '/jam', label: 'Thử vị trí 2 trên nền nhạc blues' },
     ],
   },
   {
@@ -294,6 +297,7 @@ export const LESSONS: Lesson[] = [
       { t: 'p', text: 'Trên kèn C vị trí 2: hợp âm I là hút lỗ 1–4, IV là thổi lỗ 1–4 hoặc 4–6, V là hút lỗ 4–6. Câu dưới đây đi theo nốt của từng hợp âm, có -3′ (Sib) là nốt "blue".' },
       { t: 'tab', caption: '12 ô nhịp với nhịp shuffle', body: "# Ô 1–4 (I)\n-2 -3' -3 -2 -2 -3' -3 -2\n-2 -3' -3 -2 -2 -3' -4 -3\n\n# Ô 5–8 (IV, I)\n4 5 6 5 4 5 6 5\n-2 -3' -3 -2 -2 -3' -3 -2\n\n# Ô 9–12 (V, IV, I, V)\n-4 -5 -6 -5 4 5 6 5\n-2 -3' -3 -2 -4 -5 -6 -4\n", bpm: 84, style: 'shuffle' },
       { t: 'tip', text: 'Khi đã thuộc, thử thay câu ở ô 1–4 bằng câu của riêng bạn, chỉ dùng -2 -3′ 4 -4′ -4 -5 6. Đó là thang âm blues, khó chơi sai.' },
+      { t: 'link', to: '/jam', label: 'Tập ngẫu hứng trên nền nhạc blues', text: 'Nền nhạc 12 ô chạy lặp, hiện hợp âm từng ô và các lỗ thang âm blues; có chế độ máy hỏi – bạn đáp và thư viện lick.' },
     ],
   },
   {
@@ -382,6 +386,7 @@ export const LESSONS: Lesson[] = [
         '**Tuần 3**: lỗ 7–9 (đảo chiều), vibrato, wah-wah, nốt dài có biểu cảm. Bài: Amazing Grace, Happy Birthday.',
         '**Tuần 4**: bend lỗ 4 và lỗ 1, vị trí 2, thang âm blues, blues 12 ô nhịp. Bài: Jingle Bells, Thang âm blues.',
       ] },
+      { t: 'link', to: '/jam', label: 'Tuần 4: tập ngẫu hứng blues' },
       { t: 'tip', text: 'Sau 30 ngày, dùng trang Nhập bài (file nhạc, quét khuông nhạc, dán tab) để chuyển những bài bạn yêu thích thành tab và tập tiếp.' },
     ],
   },

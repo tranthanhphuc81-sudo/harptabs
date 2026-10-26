@@ -30,6 +30,10 @@ export default function Learn() {
           <p className="muted">Kỹ thuật, thủ thuật và mẹo, kèm bài tập nghe được. Tất cả dùng offline. Chơi kèn chromatic: xem nhóm bài cuối.</p>
         </div>
       </header>
+      <Link to="/jam" className="jam-card">
+        <strong>Tập ngẫu hứng blues</strong>
+        <span>Nền nhạc 12 ô nhịp, thang âm blues trên kèn của bạn, máy hỏi – bạn đáp và 20 lick mẫu.</span>
+      </Link>
       {LESSON_GROUPS.map((g) => (
         <section key={g} className="lesson-group">
           <h2>{g}</h2>
@@ -128,6 +132,7 @@ export function LessonPage() {
             case 'tab': return <LessonTab key={i} b={b} />;
             case 'diagram': return <HarpDiagram key={i} harpKey={b.harpKey ?? 'C'} harpType={b.harpType} showAdvanced={b.advanced ?? true} nameStyle={settings.noteNames} />;
             case 'positions': return <PositionsTable key={i} />;
+            case 'link': return <aside key={i} className="callout tip">{b.text && <p>{rich(b.text)}</p>}<Link to={b.to} className="btn btn-primary">{b.label}</Link></aside>;
           }
         })}
       </div>
