@@ -16,8 +16,13 @@ export function ChordPicker({ seg, tonality, where, onPick, onClose }: Props) {
   useEffect(() => { ref.current?.showModal?.(); }, []);
   const flats = keyUsesFlats(tonality);
   const inKey = diatonicChords(tonality);
-  const all = (minor: boolean): Chord[] =>
-    Array.from({ length: 12 }, (_, i) => ({ root: i, minor, name: chordName(i, minor, flats) }));
+  const all = (minor: boolean, seventh = false): Chord[] =>
+    Array.from({ length: 12 }, (_, i) => ({ root: i, minor, seventh, name: chordName(i, minor, flats, seventh) }));
+  // hợp âm 7 hay dùng: V7 (dẫn về chủ) và I7 / IV7 (chất blues)
+  const sevenths: Chord[] = (tonality.minor ? [7] : [7, 0, 5]).map((d) => {
+    const root = (tonality.tonic + d) % 12;
+    return { root, minor: false, seventh: true, name: chordName(root, false, flats, true) };
+  });
 
   const pick = (name: string | null) => { onPick(name); ref.current?.close(); };
   const chip = (c: Chord) => (
@@ -35,6 +40,8 @@ export function ChordPicker({ seg, tonality, where, onPick, onClose }: Props) {
       <div className="field">
         <span className="field-label">Hay dùng trong giọng này</span>
         <div className="chord-grid">{inKey.map(chip)}</div>
+        <span className="field-label">Hợp âm 7 (nghe blues, dẫn về chủ)</span>
+        <div className="chord-grid">{sevenths.map(chip)}</div>
       </div>
       <details>
         <summary>Tất cả hợp âm</summary>
@@ -43,6 +50,8 @@ export function ChordPicker({ seg, tonality, where, onPick, onClose }: Props) {
           <div className="chord-grid">{all(false).map(chip)}</div>
           <span className="field-label">Thứ</span>
           <div className="chord-grid">{all(true).map(chip)}</div>
+          <span className="field-label">Hợp âm 7</span>
+          <div className="chord-grid">{all(false, true).map(chip)}</div>
         </div>
       </details>
       <div className="row gap wrap end">
