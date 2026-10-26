@@ -123,3 +123,17 @@ describe('dịch khúc hợp âm khi đổi tông', () => {
     expect(transposeSpans(spans, -2).map((s) => s.chord.root)).toEqual([10, 7, -1]);
   });
 });
+
+describe('hợp âm 7 (blues)', () => {
+  it('đọc G7, thế bấm có ♭7, dịch giọng giữ số 7', () => {
+    const g7 = parseChord('G7')!;
+    expect(g7).toMatchObject({ root: 7, minor: false, seventh: true, name: 'G7' });
+    expect(chordVoicing(g7).map((m) => m % 12)).toEqual([7, 11, 2, 5]);
+    expect(transposeChords({ 0: 'G7', 2: 'C' }, 2)).toEqual({ 0: 'A7', 2: 'D' });
+  });
+  it('chọn tay G7 trong giọng Sol: không bị nuốt thành G thường', () => {
+    const notes = [0, 1, 2, 3].map((i) => ({ start: i, beats: 1, midi: 67 }));
+    const segs = harmonizeSegments(notes, 4, 0, parseTonality('G'), { 0: 'G7', 2: 'C7' });
+    expect(segs.map((s) => s.chord.name)).toEqual(['G7', 'C7']);
+  });
+});

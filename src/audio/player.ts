@@ -294,7 +294,7 @@ export class Player {
     const swing = subdiv !== 3 && stepIdx % 2 === 1 ? bp.swing * step * spb : 0;
     const jitter = bp.humanize ? (Math.random() - 0.5) * 0.01 : 0;
     const vel = (stepIdx % subdiv === 0 ? 1 : 0.85) * (plan?.energy ?? 1);
-    const ch = { bass: bassMidi(chord), fifth: bassMidi(chord, true), minor: chord.minor, triad: chordVoicing(chord) };
+    const ch = { bass: bassMidi(chord), fifth: bassMidi(chord, true), minor: chord.minor, seventh: chord.seventh, triad: chordVoicing(chord) };
     const when = t0 + swing + jitter;
     if (kind === 'P' || kind === 'Q') {
       // bass dẫn: nửa cung / một cung dưới gốc hợp âm ô sau

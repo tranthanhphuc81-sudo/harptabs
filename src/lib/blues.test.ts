@@ -4,17 +4,17 @@ import { barAt, bluesChords, bluesOverrides, bluesScaleTokens, bluesTonic, chord
 describe('khung blues 12 ô', () => {
   it('kèn C chơi blues giọng Sol: I I I I / IV IV I I / V IV I V', () => {
     expect(bluesTonic('C')).toBe(7);
-    expect(bluesChords(7, 'basic')).toEqual(['G', 'G', 'G', 'G', 'C', 'C', 'G', 'G', 'D', 'C', 'G', 'D']);
-    expect(bluesChords(7, 'quick')[1]).toBe('C');
+    expect(bluesChords(7, 'basic')).toEqual(['G7', 'G7', 'G7', 'G7', 'C7', 'C7', 'G7', 'G7', 'D7', 'C7', 'G7', 'D7']);
+    expect(bluesChords(7, 'quick')[1]).toBe('C7');
   });
   it('tông giáng ghi giáng: kèn Eb chơi giọng Bb', () => {
-    expect(bluesChords(bluesTonic('Eb'), 'basic').slice(0, 5)).toEqual(['Bb', 'Bb', 'Bb', 'Bb', 'Eb']);
+    expect(bluesChords(bluesTonic('Eb'), 'basic').slice(0, 5)).toEqual(['Bb7', 'Bb7', 'Bb7', 'Bb7', 'Eb7']);
   });
   it('mỗi nửa ô một khoá hợp âm', () => {
     const o = bluesOverrides(bluesChords(7, 'basic'));
     expect(Object.keys(o)).toHaveLength(24);
-    expect(o['16']).toBe('C');
-    expect(o['46']).toBe('D');
+    expect(o['16']).toBe('C7');
+    expect(o['46']).toBe('D7');
   });
 });
 

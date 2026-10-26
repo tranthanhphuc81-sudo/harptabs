@@ -60,7 +60,7 @@ export default function Jam() {
   // hai chế độ dùng chung một bộ phát: nền 12 ô (có thể xen lick hỏi) hoặc một lick lặp trên nền hợp âm của nó
   const { flat, overrides, bars } = useMemo(() => {
     if (tab === 'licks') {
-      const names = lickDegrees(lick).map((d) => chordName((tonic + { I: 0, IV: 5, V: 7 }[d]) % 12, false, flats));
+      const names = lickDegrees(lick).map((d) => chordName((tonic + { I: 0, IV: 5, V: 7 }[d]) % 12, false, flats, true));
       return { flat: jamEvents(harpKey, lick.bars, [{ bar: 0, body: lick.body }]), overrides: bluesOverrides(names), bars: lick.bars };
     }
     return {
@@ -193,7 +193,7 @@ export default function Jam() {
 
           <section className="lick-detail">
             <h2 className="h-small">{lick.title}</h2>
-            <p className="small muted">{LICK_PLACES[lick.over]} · nền: {lickDegrees(lick).map((d) => chordName((tonic + { I: 0, IV: 5, V: 7 }[d]) % 12, false, flats)).join(' → ')}</p>
+            <p className="small muted">{LICK_PLACES[lick.over]} · nền: {lickDegrees(lick).map((d) => chordName((tonic + { I: 0, IV: 5, V: 7 }[d]) % 12, false, flats, true)).join(' → ')}</p>
             <TabView parsed={lickParsed} flat={lickFlat} active={lickActive != null && lickActive >= 0 ? lickActive : null} size="m" showNames={settings.showNoteNames} nameStyle={settings.noteNames} />
             {lick.tip && <p className="small">{lick.tip}</p>}
             <div className="row gap wrap">

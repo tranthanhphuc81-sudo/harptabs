@@ -35,10 +35,10 @@ export function usesFlats(tonic: number): boolean {
   return FLAT_TONICS.has(pc(tonic));
 }
 
-/** Tên hợp âm từng ô (hợp âm ba nốt — bộ đệm chỉ nhận dạng G, Cm…) */
+/** Tên hợp âm từng ô: hợp âm 7 át (G7, C7, D7) — màu đặc trưng của blues */
 export function bluesChords(tonic: number, variant: BluesVariant): string[] {
   const flats = usesFlats(tonic);
-  return bluesDegrees(variant).map((d) => chordName(pc(tonic + DEGREE_SHIFT[d]), false, flats));
+  return bluesDegrees(variant).map((d) => chordName(pc(tonic + DEGREE_SHIFT[d]), false, flats, true));
 }
 
 /** Ép bộ đệm đánh đúng khung blues: mỗi nửa ô (2 phách) một khoá */
@@ -69,7 +69,7 @@ export function bluesScaleTokens(harpKey: HarpKey): string[] {
 /** Lỗ không cần bend ra nốt của hợp âm đang vang (nốt "an toàn" để dừng câu) */
 export function chordToneTokens(harpKey: HarpKey, degree: Degree): string[] {
   const root = pc(bluesTonic(harpKey) + DEGREE_SHIFT[degree]);
-  return holesFor(harpKey, root, [0, 4, 7], 0);
+  return holesFor(harpKey, root, [0, 4, 7, 10], 0);
 }
 
 /** Ô nhịp (0–11) và phách trong ô từ vị trí phát */

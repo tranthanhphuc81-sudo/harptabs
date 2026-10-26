@@ -2037,12 +2037,13 @@ export const ACCOMP_OPTIONS: { value: Accomp; label: string }[] = [
 ];
 
 /** Hợp âm cần cho một nhát đệm: bass gốc / quãng 5 (E2–D#3) và hợp âm ba thế đóng cho piano */
-export interface AccompChord { bass: number; fifth: number; minor: boolean; triad: number[] }
+export interface AccompChord { bass: number; fifth: number; minor: boolean; seventh?: boolean; triad: number[] }
 
 /** Thế bấm guitar: gốc ở dây trầm, rồi quãng 5, 8, 3, 5, 8 lên tới dây cao */
 function guitarShape(ch: AccompChord): number[] {
   const r = ch.bass;
-  return [r, r + 7, r + 12, r + 12 + (ch.minor ? 3 : 4), r + 19, r + 24];
+  // hợp âm 7: dây thứ ba đổi quãng 8 thành ♭7 (thế G7 chặn)
+  return [r, r + 7, ch.seventh ? r + 10 : r + 12, r + 12 + (ch.minor ? 3 : 4), r + 19, r + 24];
 }
 
 /** dây bị chặn ngay sau khi gảy: "tách" ngắn, không ngân */
