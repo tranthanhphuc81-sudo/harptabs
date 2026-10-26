@@ -5,7 +5,7 @@
 import { FlatEvent } from '../lib/tabText';
 import { getEffectivePrefs, setActiveStyle } from './beatPrefs';
 import { Accomp, accompHit, audio, bass, bongo, chordStab, clap, clave, click, cowbell, conga, crash, guiro, hat, kick, playTone, ride, rim, setHumanVelocity, shaker, snare, surdo, tom } from './engine';
-import { bassMidi, Chord, chordAt, chordVoicing, ChordOverrides, ChordSpan, harmonize, parseTonality, transposeSpans, walkingNote } from './harmony';
+import { bassMidi, Chord, chordAt, chordIntervals, chordVoicing, ChordOverrides, ChordSpan, harmonize, parseTonality, transposeSpans, walkingNote } from './harmony';
 import { BeatPattern, BeatStyle, boPattern, lacPattern, resolvePattern, strumPattern } from './patterns';
 import { AccompPlan, barTrack, planAccomp } from './accompPlan';
 import { heardTime } from './latency';
@@ -244,7 +244,7 @@ export class Player {
       let midi = root;
       if (ch === 'f') midi = bassMidi(chord, true);
       else if (ch === 'o') midi = root + 12;
-      else if (ch === 't') midi = root + (chord.minor ? 3 : 4);
+      else if (ch === 't') midi = root + chordIntervals(chord)[1];
       else if (ch === 'n') {
         // tumbao đón nhịp: gốc của hợp âm ở đầu ô kế tiếp
         const next = this.chordAt(beat - stepIdx / pattern.subdiv + pattern.beats + 1e-3);
@@ -294,7 +294,7 @@ export class Player {
     const swing = subdiv !== 3 && stepIdx % 2 === 1 ? bp.swing * step * spb : 0;
     const jitter = bp.humanize ? (Math.random() - 0.5) * 0.01 : 0;
     const vel = (stepIdx % subdiv === 0 ? 1 : 0.85) * (plan?.energy ?? 1);
-    const ch = { bass: bassMidi(chord), fifth: bassMidi(chord, true), minor: chord.minor, seventh: chord.seventh, triad: chordVoicing(chord) };
+    const ch = { bass: bassMidi(chord), fifth: bassMidi(chord, true), minor: chord.minor, intervals: chordIntervals(chord), triad: chordVoicing(chord) };
     const when = t0 + swing + jitter;
     if (kind === 'P' || kind === 'Q') {
       // bass dẫn: nửa cung / một cung dưới gốc hợp âm ô sau

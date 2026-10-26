@@ -137,3 +137,22 @@ describe('hợp âm 7 (blues)', () => {
     expect(segs.map((s) => s.chord.name)).toEqual(['G7', 'C7']);
   });
 });
+
+describe('hợp âm jazz', () => {
+  it('đọc maj7 / m7 / m7b5 / dim7, thế bấm đúng nốt', () => {
+    const pcs = (n: string) => chordVoicing(parseChord(n)!).map((m) => m % 12);
+    expect(parseChord('Cmaj7')).toMatchObject({ root: 0, quality: 'maj7', minor: false, name: 'Cmaj7' });
+    expect(new Set(pcs('Cmaj7'))).toEqual(new Set([0, 4, 7, 11]));
+    expect(new Set(pcs('Dm7'))).toEqual(new Set([2, 5, 9, 0]));
+    expect(new Set(pcs('Bm7b5'))).toEqual(new Set([11, 2, 5, 9]));
+    expect(parseChord('Bø')?.name).toBe('Bm7b5');
+    expect(new Set(pcs('C#dim7'))).toEqual(new Set([1, 4, 7, 10]));
+    expect(bassMidi(parseChord('Bm7b5')!, true) % 12).toBe(5); // quãng 5 giảm
+  });
+  it('dịch giọng giữ loại hợp âm; chọn tay Dm7 không thành Dm', () => {
+    expect(transposeChords({ 0: 'Dm7', 2: 'G7', 4: 'Cmaj7', 6: 'Bm7b5' }, -2, true)).toEqual({ 0: 'Cm7', 2: 'F7', 4: 'Bbmaj7', 6: 'Am7b5' });
+    const notes = [0, 1, 2, 3].map((i) => ({ start: i, beats: 1, midi: 62 }));
+    const segs = harmonizeSegments(notes, 4, 0, parseTonality('C'), { 0: 'Dm7', 2: 'G7' });
+    expect(segs.map((s) => s.chord.name)).toEqual(['Dm7', 'G7']);
+  });
+});

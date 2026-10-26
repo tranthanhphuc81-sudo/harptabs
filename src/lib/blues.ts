@@ -3,7 +3,7 @@
  * và dựng chuỗi sự kiện cho bộ phát nhạc (nền nhạc chạy lặp, xen lick mẫu để hỏi–đáp).
  */
 import { ChordOverrides, chordName, segKey } from '../audio/harmony';
-import { HarpKey, harpLayout, HarpNote, keyOffset, techniqueCost } from './harp';
+import { HarpKey, harpLayout, HarpNote, HarpType, keyOffset, techniqueCost } from './harp';
 import { FlatEvent, flatten, parseTab } from './tabText';
 
 export type BluesVariant = 'basic' | 'quick';
@@ -87,20 +87,21 @@ export function isCallBar(bar: number): boolean {
 }
 
 /** Nốt của một lick (tab theo lỗ — cùng tab chơi được mọi tông kèn diatonic) */
-export function lickEvents(body: string, harpKey: HarpKey): FlatEvent[] {
-  return flatten(parseTab(body, harpKey, 'diatonic'));
+export function lickEvents(body: string, harpKey: HarpKey, harpType: HarpType = 'diatonic'): FlatEvent[] {
+  return flatten(parseTab(body, harpKey, harpType));
 }
 
 /**
  * Chuỗi sự kiện cho bộ phát: dài đúng `bars` ô. Chỗ trống là sự kiện câm (token null nhưng có cao độ):
  * không phát ra tiếng, nhưng giúp bộ đệm có hợp âm và biết bài dài bao nhiêu.
  * `calls`: các lick đặt vào ô nào (độ dài lick tính bằng phách, cắt nếu tràn).
+ * `tonic`: nốt gốc của bài (mặc định nốt gốc blues vị trí 2); `harpType`: loại kèn của tab lick.
  */
-export function jamEvents(harpKey: HarpKey, bars: number, calls: { bar: number; body: string }[] = []): FlatEvent[] {
-  const tonicMidi = 48 + bluesTonic(harpKey);
+export function jamEvents(harpKey: HarpKey, bars: number, calls: { bar: number; body: string }[] = [], opts: { tonic?: number; harpType?: HarpType } = {}): FlatEvent[] {
+  const tonicMidi = 48 + (opts.tonic ?? bluesTonic(harpKey));
   const total = bars * BAR_BEATS;
   const placed = calls
-    .flatMap((c) => lickEvents(c.body, harpKey).map((e) => ({ ...e, start: e.start + c.bar * BAR_BEATS })))
+    .flatMap((c) => lickEvents(c.body, harpKey, opts.harpType).map((e) => ({ ...e, start: e.start + c.bar * BAR_BEATS })))
     .filter((e) => e.start < total - 1e-6)
     .sort((a, b) => a.start - b.start);
   const out: FlatEvent[] = [];

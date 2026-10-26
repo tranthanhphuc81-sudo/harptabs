@@ -12,8 +12,34 @@ export interface Chord {
   minor: boolean;
   /** hợp âm 7 át (G7: thêm nốt ♭7) — chất blues; chỉ có khi chọn tay / khung blues */
   seventh?: boolean;
+  /** hợp âm jazz: maj7, m7, m7♭5 (nửa giảm), dim7 (giảm) — m7 / m7b5 / dim7 có minor = true */
+  quality?: ChordQuality;
   name: string;
 }
+
+export type ChordQuality = 'maj7' | 'm7' | 'm7b5' | 'dim7';
+
+/** Quãng (nửa cung) từ gốc của các nốt trong hợp âm: gốc, 3, 5 (và 7 nếu có) */
+export function chordIntervals(c: Pick<Chord, 'minor' | 'seventh' | 'quality'>): number[] {
+  switch (c.quality) {
+    case 'maj7': return [0, 4, 7, 11];
+    case 'm7': return [0, 3, 7, 10];
+    case 'm7b5': return [0, 3, 6, 10];
+    case 'dim7': return [0, 3, 6, 9];
+  }
+  const triad = [0, c.minor ? 3 : 4, 7];
+  return c.seventh ? [...triad, 10] : triad;
+}
+
+/** Phần đuôi tên hợp âm: "", "m", "7", "maj7", "m7", "m7b5", "dim7" */
+export function chordSuffix(c: Pick<Chord, 'minor' | 'seventh' | 'quality'>): string {
+  return c.quality ?? (c.minor ? 'm' : '') + (c.seventh ? '7' : '');
+}
+
+const QUALITY_OF: Record<string, ChordQuality | undefined> = {
+  maj7: 'maj7', M7: 'maj7', 'Δ': 'maj7', 'Δ7': 'maj7', m7: 'm7', m7b5: 'm7b5', 'm7♭5': 'm7b5', 'ø': 'm7b5', 'ø7': 'm7b5',
+  dim7: 'dim7', '°': 'dim7', '°7': 'dim7', o7: 'dim7',
+};
 
 export interface ChordSpan { start: number; end: number; chord: Chord }
 
@@ -27,15 +53,21 @@ export const NO_CHORD = 'N.C.';
 
 export const segKey = (beat: number) => String(Math.round(beat * 1000) / 1000);
 
-/** "G", "F#m", "Bbm", "G7", "N.C." → hợp âm; null nếu không đọc được. N.C. = không đệm (root = -1) */
+/** "G", "F#m", "Bbm", "G7", "Cmaj7", "Dm7", "Bm7b5", "C#dim7", "N.C." → hợp âm; null nếu không đọc được. N.C. = không đệm (root = -1) */
 export function parseChord(name: string): Chord | null {
   const t = name.trim();
   if (t.toUpperCase() === NO_CHORD) return { root: -1, minor: false, name: NO_CHORD };
-  const m = /^([A-G])([#b]?)(m?)(7?)$/.exec(t);
+  const m = /^([A-G])([#b]?)(maj7|M7|Δ7?|m7b5|m7♭5|ø7?|dim7|°7?|o7|m7|m|7)?$/.exec(t);
   if (!m) return null;
   const midi = nameToMidi(m[1] + m[2] + '4');
   if (midi === null) return null;
-  return { root: mod12(midi), minor: !!m[3], ...(m[4] ? { seventh: true } : {}), name: m[1] + m[2] + m[3] + m[4] };
+  const tail = m[3] ?? '';
+  const quality = QUALITY_OF[tail];
+  const chord: Chord = quality
+    ? { root: mod12(midi), minor: quality !== 'maj7', quality, name: '' }
+    : { root: mod12(midi), minor: tail === 'm', ...(tail === '7' ? { seventh: true } : {}), name: '' };
+  chord.name = m[1] + m[2] + chordSuffix(chord);
+  return chord;
 }
 
 export interface Tonality { tonic: number; minor: boolean }
@@ -104,8 +136,10 @@ function usesFlats(key: Tonality): boolean {
   return [5, 10, 3, 8, 1].includes(major);
 }
 
-export function chordName(root: number, minor: boolean, flats = false, seventh = false): string {
-  return (flats ? FLAT_NAMES[mod12(root)] : pitchClassName(root)) + (minor ? 'm' : '') + (seventh ? '7' : '');
+export function chordName(root: number, minor: boolean, flats = false, seventh: boolean | ChordQuality = false): string {
+  const head = flats ? FLAT_NAMES[mod12(root)] : pitchClassName(root);
+  if (typeof seventh === 'string') return head + seventh;
+  return head + (minor ? 'm' : '') + (seventh ? '7' : '');
 }
 
 /** Độ dài mỗi khúc hợp âm (phách) */
@@ -152,7 +186,7 @@ export function harmonizeSegments(notes: NoteLike[], beatsPerBar: number, pickup
   for (const [b, name] of Object.entries(overrides ?? {})) {
     const ch = parseChord(name);
     if (!ch) continue;
-    let idx = cands.findIndex((c) => c.chord.root === ch.root && c.chord.minor === ch.minor && !!c.chord.seventh === !!ch.seventh && ch.root >= 0);
+    let idx = cands.findIndex((c) => c.chord.root === ch.root && c.chord.minor === ch.minor && chordSuffix(c.chord) === chordSuffix(ch) && ch.root >= 0);
     if (idx < 0) {
       idx = cands.length;
       cands.push({ deg: ch.root < 0 ? -1 : mod12(ch.root - key.tonic), minor: ch.minor, prior: -20, chord: ch });
@@ -242,12 +276,11 @@ export function chordAt(spans: ChordSpan[], beat: number): Chord | null {
 /** Hợp âm ba thế đóng quanh G3–F#4 để gõ đệm (hợp âm 7 thêm nốt ♭7) */
 export function chordVoicing(chord: Chord): number[] {
   const root = 55 + mod12(chord.root - 7);
-  const triad = [root, root + (chord.minor ? 3 : 4), root + 7];
-  return chord.seventh ? [...triad, root + 10] : triad;
+  return chordIntervals(chord).map((i) => root + i);
 }
 
 export function bassMidi(chord: Chord, fifth = false): number {
-  const pc = mod12(chord.root + (fifth ? 7 : 0));
+  const pc = mod12(chord.root + (fifth ? chordIntervals(chord)[2] : 0));
   return 40 + mod12(pc - 4);
 }
 
@@ -259,7 +292,7 @@ export function transposeSpans<T extends ChordSpan>(spans: T[], semitones: numbe
   if (!semitones) return spans;
   return spans.map((s) => (s.chord.root < 0 ? s : {
     ...s,
-    chord: { ...s.chord, root: mod12(s.chord.root + semitones), name: chordName(s.chord.root + semitones, s.chord.minor, flats, s.chord.seventh) },
+    chord: { ...s.chord, root: mod12(s.chord.root + semitones), name: chordName(s.chord.root + semitones, s.chord.minor, flats, s.chord.quality ?? s.chord.seventh) },
   }));
 }
 
@@ -270,7 +303,7 @@ export function transposeChords(chords: ChordOverrides | undefined, semitones: n
   for (const [b, name] of Object.entries(chords)) {
     const c = parseChord(name);
     if (!c) continue;
-    out[b] = c.root < 0 ? NO_CHORD : chordName(c.root + semitones, c.minor, flats, c.seventh);
+    out[b] = c.root < 0 ? NO_CHORD : chordName(c.root + semitones, c.minor, flats, c.quality ?? c.seventh);
   }
   return out;
 }
@@ -313,9 +346,14 @@ export function walkingNote(spans: ChordSpan[], beat: number, prev: number | nul
   }
 
   // phách giữa: đi theo thang âm của hợp âm (ưu tiên nốt trong hợp âm), không lặp nốt
-  const third = cur.minor ? 3 : 4;
-  const chordPcs = [0, third, 7, cur.minor || cur.seventh ? 10 : 9].map((d) => mod12(cur.root + d));
-  const scalePcs = (cur.minor ? [0, 2, 3, 5, 7, 9, 10] : [0, 2, 4, 5, 7, 9, 10]).map((d) => mod12(cur.root + d));
+  const iv = chordIntervals(cur);
+  // hợp âm ba: thêm nốt 6 (trưởng) / ♭7 (thứ) cho bass có chỗ đi
+  const chordPcs = (iv.length > 3 ? iv : [...iv, cur.minor ? 10 : 9]).map((d) => mod12(cur.root + d));
+  const scale = cur.quality === 'maj7' ? [0, 2, 4, 5, 7, 9, 11]
+    : cur.quality === 'm7b5' ? [0, 2, 3, 5, 6, 8, 10]
+    : cur.quality === 'dim7' ? [0, 2, 3, 5, 6, 8, 9, 11]
+    : cur.minor ? [0, 2, 3, 5, 7, 9, 10] : [0, 2, 4, 5, 7, 9, 10];
+  const scalePcs = scale.map((d) => mod12(cur.root + d));
   const inScale = (m: number) => scalePcs.includes(mod12(m));
   const isChord = (m: number) => chordPcs.includes(mod12(m));
 

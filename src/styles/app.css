@@ -1071,3 +1071,4 @@ button, a, select { -webkit-tap-highlight-color: transparent; }
 .lk-title { font-weight: 600; }
 .lk-meta { font-size: 0.8rem; color: var(--ink-2); }
 .lick-detail { display: flex; flex-direction: column; gap: 10px; }
+.jg-c.jg-jazz { font-size: 1rem; text-align: center; overflow-wrap: anywhere; }

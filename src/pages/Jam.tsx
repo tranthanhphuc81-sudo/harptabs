@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { JazzJam } from './JazzJam';
 import { Link } from 'react-router-dom';
 import { HarpKey, harpName, pitchClassName } from '../lib/harp';
 import {
@@ -36,7 +37,7 @@ function pickCalls(seed: number, pins: string[]) {
   });
 }
 
-export default function Jam() {
+function BluesJam() {
   const { settings } = useAppState();
   const [tab, setTab] = useState<'jam' | 'licks'>('jam');
   const [harpKey, setHarpKey] = useState<HarpKey>(settings.defaultHarpKey);
@@ -102,16 +103,8 @@ export default function Jam() {
   const shown = LICKS.filter((l) => (level === 0 || l.level === level) && (place === 'all' || l.over === place));
 
   return (
-    <div className="page page-jam">
-      <header className="page-head">
-        <div className="row gap center">
-          <Link to="/learn" className="icon-btn" aria-label="Về trang Học"><Icon name="back" /></Link>
-          <div>
-            <h1>Tập ngẫu hứng blues</h1>
-            <p className="muted small">Vị trí 2: {harpName(harpKey)} chơi blues giọng <strong>{songKey}</strong>. Tab tính theo lỗ nên đổi kèn vẫn thổi y như vậy.</p>
-          </div>
-        </div>
-      </header>
+    <>
+      <p className="muted small">Vị trí 2: {harpName(harpKey)} chơi blues giọng <strong>{songKey}</strong>. Tab tính theo lỗ nên đổi kèn vẫn thổi y như vậy.</p>
       {settings.defaultHarpType !== 'diatonic' && <p className="alert">Trang này dành cho kèn diatonic 10 lỗ (kiểu blues phổ biến nhất).</p>}
 
       <div className="row gap wrap end-align">
@@ -206,6 +199,29 @@ export default function Jam() {
       )}
 
       <PlayerBar p={p} />
+    </>
+  );
+}
+
+const GENRE_KEY = 'harptabs.jamGenre';
+
+/** Tập ngẫu hứng: chọn blues (vị trí 2, 12 ô) hoặc jazz (vòng ii–V–I…); nhớ lựa chọn trên máy */
+export default function Jam() {
+  const [genre, setGenre] = useState<'blues' | 'jazz'>(() => { try { return localStorage.getItem(GENRE_KEY) === 'jazz' ? 'jazz' : 'blues'; } catch { return 'blues'; } });
+  const pick = (g: 'blues' | 'jazz') => { setGenre(g); try { localStorage.setItem(GENRE_KEY, g); } catch { /* không lưu được thì thôi */ } };
+  return (
+    <div className="page page-jam">
+      <header className="page-head">
+        <div className="row gap center">
+          <Link to="/learn" className="icon-btn" aria-label="Về trang Học"><Icon name="back" /></Link>
+          <h1>Tập ngẫu hứng</h1>
+        </div>
+        <div className="segmented" role="tablist" aria-label="Thể loại">
+          <button type="button" role="tab" aria-selected={genre === 'blues'} className={genre === 'blues' ? 'on' : ''} onClick={() => pick('blues')}>Blues</button>
+          <button type="button" role="tab" aria-selected={genre === 'jazz'} className={genre === 'jazz' ? 'on' : ''} onClick={() => pick('jazz')}>Jazz</button>
+        </div>
+      </header>
+      {genre === 'blues' ? <BluesJam key="blues" /> : <JazzJam key="jazz" />}
     </div>
   );
 }

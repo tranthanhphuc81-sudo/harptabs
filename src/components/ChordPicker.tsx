@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { Chord, chordName, ChordSegment, diatonicChords, keyUsesFlats, NO_CHORD, Tonality } from '../audio/harmony';
+import { Chord, chordName, ChordQuality, ChordSegment, diatonicChords, keyUsesFlats, NO_CHORD, Tonality } from '../audio/harmony';
 
 interface Props {
   seg: ChordSegment;
@@ -18,6 +18,8 @@ export function ChordPicker({ seg, tonality, where, onPick, onClose }: Props) {
   const inKey = diatonicChords(tonality);
   const all = (minor: boolean, seventh = false): Chord[] =>
     Array.from({ length: 12 }, (_, i) => ({ root: i, minor, seventh, name: chordName(i, minor, flats, seventh) }));
+  const allQ = (quality: ChordQuality): Chord[] =>
+    Array.from({ length: 12 }, (_, i) => ({ root: i, minor: quality !== 'maj7', quality, name: chordName(i, false, flats, quality) }));
   // hợp âm 7 hay dùng: V7 (dẫn về chủ) và I7 / IV7 (chất blues)
   const sevenths: Chord[] = (tonality.minor ? [7] : [7, 0, 5]).map((d) => {
     const root = (tonality.tonic + d) % 12;
@@ -52,6 +54,12 @@ export function ChordPicker({ seg, tonality, where, onPick, onClose }: Props) {
           <div className="chord-grid">{all(true).map(chip)}</div>
           <span className="field-label">Hợp âm 7</span>
           <div className="chord-grid">{all(false, true).map(chip)}</div>
+          <span className="field-label">Jazz: maj7</span>
+          <div className="chord-grid">{allQ('maj7').map(chip)}</div>
+          <span className="field-label">Jazz: m7</span>
+          <div className="chord-grid">{allQ('m7').map(chip)}</div>
+          <span className="field-label">Jazz: m7♭5 (nửa giảm)</span>
+          <div className="chord-grid">{allQ('m7b5').map(chip)}</div>
         </div>
       </details>
       <div className="row gap wrap end">
