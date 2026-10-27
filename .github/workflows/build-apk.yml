@@ -78,6 +78,17 @@ jobs:
           mv m.json twa-manifest.json
           echo "$KEYSTORE_BASE64" | base64 -d > android.keystore
 
+      # app mới: Pages có thể đang deploy song song — chờ biểu tượng trên trang tải được (Bubblewrap cần tải về)
+      - name: Chờ trang web của app sẵn sàng
+        working-directory: ${{ matrix.dir }}
+        run: |
+          url=$(jq -r .iconUrl twa-manifest.json)
+          for i in $(seq 1 40); do
+            curl -sf -o /dev/null "$url" && exit 0
+            echo "Chờ $url ($i)…"; sleep 15
+          done
+          echo "::error::Không tải được $url"; exit 1
+
       - name: Sinh dự án Android
         working-directory: ${{ matrix.dir }}
         run: bubblewrap update --skipVersionUpgrade
