@@ -1,4 +1,5 @@
-import { HARP_KEYS, HARP_TYPES, HARP_TYPE_LABEL, HarpKey, harpKeyLabel, HarpType, harpName, holeCount, isChromatic, isTremolo } from '../lib/harp';
+import { SHOWN_HARP_TYPES } from '../appConfig';
+import { HARP_KEYS, HARP_TYPE_LABEL, HarpKey, harpKeyLabel, HarpType, harpName, holeCount, isChromatic, isTremolo } from '../lib/harp';
 
 interface Props {
   value: HarpKey | 'auto';
@@ -27,7 +28,7 @@ export function HarpTypeSelect({ value, onChange, id, label = 'Loại kèn' }: {
     <label className="field" htmlFor={id}>
       <span className="field-label">{label}</span>
       <select id={id} value={value} onChange={(e) => onChange(e.target.value as HarpType)}>
-        {HARP_TYPES.map((t) => <option key={t} value={t}>{HARP_TYPE_LABEL[t]}</option>)}
+        {(SHOWN_HARP_TYPES.includes(value) ? SHOWN_HARP_TYPES : [...SHOWN_HARP_TYPES, value]).map((t) => <option key={t} value={t}>{HARP_TYPE_LABEL[t]}</option>)}
       </select>
     </label>
   );

@@ -2,7 +2,8 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { db, deleteSongs, downloadJson, exportOne, newId, slugify } from '../lib/db';
-import { HARP_KEYS, HARP_TYPES, HARP_TYPE_LABEL, HarpKey, harpKeyLabel, HarpType, harpName, harpTypeOf, isChromatic, isTremolo, midiToName, parseToken, songTonality } from '../lib/harp';
+import { SHOWN_HARP_TYPES } from '../appConfig';
+import { HARP_KEYS, HARP_TYPE_LABEL, HarpKey, harpKeyLabel, HarpType, harpName, harpTypeOf, isChromatic, isTremolo, midiToName, parseToken, songTonality } from '../lib/harp';
 import { countTechniques, flatten, parseTab } from '../lib/tabText';
 import { rekeyBody } from '../lib/converter';
 import { beatsPerBar, Song } from '../lib/types';
@@ -398,6 +399,7 @@ function SongPlayerView({ song, original, fit, view, choice, onChoice }: {
       )}
 
       <TabView
+        harpType={harpType}
         parsed={parsed}
         flat={flat}
         active={activeIdx}
@@ -551,7 +553,7 @@ function RekeyDialog({ song, onClose, onDone }: { song: Song; onClose: () => voi
       <label className="field">
         <span className="field-label">Loại kèn</span>
         <select value={toType} onChange={(e) => setToType(e.target.value as HarpType)}>
-          {HARP_TYPES.map((t) => <option key={t} value={t}>{HARP_TYPE_LABEL[t]}</option>)}
+          {SHOWN_HARP_TYPES.map((t) => <option key={t} value={t}>{HARP_TYPE_LABEL[t]}</option>)}
         </select>
       </label>
       <label className="field">
@@ -685,7 +687,7 @@ function ViewAsBar({ original, viewed, view, fit, choice, onChoice, onSaved }: {
           }}>
             <option value="auto">✨ Tự chọn kèn hợp nhất</option>
             <option value="original">Bản gốc ({harpName(original.harpKey, origType).replace(/^Kèn /, '')})</option>
-            {HARP_TYPES.map((t) => <option key={t} value={t}>{HARP_TYPE_LABEL[t]}</option>)}
+            {SHOWN_HARP_TYPES.map((t) => <option key={t} value={t}>{HARP_TYPE_LABEL[t]}</option>)}
           </select>
         </label>
         {manual && (

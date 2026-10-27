@@ -360,7 +360,7 @@ function Editor({ initial, isNew, draft }: { initial: Song; isNew: boolean; draf
             <h2 className="h-small">Xem trước</h2>
             <MiniPlay p={preview} />
           </div>
-          <TabView parsed={parsed} flat={flat} active={preview.active} showNames={settings.showNoteNames} nameStyle={settings.noteNames} size="s" />
+          <TabView parsed={parsed} flat={flat} active={preview.active} showNames={settings.showNoteNames} nameStyle={settings.noteNames} size="s" harpType={harpType} />
         </div>
       </div>
     </div>

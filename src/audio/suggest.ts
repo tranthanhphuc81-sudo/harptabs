@@ -1,4 +1,4 @@
-import { HarpType, isTremolo } from '../lib/harp';
+import { HarpType, isRecorder, isTremolo } from '../lib/harp';
 /**
  * Tự chọn kiểu nhịp hợp với bài (chạy offline): dựa vào nhịp, từ khoá trong tên/thẻ/ghi chú,
  * tiết tấu giai điệu (chùm ba, chấm dôi, lệch nhịp), giọng trưởng/thứ, tốc độ và ngôn ngữ lời.
@@ -210,6 +210,8 @@ const median = (xs: number[]) => {
 export function suggestInstrument(song: SongLike, notes: NoteLike[], style: BeatStyle): InstrumentSuggestion {
   // bài cho kèn tremolo: phát bằng tiếng kèn tremolo
   if (isTremolo(song.harpType)) return { instrument: 'tremolo', reason: 'Bài cho kèn tremolo' };
+  // bài cho sáo dọc: phát bằng tiếng sáo dọc để nghe đúng như mình sẽ thổi
+  if (isRecorder(song.harpType)) return { instrument: 'recorder', reason: 'Bài cho sáo dọc' };
   const text = fold([song.title, song.artist, song.notes, ...(song.tags ?? [])].filter(Boolean).join(' '));
   for (const [re, instrument] of NAMED_INSTRUMENTS) if (re.test(text)) return { instrument, reason: 'Bài ghi rõ nhạc cụ' };
   if (HYMN.test(text)) return { instrument: 'organ', reason: 'Thánh ca hợp organ' };

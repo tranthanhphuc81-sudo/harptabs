@@ -1,5 +1,6 @@
 import { memo, useCallback, useEffect, useMemo, useRef } from 'react';
-import { midiToName, NoteNameStyle } from '../lib/harp';
+import { HarpType, midiToName, nameToMidi, NoteNameStyle } from '../lib/harp';
+import { FingeringIcon, fingeringOf } from './Fingering';
 import { FlatEvent, ParsedTab, TabLine } from '../lib/tabText';
 import type { ChordSegment } from '../audio/harmony';
 
@@ -17,9 +18,17 @@ interface Props {
   /** hiện hợp âm đệm trên nốt; chạm vào để chọn hợp âm khác */
   chords?: ChordSegment[] | null;
   onChordClick?: (seg: ChordSegment) => void;
+  /** loại nhạc cụ: sáo dọc hiện tên nốt kèm hình thế bấm dưới mỗi nốt */
+  harpType?: HarpType;
 }
 
-export function TokenText({ token }: { token: string }) {
+export function TokenText({ token, nameStyle }: { token: string; nameStyle?: NoteNameStyle }) {
+  // sáo dọc: tên nốt có quãng tám (F4, Bb5) → tên theo kiểu đang chọn, quãng tám viết nhỏ
+  const n = /^([A-G][#b]?)(\d)$/.exec(token);
+  if (n) {
+    const name = nameStyle === 'solfege' ? midiToName(nameToMidi(token)!, 'solfege', false) : n[1];
+    return <>{name}<sub className="tok-oct">{n[2]}</sub></>;
+  }
   const m = /^(-?)(\d+)('*)(o?)(<?)$/.exec(token);
   if (!m) return <>{token}</>;
   return (
@@ -47,9 +56,10 @@ interface LineProps {
   nameStyle: NoteNameStyle;
   chordsAt: Map<number, ChordSegment[]> | null;
   onChord: (seg: ChordSegment) => void;
+  harpType?: HarpType;
 }
 
-const Line = memo(function Line({ events, si, li, index, active, selected, clickable, onNote, showNames, nameStyle, chordsAt, onChord }: LineProps) {
+const Line = memo(function Line({ events, si, li, index, active, selected, clickable, onNote, showNames, nameStyle, chordsAt, onChord, harpType }: LineProps) {
   return (
     <div className="tabline">
       {events.map((ev, ei) => {
@@ -72,7 +82,8 @@ const Line = memo(function Line({ events, si, li, index, active, selected, click
             aria-label={label}
           >
             {showNames && <span className="nt-name">{ev.midi !== null ? midiToName(ev.midi, nameStyle, false) : ''}</span>}
-            <span className="nt-hole">{isRest ? '–' : <TokenText token={ev.token!} />}</span>
+            <span className="nt-hole">{isRest ? '–' : <TokenText token={ev.token!} nameStyle={nameStyle} />}</span>
+            {harpType && !isRest && (() => { const f = fingeringOf(ev.token, harpType); return f ? <span className="nt-finger"><FingeringIcon fingers={f} size="s" /></span> : null; })()}
             <span className="nt-lyric">{ev.lyric ? ev.lyric + (ev.hyphen ? '-' : '') : ' '}</span>
           </button>
         );
@@ -109,7 +120,7 @@ function visibleBand(): [number, number] {
   return [0, bottom];
 }
 
-function TabViewInner({ parsed, flat, active, selected, onNoteClick, showNames, nameStyle = 'letter', size = 'm', compact, chords, onChordClick }: Props) {
+function TabViewInner({ parsed, flat, active, selected, onNoteClick, showNames, nameStyle = 'letter', size = 'm', compact, chords, onChordClick, harpType }: Props) {
   const ref = useRef<HTMLDivElement>(null);
   const lastLine = useRef<string>('');
   // hàm bấm nốt / hợp âm giữ cố định giữa các lần vẽ (trang cha tạo hàm mới mỗi lần) để các dòng không phải vẽ lại
@@ -190,7 +201,7 @@ function TabViewInner({ parsed, flat, active, selected, onNoteClick, showNames, 
                 active={act && act.sectionIndex === si && act.lineIndex === li ? active! : -1}
                 selected={sel && sel.sectionIndex === si && sel.lineIndex === li ? selected! : -1}
                 clickable={!!onNoteClick} onNote={onNote} showNames={showNames} nameStyle={nameStyle}
-                chordsAt={chordsAt} onChord={onChord} />
+                chordsAt={chordsAt} onChord={onChord} harpType={harpType} />
             ),
           )}
         </section>

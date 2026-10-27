@@ -710,7 +710,7 @@ export default function ScanImport({ editSongId, initialFiles }: { editSongId?: 
                 {converted.fit.stats.natural} nốt thường, {converted.fit.stats.bends} nốt bend
                 {converted.fit.stats.unplayable > 0 && `, ${converted.fit.stats.unplayable} nốt ngoài tầm kèn (×, đã thành dấu nghỉ)`}.
               </p>
-              <TabView parsed={parsed} flat={flat} active={player.active} size="s" showNames={settings.showNoteNames} nameStyle={settings.noteNames} />
+              <TabView parsed={parsed} flat={flat} active={player.active} size="s" showNames={settings.showNoteNames} nameStyle={settings.noteNames} harpType={converted.harpType} />
               <div className="row gap preview-actions">
                 <MiniPlay p={player} />
                 <button type="button" className="btn btn-primary" onClick={save}>{editSongId ? 'Lưu thay đổi' : 'Lưu vào thư viện'}</button>

@@ -100,13 +100,13 @@ export type Instrument = 'harmonica' | 'tremolo' | 'piano' | 'guitar' | 'flute' 
   | 'dannhi' | 'kenbau' | 'dannguyet' | 'ukulele' | 'banjo' | 'danhac' | 'ocarina' | 'vibraphone' | 'kalimba' | 'epiano' | 'synth' | 'steeldrum'
   | 'theremin' | 'chiptune' | 'kazoo' | 'talkbox' | 'meow' | 'waterdrop' | 'glassharp' | 'space'
   | 'duck' | 'bird' | 'frog' | 'squeak' | 'bubble' | 'laser' | 'windchime' | 'musicalsaw' | 'oldradio'
-  | 'danda' | 'dantrung' | 'khen';
+  | 'danda' | 'dantrung' | 'khen' | 'recorder';
 
 /** nhóm trong ô chọn nhạc cụ (18 nhạc cụ, chia nhóm cho dễ tìm) */
 export const INSTRUMENT_GROUPS: { label: string; items: Instrument[] }[] = [
   { label: 'Kèn harmonica', items: ['harmonica', 'tremolo'] },
   { label: 'Dân tộc Việt', items: ['flute', 'danbau', 'dantranh', 'dannhi', 'kenbau', 'dannguyet', 'danda', 'dantrung', 'khen'] },
-  { label: 'Kèn & sáo', items: ['whistle', 'ocarina', 'sax', 'trumpet', 'clarinet'] },
+  { label: 'Kèn & sáo', items: ['recorder', 'whistle', 'ocarina', 'sax', 'trumpet', 'clarinet'] },
   { label: 'Đàn dây', items: ['guitar', 'ukulele', 'banjo', 'danhac', 'violin', 'cello'] },
   { label: 'Phím', items: ['piano', 'epiano', 'accordion', 'organ', 'synth'] },
   { label: 'Gõ & giọng hát', items: ['marimba', 'vibraphone', 'kalimba', 'steeldrum', 'musicbox', 'choir'] },
@@ -120,6 +120,7 @@ export const INSTRUMENT_OPTIONS: { value: Instrument; label: string }[] = [
   { value: 'piano', label: 'Piano' },
   { value: 'guitar', label: 'Guitar' },
   { value: 'flute', label: 'Sáo trúc' },
+  { value: 'recorder', label: 'Sáo dọc' },
   { value: 'violin', label: 'Violin' },
   { value: 'accordion', label: 'Accordion' },
   { value: 'organ', label: 'Organ' },
@@ -209,6 +210,7 @@ export function playToneAs(inst: Instrument, midi: number, when: number, dur: nu
     case 'piano': return pianoTone(c, midi, t, dur, velocity, dest);
     case 'guitar': return guitarTone(c, midi, t, dur, velocity, dest);
     case 'flute': return fluteTone(c, midi, t, dur, velocity, dest);
+    case 'recorder': return recorderTone(c, midi, t, dur, velocity, dest);
     case 'violin': return bowedTone(c, midi, t, dur, velocity, dest);
     case 'accordion': return reedTone(c, midi, t, dur, velocity, dest);
     case 'organ': return organTone(c, midi, t, dur, velocity, dest);
@@ -417,6 +419,41 @@ function fluteTone(c: AudioContext, midi: number, t: number, dur: number, vel: n
   for (const o of [o1, o2]) { o.start(t); o.stop(end + 0.12); }
   // tiếng hơi qua lỗ sáo
   breath(c, t, end, f * 2, 2, 0.09 * vel, 0.025 * vel, out);
+}
+
+/** sáo dọc (recorder): tiếng tròn, gần sin, ít rung; đầu nốt có tiếng "chíp" hơi ngắn của đánh lưỡi */
+function recorderTone(c: AudioContext, midi: number, t: number, dur: number, vel: number, out: AudioNode) {
+  const f = midiToHz(midi);
+  const end = t + Math.max(0.1, dur);
+  const env = c.createGain();
+  const peak = 0.34 * vel;
+  env.gain.setValueAtTime(0.0001, t);
+  env.gain.exponentialRampToValueAtTime(peak, t + 0.03);
+  env.gain.setValueAtTime(peak, end);
+  env.gain.exponentialRampToValueAtTime(0.0001, end + 0.06);
+  env.connect(out);
+  const o1 = c.createOscillator();
+  const o2 = c.createOscillator();
+  const o3 = c.createOscillator();
+  const g2 = c.createGain();
+  const g3 = c.createGain();
+  o1.type = 'sine';
+  o2.type = 'sine';
+  o3.type = 'sine';
+  o1.frequency.value = f;
+  o2.frequency.value = f * 2;
+  o3.frequency.value = f * 3;
+  g2.gain.value = 0.08;
+  g3.gain.value = 0.06;
+  o1.connect(env);
+  o2.connect(g2).connect(env);
+  o3.connect(g3).connect(env);
+  // sáo dọc thường thổi thẳng, chỉ rung nhẹ ở nốt dài
+  vibrato(c, t, 5, f * 0.003, Math.min(0.6, dur * 0.5), [o1.frequency, o2.frequency, o3.frequency], end + 0.08);
+  for (const o of [o1, o2, o3]) { o.start(t); o.stop(end + 0.08); }
+  // "chíp" đầu nốt (đánh lưỡi "tu") + chút hơi suốt nốt
+  breath(c, t, t + 0.16, f * 3, 1.2, 0.12 * vel, 0.0001, out);
+  breath(c, t, end, f * 2, 2, 0.02 * vel, 0.015 * vel, out);
 }
 
 /** huýt sáo: sin gần như tinh khiết, vuốt cao độ lên lúc vào nốt, rung muộn, chút tiếng hơi qua môi */

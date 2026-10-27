@@ -88,7 +88,8 @@ export function bestTabs(midis: (number | null)[], key: HarpKey, shift = 0, type
     if (!n) { unplayable++; tokens[idxMap[c]] = null; }
     else {
       tokens[idxMap[c]] = n.token;
-      if (n.technique === 'blow' || n.technique === 'draw') stats.natural++;
+      // sáo dọc: mọi thế bấm đều là nốt thổi bình thường (độ khó đã tính trong chi phí)
+      if (n.technique === 'blow' || n.technique === 'draw' || n.fingers) stats.natural++;
       else if (n.technique === 'overblow' || n.technique === 'overdraw') stats.overblows++;
       else if (n.slide) stats.slides++;
       else stats.bends++;

@@ -6,6 +6,7 @@
  * (setSongInstrument). Mục nào người dùng chỉnh tay thì được giữ nguyên (danh sách `manual`)
  * cho tới khi bấm "Về tự động".
  */
+import { IS_RECORDER_APP } from '../appConfig';
 import { useSyncExternalStore } from 'react';
 import { Accomp, applyMix, DrumKit, Instrument } from './engine';
 import type { BeatStyle } from './patterns';
@@ -57,7 +58,7 @@ export interface BeatPrefs {
 }
 
 export const DEFAULT_BEAT_PREFS: BeatPrefs = {
-  instrument: 'harmonica', kit: 'acoustic', swing: 0, humanize: true, fills: false, bass: true, comp: true, bo: false,
+  instrument: IS_RECORDER_APP ? 'recorder' : 'harmonica', kit: 'acoustic', swing: 0, humanize: true, fills: false, bass: true, comp: true, bo: false,
   beatVol: 0.6, melodyVol: 0.55, bassVol: 0.7, boVol: 0.8, bellVol: 0.8, compVol: 0.7, clapVol: 0.8, reverb: 0.25, accomp: 'gobo', singVol: 0.8, gRake: false, gTrem: false, gShake: false, boSlide: false, boRoll: false, lac: false, showChords: false,
   auto: true, manual: [],
 };
