@@ -73,3 +73,16 @@ describe('tremolo giọng thứ', () => {
     expect(songTonality('A', 1, 'tremolo24m')).toBe('Am');
   });
 });
+
+describe('tremolo 16 lỗ', () => {
+  it('16 lỗ: cùng cách xếp nốt, đủ 16 lỗ; có cả giọng thứ', async () => {
+    const { harpLayout, harpName, holeCount, isTremolo, parseToken } = await import('./harp');
+    expect(holeCount('tremolo16')).toBe(16);
+    expect(isTremolo('tremolo16m')).toBe(true);
+    const l16 = harpLayout('C', 'tremolo16');
+    expect(l16).toHaveLength(16);
+    expect(l16.map((n) => n.midi)).toEqual(harpLayout('C', 'tremolo24').slice(0, 16).map((n) => n.midi));
+    expect(parseToken('17', 'C', 'tremolo16')).toBeNull();
+    expect(harpName('A', 'tremolo16m')).toBe('Kèn Am tremolo 16 lỗ');
+  });
+});

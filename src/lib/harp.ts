@@ -12,7 +12,7 @@
  *   4     thổi lỗ 4;  -4  hút lỗ 4
  *   4<    thổi lỗ 4, bấm nút gạt (cao lên nửa cung);  -4<  hút có bấm nút gạt
  *
- * Kèn tremolo kiểu châu Á (21 / 24 lỗ): mỗi số lỗ chỉ có MỘT nốt — lỗ lẻ thổi, lỗ chẵn hút.
+ * Kèn tremolo kiểu châu Á (16 / 21 / 24 lỗ, cùng cách xếp nốt, kèn ít lỗ thì bớt ở dải cao): mỗi số lỗ chỉ có MỘT nốt — lỗ lẻ thổi, lỗ chẵn hút.
  * App ghi lỗ hút có dấu trừ cho dễ nhìn (-4), nhưng nhận cả cách ghi chỉ có số (4) như sách tremolo.
  * Kèn này không có nốt thăng giáng, không bend.
  * Tremolo giọng thứ (Am, Dm…, thứ tự nhiên): lỗ thổi là hợp âm thứ (La Đô Mi), lỗ hút là các nốt còn lại.
@@ -22,8 +22,8 @@ export type Direction = 'blow' | 'draw';
 export type Technique = 'blow' | 'draw' | 'drawBend' | 'blowBend' | 'overblow' | 'overdraw' | 'blowSlide' | 'drawSlide';
 
 /** Loại kèn. Bài cũ không ghi loại là diatonic. */
-export type HarpType = 'diatonic' | 'chromatic' | 'chromatic16' | 'tremolo24' | 'tremolo21' | 'tremolo24m' | 'tremolo21m';
-export const HARP_TYPES: readonly HarpType[] = ['diatonic', 'chromatic', 'chromatic16', 'tremolo24', 'tremolo21', 'tremolo24m', 'tremolo21m'];
+export type HarpType = 'diatonic' | 'chromatic' | 'chromatic16' | 'tremolo24' | 'tremolo21' | 'tremolo16' | 'tremolo24m' | 'tremolo21m' | 'tremolo16m';
+export const HARP_TYPES: readonly HarpType[] = ['diatonic', 'chromatic', 'chromatic16', 'tremolo24', 'tremolo21', 'tremolo16', 'tremolo24m', 'tremolo21m', 'tremolo16m'];
 
 export const HARP_TYPE_LABEL: Record<HarpType, string> = {
   diatonic: 'Diatonic 10 lỗ',
@@ -31,8 +31,10 @@ export const HARP_TYPE_LABEL: Record<HarpType, string> = {
   chromatic16: 'Chromatic 16 lỗ',
   tremolo24: 'Tremolo 24 lỗ',
   tremolo21: 'Tremolo 21 lỗ',
+  tremolo16: 'Tremolo 16 lỗ',
   tremolo24m: 'Tremolo 24 lỗ giọng thứ (Am, Dm…)',
   tremolo21m: 'Tremolo 21 lỗ giọng thứ (Am, Dm…)',
+  tremolo16m: 'Tremolo 16 lỗ giọng thứ (Am, Dm…)',
 };
 
 export function isChromatic(t: HarpType | undefined): boolean {
@@ -40,12 +42,12 @@ export function isChromatic(t: HarpType | undefined): boolean {
 }
 
 export function isTremolo(t: HarpType | undefined): boolean {
-  return t === 'tremolo24' || t === 'tremolo21' || t === 'tremolo24m' || t === 'tremolo21m';
+  return t === 'tremolo24' || t === 'tremolo21' || t === 'tremolo16' || t === 'tremolo24m' || t === 'tremolo21m' || t === 'tremolo16m';
 }
 
 /** kèn tremolo lên dây giọng thứ: tên kèn là giọng thứ (kèn "Am" = tông A, loại giọng thứ) */
 export function isMinorHarp(t: HarpType | undefined): boolean {
-  return t === 'tremolo24m' || t === 'tremolo21m';
+  return t === 'tremolo24m' || t === 'tremolo21m' || t === 'tremolo16m';
 }
 
 /** tên tông kèn để hiện: "C", hoặc "Am" với kèn giọng thứ */
@@ -59,6 +61,7 @@ export function holeCount(t: HarpType = 'diatonic'): number {
     case 'chromatic': return 12;
     case 'tremolo24': case 'tremolo24m': return 24;
     case 'tremolo21': case 'tremolo21m': return 21;
+    case 'tremolo16': case 'tremolo16m': return 16;
     default: return 10;
   }
 }
