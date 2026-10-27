@@ -4,6 +4,17 @@ App lưu và tập harptab cho kèn **diatonic 10 lỗ**, **chromatic 12 / 16 l�
 
 Bản đang chạy: https://harptabs.pages.dev
 
+Cùng mã nguồn này còn build ra ba app khác cho [sáo](#sổ-tab-sáo), [kalimba](#sổ-tab-kalimba) và [guitar / ukulele](#sổ-tab-guitar):
+
+| App | Nhạc cụ | Bản web | APK Android |
+|---|---|---|---|
+| Sổ Tab Harmonica | Harmonica diatonic, chromatic, tremolo | https://harptabs.pages.dev | [Bản mới nhất `apk-v…`](https://github.com/tranthanhphuc81-sudo/harptabs/releases/latest) |
+| Sổ Tab Sáo | Sáo dọc soprano / alto / tenor / bass, sáo trúc 6 lỗ | https://sotabsao.pages.dev | [Releases `sao-apk-v…`](https://github.com/tranthanhphuc81-sudo/harptabs/releases?q=sao-apk&expanded=true) |
+| Sổ Tab Kalimba | Kalimba 17 phím | https://sotabkalimba.pages.dev | [Releases `kalimba-apk-v…`](https://github.com/tranthanhphuc81-sudo/harptabs/releases?q=kalimba-apk&expanded=true) |
+| Sổ Tab Guitar | Guitar 6 dây, ukulele 4 dây | https://sotabguitar.pages.dev | [Releases `guitar-apk-v…`](https://github.com/tranthanhphuc81-sudo/harptabs/releases?q=guitar-apk&expanded=true) |
+
+Cả bốn app có chung thư viện bài, phát nhạc đệm, karaoke, chia sẻ bài, nhập MIDI / MusicXML, quét khuông nhạc, dò nốt, tập ngẫu hứng, chạy offline. Phần riêng của từng app nằm ở các mục bên dưới.
+
 ## Tính năng
 
 | Phần | Chạy ở đâu | Nội dung |
@@ -26,6 +37,44 @@ Bản đang chạy: https://harptabs.pages.dev
 | Đối chiếu bản thu | Offline (micro / file âm thanh) | Hát, thổi hoặc mở bài gốc có nhạc đệm (MP3, M4A, WAV), app dò giai điệu và gợi ý sửa những nốt quét sai |
 | Nhập AI | Online (Gemini) | Nhờ AI đọc ảnh hoặc nhớ bài theo tên → app tự xếp tab, beat, ghép lời. Đọc ảnh bằng AI còn hay sai cao độ, bản in nên dùng Quét khuông nhạc |
 
+## Sổ Tab Sáo
+
+Bản web: https://sotabsao.pages.dev · APK: gói `dev.pages.sotabsao.twa`, tag `sao-apk-v…` trên GitHub Releases.
+
+| Phần | Nội dung |
+|---|---|
+| Loại sáo | Sáo dọc soprano, alto (mặc định), tenor, bass (Fa trầm); kiểu bấm Baroque hoặc German (chọn trong Cài đặt). Sáo trúc 6 lỗ: chọn tông sáo, tự chọn tông hợp bài, chọn cách gọi nốt "bịt hết lỗ" (Đô … Si) |
+| Tab | Ghi tên nốt, dưới mỗi nốt có hình thế bấm; bảng thế bấm đầy đủ cho từng loại sáo. Sửa bài / sửa nốt chọn theo tên nốt |
+| Karaoke | Hình thế bấm dưới mỗi nốt và hình thế tay lớn của nốt đang vang |
+| Tập ngẫu hứng | Blues (chọn loại sáo, giọng, thang âm và nốt hợp âm hiện theo thế bấm, lick ghi tên nốt) và jazz |
+| Học | 8 bài cho sáo alto và 2 bài cho sáo trúc; máy dò nốt hiện thế bấm |
+
+## Sổ Tab Kalimba
+
+Bản web: https://sotabkalimba.pages.dev · APK: gói `dev.pages.sotabkalimba.twa`, tag `kalimba-apk-v…` trên GitHub Releases.
+
+| Phần | Nội dung |
+|---|---|
+| Đàn | Kalimba 17 phím giọng trưởng (tông C: Đô4 → Mi6), phím thấp nhất ở giữa, lên cao xen kẽ trái / phải |
+| Tab | Kiểu số 1–7 theo tông đàn, chấm `°` = lên một quãng tám (`1` = Đô4, `1°` = Đô5, `1°°` = Đô6; gõ `'` hoặc `*` cũng được). Dưới mỗi nốt có hình phím cần gảy, kèm sơ đồ cả cây đàn |
+| Bài và học | Bài mẫu xếp lại cho kalimba, 4 bài học (bắt đầu, kỹ thuật, bảo quản) |
+| Dò nốt | Dùng để chỉnh dây từng phím |
+
+## Sổ Tab Guitar
+
+Bản web: https://sotabguitar.pages.dev · APK: gói `dev.pages.sotabguitar.twa`, tag `guitar-apk-v…` trên GitHub Releases.
+
+| Phần | Nội dung |
+|---|---|
+| Đàn | Guitar 6 dây và ukulele 4 dây |
+| Tab | Ghi `dây.phím` (`2.3` = dây 2 phím 3), mỗi nốt vẽ như một cột tab. Bộ chọn vị trí ưu tiên dây buông, thế đầu cần và dây cao cho giai điệu. Sơ đồ cần đàn chạm để nghe, sửa nốt và soạn bài ngay trên cần đàn |
+| Hợp âm | Sơ đồ hợp âm cho các hợp âm trong bài (thế mở, thế chặn, tự dò thế cho hợp âm khác), chạm để nghe. Capo theo từng bài (phím 1–7), gợi ý capo khi bài có nhiều hợp âm chặn khó. Bộ đoán hợp âm ưu tiên các vòng hay gặp (V–I, IV–V, ii–V, vi–IV…) |
+| Lời + hợp âm | Tên hợp âm đặt trên chữ chỗ đổi hợp âm, chữ sáng theo nhạc, chạm chữ để phát từ đó, gợi ý điệu quạt theo kiểu nhịp |
+| Dán hợp âm | Dán bài lời + hợp âm từ mạng (kiểu `[Am]lời` hoặc dòng hợp âm trên dòng lời), không cần giai điệu: app phát nhạc đệm theo hợp âm. Ở bài đã có giai điệu, dán hợp âm sẽ khớp từng chữ với lời để đặt hợp âm đúng chỗ. Hợp âm lạ (sus, add9, C/G) được đổi về hợp âm chơi được |
+| Karaoke | Hình cần đàn và sơ đồ hợp âm đang vang |
+| Tập ngẫu hứng | Blues / jazz trên cần đàn, tô cả hình thang blues |
+| Bài và học | 34 bài mẫu guitar, 8 bài ukulele, 7 bài học; dò nốt để lên dây |
+
 ## Chạy thử
 
 Cần Node.js 18 trở lên.
@@ -33,14 +82,22 @@ Cần Node.js 18 trở lên.
 ```bash
 npm install
 npm run dev        # http://localhost:5173
-npm test           # ~450 test: lý thuyết harp, parser, chuyển tab, YIN, OMR, AI, worker, giao diện
+npm test           # ~730 test: lý thuyết harp, parser, chuyển tab, YIN, OMR, AI, worker, giao diện
 npm run lint       # ESLint (gồm luật react-hooks)
 npm run typecheck
-npm run build      # xuất ra dist/
+npm run build      # xuất ra dist/ (app Harmonica)
 npm run preview    # chạy bản build (có service worker offline)
 ```
 
-Mỗi lần push lên `main`, GitHub Actions chạy lint + test + build rồi deploy `dist/` lên Cloudflare Pages (`.github/workflows/deploy-pages.yml`). Mở https://harptabs.pages.dev bằng trình duyệt điện thoại → "Thêm vào màn hình chính" là app chạy offline.
+Ba app còn lại build bằng biến `VITE_APP` (Git Bash / macOS / Linux):
+
+```bash
+VITE_APP=recorder npx vite build --outDir dist-recorder   # Sổ Tab Sáo
+VITE_APP=kalimba npx vite build --outDir dist-kalimba     # Sổ Tab Kalimba
+VITE_APP=guitar npx vite build --outDir dist-guitar       # Sổ Tab Guitar
+```
+
+Mỗi lần push lên `main`, GitHub Actions chạy lint + test + build rồi deploy cả bốn app lên Cloudflare Pages (`.github/workflows/deploy-pages.yml`): `dist/` → dự án `harptabs`, `dist-recorder/` → `sotabsao`, `dist-kalimba/` → `sotabkalimba`, `dist-guitar/` → `sotabguitar`. Mở link của app bằng trình duyệt điện thoại → "Thêm vào màn hình chính" là app chạy offline.
 
 Các phần nặng (quét nhạc, đọc file, PDF, OCR) chỉ tải khi dùng. Bộ đọc PDF và OCR được lưu lại sau lần dùng đầu, nên muốn dùng offline thì mở thử một lần khi có mạng.
 
@@ -144,10 +201,17 @@ worker/                Cloudflare Worker proxy
 
 ## App Android
 
-Bản Android là **TWA** (Trusted Web Activity) do Bubblewrap tạo: mở https://harptabs.pages.dev toàn màn hình qua Chrome, nên nội dung tự cập nhật theo mỗi lần deploy Pages, không cần build lại APK.
+Bản Android là **TWA** (Trusted Web Activity) do Bubblewrap tạo: mở trang Pages của app toàn màn hình qua Chrome, nên nội dung tự cập nhật theo mỗi lần deploy Pages, không cần build lại APK.
 
-- Cấu hình: `android/twa-manifest.json`. Workflow `build-apk.yml` chỉ chạy khi file này đổi (hoặc bấm chạy tay), rồi đăng APK lên GitHub Releases.
-- Cần secret `ANDROID_KEYSTORE_BASE64` và `ANDROID_KEYSTORE_PASSWORD`. Vân tay SHA-256 của khoá ký phải khớp với `public/.well-known/assetlinks.json`, nếu không app sẽ hiện thanh địa chỉ trình duyệt.
+| App | Cấu hình | Gói | Tag trên Releases |
+|---|---|---|---|
+| Sổ Tab Harmonica | `android/twa-manifest.json` | `dev.pages.harptabs.twa` | `apk-v…` |
+| Sổ Tab Sáo | `android-recorder/twa-manifest.json` | `dev.pages.sotabsao.twa` | `sao-apk-v…` |
+| Sổ Tab Kalimba | `android-kalimba/twa-manifest.json` | `dev.pages.sotabkalimba.twa` | `kalimba-apk-v…` |
+| Sổ Tab Guitar | `android-guitar/twa-manifest.json` | `dev.pages.sotabguitar.twa` | `guitar-apk-v…` |
+
+- Workflow `build-apk.yml` build cả bốn app (mỗi app một dòng trong matrix), chỉ chạy khi một trong các file cấu hình trên đổi (hoặc bấm chạy tay), rồi đăng APK lên [GitHub Releases](https://github.com/tranthanhphuc81-sudo/harptabs/releases).
+- Cần secret `ANDROID_KEYSTORE_BASE64` và `ANDROID_KEYSTORE_PASSWORD` (cả bốn app dùng chung khoá). Vân tay SHA-256 của khoá ký phải khớp với `public/.well-known/assetlinks.json` (có mục cho từng gói), nếu không app sẽ hiện thanh địa chỉ trình duyệt.
 
 ## Bản quyền
 
