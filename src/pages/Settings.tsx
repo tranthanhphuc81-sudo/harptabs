@@ -181,6 +181,12 @@ export default function SettingsPage() {
             <input type="checkbox" checked={s.keepAwake} onChange={(e) => update({ keepAwake: e.target.checked })} />
             Giữ màn hình sáng khi đang phát bài, chờ nốt hoặc dò nốt
           </label>
+          {s.keepAwake && (
+            <label className="check wide">
+              <input type="checkbox" checked={s.keepAwakeAlways ?? true} onChange={(e) => update({ keepAwakeAlways: e.target.checked })} />
+              Luôn giữ sáng suốt lúc app đang mở (tốn pin hơn)
+            </label>
+          )}
           <SyncCalibrator value={s.syncOffsetMs} onChange={(syncOffsetMs) => update({ syncOffsetMs })} />
           <label className="field wide">
             <span className="field-label">Độ trễ micro khi chấm điểm karaoke: {s.micLatencyMs} ms</span>

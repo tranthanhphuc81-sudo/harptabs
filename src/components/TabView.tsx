@@ -112,7 +112,7 @@ const Line = memo(function Line({ events, si, li, index, active, selected, click
 });
 
 /** Khoảng màn hình không bị thanh điều khiển (.playerbar), hàng nút Nghe thử / Lưu (.preview-actions) và thanh menu (.nav) dính ở dưới che */
-function visibleBand(): [number, number] {
+export function visibleBand(): [number, number] {
   const h = window.innerHeight;
   let bottom = h;
   for (const sel of ['.playerbar', '.preview-actions', '.nav']) {

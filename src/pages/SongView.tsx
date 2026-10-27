@@ -7,7 +7,7 @@ import { HARP_KEYS, HARP_TYPE_LABEL, HarpKey, harpKeyLabel, HarpType, harpName, 
 import { countTechniques, flatten, parseTab } from '../lib/tabText';
 import { rekeyBody } from '../lib/converter';
 import { beatsPerBar, Song } from '../lib/types';
-import { TabView } from '../components/TabView';
+import { TabView, visibleBand } from '../components/TabView';
 import { HarpDiagram } from '../components/HarpDiagram';
 import { PlayerBar } from '../components/PlayerBar';
 import { usePlayer } from '../components/usePlayer';
@@ -34,6 +34,8 @@ import { suggestInstrument, suggestStyle } from '../audio/suggest';
 
 // màn hình karaoke: tải khi mở
 const KaraokeView = lazy(() => import('../components/KaraokeView'));
+
+const PAGE_TURN_KEY = 'harptabs.pageTurn';
 
 export default function SongView() {
   const { id } = useParams();
@@ -197,6 +199,27 @@ function SongPlayerView({ song, original, fit, view, choice, onChoice }: {
     const k = Math.min(flat.length - 1, Math.max(0, focus + dir));
     setFocus(k);
     if (flat[k]?.midi != null) previewNote(flat[k].midi!, 0.4);
+  };
+
+  // ----- lật trang bằng một chạm (khi không phát): chạm nửa dưới sang trang, phần trên lùi trang -----
+  const [pageTurn, setPageTurn] = useState(() => { try { return localStorage.getItem(PAGE_TURN_KEY) === '1'; } catch { return false; } });
+  const togglePageTurn = () => {
+    setPageTurn((v) => {
+      try { localStorage.setItem(PAGE_TURN_KEY, v ? '0' : '1'); } catch { /* không lưu được thì thôi */ }
+      return !v;
+    });
+  };
+  const onPagerClick = (e: React.MouseEvent) => {
+    if (!pageTurn || p.playing || waitMode || editMode) return;
+    // chạm tên hợp âm vẫn mở bảng chọn hợp âm
+    if ((e.target as HTMLElement).closest('.nt-chord')) return;
+    e.stopPropagation();
+    e.preventDefault();
+    const [top, bottom] = visibleBand();
+    const page = Math.max(120, (bottom - top) * 0.85);
+    const back = e.clientY < top + (bottom - top) * 0.3;
+    const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    window.scrollBy({ top: back ? -page : page, behavior: reduce ? 'auto' : 'smooth' });
   };
 
   const onNoteClick = (fi: number) => {
@@ -382,6 +405,7 @@ function SongPlayerView({ song, original, fit, view, choice, onChoice }: {
         </>}
         <span className="lg-dur print-only">Ô dài = giữ lâu hơn (ô thường 1 phách) · <strong>–</strong> nghỉ</span>
         <span className="muted no-print">Chạm vào nốt để nghe, hoặc chọn chỗ bắt đầu phát.</span>
+        <button type="button" className={`chip no-print${pageTurn ? ' on' : ''}`} aria-pressed={pageTurn} onClick={togglePageTurn}>Chạm lật trang</button>
         <button type="button" className={`chip legend-chords${beatPrefs.showChords ? ' on' : ''}`} aria-pressed={beatPrefs.showChords}
           onClick={() => setBeatPrefs({ showChords: !beatPrefs.showChords })}>
           Hợp âm{manualCount > 0 ? ` (${manualCount} chọn tay)` : ''}
@@ -401,6 +425,8 @@ function SongPlayerView({ song, original, fit, view, choice, onChoice }: {
         </div>
       )}
 
+      {pageTurn && !p.playing && !waitMode && !editMode && <p className="small muted no-print page-turn-hint">Chạm phần dưới màn hình để sang trang, phần trên để lùi trang.</p>}
+      <div className="tab-pager" onClickCapture={onPagerClick}>
       <TabView
         harpType={harpType}
         harpKey={song.harpKey}
@@ -415,6 +441,7 @@ function SongPlayerView({ song, original, fit, view, choice, onChoice }: {
         chords={chordSegs}
         onChordClick={setChordEdit}
       />
+      </div>
 
       <div className="below-tab">
         <button type="button" className="btn btn-ghost" onClick={() => setShowDiagram((v) => !v)} aria-expanded={showDiagram}>

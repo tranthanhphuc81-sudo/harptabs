@@ -1,3 +1,5 @@
+import { useAppState } from './state';
+import { useWakeLock } from './components/useWakeLock';
 import { BRAND } from './appConfig';
 import { lazy, Suspense, useEffect, useState } from 'react';
 import { HashRouter, NavLink, Route, Routes, useLocation } from 'react-router-dom';
@@ -30,6 +32,9 @@ const NAV = [
 
 function Shell() {
   const online = useOnline();
+  // giữ màn hình sáng suốt lúc app đang mở (Cài đặt → Luôn giữ sáng); tay bận cầm kèn / sáo
+  const { settings } = useAppState();
+  useWakeLock(settings.keepAwakeAlways ?? true);
   const { pathname } = useLocation();
   const [ready, setReady] = useState(false);
   const [err, setErr] = useState<string | null>(null);

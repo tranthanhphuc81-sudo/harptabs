@@ -52,6 +52,8 @@ export interface Settings {
   defaultHarpType: HarpType;
   /** giữ màn hình sáng khi đang phát bài / chờ nốt / dò nốt */
   keepAwake: boolean;
+  /** giữ màn hình sáng suốt lúc app đang mở (không chỉ khi phát bài) */
+  keepAwakeAlways: boolean;
   /** bù trễ đèn nốt (ms): dương = đèn sáng muộn hơn; dùng khi loa / tai nghe Bluetooth trễ hơn máy báo */
   syncOffsetMs: number;
   /** độ trễ micro (ms) khi chấm điểm karaoke: giọng hát tới bộ dò trễ chừng này */
@@ -81,6 +83,7 @@ export const DEFAULT_SETTINGS: Settings = {
   recorderFingering: 'baroque',
   saoTrucClosed: 5,
   keepAwake: true,
+  keepAwakeAlways: true,
   syncOffsetMs: 0,
   micLatencyMs: 60,
 };
