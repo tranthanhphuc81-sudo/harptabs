@@ -992,6 +992,14 @@ button, a, select { -webkit-tap-highlight-color: transparent; }
 .ks-holes { display: inline-flex; gap: 0.25em; font-family: var(--font-cond); font-weight: 600; }
 .ks-holes .blow { color: var(--blow); }
 .ks-holes .draw { color: var(--draw); }
+/* karaoke sáo: hình thế bấm dưới tên nốt, và thế tay lớn của nốt đang vang ở góc */
+.ks-holes .ks-fing { display: inline-flex; flex-direction: column; align-items: center; gap: 2px; }
+.kara-finger { display: flex; flex-direction: row; align-items: center; gap: 6px; padding: 10px 12px; border-radius: var(--r-l); background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow-sm); font-weight: 700; pointer-events: none; }
+.kara-finger .fingering { width: auto; height: 96px; }
+.kara-finger span { font-size: 1.4rem; }
+/* màn rộng: đưa thế tay lớn sang cạnh phải, không chiếm chỗ lời */
+@media (min-width: 900px) { .kara-finger { position: absolute; right: 16px; top: 50%; transform: translateY(-50%); flex-direction: column; } .kara-finger .fingering { height: 140px; } }
+
 .ks-word { position: relative; display: inline-block; white-space: nowrap; }
 .ks-base { color: var(--ink); }
 .kara-line.next .ks-base { color: var(--ink-2); }
@@ -1087,3 +1095,4 @@ button, a, select { -webkit-tap-highlight-color: transparent; }
 .rc-name { font-size: 0.8rem; font-weight: 600; }
 .keypad.recorder button { min-width: 44px; padding: 0 4px; }
 .keypad.ne-keys.recorder { grid-template-columns: repeat(auto-fill, minmax(40px, 1fr)); }
+.kara-stage { position: relative; }

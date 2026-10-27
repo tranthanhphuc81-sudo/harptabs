@@ -16,7 +16,8 @@ import type { Backing, MidiSource } from '../lib/types';
 import { loadMidiSource, midiBytes, saveMidiSource, updateMidiSound } from '../lib/midiSources';
 import { INSTRUMENT_GROUPS, INSTRUMENT_OPTIONS, setArrangeSoft } from '../audio/engine';
 import { Arrangement, ArrVoice, ArrVoices, buildArrangement, matchMidiToTab } from '../lib/midiArrange';
-import { harpName, harpTypeOf, shiftKey } from '../lib/harp';
+import { harpName, harpTypeOf, isFingered, midiToName, shiftKey } from '../lib/harp';
+import { FingeringIcon, fingeringOf } from './Fingering';
 import { buildKaraoke, countdownAt, holesFor, KLine, locate } from '../lib/karaoke';
 import { DEFAULT_KARAOKE, DEFAULT_KARAOKE_VIEW, HOLE_SIZES, KaraokeHoles, KaraokePrefs, KaraokeView as ViewSizes, loadKaraokePrefs, loadKaraokeView, LYRIC_SIZES, MAX_TRANSPOSE, saveKaraokePrefs, saveKaraokeView } from '../lib/karaokePrefs';
 import { FlatEvent, flatten, parseTab } from '../lib/tabText';
@@ -311,6 +312,13 @@ export default function KaraokeView({ song, original, flat, p, chordSegs, onClos
     [prefs.chords, chordSegs, lines, et],
   );
 
+  // sáo: hiện thế tay của nốt đang vang (cập nhật khi đổi nốt)
+  const fingered = isFingered(type);
+  const [curNote, setCurNote] = useState<number | null>(null);
+  const curRef = useRef<number | null>(null);
+  const holeFlatRef = useRef(holeFlat);
+  holeFlatRef.current = holeFlat;
+
   // ----- chữ chạy: đọc phách mỗi khung hình, ghi thẳng --p vào âm tiết (không vẽ lại React) -----
   const [shown, setShown] = useState(0);
   const [count, setCount] = useState<number | null>(null);
@@ -331,12 +339,18 @@ export default function KaraokeView({ song, original, flat, p, chordSegs, onClos
         });
         const c = countdownAt(lines, beat);
         if (c !== lastCount) { lastCount = c; setCount(c); }
+        if (fingered) {
+          const hf = holeFlatRef.current;
+          const i = hf.findIndex((f) => f.token && beat >= f.start - 1e-6 && beat < f.start + f.beats - 1e-6);
+          const ni = i >= 0 ? i : null;
+          if (ni !== curRef.current) { curRef.current = ni; setCurNote(ni); }
+        }
       }
       raf = requestAnimationFrame(frame);
     };
     raf = requestAnimationFrame(frame);
     return () => cancelAnimationFrame(raf);
-  }, [lines]);
+  }, [lines, fingered]);
   // dừng phát: chữ về trạng thái chưa hát
   useEffect(() => {
     if (tp.playing) return;
@@ -425,7 +439,15 @@ export default function KaraokeView({ song, original, flat, p, chordSegs, onClos
                   {chord && <span className="ks-chord">{chord}</span>}
                   {holes.length > 0 && (
                     <span className="ks-holes">
-                      {holes.map((h, i) => <span key={i} className={h?.startsWith('-') ? 'draw' : 'blow'}>{h ? <TokenText token={h} /> : '–'}</span>)}
+                      {holes.map((h, i) => {
+                        const f = fingered ? fingeringOf(h, type, song.harpKey) : null;
+                        return (
+                          <span key={i} className={`${h?.startsWith('-') ? 'draw' : 'blow'}${f ? ' ks-fing' : ''}`}>
+                            {h ? <TokenText token={h} /> : '–'}
+                            {f && <FingeringIcon fingers={f} size="s" />}
+                          </span>
+                        );
+                      })}
                     </span>
                   )}
                 </span>
@@ -576,6 +598,17 @@ export default function KaraokeView({ song, original, flat, p, chordSegs, onClos
           ? <div className="kara-count big" aria-live="assertive">{tp.countIn}</div>
           : count != null && <div className="kara-count" aria-hidden="true">{'●'.repeat(count)}</div>}
         {scoring && <PitchStrip lines={lines} scorer={scorer} getBeat={tp.beatAt} spb={spb} />}
+        {fingered && (() => {
+          // thế tay lớn của nốt đang vang (chưa phát thì nốt đầu câu đang hiện)
+          const n = curNote != null ? holeFlat[curNote] : holeFlat[lines[shown]?.syls[0]?.fi[0] ?? -1];
+          const f = n?.token ? fingeringOf(n.token, type, song.harpKey) : null;
+          return f && n?.midi != null ? (
+            <div className="kara-finger" aria-label={`Thế tay nốt ${n.token}`}>
+              <FingeringIcon fingers={f} size="l" />
+              <span>{midiToName(n.midi)}</span>
+            </div>
+          ) : null;
+        })()}
         {renderLine(shown, true)}
         {renderLine(shown + 1, false)}
       </main>
