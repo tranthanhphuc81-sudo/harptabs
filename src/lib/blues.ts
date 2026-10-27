@@ -51,9 +51,9 @@ export function bluesOverrides(chords: string[]): ChordOverrides {
 }
 
 /** Lỗ dễ nhất cho mỗi cao độ thuộc các bậc `degrees` (tính từ `tonic`), bỏ overblow; xếp từ thấp lên cao */
-function holesFor(harpKey: HarpKey, tonic: number, degrees: number[], maxCost: number): string[] {
+function holesFor(harpKey: HarpKey, tonic: number, degrees: number[], maxCost: number, type: HarpType = 'diatonic'): string[] {
   const best = new Map<number, HarpNote>();
-  for (const n of harpLayout(harpKey, 'diatonic')) {
+  for (const n of harpLayout(harpKey, type)) {
     if (n.over || techniqueCost(n) > maxCost || !degrees.includes(pc(n.midi - tonic))) continue;
     const cur = best.get(n.midi);
     if (!cur || techniqueCost(n) < techniqueCost(cur)) best.set(n.midi, n);
@@ -61,15 +61,18 @@ function holesFor(harpKey: HarpKey, tonic: number, degrees: number[], maxCost: n
   return [...best.values()].sort((a, b) => a.midi - b.midi).map((n) => n.token);
 }
 
-/** Thang âm blues (1 ♭3 4 ♭5 5 ♭7) ở vị trí 2: kèn C ra -2 -3' 4 -4' -4 -5 6 … */
-export function bluesScaleTokens(harpKey: HarpKey): string[] {
-  return holesFor(harpKey, bluesTonic(harpKey), [0, 3, 5, 6, 7, 10], 4);
+/**
+ * Thang âm blues (1 ♭3 4 ♭5 5 ♭7) ở vị trí 2: kèn C ra -2 -3' 4 -4' -4 -5 6 …
+ * Sáo dọc: truyền loại sáo và giọng blues (`tonic`), mọi thế bấm đều dùng được.
+ */
+export function bluesScaleTokens(harpKey: HarpKey, type: HarpType = 'diatonic', tonic = bluesTonic(harpKey)): string[] {
+  return holesFor(harpKey, tonic, [0, 3, 5, 6, 7, 10], type === 'diatonic' ? 4 : 99, type);
 }
 
 /** Lỗ không cần bend ra nốt của hợp âm đang vang (nốt "an toàn" để dừng câu) */
-export function chordToneTokens(harpKey: HarpKey, degree: Degree): string[] {
-  const root = pc(bluesTonic(harpKey) + DEGREE_SHIFT[degree]);
-  return holesFor(harpKey, root, [0, 4, 7, 10], 0);
+export function chordToneTokens(harpKey: HarpKey, degree: Degree, type: HarpType = 'diatonic', tonic = bluesTonic(harpKey)): string[] {
+  const root = pc(tonic + DEGREE_SHIFT[degree]);
+  return holesFor(harpKey, root, [0, 4, 7, 10], type === 'diatonic' ? 0 : 99, type);
 }
 
 /** Ô nhịp (0–11) và phách trong ô từ vị trí phát */

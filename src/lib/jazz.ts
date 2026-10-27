@@ -3,9 +3,9 @@
  * trên kèn (nốt 3 và 7 là "guide tones" nên nhắm vào), và lick viết bằng tên nốt đổi sang tab cho từng loại kèn.
  */
 import { chordIntervals, ChordOverrides, chordName, ChordQuality, segKey } from '../audio/harmony';
-import { HarpKey, harpLayout, HarpNote, HarpType, nameToMidi, techniqueCost } from './harp';
+import { HarpKey, harpLayout, HarpNote, HarpType, midiToName, nameToMidi, recorderKey, techniqueCost } from './harp';
 import { bestTabs } from './converter';
-import { BAR_BEATS, usesFlats } from './blues';
+import { BAR_BEATS, lickEvents, usesFlats } from './blues';
 
 /** '' trưởng, 'm' thứ, '7' át, và các loại jazz */
 export type JazzQuality = '' | 'm' | '7' | ChordQuality;
@@ -113,4 +113,10 @@ export function lickToTab(notes: string, tonic: number, harpKey: HarpKey, harpTy
   // tokens của bestTabs khớp từng vị trí đầu vào (nghỉ = null)
   const body = items.map((i, k) => `${(i.midi !== null && best!.tokens[k]) || 'r'}${i.dur}`).join(' ');
   return { body, unplayable: best!.stats.unplayable };
+}
+
+/** lick blues viết cho kèn C diatonic (giọng Sol) → tên nốt ở giọng `tonic`, rồi xếp thế bấm cho sáo */
+export function lickForRecorder(body: string, tonic: number, type: HarpType): string {
+  const notes = lickEvents(body, 'C').map((e) => `${e.midi === null || !e.token ? 'r' : midiToName(e.midi)}:${e.beats}`).join(' ');
+  return lickToTab(notes, (((tonic - 7) % 12) + 12) % 12, recorderKey(type), type).body;
 }

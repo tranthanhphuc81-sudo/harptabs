@@ -18,7 +18,7 @@
  * Tremolo giọng thứ (Am, Dm…, thứ tự nhiên): lỗ thổi là hợp âm thứ (La Đô Mi), lỗ hút là các nốt còn lại.
  *
  * Sáo dọc (recorder, bấm Baroque): tab ghi bằng TÊN NỐT có quãng tám (F4, Bb4, C#5); mỗi nốt một thế bấm
- * (src/data/recorderFingerings.ts). Alto tông F ghi đúng cao độ; soprano tông C ghi thấp hơn tiếng thật một quãng tám.
+ * (src/data/recorderFingerings.ts). Alto tông F và tenor tông C ghi đúng cao độ; soprano tông C ghi thấp hơn tiếng thật một quãng tám.
  */
 import { RECORDER_FINGERINGS } from '../data/recorderFingerings';
 
@@ -29,9 +29,9 @@ export type Technique = 'blow' | 'draw' | 'drawBend' | 'blowBend' | 'overblow' |
 
 /** Loại kèn. Bài cũ không ghi loại là diatonic. */
 export type HarpType = 'diatonic' | 'chromatic' | 'chromatic16' | 'tremolo24' | 'tremolo21' | 'tremolo16' | 'tremolo24m' | 'tremolo21m' | 'tremolo16m'
-  | 'recorderAlto' | 'recorderSoprano';
+  | 'recorderAlto' | 'recorderSoprano' | 'recorderTenor';
 /** mọi loại hợp lệ (để đọc bài đã lưu); ô chọn chỉ hiện SHOWN_HARP_TYPES của bản build (src/appConfig.ts) */
-export const HARP_TYPES: readonly HarpType[] = ['diatonic', 'chromatic', 'chromatic16', 'tremolo24', 'tremolo21', 'tremolo16', 'tremolo24m', 'tremolo21m', 'tremolo16m', 'recorderAlto', 'recorderSoprano'];
+export const HARP_TYPES: readonly HarpType[] = ['diatonic', 'chromatic', 'chromatic16', 'tremolo24', 'tremolo21', 'tremolo16', 'tremolo24m', 'tremolo21m', 'tremolo16m', 'recorderAlto', 'recorderSoprano', 'recorderTenor'];
 
 export const HARP_TYPE_LABEL: Record<HarpType, string> = {
   diatonic: 'Diatonic 10 lỗ',
@@ -45,13 +45,14 @@ export const HARP_TYPE_LABEL: Record<HarpType, string> = {
   tremolo16m: 'Tremolo 16 lỗ giọng thứ (Am, Dm…)',
   recorderAlto: 'Sáo dọc alto (Fa)',
   recorderSoprano: 'Sáo dọc soprano (Đô)',
+  recorderTenor: 'Sáo dọc tenor (Đô trầm)',
 };
 
 export function isRecorder(t: HarpType | undefined): boolean {
-  return t === 'recorderAlto' || t === 'recorderSoprano';
+  return t === 'recorderAlto' || t === 'recorderSoprano' || t === 'recorderTenor';
 }
 
-/** tông cố định của sáo dọc: alto Fa, soprano Đô */
+/** tông cố định của sáo dọc: alto Fa, soprano và tenor Đô */
 export function recorderKey(t: HarpType): HarpKey {
   return t === 'recorderAlto' ? 'F' : 'C';
 }
@@ -81,7 +82,7 @@ export function holeCount(t: HarpType = 'diatonic'): number {
     case 'tremolo24': case 'tremolo24m': return 24;
     case 'tremolo21': case 'tremolo21m': return 21;
     case 'tremolo16': case 'tremolo16m': return 16;
-    case 'recorderAlto': case 'recorderSoprano': return 8;
+    case 'recorderAlto': case 'recorderSoprano': case 'recorderTenor': return 8;
     default: return 10;
   }
 }
@@ -96,7 +97,7 @@ export function harpTypeOf(s: { harpType?: HarpType }): HarpType {
 /** "Kèn C" hoặc "Kèn C chromatic" */
 export function harpName(key: string, t: HarpType = 'diatonic'): string {
   if (isTremolo(t)) return `Kèn ${harpKeyLabel(key, t)} tremolo ${holeCount(t)} lỗ`;
-  if (isRecorder(t)) return t === 'recorderAlto' ? 'Sáo alto (Fa)' : 'Sáo soprano (Đô)';
+  if (isRecorder(t)) return t === 'recorderAlto' ? 'Sáo alto (Fa)' : t === 'recorderTenor' ? 'Sáo tenor (Đô)' : 'Sáo soprano (Đô)';
   return t === 'diatonic' ? `Kèn ${key}` : t === 'chromatic16' ? `Kèn ${key} chromatic 16 lỗ` : `Kèn ${key} chromatic`;
 }
 
@@ -183,7 +184,8 @@ export function harpLayout(key: HarpKey, type: HarpType = 'diatonic'): HarpNote[
 
   if (isRecorder(type)) {
     // sáo: không phụ thuộc tông kèn; hole = thứ tự nốt (để bộ chọn tính khoảng nhảy theo cao độ)
-    const sounding = type === 'recorderAlto' ? 65 : 72; // nốt thấp nhất: alto F4, soprano C5 (ghi C4)
+    // nốt thấp nhất: alto F4, tenor C4 (ghi đúng cao độ), soprano C5 (ghi C4, thấp hơn tiếng thật một quãng tám)
+    const sounding = type === 'recorderAlto' ? 65 : type === 'recorderTenor' ? 60 : 72;
     const written = type === 'recorderAlto' ? 65 : 60;
     const KIND: Record<string, Technique> = { normal: 'fingered', cross: 'crossFingered', half: 'halfHole', high: 'highRegister' };
     RECORDER_FINGERINGS.forEach((f, i) => notes.push({

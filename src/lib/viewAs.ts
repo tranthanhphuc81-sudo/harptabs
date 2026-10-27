@@ -96,7 +96,7 @@ export function bestHarp(song: Song): BestHarp {
   if (hit) return hit;
   const midis = midisOf(parseTab(song.body, song.harpKey, origType));
   // bài sáo dọc: chỉ so sáo alto / soprano (mỗi loại một tông); bài kèn: các loại kèn
-  const order: HarpType[] = isRecorder(origType) ? ['recorderAlto', 'recorderSoprano'] : TYPE_ORDER;
+  const order: HarpType[] = isRecorder(origType) ? ['recorderAlto', 'recorderSoprano', 'recorderTenor'] : TYPE_ORDER;
   const types = [origType, ...order.filter((t) => t !== origType)];
   const originalFit = fitToHarp(midis, song.harpKey, { transpose: 'octave', type: origType });
   let best: { score: number[]; view: ViewAs; fit: TabFit } | null = null;

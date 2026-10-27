@@ -50,3 +50,34 @@ describe('nội dung app sáo', () => {
     }
   });
 });
+
+describe('sáo tenor', () => {
+  it('tenor Đô: C4–D6 ghi đúng cao độ, cùng thế bấm', () => {
+    const t = harpLayout('C', 'recorderTenor');
+    expect(t[0]).toMatchObject({ token: 'C4', midi: 60 });
+    expect(t[26]).toMatchObject({ token: 'D6', midi: 86 });
+    expect(harpName('C', 'recorderTenor')).toBe('Sáo tenor (Đô)');
+  });
+});
+
+describe('blues cho sáo', () => {
+  it('lick blues (viết cho kèn) đổi sang sáo alto ở mọi giọng, đủ nốt, đủ phách', async () => {
+    const { LICKS } = await import('../data/licks');
+    const { lickForRecorder } = await import('./jazz');
+    const { totalBeats } = await import('./tabText');
+    for (const l of LICKS) for (let tonic = 0; tonic < 12; tonic++) {
+      const body = lickForRecorder(l.body, tonic, 'recorderAlto');
+      const p = parseTab(body, 'F', 'recorderAlto');
+      expect(p.issues.filter((i) => i.level === 'error'), `${l.id} @${tonic}`).toEqual([]);
+      expect(totalBeats(p)).toBeCloseTo(l.bars * 4, 6);
+      expect(body.split(/\s+/).filter((t) => t.startsWith('r')).length, `${l.id} @${tonic}: nốt thiếu`).toBe(l.body.split(/\s+/).filter((t) => t.startsWith('r')).length);
+    }
+  });
+  it('thang âm blues giọng Sol trên sáo alto', async () => {
+    const { bluesScaleTokens } = await import('./blues');
+    const t = bluesScaleTokens('F', 'recorderAlto', 7);
+    expect(t).toContain('G4');
+    expect(t).toContain('Bb4');
+    expect(t).toContain('C#5');
+  });
+});
