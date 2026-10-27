@@ -147,3 +147,16 @@ export function chordShape(name: string, inst: ChordInstrument): ChordShape | nu
 export function chordPcs(name: string): number[] | null {
   return chordInfo(name)?.pcs ?? null;
 }
+
+/**
+ * Độ khó bấm một hợp âm: 0 = thế mở quen (có dây buông), 1 = thế quen nhưng phải chặn (F, Bm),
+ * 2.5 = thế chặn di chuyển, 3 = thế tự dò, 5 = không có thế.
+ */
+export function chordEase(name: string, inst: ChordInstrument): number {
+  const info = chordInfo(name);
+  if (!info) return 5;
+  const open = lookupOpen(inst === 'guitar' ? GUITAR_OPEN : UKULELE_OPEN, info.root, info.suffix);
+  if (open) return open.some((f) => f === 0) ? 0 : 1;
+  if (inst === 'guitar' && barre(info.root, info.suffix)) return 2.5;
+  return chordShape(name, inst) ? 3 : 5;
+}

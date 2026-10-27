@@ -17,6 +17,8 @@ export interface Song {
   songKey?: string;
   /** hợp âm chọn tay: phách bắt đầu khúc → tên hợp âm (xem audio/harmony.ts) */
   chords?: Record<string, string>;
+  /** guitar / ukulele: kẹp capo ở phím mấy (hợp âm hiện theo thế bấm với capo) */
+  capo?: number;
   bpm: number;
   /** ví dụ "4/4", "3/4" */
   timeSig: string;

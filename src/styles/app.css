@@ -1145,3 +1145,18 @@ button, a, select { -webkit-tap-highlight-color: transparent; }
 .chord-diagram .cd-open { fill: none; stroke: var(--ink); stroke-width: 1.3; }
 .chord-diagram .cd-mark, .chord-diagram .cd-pos { fill: var(--ink-2); }
 .keyplate.fretted .kp-letter { font-size: 0.62em; letter-spacing: -0.02em; }
+
+/* ===== Guitar: capo, bảng lời + hợp âm ===== */
+.guitar-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 6px 0 10px; }
+.capo-field { display: inline-flex; align-items: center; gap: 6px; font-size: 0.9rem; }
+.capo-field select { padding: 4px 8px; border-radius: 999px; }
+.strum-hint { font-size: 0.85rem; color: var(--ink-2); }
+.strum-hint strong { color: var(--ink); letter-spacing: 0.05em; }
+.chord-sheet { font-size: calc(1.05rem * var(--tab-scale, 1)); line-height: 1.2; }
+.cs-title { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-2); margin: 14px 0 4px; }
+.cs-line { display: flex; flex-wrap: wrap; align-items: flex-end; margin: 0 0 10px; }
+.cs-syl { display: inline-flex; flex-direction: column; cursor: pointer; border-radius: 6px; padding: 0 1px; }
+.cs-syl.bare { margin-right: 1.2em; }
+.cs-chord { color: var(--accent); font-weight: 800; font-size: 0.9em; min-height: 1.15em; white-space: nowrap; padding-right: 0.3em; }
+.cs-text { white-space: pre; }
+.cs-syl.on { background: color-mix(in srgb, var(--accent) 22%, transparent); }

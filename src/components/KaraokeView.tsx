@@ -23,7 +23,8 @@ import { DEFAULT_KARAOKE, DEFAULT_KARAOKE_VIEW, HOLE_SIZES, KaraokeHoles, Karaok
 import { FlatEvent, flatten, parseTab } from '../lib/tabText';
 import type { Song } from '../lib/types';
 import { viewSong } from '../lib/viewAs';
-import { ChordSegment, transposeSpans } from '../audio/harmony';
+import { chordAt, ChordSegment, transposeSpans } from '../audio/harmony';
+import { ChordDiagram } from './Fretboard';
 import { Icon } from './Icon';
 import { TokenText } from './TabView';
 import type { PlayerState } from './usePlayer';
@@ -440,7 +441,7 @@ export default function KaraokeView({ song, original, flat, p, chordSegs, onClos
                   {holes.length > 0 && (
                     <span className="ks-holes">
                       {holes.map((h, i) => {
-                        const f = fingered ? fingeringOf(h, type, song.harpKey) : null;
+                        const f = fingered && !isFretted(type) ? fingeringOf(h, type, song.harpKey) : null;
                         return (
                           <span key={i} className={`${h?.startsWith('-') ? 'draw' : 'blow'}${f ? ' ks-fing' : ''}`}>
                             {h ? <TokenText token={h} strings={isFretted(type) ? holeCount(type) : undefined} /> : '–'}
@@ -602,8 +603,11 @@ export default function KaraokeView({ song, original, flat, p, chordSegs, onClos
           // thế tay lớn của nốt đang vang (chưa phát thì nốt đầu câu đang hiện)
           const n = curNote != null ? holeFlat[curNote] : holeFlat[lines[shown]?.syls[0]?.fi[0] ?? -1];
           const f = n?.token ? fingeringOf(n.token, type, song.harpKey) : null;
+          // guitar / ukulele: kèm sơ đồ hợp âm đang vang (theo capo của bài)
+          const seg = isFretted(type) && chordSegs && n ? chordAt(transposeSpans(chordSegs, et - (song.capo ?? 0)), n.start) : null;
           return f && n?.midi != null ? (
             <div className="kara-finger" aria-label={`Thế tay nốt ${n.token}`}>
+              {seg && seg.root >= 0 && <ChordDiagram name={seg.name} inst={type === 'ukulele4' ? 'ukulele' : 'guitar'} />}
               <FingeringIcon fingers={f} size="l" />
               <span>{midiToName(n.midi)}</span>
             </div>

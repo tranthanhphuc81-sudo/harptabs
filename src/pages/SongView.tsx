@@ -1,4 +1,6 @@
 import { ChordStrip } from '../components/Fretboard';
+import { ChordSheet, strumHint } from '../components/ChordSheet';
+import { bestCapo, MAX_CAPO, soundingName } from '../lib/capo';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
@@ -25,7 +27,7 @@ import type { SongScan } from '../lib/scanStore';
 import { useAppState } from '../state';
 import { MicPitch, PitchReading } from '../audio/pitch';
 import { previewNote } from '../audio/engine';
-import { ChordSegment, harmonizeSegments, parseTonality, segKey, transposeChords } from '../audio/harmony';
+import { ChordSegment, harmonizeSegments, parseTonality, segKey, transposeChords, transposeSpans } from '../audio/harmony';
 import { setBeatPrefs, setSongInstrument, useBeatPrefs } from '../audio/beatPrefs';
 import { ChordPicker } from '../components/ChordPicker';
 import { NoteEditor } from '../components/NoteEditor';
@@ -37,6 +39,8 @@ import { suggestInstrument, suggestStyle } from '../audio/suggest';
 const KaraokeView = lazy(() => import('../components/KaraokeView'));
 
 const PAGE_TURN_KEY = 'harptabs.pageTurn';
+
+const SHEET_KEY = 'harptabs.chordSheet';
 
 export default function SongView() {
   const { id } = useParams();
@@ -95,14 +99,29 @@ function SongPlayerView({ song, original, fit, view, choice, onChoice }: {
 
   // ----- hợp âm đệm: hiện trên tab, chọn tay khi máy đoán sai -----
   const tonality = useMemo(() => parseTonality(song.songKey || songTonality(song.harpKey, song.position, harpType))!, [song.songKey, song.harpKey, song.position, harpType]);
+  // guitar / ukulele: bảng lời + hợp âm thay cho tab, capo đổi thế hợp âm
+  const fretted = isFretted(harpType);
+  const inst = harpType === 'ukulele4' ? 'ukulele' : 'guitar';
+  const capo = fretted ? song.capo ?? 0 : 0;
+  const [sheet, setSheet] = useState(() => { try { return fretted && localStorage.getItem(SHEET_KEY) === '1'; } catch { return false; } });
+  const toggleSheet = () => { const v = !sheet; setSheet(v); try { localStorage.setItem(SHEET_KEY, v ? '1' : '0'); } catch { /* không lưu được thì thôi */ } };
+  const setCapo = (n: number) => { void db.songs.update(song.id, { capo: n || undefined, updatedAt: Date.now() }); };
   // đệm hát: luôn hiện hợp âm trên lời để hát theo
-  const showChords = beatPrefs.showChords || !!p.opts.sing;
+  const showChords = beatPrefs.showChords || !!p.opts.sing || (fretted && sheet);
   const chordSegs = useMemo(
     () => (showChords ? harmonizeSegments(flat, bpb, song.pickupBeats, tonality, song.chords) : null),
     [showChords, flat, bpb, song.pickupBeats, tonality, song.chords],
   );
+  // có capo: hiện tên thế bấm (thấp hơn tiếng thật `capo` nửa cung)
+  const shownSegs = useMemo(() => (chordSegs && capo ? transposeSpans(chordSegs, -capo) : chordSegs), [chordSegs, capo]);
+  const capoHint = useMemo(
+    () => (fretted && chordSegs ? bestCapo(chordSegs.map((c) => c.chord.name), inst) : 0),
+    [fretted, chordSegs, inst],
+  );
   const [chordEdit, setChordEdit] = useState<ChordSegment | null>(null);
-  const pickChord = (seg: ChordSegment, name: string | null) => {
+  const pickChord = (seg: ChordSegment, picked: string | null) => {
+    // chọn theo thế bấm khi có capo → đổi về hợp âm nghe thật
+    const name = picked === null ? null : soundingName(picked, capo);
     // đang xem bản đã dịch giọng: lưu hợp âm theo giọng của bài gốc
     const next = { ...(original.chords ?? {}) };
     if (name === null) delete next[segKey(seg.start)];
@@ -412,7 +431,26 @@ function SongPlayerView({ song, original, fit, view, choice, onChoice }: {
           Hợp âm{manualCount > 0 ? ` (${manualCount} chọn tay)` : ''}
         </button>
       </p>
-      {showChords && <p className="small muted">Chạm vào tên hợp âm trên nốt để đổi. Viền đậm là hợp âm bạn đã chọn tay.</p>}
+      {fretted && (
+        <div className="guitar-tools no-print">
+          <button type="button" className={`chip${sheet ? ' on' : ''}`} aria-pressed={sheet} onClick={toggleSheet}>Lời + hợp âm</button>
+          <label className="capo-field">
+            <span>Capo</span>
+            <select value={capo} onChange={(e) => setCapo(Number(e.target.value))} aria-label="Kẹp capo ở phím">
+              <option value={0}>Không</option>
+              {Array.from({ length: MAX_CAPO }, (_, i) => <option key={i + 1} value={i + 1}>Phím {i + 1}</option>)}
+            </select>
+          </label>
+          {chordSegs && capoHint !== capo && (
+            <button type="button" className="chip" onClick={() => setCapo(capoHint)}>
+              {capoHint ? `Gợi ý: capo ${capoHint} cho dễ bấm` : 'Gợi ý: bỏ capo'}
+            </button>
+          )}
+          {!chordSegs && <span className="small muted">Bật Hợp âm để xem gợi ý capo.</span>}
+          {sheet && (() => { const h = strumHint(autoApplied ? autoStyle.style : song.style, song.timeSig); return <span className="strum-hint">Điệu {h.name}: <strong>{h.pattern}</strong></span>; })()}
+        </div>
+      )}
+      {showChords && !(fretted && sheet) && <p className="small muted">Chạm vào tên hợp âm trên nốt để đổi. Viền đậm là hợp âm bạn đã chọn tay.</p>}
 
       {waitMode && (
         <div className="wait-banner" role="status">
@@ -428,7 +466,9 @@ function SongPlayerView({ song, original, fit, view, choice, onChoice }: {
 
       {pageTurn && !p.playing && !waitMode && !editMode && <p className="small muted no-print page-turn-hint">Chạm phần dưới màn hình để sang trang, phần trên để lùi trang.</p>}
       <div className="tab-pager" onClickCapture={onPagerClick}>
-      <TabView
+      {fretted && sheet && shownSegs
+        ? <ChordSheet parsed={parsed} flat={flat} segs={shownSegs} active={activeIdx} onSeek={onNoteClick} />
+        : <TabView
         harpType={harpType}
         harpKey={song.harpKey}
         parsed={parsed}
@@ -439,12 +479,15 @@ function SongPlayerView({ song, original, fit, view, choice, onChoice }: {
         showNames={settings.showNoteNames}
         nameStyle={settings.noteNames}
         size={settings.tabSize}
-        chords={chordSegs}
+        chords={shownSegs}
         onChordClick={setChordEdit}
-      />
+      />}
       </div>
 
-      {isFretted(harpType) && chordSegs && <ChordStrip names={chordSegs.filter((c) => c.chord.root >= 0).map((c) => c.chord.name)} inst={harpType === 'ukulele4' ? 'ukulele' : 'guitar'} />}
+      {fretted && shownSegs && <>
+        {capo > 0 && <p className="small muted">Capo phím {capo}: bấm các thế dưới đây, nghe ra đúng giọng bài.</p>}
+        <ChordStrip names={shownSegs.filter((c) => c.chord.root >= 0).map((c) => c.chord.name)} inst={inst} />
+      </>}
 
       <div className="below-tab">
         <button type="button" className="btn btn-ghost" onClick={() => setShowDiagram((v) => !v)} aria-expanded={showDiagram}>
@@ -522,7 +565,7 @@ function SongPlayerView({ song, original, fit, view, choice, onChoice }: {
       {chordEdit && (
         <ChordPicker
           seg={chordEdit}
-          tonality={tonality}
+          tonality={capo ? { tonic: (((tonality.tonic - capo) % 12) + 12) % 12, minor: tonality.minor } : tonality}
           where={chordWhere(chordEdit)}
           onPick={(name) => pickChord(chordEdit, name)}
           onClose={() => setChordEdit(null)}
