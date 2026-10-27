@@ -9,6 +9,7 @@ on:
       - 'android/twa-manifest.json'
       - 'android-recorder/twa-manifest.json'
       - 'android-kalimba/twa-manifest.json'
+      - 'android-guitar/twa-manifest.json'
       - '.github/workflows/build-apk.yml'
   workflow_dispatch:
 
@@ -22,7 +23,7 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
-    # cùng mã nguồn, hai app: Sổ Tab Harmonica và Sổ Tab Sáo (mỗi app một twa-manifest.json)
+    # cùng mã nguồn, bốn app: Harmonica, Sáo, Kalimba, Guitar (mỗi app một twa-manifest.json)
     strategy:
       fail-fast: false
       matrix:
@@ -44,6 +45,12 @@ jobs:
             tag: kalimba-apk
             title: Sổ Tab Kalimba
             host: sotabkalimba.pages.dev
+            latest: 'false'
+          - dir: android-guitar
+            file: sotabguitar
+            tag: guitar-apk
+            title: Sổ Tab Guitar
+            host: sotabguitar.pages.dev
             latest: 'false'
     env:
       VERSION_CODE: ${{ github.run_number }}

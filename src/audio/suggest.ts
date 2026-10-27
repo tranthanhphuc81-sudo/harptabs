@@ -1,4 +1,4 @@
-import { HarpType, isKalimba, isRecorder, isSaoTruc, isTremolo } from '../lib/harp';
+import { HarpType, isFretted, isKalimba, isRecorder, isSaoTruc, isTremolo } from '../lib/harp';
 /**
  * Tự chọn kiểu nhịp hợp với bài (chạy offline): dựa vào nhịp, từ khoá trong tên/thẻ/ghi chú,
  * tiết tấu giai điệu (chùm ba, chấm dôi, lệch nhịp), giọng trưởng/thứ, tốc độ và ngôn ngữ lời.
@@ -214,6 +214,7 @@ export function suggestInstrument(song: SongLike, notes: NoteLike[], style: Beat
   if (isRecorder(song.harpType)) return { instrument: 'recorder', reason: 'Bài cho sáo dọc' };
   if (isSaoTruc(song.harpType)) return { instrument: 'flute', reason: 'Bài cho sáo trúc' };
   if (isKalimba(song.harpType)) return { instrument: 'kalimba', reason: 'Bài cho kalimba' };
+  if (isFretted(song.harpType)) return song.harpType === 'ukulele4' ? { instrument: 'ukulele', reason: 'Bài cho ukulele' } : { instrument: 'guitar', reason: 'Bài cho guitar' };
   const text = fold([song.title, song.artist, song.notes, ...(song.tags ?? [])].filter(Boolean).join(' '));
   for (const [re, instrument] of NAMED_INSTRUMENTS) if (re.test(text)) return { instrument, reason: 'Bài ghi rõ nhạc cụ' };
   if (HYMN.test(text)) return { instrument: 'organ', reason: 'Thánh ca hợp organ' };

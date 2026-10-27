@@ -16,7 +16,7 @@ import type { Backing, MidiSource } from '../lib/types';
 import { loadMidiSource, midiBytes, saveMidiSource, updateMidiSound } from '../lib/midiSources';
 import { INSTRUMENT_GROUPS, INSTRUMENT_OPTIONS, setArrangeSoft } from '../audio/engine';
 import { Arrangement, ArrVoice, ArrVoices, buildArrangement, matchMidiToTab } from '../lib/midiArrange';
-import { harpName, harpTypeOf, isFingered, midiToName, shiftKey } from '../lib/harp';
+import { harpName, harpTypeOf, holeCount, isFingered, isFretted, midiToName, shiftKey } from '../lib/harp';
 import { FingeringIcon, fingeringOf } from './Fingering';
 import { buildKaraoke, countdownAt, holesFor, KLine, locate } from '../lib/karaoke';
 import { DEFAULT_KARAOKE, DEFAULT_KARAOKE_VIEW, HOLE_SIZES, KaraokeHoles, KaraokePrefs, KaraokeView as ViewSizes, loadKaraokePrefs, loadKaraokeView, LYRIC_SIZES, MAX_TRANSPOSE, saveKaraokePrefs, saveKaraokeView } from '../lib/karaokePrefs';
@@ -443,7 +443,7 @@ export default function KaraokeView({ song, original, flat, p, chordSegs, onClos
                         const f = fingered ? fingeringOf(h, type, song.harpKey) : null;
                         return (
                           <span key={i} className={`${h?.startsWith('-') ? 'draw' : 'blow'}${f ? ' ks-fing' : ''}`}>
-                            {h ? <TokenText token={h} /> : '–'}
+                            {h ? <TokenText token={h} strings={isFretted(type) ? holeCount(type) : undefined} /> : '–'}
                             {f && <FingeringIcon fingers={f} size="s" />}
                           </span>
                         );

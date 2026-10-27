@@ -3,7 +3,7 @@
  * và dựng chuỗi sự kiện cho bộ phát nhạc (nền nhạc chạy lặp, xen lick mẫu để hỏi–đáp).
  */
 import { ChordOverrides, chordName, segKey } from '../audio/harmony';
-import { HarpKey, harpLayout, HarpNote, HarpType, keyOffset, techniqueCost } from './harp';
+import { HarpKey, harpLayout, HarpNote, HarpType, isFretted, keyOffset, techniqueCost } from './harp';
 import { FlatEvent, flatten, parseTab } from './tabText';
 
 export type BluesVariant = 'basic' | 'quick';
@@ -66,6 +66,8 @@ function holesFor(harpKey: HarpKey, tonic: number, degrees: number[], maxCost: n
  * Sáo dọc: truyền loại sáo và giọng blues (`tonic`), mọi thế bấm đều dùng được.
  */
 export function bluesScaleTokens(harpKey: HarpKey, type: HarpType = 'diatonic', tonic = bluesTonic(harpKey)): string[] {
+  // guitar / ukulele: tô mọi vị trí trên cần (tới phím 12) để thấy cả hình thang âm, không chỉ một chỗ cho mỗi cao độ
+  if (isFretted(type)) return harpLayout(harpKey, type).filter((n) => n.hole <= 13 && [0, 3, 5, 6, 7, 10].includes(pc(n.midi - tonic))).map((n) => n.token);
   return holesFor(harpKey, tonic, [0, 3, 5, 6, 7, 10], type === 'diatonic' ? 4 : 99, type);
 }
 

@@ -1,6 +1,7 @@
 import { memo, useCallback, useEffect, useMemo, useRef } from 'react';
-import { HarpKey, HarpType, midiToName, nameToMidi, NoteNameStyle } from '../lib/harp';
+import { HarpKey, HarpType, holeCount, isFretted, midiToName, nameToMidi, NoteNameStyle } from '../lib/harp';
 import { FingeringIcon, fingeringOf } from './Fingering';
+import { FretTokenText } from './Fretboard';
 import { FlatEvent, ParsedTab, TabLine } from '../lib/tabText';
 import type { ChordSegment } from '../audio/harmony';
 
@@ -24,7 +25,9 @@ interface Props {
   harpKey?: HarpKey;
 }
 
-export function TokenText({ token, nameStyle }: { token: string; nameStyle?: NoteNameStyle }) {
+export function TokenText({ token, nameStyle, strings }: { token: string; nameStyle?: NoteNameStyle; strings?: number }) {
+  // guitar / ukulele: dây.phím vẽ như một cột tab
+  if (/^[1-6]\.\d{1,2}$/.test(token)) return <FretTokenText token={token} strings={strings ?? 6} />;
   // kalimba: số 1–7, chấm trên = lên quãng tám (1°, 1°°)
   const k = /^([1-7])(°{1,2})$/.exec(token);
   if (k) return <span className="tok-kal"><span className="kal-dots" aria-hidden="true">{'•'.repeat(k[2].length)}</span>{k[1]}</span>;
@@ -88,8 +91,8 @@ const Line = memo(function Line({ events, si, li, index, active, selected, click
             aria-label={label}
           >
             {showNames && <span className="nt-name">{ev.midi !== null ? midiToName(ev.midi, nameStyle, false) : ''}</span>}
-            <span className="nt-hole">{isRest ? '–' : <TokenText token={ev.token!} nameStyle={nameStyle} />}</span>
-            {harpType && !isRest && (() => { const f = fingeringOf(ev.token, harpType, harpKey); return f ? <span className="nt-finger"><FingeringIcon fingers={f} size="s" /></span> : null; })()}
+            <span className="nt-hole">{isRest ? '–' : <TokenText token={ev.token!} nameStyle={nameStyle} strings={harpType && isFretted(harpType) ? holeCount(harpType) : undefined} />}</span>
+            {harpType && !isRest && !isFretted(harpType) && (() => { const f = fingeringOf(ev.token, harpType, harpKey); return f ? <span className="nt-finger"><FingeringIcon fingers={f} size="s" /></span> : null; })()}
             <span className="nt-lyric">{ev.lyric ? ev.lyric + (ev.hyphen ? '-' : '') : ' '}</span>
           </button>
         );

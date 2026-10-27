@@ -2,6 +2,7 @@ node_modules
 dist
 dist-recorder
 dist-kalimba
+dist-guitar
 dev-dist
 worker/node_modules
 worker/.wrangler

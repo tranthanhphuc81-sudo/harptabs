@@ -2,7 +2,8 @@
  * Bài mẫu — chỉ dùng giai điệu và lời đã thuộc phạm vi công cộng (public domain).
  * Tất cả viết cho kèn C (diatonic); bản cho kèn C chromatic tạo ở samples4.ts.
  */
-import { IS_KALIMBA_APP, IS_RECORDER_APP } from '../appConfig';
+import { IS_GUITAR_APP, IS_KALIMBA_APP, IS_RECORDER_APP } from '../appConfig';
+import { guitarSamples } from './guitarSamples';
 import { kalimbaSamples } from './kalimbaSamples';
 import { recorderSamples } from './recorderSamples';
 import type { Song } from '../lib/types';
@@ -171,4 +172,6 @@ export const SAMPLE_SONGS: SampleSong[] = IS_RECORDER_APP
   ? recorderSamples(DIATONIC_SAMPLES)
   : IS_KALIMBA_APP
   ? kalimbaSamples(DIATONIC_SAMPLES)
+  : IS_GUITAR_APP
+  ? guitarSamples(DIATONIC_SAMPLES)
   : [...DIATONIC_SAMPLES, ...chromaticSamples(DIATONIC_SAMPLES), ...tremoloSamples(DIATONIC_SAMPLES)];

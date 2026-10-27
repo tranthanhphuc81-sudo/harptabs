@@ -2,10 +2,14 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 
-// cùng mã nguồn ra ba app: VITE_APP=recorder → Sổ Tab Sáo, VITE_APP=kalimba → Sổ Tab Kalimba (tên, biểu tượng, mô tả riêng)
+// cùng mã nguồn ra bốn app: VITE_APP=recorder → Sổ Tab Sáo, VITE_APP=kalimba → Sổ Tab Kalimba, VITE_APP=guitar → Sổ Tab Guitar
+// (tên, biểu tượng, mô tả riêng)
 const RECORDER = process.env.VITE_APP === 'recorder';
 const KALIMBA = process.env.VITE_APP === 'kalimba';
-const BRAND = KALIMBA
+const GUITAR = process.env.VITE_APP === 'guitar';
+const BRAND = GUITAR
+  ? { name: 'Sổ Tab Guitar', short: 'Guitar Tab', desc: 'Sổ bài guitar và ukulele: tab dây.phím, sơ đồ hợp âm, phát nhạc đệm, karaoke, dò nốt để lên dây, học chơi. Chạy offline.', icons: 'guitar/' }
+  : KALIMBA
   ? { name: 'Sổ Tab Kalimba', short: 'Kalimba Tab', desc: 'Sổ bài kalimba 17 phím: tab số kèm vị trí phím, phát nhạc đệm, karaoke, dò nốt để chỉnh dây, học chơi. Chạy offline.', icons: 'kalimba/' }
   : RECORDER
   ? { name: 'Sổ Tab Sáo', short: 'Sáo Tab', desc: 'Sổ bài sáo dọc alto / soprano: tab tên nốt kèm thế bấm, phát nhạc đệm, dò nốt, học thổi. Chạy offline.', icons: 'recorder/' }

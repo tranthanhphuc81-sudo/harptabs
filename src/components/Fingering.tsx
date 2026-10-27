@@ -1,6 +1,8 @@
 import { fingeringKey, HarpKey, HarpType, harpLayout, isFingered, midiToName, NoteNameStyle } from '../lib/harp';
 import { previewNote } from '../audio/engine';
 import { KALIMBA_KEYS } from '../data/kalimba';
+import { parseFretFingers } from '../data/guitar';
+import { FretIcon } from './Fretboard';
 import { TokenText } from './TabView';
 
 /**
@@ -9,6 +11,8 @@ import { TokenText } from './TabView';
  */
 export function FingeringIcon({ fingers, size = 'm' }: { fingers: string; size?: 's' | 'm' | 'l' }) {
   if (fingers.startsWith('k')) return <KalimbaIcon pos={Number(fingers.slice(1))} size={size} />;
+  const g = parseFretFingers(fingers);
+  if (g) return <FretIcon strings={g.strings} string={g.string} fret={g.fret} size={size} />;
   const r = size === 's' ? 3.2 : size === 'l' ? 6 : 4.5;
   const gap = r * 2.6;
   const six = fingers.length === 6;

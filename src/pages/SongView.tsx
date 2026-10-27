@@ -1,9 +1,10 @@
+import { ChordStrip } from '../components/Fretboard';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { db, deleteSongs, downloadJson, exportOne, newId, slugify } from '../lib/db';
 import { BRAND, SHOWN_HARP_TYPES } from '../appConfig';
-import { HARP_KEYS, HARP_TYPE_LABEL, HarpKey, harpKeyLabel, HarpType, harpName, harpTypeOf, isChromatic, isFingered, isKalimba, isRecorder, isTremolo, midiToName, parseToken, recorderKey, songTonality } from '../lib/harp';
+import { HARP_KEYS, HARP_TYPE_LABEL, HarpKey, harpKeyLabel, HarpType, harpName, harpTypeOf, isChromatic, isFingered, isFixedKey, isFretted, isKalimba, isRecorder, isTremolo, midiToName, parseToken, recorderKey, songTonality } from '../lib/harp';
 import { countTechniques, flatten, parseTab } from '../lib/tabText';
 import { rekeyBody } from '../lib/converter';
 import { beatsPerBar, Song } from '../lib/types';
@@ -398,7 +399,7 @@ function SongPlayerView({ song, original, fit, view, choice, onChoice }: {
       )}
 
       <p className="legend">
-        {isKalimba(harpType) ? <>Số 1–7 là Đô–Si theo tông kalimba, chấm trên = lên quãng tám. Hình nhỏ dưới số: phím cần gảy (phím giữa dài nhất là nốt thấp nhất).</> : rec ? <>Tên nốt kèm thế bấm: <strong>●</strong> bịt kín, <strong>○</strong> mở, <strong>◐</strong> bịt nửa {isRecorder(harpType) ? ' (lỗ trên cùng lệch trái là ngón cái)' : ' (lỗ 1 gần miệng thổi ở trên cùng)'}</> : <>
+        {isFretted(harpType) ? <>Tab guitar: mỗi nốt là một cột, <strong>dòng trên cùng là dây 1</strong> (dây mảnh nhất), số là <strong>phím cần bấm</strong> (0 = buông). Bật Hợp âm để xem thế bấm hợp âm.</> : isKalimba(harpType) ? <>Số 1–7 là Đô–Si theo tông kalimba, chấm trên = lên quãng tám. Hình nhỏ dưới số: phím cần gảy (phím giữa dài nhất là nốt thấp nhất).</> : rec ? <>Tên nốt kèm thế bấm: <strong>●</strong> bịt kín, <strong>○</strong> mở, <strong>◐</strong> bịt nửa {isRecorder(harpType) ? ' (lỗ trên cùng lệch trái là ngón cái)' : ' (lỗ 1 gần miệng thổi ở trên cùng)'}</> : <>
         <span className="lg blow">4</span> thổi
         <span className="lg draw">−4</span> hút
         {trem ? null : chrom ? <><span className="lg bend">&lt;</span> bấm nút gạt</> : <><span className="lg bend">′</span> bend nửa cung</>}
@@ -443,9 +444,11 @@ function SongPlayerView({ song, original, fit, view, choice, onChoice }: {
       />
       </div>
 
+      {isFretted(harpType) && chordSegs && <ChordStrip names={chordSegs.filter((c) => c.chord.root >= 0).map((c) => c.chord.name)} inst={harpType === 'ukulele4' ? 'ukulele' : 'guitar'} />}
+
       <div className="below-tab">
         <button type="button" className="btn btn-ghost" onClick={() => setShowDiagram((v) => !v)} aria-expanded={showDiagram}>
-          {showDiagram ? 'Ẩn sơ đồ kèn' : 'Hiện sơ đồ kèn'}
+          {isFretted(harpType) ? (showDiagram ? 'Ẩn cần đàn' : 'Hiện cần đàn') : showDiagram ? 'Ẩn sơ đồ kèn' : 'Hiện sơ đồ kèn'}
         </button>
       </div>
       {showDiagram && <HarpDiagram harpKey={song.harpKey} harpType={harpType} highlight={activeToken ? [activeToken] : []} nameStyle={settings.noteNames} />}
@@ -557,7 +560,7 @@ function RekeyDialog({ song, onClose, onDone }: { song: Song; onClose: () => voi
   const [toType, setToType] = useState<HarpType>(fromType);
   const [target0, setTarget] = useState<HarpKey>(song.harpKey === 'C' ? 'G' : 'C');
   // sáo dọc chỉ có một tông
-  const target = isRecorder(toType) ? recorderKey(toType) : target0;
+  const target = isFixedKey(toType) ? recorderKey(toType) : target0;
   const [mode, setMode] = useState<'octave' | 'any'>('any');
   const preview = useMemo(() => rekeyBody(song.body, song.harpKey, target, mode, fromType, toType), [song, target, mode, fromType, toType]);
   const toName = harpName(target, toType).replace(/^Kèn/, 'kèn');
@@ -590,7 +593,7 @@ function RekeyDialog({ song, onClose, onDone }: { song: Song; onClose: () => voi
           {SHOWN_HARP_TYPES.map((t) => <option key={t} value={t}>{HARP_TYPE_LABEL[t]}</option>)}
         </select>
       </label>
-      {!isRecorder(toType) && <label className="field">
+      {!isFixedKey(toType) && <label className="field">
         <span className="field-label">Kèn bạn có</span>
         <select value={target} onChange={(e) => setTarget(e.target.value as HarpKey)}>
           {HARP_KEYS.map((k) => <option key={k} value={k}>Kèn {harpKeyLabel(k, toType)}</option>)}
@@ -717,14 +720,14 @@ function ViewAsBar({ original, viewed, view, fit, choice, onChoice, onSaved }: {
           <select value={manual ? choice.type : choice} onChange={(e) => {
             const v = e.target.value;
             if (v === 'auto' || v === 'original') onChoice(v);
-            else onChoice({ type: v as HarpType, key: isRecorder(v as HarpType) ? recorderKey(v as HarpType) : key, mode: 'any' });
+            else onChoice({ type: v as HarpType, key: isFixedKey(v as HarpType) ? recorderKey(v as HarpType) : key, mode: 'any' });
           }}>
             <option value="auto">✨ Tự chọn {BRAND.noun} hợp nhất</option>
             <option value="original">Bản gốc ({harpName(original.harpKey, origType).replace(/^Kèn /, '')})</option>
             {SHOWN_HARP_TYPES.map((t) => <option key={t} value={t}>{HARP_TYPE_LABEL[t]}</option>)}
           </select>
         </label>
-        {manual && !isRecorder(type) && (
+        {manual && !isFixedKey(type) && (
           <label className="field viewas-field">
             <span className="field-label">Tông kèn</span>
             <select value={key} onChange={(e) => set({ key: e.target.value as HarpKey })}>

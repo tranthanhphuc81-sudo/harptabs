@@ -1,5 +1,6 @@
-import { HarpKey, HarpNote, HarpType, harpLayout, harpName, holeCount, isChromatic, isFingered, isKalimba, isTremolo, midiToName, NoteNameStyle } from '../lib/harp';
+import { HarpKey, HarpNote, HarpType, harpLayout, harpName, holeCount, isChromatic, isFingered, isFretted, isKalimba, isTremolo, midiToName, NoteNameStyle } from '../lib/harp';
 import { KalimbaChart, RecorderChart } from './Fingering';
+import { FretboardChart } from './Fretboard';
 import { previewNote } from '../audio/engine';
 
 interface Row { id: string; label: string; pick: (n: HarpNote) => boolean }
@@ -67,6 +68,7 @@ function TremoloDiagram({ harpKey, harpType, highlight, nameStyle, interactive }
 }
 
 export function HarpDiagram({ harpKey, harpType = 'diatonic', highlight = [], nameStyle = 'letter', showAdvanced = true, interactive = true }: Props) {
+  if (isFretted(harpType)) return <FretboardChart harpType={harpType} highlight={highlight} nameStyle={nameStyle} interactive={interactive} />;
   if (isKalimba(harpType)) return <KalimbaChart harpKey={harpKey} highlight={highlight} nameStyle={nameStyle} interactive={interactive} />;
   if (isFingered(harpType)) return <RecorderChart harpType={harpType} harpKey={harpKey} highlight={highlight} nameStyle={nameStyle} interactive={interactive} />;
   if (isTremolo(harpType)) return <TremoloDiagram harpKey={harpKey} harpType={harpType} highlight={highlight} nameStyle={nameStyle} interactive={interactive} />;

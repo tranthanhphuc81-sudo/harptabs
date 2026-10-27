@@ -2063,6 +2063,12 @@ export function previewNote(midi: number, dur = 0.6) {
   playTone(midi, c.currentTime + 0.01, dur);
 }
 
+/** nghe thử một hợp âm: quạt các nốt từ trầm lên cao như gảy đàn */
+export function previewChord(midis: number[], dur = 1.4) {
+  const c = audio();
+  midis.forEach((m, i) => playTone(m, c.currentTime + 0.01 + i * 0.03, dur - i * 0.03));
+}
+
 /** Nhạc cụ đệm hát: guitar gõ bo / quạt chả, piano tự đệm (không trống), hoặc cả ban nhạc theo beat */
 export type Accomp = 'gobo' | 'strum' | 'piano' | 'band';
 

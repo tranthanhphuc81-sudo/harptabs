@@ -23,6 +23,7 @@
 import { GERMAN_OVERRIDES, RECORDER_FINGERINGS } from '../data/recorderFingerings';
 import { closedOffset, saoTrucTable } from '../data/saoTrucFingerings';
 import { cleanKalimbaToken, KALIMBA_KEYS, KALIMBA_TINES } from '../data/kalimba';
+import { FRET_TOKEN_RE, fretCost, fretFingers, fretToken, GUITAR_FRETS, GUITAR_TUNING, parseFretToken, UKULELE_FRETS, UKULELE_TUNING } from '../data/guitar';
 
 /** sáo trúc: bịt hết lỗ ra bậc mấy của tông sáo (1 = Đô của sáo Đô … 7; mặc định 5 = Sol), theo Cài đặt */
 let saoTrucClosed = 5;
@@ -50,9 +51,9 @@ export type Technique = 'blow' | 'draw' | 'drawBend' | 'blowBend' | 'overblow' |
 
 /** Loại kèn. Bài cũ không ghi loại là diatonic. */
 export type HarpType = 'diatonic' | 'chromatic' | 'chromatic16' | 'tremolo24' | 'tremolo21' | 'tremolo16' | 'tremolo24m' | 'tremolo21m' | 'tremolo16m'
-  | 'recorderAlto' | 'recorderSoprano' | 'recorderTenor' | 'recorderBass' | 'saoTruc6' | 'kalimba17';
+  | 'recorderAlto' | 'recorderSoprano' | 'recorderTenor' | 'recorderBass' | 'saoTruc6' | 'kalimba17' | 'guitar6' | 'ukulele4';
 /** mọi loại hợp lệ (để đọc bài đã lưu); ô chọn chỉ hiện SHOWN_HARP_TYPES của bản build (src/appConfig.ts) */
-export const HARP_TYPES: readonly HarpType[] = ['diatonic', 'chromatic', 'chromatic16', 'tremolo24', 'tremolo21', 'tremolo16', 'tremolo24m', 'tremolo21m', 'tremolo16m', 'recorderAlto', 'recorderSoprano', 'recorderTenor', 'recorderBass', 'saoTruc6', 'kalimba17'];
+export const HARP_TYPES: readonly HarpType[] = ['diatonic', 'chromatic', 'chromatic16', 'tremolo24', 'tremolo21', 'tremolo16', 'tremolo24m', 'tremolo21m', 'tremolo16m', 'recorderAlto', 'recorderSoprano', 'recorderTenor', 'recorderBass', 'saoTruc6', 'kalimba17', 'guitar6', 'ukulele4'];
 
 export const HARP_TYPE_LABEL: Record<HarpType, string> = {
   diatonic: 'Diatonic 10 lỗ',
@@ -70,7 +71,19 @@ export const HARP_TYPE_LABEL: Record<HarpType, string> = {
   recorderBass: 'Sáo dọc bass (Fa trầm)',
   saoTruc6: 'Sáo trúc 6 lỗ',
   kalimba17: 'Kalimba 17 phím',
+  guitar6: 'Guitar 6 dây',
+  ukulele4: 'Ukulele 4 dây',
 };
+
+/** guitar, ukulele: tab ghi "dây.phím" (3.2 = dây 3 phím 2), dây 1 là dây cao nhất */
+export function isFretted(t: HarpType | undefined): boolean {
+  return t === 'guitar6' || t === 'ukulele4';
+}
+
+/** nhạc cụ không có tông để chọn (sáo dọc, guitar, ukulele): bảng nốt cố định */
+export function isFixedKey(t: HarpType | undefined): boolean {
+  return isRecorder(t) || isFretted(t);
+}
 
 export function isKalimba(t: HarpType | undefined): boolean {
   return t === 'kalimba17';
@@ -86,19 +99,19 @@ export function isSaoTruc(t: HarpType | undefined): boolean {
  * Sáo ghi tên nốt (F4, Bb4); kalimba ghi số 1–7 có chấm quãng tám.
  */
 export function isFingered(t: HarpType | undefined): boolean {
-  return isRecorder(t) || isSaoTruc(t) || isKalimba(t);
+  return isRecorder(t) || isSaoTruc(t) || isKalimba(t) || isFretted(t);
 }
 
 /** tông dùng để tra bảng nốt: sáo dọc có tông cố định, sáo trúc theo tông đã chọn */
 export function fingeringKey(t: HarpType, key: HarpKey): HarpKey {
-  return isRecorder(t) ? recorderKey(t) : key;
+  return isFixedKey(t) ? recorderKey(t) : key;
 }
 
 export function isRecorder(t: HarpType | undefined): boolean {
   return t === 'recorderAlto' || t === 'recorderSoprano' || t === 'recorderTenor' || t === 'recorderBass';
 }
 
-/** tông cố định của sáo dọc: alto và bass Fa, soprano và tenor Đô */
+/** tông cố định của sáo dọc: alto và bass Fa, soprano và tenor Đô (guitar, ukulele: C — không có tông) */
 export function recorderKey(t: HarpType): HarpKey {
   return t === 'recorderAlto' || t === 'recorderBass' ? 'F' : 'C';
 }
@@ -131,6 +144,8 @@ export function holeCount(t: HarpType = 'diatonic'): number {
     case 'recorderAlto': case 'recorderSoprano': case 'recorderTenor': case 'recorderBass': return 8;
     case 'saoTruc6': return 6;
     case 'kalimba17': return KALIMBA_KEYS;
+    case 'guitar6': return 6;
+    case 'ukulele4': return 4;
     default: return 10;
   }
 }
@@ -146,6 +161,8 @@ export function harpTypeOf(s: { harpType?: HarpType }): HarpType {
 export function harpName(key: string, t: HarpType = 'diatonic'): string {
   if (isTremolo(t)) return `Kèn ${harpKeyLabel(key, t)} tremolo ${holeCount(t)} lỗ`;
   if (isKalimba(t)) return `Kalimba 17 phím (${key})`;
+  if (t === 'guitar6') return 'Guitar';
+  if (t === 'ukulele4') return 'Ukulele';
   if (isSaoTruc(t)) return `Sáo trúc ${pitchClassName(KEY_OFFSET[normalizeKey(key) ?? 'C'], 'solfege')} (${key}, bịt hết ra ${pitchClassName(KEY_OFFSET[normalizeKey(key) ?? 'C'] + [0, 2, 4, 5, 7, 9, 11][saoTrucClosed - 1], 'solfege')})`;
   if (isRecorder(t)) return t === 'recorderAlto' ? 'Sáo alto (Fa)' : t === 'recorderTenor' ? 'Sáo tenor (Đô)' : t === 'recorderBass' ? 'Sáo bass (Fa)' : 'Sáo soprano (Đô)';
   return t === 'diatonic' ? `Kèn ${key}` : t === 'chromatic16' ? `Kèn ${key} chromatic 16 lỗ` : `Kèn ${key} chromatic`;
@@ -231,6 +248,20 @@ export function harpLayout(key: HarpKey, type: HarpType = 'diatonic'): HarpNote[
   const notes: HarpNote[] = [];
   const push = (hole: number, dir: Direction, bend: number, over: boolean, midi: number, technique: Technique, slide = false) =>
     notes.push({ hole, dir, bend, over, slide, midi: midi + off, technique, token: makeToken(hole, dir, bend, over, slide) });
+
+  if (isFretted(type)) {
+    // guitar / ukulele: mọi vị trí dây × phím; hole = phím + 1 (bộ chọn tính khoảng di tay theo phím)
+    const tuning = type === 'guitar6' ? GUITAR_TUNING : UKULELE_TUNING;
+    const frets = type === 'guitar6' ? GUITAR_FRETS : UKULELE_FRETS;
+    tuning.forEach((open, si) => {
+      for (let f = 0; f <= frets; f++) notes.push({
+        hole: f + 1, dir: 'blow', bend: 0, over: false, slide: false, midi: open + f,
+        technique: 'fingered', token: fretToken(si + 1, f), fingers: fretFingers(tuning.length, si + 1, f), fingerCost: fretCost(si + 1, f, tuning.length),
+      });
+    });
+    layoutCache.set(ck, notes);
+    return notes;
+  }
 
   if (isKalimba(type)) {
     // kalimba tông C: Đô4 … Mi6; tông khác dịch theo (B: Si3 …, D: Rê4 …)
@@ -324,9 +355,10 @@ export const TREM_TOKEN_RE = /^([+-])?(2[0-4]|1[0-9]|[1-9])()$/;
 export const RECORDER_TOKEN_RE = /^([A-G])([#b]?)(\d)$/;
 /** kalimba: số 1–7, chấm quãng tám ° (hoặc ' *) */
 export const KALIMBA_TOKEN_RE = /^([1-7])([°'*˚º·]{0,2})$/;
+export { FRET_TOKEN_RE };
 
 function tokenRe(type: HarpType): RegExp {
-  return isKalimba(type) ? KALIMBA_TOKEN_RE : isFingered(type) ? RECORDER_TOKEN_RE : isTremolo(type) ? TREM_TOKEN_RE : isChromatic(type) ? CHROM_TOKEN_RE : TOKEN_RE;
+  return isFretted(type) ? FRET_TOKEN_RE : isKalimba(type) ? KALIMBA_TOKEN_RE : isFingered(type) ? RECORDER_TOKEN_RE : isTremolo(type) ? TREM_TOKEN_RE : isChromatic(type) ? CHROM_TOKEN_RE : TOKEN_RE;
 }
 
 /** Chuẩn hoá các dấu nháy hay gặp khi copy từ web: ’ ′ ` ″ */
@@ -345,6 +377,10 @@ export function parseToken(raw: string, key: HarpKey, type: HarpType = 'diatonic
   const t = cleanToken(raw);
   const m = tokenRe(type).exec(t);
   if (!m) return null;
+  if (isFretted(type)) {
+    const p = parseFretToken(t);
+    return p ? harpLayout(key, type).find((n) => n.token === fretToken(p.string, p.fret)) ?? null : null;
+  }
   if (isKalimba(type)) {
     const k = cleanKalimbaToken(t);
     return harpLayout(key, type).find((n) => n.token === k) ?? null;

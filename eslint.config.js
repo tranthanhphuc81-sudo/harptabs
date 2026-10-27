@@ -4,7 +4,7 @@ import reactHooks from 'eslint-plugin-react-hooks';
 import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
-  { ignores: ['dist', 'dist-recorder', 'dist-kalimba', 'dev-dist', 'public', 'android', 'android-recorder', 'android-kalimba', 'worker/node_modules', 'worker/.wrangler'] },
+  { ignores: ['dist', 'dist-recorder', 'dist-kalimba', 'dist-guitar', 'dev-dist', 'public', 'android', 'android-recorder', 'android-kalimba', 'android-guitar', 'worker/node_modules', 'worker/.wrangler'] },
   {
     files: ['**/*.{ts,tsx}'],
     extends: [js.configs.recommended, ...tseslint.configs.recommended],

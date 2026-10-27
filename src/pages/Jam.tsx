@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { JazzJam } from './JazzJam';
-import { BRAND, IS_RECORDER_APP } from '../appConfig';
+import { BRAND, IS_GUITAR_APP, IS_RECORDER_APP } from '../appConfig';
 import { lickForRecorder } from '../lib/jazz';
 import { Link } from 'react-router-dom';
-import { HarpKey, harpName, HarpType, isRecorder, keyOffset, pitchClassName, recorderKey } from '../lib/harp';
+import { HarpKey, harpName, HarpType, isFixedKey, keyOffset, pitchClassName, recorderKey } from '../lib/harp';
 import {
   BAR_BEATS, barAt, BARS, bluesChords, bluesDegrees, bluesOverrides, bluesScaleTokens, bluesTonic, BluesVariant,
   CALL_BARS, chordToneTokens, isCallBar, jamEvents, lickEvents, usesFlats,
@@ -44,8 +44,8 @@ function BluesJam() {
   const [tab, setTab] = useState<'jam' | 'licks'>('jam');
   const [harpKey0, setHarpKey] = useState<HarpKey>(settings.defaultHarpKey);
   // app sáo: chọn loại sáo và giọng blues; lick (viết theo lỗ kèn) đổi sang tên nốt
-  const rec = IS_RECORDER_APP;
-  const [harpType, setHarpType] = useState<HarpType>(isRecorder(settings.defaultHarpType) ? settings.defaultHarpType : rec ? 'recorderAlto' : 'diatonic');
+  const rec = IS_RECORDER_APP || IS_GUITAR_APP;
+  const [harpType, setHarpType] = useState<HarpType>(isFixedKey(settings.defaultHarpType) ? settings.defaultHarpType : IS_GUITAR_APP ? 'guitar6' : rec ? 'recorderAlto' : 'diatonic');
   const harpKey = rec ? recorderKey(harpType) : harpKey0;
   const [recTonic, setRecTonic] = useState(() => (((keyOffset(recorderKey(harpType)) % 12) + 12) % 12));
   const conv = (body: string) => (rec ? lickForRecorder(body, recTonic, harpType) : body);
@@ -116,13 +116,13 @@ function BluesJam() {
   return (
     <>
       {rec
-        ? <p className="muted small">Blues giọng <strong>{songKey}</strong> trên {harpName(harpKey, harpType).toLowerCase()}. Lick được đổi sang tên nốt và thế bấm theo giọng bạn chọn.</p>
+        ? <p className="muted small">Blues giọng <strong>{songKey}</strong> trên {harpName(harpKey, harpType).toLowerCase()}. {IS_GUITAR_APP ? 'Lick được xếp lên cần đàn (dây.phím) theo giọng bạn chọn.' : 'Lick được đổi sang tên nốt và thế bấm theo giọng bạn chọn.'}</p>
         : <p className="muted small">Vị trí 2: {harpName(harpKey)} chơi blues giọng <strong>{songKey}</strong>. Tab tính theo lỗ nên đổi kèn vẫn thổi y như vậy.</p>}
       {!rec && settings.defaultHarpType !== 'diatonic' && <p className="alert">Trang này dành cho kèn diatonic 10 lỗ (kiểu blues phổ biến nhất).</p>}
 
       <div className="row gap wrap end-align">
         {rec ? <>
-          <HarpTypeSelect value={harpType} onChange={(t) => isRecorder(t) && setHarpType(t)} />
+          <HarpTypeSelect value={harpType} onChange={(t) => isFixedKey(t) && setHarpType(t)} />
           <label className="field">
             <span className="field-label">Giọng blues</span>
             <select value={recTonic} onChange={(e) => setRecTonic(Number(e.target.value))}>
@@ -170,7 +170,7 @@ function BluesJam() {
 
           <section>
             <h2 className="h-small">Thang âm blues trên {BRAND.noun} của bạn</h2>
-            <p className="small muted">Khi nền nhạc chạy, thổi nốt nào trong các ô sáng cũng hợp. Chạm vào ô để nghe.</p>
+            <p className="small muted">Khi nền nhạc chạy, {BRAND.verb} nốt nào trong các ô sáng cũng hợp. Chạm vào ô để nghe.</p>
             <HarpDiagram harpKey={harpKey} harpType={harpType} highlight={scale} nameStyle={settings.noteNames} />
             <p className="small">
               Nốt hợp âm đang vang (dừng câu ở đây nghe "chắc"):{' '}

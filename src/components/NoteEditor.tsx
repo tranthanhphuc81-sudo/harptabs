@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { fingeringKey, HarpKey, HarpType, harpLayout, holeCount, isChromatic, isFingered, isTremolo, midiToName, NoteNameStyle, tremoloDir } from '../lib/harp';
+import { fingeringKey, HarpKey, HarpType, harpLayout, holeCount, isChromatic, isFingered, isFretted, isTremolo, midiToName, NoteNameStyle, tremoloDir } from '../lib/harp';
+import { FretboardChart } from './Fretboard';
 import { TokenText } from './TabView';
 import { joinToken, splitToken } from '../lib/tabEdit';
 import type { FlatEvent } from '../lib/tabText';
@@ -40,7 +41,8 @@ export function NoteEditor({ note, harpType, harpKey = 'C', nameStyle, playing, 
   const chrom = isChromatic(harpType);
   // sáo dọc: chọn theo tên nốt (mỗi nốt một thế bấm), không có thổi / hút / bend
   const rec = isFingered(harpType);
-  const recNotes = rec ? harpLayout(fingeringKey(harpType, harpKey), harpType) : [];
+  const fret = isFretted(harpType);
+  const recNotes = rec && !fret ? harpLayout(fingeringKey(harpType, harpKey), harpType) : [];
   const pick = (t: string) => { setPend(t); onHearToken(t); };
   const holes = Array.from({ length: holeCount(harpType) }, (_, i) => i + 1);
   const cur = splitToken(note?.token ?? null);
@@ -87,7 +89,7 @@ export function NoteEditor({ note, harpType, harpKey = 'C', nameStyle, playing, 
       {note && (
         <>
           <div className={`keypad ne-keys${rec ? ' recorder' : ''}`} role="toolbar" aria-label={rec ? 'Chọn nốt' : 'Chọn lỗ'}>
-            {rec ? recNotes.map((n) => (
+            {fret ? <FretboardChart harpType={harpType} nameStyle={nameStyle} selected={pend ?? note.token} onPick={pick} maxFret={12} /> : rec ? recNotes.map((n) => (
               <button type="button" key={n.token} className={`blow${(pend ?? note.token) === n.token ? ' on' : ''}`} onClick={() => pick(n.token)} aria-label={`Nốt ${n.token}`}><TokenText token={n.token} nameStyle={nameStyle} /></button>
             )) : trem ? holes.map((h) => {
               const d = tremoloDir(h) === 'draw';
@@ -99,7 +101,7 @@ export function NoteEditor({ note, harpType, harpKey = 'C', nameStyle, playing, 
           </div>
           {pend && (
             <div className="ne-row ne-pend">
-              <strong>Chọn: {pend}</strong>
+              <strong>Chọn: {fret ? `dây ${pend.split('.')[0]} phím ${pend.split('.')[1]}` : pend}</strong>
               <button type="button" className="btn btn-primary btn-sm" onClick={() => { onToken(pend); setPend(null); }}>Thay nốt này</button>
               <button type="button" className="btn btn-primary btn-sm" onClick={() => { onInsert(pend); setPend(null); }}>Chèn sau nốt này</button>
               <button type="button" className="btn btn-ghost btn-sm" onClick={() => onHearToken(pend)}>Nghe lại</button>
