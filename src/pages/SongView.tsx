@@ -1,6 +1,9 @@
 import { ChordStrip } from '../components/Fretboard';
 import { ChordSheet, strumHint } from '../components/ChordSheet';
-import { bestCapo, MAX_CAPO, soundingName } from '../lib/capo';
+import { SheetView } from '../components/SheetView';
+import { chordsFromSheet, parseSheet, sheetChords, sheetPlayback, sheetSlots } from '../lib/chordSheet';
+import { SheetApplyDialog } from '../components/SheetApplyDialog';
+import { bestCapo, MAX_CAPO, shapeName, soundingName } from '../lib/capo';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
@@ -76,10 +79,18 @@ function SongPlayerView({ song, original, fit, view, choice, onChoice }: {
   const trem = isTremolo(harpType);
   const rec = isFingered(harpType);
   const parsed = useMemo(() => parseTab(song.body, song.harpKey, harpType), [song.body, song.harpKey, harpType]);
-  const flat = useMemo(() => flatten(parsed), [parsed]);
+  const bpb = beatsPerBar(song.timeSig);
+  // bài chỉ có lời + hợp âm: phát nền theo hợp âm (sự kiện câm giữ nhịp), không có giai điệu
+  const sheetData = useMemo(() => {
+    if (!song.sheet) return null;
+    const ps = parseSheet(song.sheet);
+    const slots = sheetSlots(ps.lines, song.sheetBeats ?? bpb);
+    return { lines: ps.lines, slots, ...sheetPlayback(slots, bpb === 4 ? 2 : bpb >= 6 && bpb % 2 === 0 ? bpb / 2 : bpb) };
+  }, [song.sheet, song.sheetBeats, bpb]);
+  const flat = useMemo(() => sheetData?.flat ?? flatten(parsed), [parsed, sheetData]);
   const stats = useMemo(() => countTechniques(parsed), [parsed]);
   const sections = useMemo(() => parsed.sections.map((s) => s.title), [parsed]);
-  const bpb = beatsPerBar(song.timeSig);
+  const chordOverrides = sheetData?.overrides ?? song.chords;
 
   // tự động tối ưu: mở bài là áp kiểu nhịp hợp nhất (trừ bài để "Không beat" / "Máy đếm nhịp")
   const beatPrefs = useBeatPrefs();
@@ -89,7 +100,7 @@ function SongPlayerView({ song, original, fit, view, choice, onChoice }: {
     bpm: song.bpm, tempoScale: 1, beatsPerBar: bpb, pickupBeats: song.pickupBeats,
     style: autoApplied ? autoStyle.style : song.style, melody: true, beat: song.style !== 'none', click: false, countIn: true,
     songKey: song.songKey || songTonality(song.harpKey, song.position, harpType),
-    chordOverrides: song.chords,
+    chordOverrides,
     sections,
   });
   // nhạc cụ giai điệu hợp với bài và kiểu nhịp đang phát (chỉ dùng khi tự động, chỉnh tay thì giữ)
@@ -107,10 +118,10 @@ function SongPlayerView({ song, original, fit, view, choice, onChoice }: {
   const toggleSheet = () => { const v = !sheet; setSheet(v); try { localStorage.setItem(SHEET_KEY, v ? '1' : '0'); } catch { /* không lưu được thì thôi */ } };
   const setCapo = (n: number) => { void db.songs.update(song.id, { capo: n || undefined, updatedAt: Date.now() }); };
   // đệm hát: luôn hiện hợp âm trên lời để hát theo
-  const showChords = beatPrefs.showChords || !!p.opts.sing || (fretted && sheet);
+  const showChords = beatPrefs.showChords || !!p.opts.sing || (fretted && sheet) || !!sheetData;
   const chordSegs = useMemo(
-    () => (showChords ? harmonizeSegments(flat, bpb, song.pickupBeats, tonality, song.chords) : null),
-    [showChords, flat, bpb, song.pickupBeats, tonality, song.chords],
+    () => (showChords ? harmonizeSegments(flat, bpb, song.pickupBeats, tonality, chordOverrides) : null),
+    [showChords, flat, bpb, song.pickupBeats, tonality, chordOverrides],
   );
   // có capo: hiện tên thế bấm (thấp hơn tiếng thật `capo` nửa cung)
   const shownSegs = useMemo(() => (chordSegs && capo ? transposeSpans(chordSegs, -capo) : chordSegs), [chordSegs, capo]);
@@ -135,6 +146,19 @@ function SongPlayerView({ song, original, fit, view, choice, onChoice }: {
     return `ô nhịp ${bar}${half ? ' (nửa sau)' : ''}`;
   };
   const manualCount = Object.keys(song.chords ?? {}).length;
+  // dán bài lời + hợp âm: khớp theo lời rồi ghi thành hợp âm chọn tay
+  const [sheetApply, setSheetApply] = useState(false);
+  const applySheet = (text: string) => {
+    const ps = parseSheet(text);
+    const segs = harmonizeSegments(flat, bpb, song.pickupBeats, tonality);
+    const r = chordsFromSheet(ps.lines, flat, segs.map((s) => s.start));
+    if (!r.matched) { toast(r.total ? 'Không khớp được lời bài dán với lời trong tab' : 'Không thấy hợp âm nào trong bài dán'); return; }
+    const next: Record<string, string> = {};
+    for (const [k, name] of Object.entries(r.overrides)) next[k] = chordForOriginal(name, fit);
+    void db.songs.update(song.id, { chords: next, updatedAt: Date.now() });
+    setBeatPrefs({ showChords: true });
+    toast(`Đã đặt ${r.matched}/${r.total} hợp âm theo lời`);
+  };
 
   const [focus, setFocus] = useState<number | null>(null);
   const [showDiagram, setShowDiagram] = useState(false);
@@ -388,7 +412,7 @@ function SongPlayerView({ song, original, fit, view, choice, onChoice }: {
             {!chrom && !trem && !rec && song.position && <span>Vị trí {song.position}</span>}
             {song.songKey && <span>Giọng {song.songKey}</span>}
             <span>{song.timeSig}</span>
-            <span>{stats.notes} nốt</span>
+            <span>{sheetData ? `${sheetData.slots.length} hợp âm` : `${stats.notes} nốt`}</span>
             {stats.bends > 0 && <span className="bend-count">{stats.bends} bend</span>}
             {stats.slides > 0 && <span className="bend-count">{stats.slides} nốt gạt</span>}
             <span className="print-only">{song.bpm} bpm</span>
@@ -410,7 +434,7 @@ function SongPlayerView({ song, original, fit, view, choice, onChoice }: {
         </div>
       </header>
 
-      <ViewAsBar original={original} view={view} fit={fit} choice={choice} onChoice={onChoice} viewed={song} onSaved={(id) => nav(`/song/${id}`)} />
+      {!sheetData && <ViewAsBar original={original} view={view} fit={fit} choice={choice} onChoice={onChoice} viewed={song} onSaved={(id) => nav(`/song/${id}`)} />}
 
       {song.notes && <p className="song-notes">{song.notes}</p>}
       {issues.length > 0 && (
@@ -418,13 +442,13 @@ function SongPlayerView({ song, original, fit, view, choice, onChoice }: {
       )}
 
       <p className="legend">
-        {isFretted(harpType) ? <>Tab guitar: mỗi nốt là một cột, <strong>dòng trên cùng là dây 1</strong> (dây mảnh nhất), số là <strong>phím cần bấm</strong> (0 = buông). Bật Hợp âm để xem thế bấm hợp âm.</> : isKalimba(harpType) ? <>Số 1–7 là Đô–Si theo tông kalimba, chấm trên = lên quãng tám. Hình nhỏ dưới số: phím cần gảy (phím giữa dài nhất là nốt thấp nhất).</> : rec ? <>Tên nốt kèm thế bấm: <strong>●</strong> bịt kín, <strong>○</strong> mở, <strong>◐</strong> bịt nửa {isRecorder(harpType) ? ' (lỗ trên cùng lệch trái là ngón cái)' : ' (lỗ 1 gần miệng thổi ở trên cùng)'}</> : <>
+        {sheetData ? <>Bài lời + hợp âm: bấm Phát để nghe nhạc đệm theo hợp âm, chạm chữ để phát từ đó. Mỗi hợp âm giữ {(song.sheetBeats ?? bpb) === bpb ? 'một ô nhịp' : `${song.sheetBeats} phách`} (đổi trong Sửa bài).</> : isFretted(harpType) ? <>Tab guitar: mỗi nốt là một cột, <strong>dòng trên cùng là dây 1</strong> (dây mảnh nhất), số là <strong>phím cần bấm</strong> (0 = buông). Bật Hợp âm để xem thế bấm hợp âm.</> : isKalimba(harpType) ? <>Số 1–7 là Đô–Si theo tông kalimba, chấm trên = lên quãng tám. Hình nhỏ dưới số: phím cần gảy (phím giữa dài nhất là nốt thấp nhất).</> : rec ? <>Tên nốt kèm thế bấm: <strong>●</strong> bịt kín, <strong>○</strong> mở, <strong>◐</strong> bịt nửa {isRecorder(harpType) ? ' (lỗ trên cùng lệch trái là ngón cái)' : ' (lỗ 1 gần miệng thổi ở trên cùng)'}</> : <>
         <span className="lg blow">4</span> thổi
         <span className="lg draw">−4</span> hút
         {trem ? null : chrom ? <><span className="lg bend">&lt;</span> bấm nút gạt</> : <><span className="lg bend">′</span> bend nửa cung</>}
         </>}
         <span className="lg-dur print-only">Ô dài = giữ lâu hơn (ô thường 1 phách) · <strong>–</strong> nghỉ</span>
-        <span className="muted no-print">Chạm vào nốt để nghe, hoặc chọn chỗ bắt đầu phát.</span>
+        {!sheetData && <span className="muted no-print">Chạm vào nốt để nghe, hoặc chọn chỗ bắt đầu phát.</span>}
         <button type="button" className={`chip no-print${pageTurn ? ' on' : ''}`} aria-pressed={pageTurn} onClick={togglePageTurn}>Chạm lật trang</button>
         <button type="button" className={`chip legend-chords${beatPrefs.showChords ? ' on' : ''}`} aria-pressed={beatPrefs.showChords}
           onClick={() => setBeatPrefs({ showChords: !beatPrefs.showChords })}>
@@ -433,7 +457,8 @@ function SongPlayerView({ song, original, fit, view, choice, onChoice }: {
       </p>
       {fretted && (
         <div className="guitar-tools no-print">
-          <button type="button" className={`chip${sheet ? ' on' : ''}`} aria-pressed={sheet} onClick={toggleSheet}>Lời + hợp âm</button>
+          {!sheetData && <button type="button" className={`chip${sheet ? ' on' : ''}`} aria-pressed={sheet} onClick={toggleSheet}>Lời + hợp âm</button>}
+          {!sheetData && flat.some((e) => e.lyric) && <button type="button" className="chip" onClick={() => setSheetApply(true)}>Dán hợp âm</button>}
           <label className="capo-field">
             <span>Capo</span>
             <select value={capo} onChange={(e) => setCapo(Number(e.target.value))} aria-label="Kẹp capo ở phím">
@@ -447,10 +472,10 @@ function SongPlayerView({ song, original, fit, view, choice, onChoice }: {
             </button>
           )}
           {!chordSegs && <span className="small muted">Bật Hợp âm để xem gợi ý capo.</span>}
-          {sheet && (() => { const h = strumHint(autoApplied ? autoStyle.style : song.style, song.timeSig); return <span className="strum-hint">Điệu {h.name}: <strong>{h.pattern}</strong></span>; })()}
+          {(sheet || sheetData) && (() => { const h = strumHint(autoApplied ? autoStyle.style : song.style, song.timeSig); return <span className="strum-hint">Điệu {h.name}: <strong>{h.pattern}</strong></span>; })()}
         </div>
       )}
-      {showChords && !(fretted && sheet) && <p className="small muted">Chạm vào tên hợp âm trên nốt để đổi. Viền đậm là hợp âm bạn đã chọn tay.</p>}
+      {showChords && !(fretted && sheet) && !sheetData && <p className="small muted">Chạm vào tên hợp âm trên nốt để đổi. Viền đậm là hợp âm bạn đã chọn tay.</p>}
 
       {waitMode && (
         <div className="wait-banner" role="status">
@@ -466,7 +491,9 @@ function SongPlayerView({ song, original, fit, view, choice, onChoice }: {
 
       {pageTurn && !p.playing && !waitMode && !editMode && <p className="small muted no-print page-turn-hint">Chạm phần dưới màn hình để sang trang, phần trên để lùi trang.</p>}
       <div className="tab-pager" onClickCapture={onPagerClick}>
-      {fretted && sheet && shownSegs
+      {sheetData
+        ? <SheetView lines={sheetData.lines} slots={sheetData.slots} capo={capo} active={p.active ?? null} onSeek={(i) => p.play(i)} />
+        : fretted && sheet && shownSegs
         ? <ChordSheet parsed={parsed} flat={flat} segs={shownSegs} active={activeIdx} onSeek={onNoteClick} />
         : <TabView
         harpType={harpType}
@@ -486,7 +513,7 @@ function SongPlayerView({ song, original, fit, view, choice, onChoice }: {
 
       {fretted && shownSegs && <>
         {capo > 0 && <p className="small muted">Capo phím {capo}: bấm các thế dưới đây, nghe ra đúng giọng bài.</p>}
-        <ChordStrip names={shownSegs.filter((c) => c.chord.root >= 0).map((c) => c.chord.name)} inst={inst} />
+        <ChordStrip names={sheetData ? sheetChords(sheetData.lines).map((c) => shapeName(c, capo)) : shownSegs.filter((c) => c.chord.root >= 0).map((c) => c.chord.name)} inst={inst} />
       </>}
 
       <div className="below-tab">
@@ -561,6 +588,8 @@ function SongPlayerView({ song, original, fit, view, choice, onChoice }: {
           <KaraokeView song={song} original={original} flat={flat} p={player} chordSegs={chordSegs} onClose={() => setKaraoke(false)} />
         </Suspense>
       )}
+
+      {sheetApply && <SheetApplyDialog onApply={applySheet} onClose={() => setSheetApply(false)} />}
 
       {chordEdit && (
         <ChordPicker

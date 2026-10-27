@@ -291,6 +291,24 @@ function Editor({ initial, isNew, draft }: { initial: Song; isNew: boolean; draf
           </label>
         </div>
 
+        {s.sheet !== undefined && (
+          <div className="edit-body">
+            <div className="field-label row between">
+              <span>Lời + hợp âm</span>
+              <label className="capo-field">
+                <span>Mỗi hợp âm</span>
+                <select value={s.sheetBeats ?? beatsPerBar(s.timeSig)} onChange={(e) => { const v = Number(e.target.value); set('sheetBeats', v === beatsPerBar(s.timeSig) ? undefined : v); }}>
+                  {beatsPerBar(s.timeSig) % 2 === 0 && <option value={beatsPerBar(s.timeSig) / 2}>Nửa ô nhịp</option>}
+                  <option value={beatsPerBar(s.timeSig)}>Một ô nhịp</option>
+                  <option value={beatsPerBar(s.timeSig) * 2}>Hai ô nhịp</option>
+                </select>
+              </label>
+            </div>
+            <p className="small muted">Hợp âm trong ngoặc vuông chen trong lời: <code>[Am]Em ơi Hà [F]Nội phố</code>. Dòng <code># Điệp khúc</code> là tên đoạn.</p>
+            <textarea className="tab-input" rows={14} value={s.sheet} onChange={(e) => set('sheet', e.target.value)} spellCheck={false} aria-label="Lời + hợp âm" />
+          </div>
+        )}
+
         <div className="edit-body">
           <div className="field-label row between">
             <span>Tab và lời</span>

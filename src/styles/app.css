@@ -1160,3 +1160,7 @@ button, a, select { -webkit-tap-highlight-color: transparent; }
 .cs-chord { color: var(--accent); font-weight: 800; font-size: 0.9em; min-height: 1.15em; white-space: nowrap; padding-right: 0.3em; }
 .cs-text { white-space: pre; }
 .cs-syl.on { background: color-mix(in srgb, var(--accent) 22%, transparent); }
+.sheet-view .cs-syl { max-width: 100%; }
+.sheet-view .cs-text { white-space: pre-wrap; }
+.sv-gap { height: 0.6em; }
+.chord-paste textarea, dialog.sheet textarea { width: 100%; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 0.9rem; }

@@ -1,3 +1,4 @@
+import { IS_GUITAR_APP } from '../appConfig';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { lazy, Suspense, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
@@ -21,8 +22,9 @@ import { AI_ENABLED } from '../lib/features';
 const ScanImport = lazy(() => import('./ScanImport'));
 const FileImport = lazy(() => import('./FileImport'));
 const AudioImport = lazy(() => import('./AudioImport'));
+const ChordPaste = lazy(() => import('./ChordPaste'));
 
-type Mode = 'scan' | 'file' | 'paste' | 'audio' | 'image' | 'name';
+type Mode = 'scan' | 'file' | 'paste' | 'chords' | 'audio' | 'image' | 'name';
 interface Img { id: string; mimeType: string; data: string; preview: string }
 
 function vnd(usd: number) {
@@ -37,7 +39,7 @@ export default function AiImport() {
   const [params] = useSearchParams();
   const editScan = params.get('scan') ?? undefined;
   // mặc định mở "File nhạc" (MIDI / MusicXML: chính xác tuyệt đối); link sửa bản quét / dán tab mở thẳng chế độ đó
-  const [rawMode, setMode] = useState<Mode>(params.get('paste') ? 'paste' : editScan ? 'scan' : 'file');
+  const [rawMode, setMode] = useState<Mode>(params.get('paste') ? 'paste' : editScan ? 'scan' : params.get('chords') || IS_GUITAR_APP ? 'chords' : 'file');
   // AI đang tạm khoá: không vào được chế độ Ảnh + AI / Tên bài
   const mode: Mode = !AI_ENABLED && (rawMode === 'image' || rawMode === 'name') ? 'file' : rawMode;
   const [lastMode, setLastMode] = useState<Mode>('image'); // chế độ đã tạo ra kết quả đang hiện
@@ -170,6 +172,11 @@ export default function AiImport() {
       {(mode === 'image' || mode === 'name') && !online && <div className="alert">Bạn đang offline. Phần này cần mạng; các phần khác của app vẫn dùng bình thường.</div>}
 
       <div className="segmented" role="tablist" aria-label="Cách nhập">
+        {IS_GUITAR_APP && (
+          <button type="button" role="tab" aria-selected={mode === 'chords'} className={mode === 'chords' ? 'on' : ''} onClick={() => setMode('chords')}>
+            <Icon name="edit" size={18} /> Dán hợp âm
+          </button>
+        )}
         <button type="button" role="tab" aria-selected={mode === 'file'} className={mode === 'file' ? 'on' : ''} onClick={() => setMode('file')}>
           <Icon name="music" size={18} /> File nhạc
         </button>
@@ -195,6 +202,7 @@ export default function AiImport() {
       </div>
 
       {mode === 'scan' ? <Suspense fallback={null}><ScanImport key={editScan ?? `new-${scanFiles?.n ?? 0}`} editSongId={editScan} initialFiles={scanFiles?.files} /></Suspense>
+        : mode === 'chords' ? <Suspense fallback={null}><ChordPaste /></Suspense>
         : mode === 'file' ? <Suspense fallback={null}><FileImport onImages={(files) => { setScanFiles((s) => ({ n: (s?.n ?? 0) + 1, files })); setMode('scan'); }} onAudio={(f) => { setAudioFile(f); setMode('audio'); }} /></Suspense> : mode === 'paste' ? <PasteTab /> : mode === 'audio' ? <Suspense fallback={null}><AudioImport initialFile={audioFile ?? undefined} /></Suspense> : <>
       <div className="ai-form">
         {mode === 'image' ? (

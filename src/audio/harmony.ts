@@ -130,6 +130,19 @@ const MINOR_CANDS: Candidate[] = [
   { deg: 5, minor: false, prior: 0.3 },
 ];
 
+/**
+ * Điểm cộng khi chuyển hợp âm theo các vòng hay gặp ("bậc>bậc", m = thứ): V → I, IV → V, ii → V, vi → IV…
+ * Giúp bộ đoán chọn vòng tự nhiên khi giai điệu khớp ngang nhau với nhiều hợp âm.
+ */
+const MAJOR_FLOW: Record<string, number> = {
+  '7>0': 0.15, '5>7': 0.1, '2m>7': 0.12, '0>5': 0.08, '0>7': 0.08, '5>0': 0.08, '9m>5': 0.08,
+  '7>9m': 0.06, '9m>2m': 0.06, '0>9m': 0.05, '4m>9m': 0.05, '2m>5': 0.04, '7>5': -0.03,
+};
+const MINOR_FLOW: Record<string, number> = {
+  '7>0m': 0.15, '5m>7': 0.1, '0m>5m': 0.08, '5m>0m': 0.06, '0m>8': 0.06, '8>10': 0.06,
+  '10>3': 0.08, '3>8': 0.05, '0m>10': 0.05, '10>0m': 0.06, '7m>0m': 0.08,
+};
+
 /** Tông dùng dấu giáng (F, Bb, Eb…, Dm, Gm…) thì gọi tên hợp âm bằng giáng */
 function usesFlats(key: Tonality): boolean {
   const major = key.minor ? mod12(key.tonic + 3) : key.tonic;
@@ -208,7 +221,8 @@ export function harmonizeSegments(notes: NoteLike[], beatsPerBar: number, pickup
       const ov = Math.min(e, n.start + n.beats) - Math.max(start, n.start);
       if (ov <= 1e-6) continue;
       const strong = Math.abs(n.start - start) < 1e-6 || Math.abs(mod(n.start - pickupBeats, beatsPerBar)) < 1e-6;
-      const wt = ov * (strong ? 1.3 : 1);
+      // nốt lướt rất ngắn ít quyết định hợp âm
+      const wt = ov * (strong ? 1.3 : 1) * (n.beats < 0.5 ? 0.6 : 1);
       w[mod12(n.midi!)] += wt;
       total += wt;
     }
@@ -232,6 +246,11 @@ export function harmonizeSegments(notes: NoteLike[], beatsPerBar: number, pickup
   // quy hoạch động: hạn chế đổi hợp âm vụn vặt, nhất là giữa ô nhịp
   const n = segs.length;
   const k = cands.length;
+  const flow = key.minor ? MINOR_FLOW : MAJOR_FLOW;
+  const tag = (c: Candidate) => `${c.deg}${c.minor ? 'm' : ''}`;
+  // khúc ngay trước nốt cuối bài: ưu tiên hợp âm V để về chủ (kết câu)
+  const lastStart = Math.max(...played.map((x) => x.start));
+  const finalSeg = segs.findIndex((s) => lastStart >= s.start - 1e-6 && lastStart < s.end - 1e-6);
   const score: number[][] = [fit[0].slice()];
   const from: number[][] = [new Array(k).fill(-1)];
   for (let i = 1; i < n; i++) {
@@ -243,10 +262,11 @@ export function harmonizeSegments(notes: NoteLike[], beatsPerBar: number, pickup
       let best = -Infinity, arg = 0;
       for (let p = 0; p < k; p++) {
         let v = score[i - 1][p] - (p === j ? 0 : change);
-        if (cands[p].deg === 7 && cands[j].deg === 0) v += 0.1; // V → I
+        if (p !== j) v += flow[`${tag(cands[p])}>${tag(cands[j])}`] ?? 0; // vòng hợp âm hay gặp (V → I, IV → V, ii → V…)
         if (v > best) { best = v; arg = p; }
       }
-      score[i].push(best + fit[i][j] + (i === n - 1 && cands[j].deg === 0 ? 0.6 : 0));
+      const cadence = i === finalSeg - 1 && cands[j].deg === 7 && !cands[j].minor ? 0.25 : 0;
+      score[i].push(best + fit[i][j] + cadence + (i === n - 1 && cands[j].deg === 0 ? 0.6 : 0));
       from[i].push(arg);
     }
   }

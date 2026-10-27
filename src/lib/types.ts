@@ -19,6 +19,10 @@ export interface Song {
   chords?: Record<string, string>;
   /** guitar / ukulele: kẹp capo ở phím mấy (hợp âm hiện theo thế bấm với capo) */
   capo?: number;
+  /** bài chỉ có lời + hợp âm (dán từ sách / trang hợp âm), dạng "[C]lời [G]lời" — xem lib/chordSheet.ts */
+  sheet?: string;
+  /** bài lời + hợp âm: mỗi hợp âm giữ mấy phách (mặc định một ô nhịp) */
+  sheetBeats?: number;
   bpm: number;
   /** ví dụ "4/4", "3/4" */
   timeSig: string;
