@@ -1,11 +1,14 @@
 import { fingeringKey, HarpKey, HarpType, harpLayout, isFingered, midiToName, NoteNameStyle } from '../lib/harp';
 import { previewNote } from '../audio/engine';
+import { KALIMBA_KEYS } from '../data/kalimba';
+import { TokenText } from './TabView';
 
 /**
  * Hình thế bấm: sáo dọc 8 lỗ = ngón cái (lỗ sau, lệch trái) rồi 7 lỗ trước — 3 lỗ tay trái, khoảng hở, 4 lỗ tay phải;
  * sáo trúc 6 lỗ = 3 lỗ tay trái, khoảng hở, 3 lỗ tay phải. fingers: x (kín) / o (mở) / h (nửa).
  */
 export function FingeringIcon({ fingers, size = 'm' }: { fingers: string; size?: 's' | 'm' | 'l' }) {
+  if (fingers.startsWith('k')) return <KalimbaIcon pos={Number(fingers.slice(1))} size={size} />;
   const r = size === 's' ? 3.2 : size === 'l' ? 6 : 4.5;
   const gap = r * 2.6;
   const six = fingers.length === 6;
@@ -30,6 +33,43 @@ export function FingeringIcon({ fingers, size = 'm' }: { fingers: string; size?:
         ? [0, 1, 2, 3, 4, 5].map((i) => hole(i, w / 2, y(i)))
         : <>{hole(0, r * 1.3, y(0))}{[1, 2, 3, 4, 5, 6, 7].map((i) => hole(i, w - r * 2.2, y(i)))}</>}
     </svg>
+  );
+}
+
+/** Kalimba thu nhỏ: 17 phím, phím giữa dài nhất, tô phím cần gảy */
+export function KalimbaIcon({ pos, size = 'm' }: { pos: number; size?: 's' | 'm' | 'l' }) {
+  const n = KALIMBA_KEYS;
+  const bw = size === 's' ? 2.4 : size === 'l' ? 6 : 3.6;
+  const gap = bw * 0.45;
+  const H = size === 's' ? 26 : size === 'l' ? 90 : 44;
+  const w = n * bw + (n - 1) * gap;
+  const center = Math.floor(n / 2);
+  return (
+    <svg className={`kalimba-icon size-${size}`} width={w} height={H} viewBox={`0 0 ${w} ${H}`} aria-hidden="true">
+      {Array.from({ length: n }, (_, i) => {
+        const len = H * (1 - Math.abs(i - center) * 0.045);
+        return <rect key={i} x={i * (bw + gap)} y={0} width={bw} height={len} rx={bw / 2} className={i === pos ? 'ki-on' : 'ki-off'} />;
+      })}
+    </svg>
+  );
+}
+
+/** Sơ đồ kalimba: phím đúng thứ tự trên đàn, ghi số tab, chạm để nghe, tô sáng các nốt `highlight` */
+export function KalimbaChart({ harpKey = 'C', highlight = [], nameStyle = 'letter', interactive = true }: { harpKey?: HarpKey; highlight?: string[]; nameStyle?: NoteNameStyle; interactive?: boolean }) {
+  const layout = [...harpLayout(harpKey, 'kalimba17')].sort((a, b) => a.hole - b.hole);
+  const center = Math.floor(KALIMBA_KEYS / 2);
+  return (
+    <div className="kalimba-chart" role="list" aria-label="Sơ đồ kalimba">
+      {layout.map((n) => (
+        <button key={n.token} type="button" role="listitem" className={`kc-tine${highlight.includes(n.token) ? ' on' : ''}`}
+          style={{ height: `${100 - Math.abs(n.hole - 1 - center) * 4.5}%` }}
+          onClick={interactive ? () => previewNote(n.midi) : undefined} tabIndex={interactive ? 0 : -1}
+          aria-label={`${n.token} — ${midiToName(n.midi, nameStyle)}`}>
+          <span className="kc-num"><TokenText token={n.token} /></span>
+          <span className="kc-name">{midiToName(n.midi, nameStyle, false)}</span>
+        </button>
+      ))}
+    </div>
   );
 }
 

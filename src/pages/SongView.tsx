@@ -3,7 +3,7 @@ import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { db, deleteSongs, downloadJson, exportOne, newId, slugify } from '../lib/db';
 import { BRAND, SHOWN_HARP_TYPES } from '../appConfig';
-import { HARP_KEYS, HARP_TYPE_LABEL, HarpKey, harpKeyLabel, HarpType, harpName, harpTypeOf, isChromatic, isFingered, isRecorder, isTremolo, midiToName, parseToken, recorderKey, songTonality } from '../lib/harp';
+import { HARP_KEYS, HARP_TYPE_LABEL, HarpKey, harpKeyLabel, HarpType, harpName, harpTypeOf, isChromatic, isFingered, isKalimba, isRecorder, isTremolo, midiToName, parseToken, recorderKey, songTonality } from '../lib/harp';
 import { countTechniques, flatten, parseTab } from '../lib/tabText';
 import { rekeyBody } from '../lib/converter';
 import { beatsPerBar, Song } from '../lib/types';
@@ -398,7 +398,7 @@ function SongPlayerView({ song, original, fit, view, choice, onChoice }: {
       )}
 
       <p className="legend">
-        {rec ? <>Tên nốt kèm thế bấm: <strong>●</strong> bịt kín, <strong>○</strong> mở, <strong>◐</strong> bịt nửa {isRecorder(harpType) ? ' (lỗ trên cùng lệch trái là ngón cái)' : ' (lỗ 1 gần miệng thổi ở trên cùng)'}</> : <>
+        {isKalimba(harpType) ? <>Số 1–7 là Đô–Si theo tông kalimba, chấm trên = lên quãng tám. Hình nhỏ dưới số: phím cần gảy (phím giữa dài nhất là nốt thấp nhất).</> : rec ? <>Tên nốt kèm thế bấm: <strong>●</strong> bịt kín, <strong>○</strong> mở, <strong>◐</strong> bịt nửa {isRecorder(harpType) ? ' (lỗ trên cùng lệch trái là ngón cái)' : ' (lỗ 1 gần miệng thổi ở trên cùng)'}</> : <>
         <span className="lg blow">4</span> thổi
         <span className="lg draw">−4</span> hút
         {trem ? null : chrom ? <><span className="lg bend">&lt;</span> bấm nút gạt</> : <><span className="lg bend">′</span> bend nửa cung</>}

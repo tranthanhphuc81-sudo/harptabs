@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { fixGarbled, VN_ENCODINGS } from '../lib/vnEncoding';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { blankSong, db, deleteSongs } from '../lib/db';
-import { HarpKey, HarpType, harpTypeOf, holeCount, harpLayout, fingeringKey, isChromatic, isFingered, isRecorder, isSaoTruc, isTremolo, midiToName, normalizeKey, parseToken, recorderKey, songTonality, tremoloDir } from '../lib/harp';
+import { HarpKey, HarpType, harpTypeOf, holeCount, harpLayout, fingeringKey, isChromatic, isFingered, isKalimba, isRecorder, isSaoTruc, isTremolo, midiToName, normalizeKey, parseToken, recorderKey, songTonality, tremoloDir } from '../lib/harp';
 import { flatten, parseTab } from '../lib/tabText';
 import { beatsPerBar, Song } from '../lib/types';
 import { STYLE_OPTIONS, BeatStyle } from '../audio/patterns';
@@ -296,7 +296,8 @@ function Editor({ initial, isNew, draft }: { initial: Song; isNew: boolean; draf
             <details className="syntax-help">
               <summary>Cách ghi</summary>
               <ul>
-                {rec && <li>Ghi <strong>tên nốt có quãng tám</strong>: <code>F4</code> <code>Bb4</code> <code>C#5</code> ({isSaoTruc(harpType) ? 'sáo trúc Đô từ G4: bịt hết lỗ ra Sol' : 'sáo alto từ F4 tới G6; soprano ghi từ C4'}). Dưới mỗi nốt app vẽ thế bấm.</li>}
+                {isKalimba(harpType) && <li>Ghi <strong>số 1–7</strong> (Đô–Si theo tông kalimba), thêm <code>'</code> hoặc <code>°</code> để lên quãng tám: <code>1 2 3 5'</code>. <code>0</code> hoặc <code>r</code> là nghỉ.</li>}
+                {rec && !isKalimba(harpType) && <li>Ghi <strong>tên nốt có quãng tám</strong>: <code>F4</code> <code>Bb4</code> <code>C#5</code> ({isSaoTruc(harpType) ? 'sáo trúc Đô từ G4: bịt hết lỗ ra Sol' : 'sáo alto từ F4 tới G6; soprano ghi từ C4'}). Dưới mỗi nốt app vẽ thế bấm.</li>}
                 {rec ? null : trem
                   ? <li>Kèn tremolo: lỗ lẻ là thổi, lỗ chẵn là hút. Gõ <code>3</code> hay <code>4</code> là đủ — app tự ghi lỗ hút thành <code>-4</code>. Kèn này không bend.</li>
                   : <li><code>4</code> thổi lỗ 4, <code>-4</code> hút lỗ 4</li>}

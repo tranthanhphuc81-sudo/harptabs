@@ -1,6 +1,7 @@
 node_modules
 dist
 dist-recorder
+dist-kalimba
 dev-dist
 worker/node_modules
 worker/.wrangler

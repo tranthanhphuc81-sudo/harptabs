@@ -25,6 +25,9 @@ interface Props {
 }
 
 export function TokenText({ token, nameStyle }: { token: string; nameStyle?: NoteNameStyle }) {
+  // kalimba: số 1–7, chấm trên = lên quãng tám (1°, 1°°)
+  const k = /^([1-7])(°{1,2})$/.exec(token);
+  if (k) return <span className="tok-kal"><span className="kal-dots" aria-hidden="true">{'•'.repeat(k[2].length)}</span>{k[1]}</span>;
   // sáo dọc: tên nốt có quãng tám (F4, Bb5) → tên theo kiểu đang chọn, quãng tám viết nhỏ
   const n = /^([A-G][#b]?)(\d)$/.exec(token);
   if (n) {

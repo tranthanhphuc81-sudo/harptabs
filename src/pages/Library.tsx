@@ -1,4 +1,4 @@
-import { IS_RECORDER_APP } from '../appConfig';
+import { IS_HARMONICA_APP } from '../appConfig';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
@@ -128,7 +128,7 @@ export default function Library() {
           <button type="button" className={`chip${fav ? ' on' : ''}`} aria-pressed={fav} onClick={() => setFav(!fav)}>
             <Icon name="star" size={15} filled={fav} /> Yêu thích
           </button>
-          {!IS_RECORDER_APP && <>
+          {IS_HARMONICA_APP && <>
           <select aria-label="Lọc theo loại kèn" value={kind} onChange={(e) => setKind(e.target.value as typeof kind)} className="chip-select">
             <option value="">Mọi loại kèn</option>
             <option value="diatonic">Diatonic</option>

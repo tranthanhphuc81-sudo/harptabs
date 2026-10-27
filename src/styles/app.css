@@ -1102,3 +1102,14 @@ button, a, select { -webkit-tap-highlight-color: transparent; }
 .playerbar.collapsed.with-above { width: auto; margin-left: 0; border-radius: var(--r-l); padding: 10px 12px; }
 .playerbar.collapsed .pb-main { flex-wrap: nowrap; gap: 6px; }
 .playerbar.collapsed.with-above .pb-main { justify-content: flex-end; }
+
+/* ===== Kalimba ===== */
+.tok-kal { display: inline-flex; flex-direction: column; align-items: center; line-height: 1; }
+.kal-dots { font-size: 0.5em; letter-spacing: -0.05em; height: 0.6em; line-height: 0.6em; }
+.kalimba-icon .ki-off { fill: color-mix(in srgb, var(--ink-2) 35%, transparent); }
+.kalimba-icon .ki-on { fill: var(--accent); }
+.kalimba-chart { display: grid; grid-template-columns: repeat(17, minmax(0, 1fr)); gap: 3px; align-items: start; height: 220px; padding: 10px 8px; border-radius: var(--r-l); background: linear-gradient(180deg, #c9a46a, #a87a42); }
+.kc-tine { display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 2px; padding: 0 0 6px; border: 0; border-radius: 0 0 999px 999px; background: linear-gradient(90deg, #cfd5da, #f3f5f6 45%, #aeb6bd); color: #1f2a33; font: inherit; font-weight: 700; cursor: pointer; min-width: 0; }
+.kc-tine.on { background: linear-gradient(90deg, var(--accent), color-mix(in srgb, var(--accent) 60%, #fff)); }
+.kc-num { font-size: 0.85rem; }
+.kc-name { font-size: 0.55rem; font-weight: 500; opacity: 0.75; }

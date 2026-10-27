@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { HarpKey, HarpType, harpLayout, isChromatic, isFingered, isRecorder, isSaoTruc, isTremolo, midiToName, TECHNIQUE_LABEL } from '../lib/harp';
+import { HarpKey, HarpType, harpLayout, isChromatic, isFingered, isKalimba, isRecorder, isSaoTruc, isTremolo, midiToName, TECHNIQUE_LABEL } from '../lib/harp';
 import { MicPitch, PitchReading } from '../audio/pitch';
 import { HarpDiagram } from '../components/HarpDiagram';
 import { HarpTypeSelect, KeySelect } from '../components/KeySelect';
@@ -60,7 +60,7 @@ export default function Tuner() {
       <header className="page-head">
         <div>
           <h1>Dò nốt</h1>
-          <p className="muted">{isFingered(type) ? 'Thổi sáo, app cho biết bạn đang ra nốt gì, thế bấm nào và có chuẩn không.' : <>Thổi vào kèn, app cho biết bạn đang ra nốt gì, lỗ nào{trem ? ' và có chuẩn không.' : chrom ? ', có bấm nút gạt hay không, và có chuẩn không.' : ', và bend đã đủ sâu chưa.'}</>}</p>
+          <p className="muted">{isKalimba(type) ? 'Gảy phím kalimba, app cho biết nốt gì, phím nào và có chuẩn không — dùng để chỉnh dây (gõ phím lên / xuống).' : isFingered(type) ? 'Thổi sáo, app cho biết bạn đang ra nốt gì, thế bấm nào và có chuẩn không.' : <>Thổi vào kèn, app cho biết bạn đang ra nốt gì, lỗ nào{trem ? ' và có chuẩn không.' : chrom ? ', có bấm nút gạt hay không, và có chuẩn không.' : ', và bend đã đủ sâu chưa.'}</>}</p>
         </div>
       </header>
 
@@ -96,7 +96,9 @@ export default function Tuner() {
       </div>
 
       <HarpDiagram harpKey={key} harpType={type} highlight={matches.map((m) => m.token)} nameStyle={settings.noteNames} />
-      {isSaoTruc(type)
+      {isKalimba(type)
+        ? <p className="muted small">Mẹo chỉnh dây kalimba: nốt thấp (kim lệch trái) thì gõ nhẹ phím vào trong cho phím ngắn lại; nốt cao thì gõ phím ra ngoài cho dài ra. Gõ từng chút rồi đo lại.</p>
+        : isSaoTruc(type)
         ? <p className="muted small">Mẹo: sáo trúc thổi hơi chếch, nốt cao / thấp thay đổi theo góc thổi và độ mạnh. Nhìn kim cent để tập giữ hơi; lỗ bịt chưa kín làm nốt rè hoặc vọt quãng.</p>
         : isRecorder(type)
         ? <p className="muted small">Mẹo: sáo dọc thổi mạnh quá thì nốt cao lên (và dễ vọt quãng tám), yếu quá thì thấp xuống. Nhìn kim cent để tập giữ hơi đều; ngón bịt chưa kín cũng làm nốt lệch hoặc rè.</p>

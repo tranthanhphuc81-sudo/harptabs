@@ -1,0 +1,47 @@
+{
+  "packageId": "dev.pages.sotabkalimba.twa",
+  "host": "sotabkalimba.pages.dev",
+  "name": "Sổ Tab Kalimba",
+  "launcherName": "Kalimba Tab",
+  "display": "standalone",
+  "orientation": "default",
+  "themeColor": "#1f2a33",
+  "navigationColor": "#1f2a33",
+  "navigationColorDark": "#1f2a33",
+  "navigationDividerColor": "#1f2a33",
+  "navigationDividerColorDark": "#1f2a33",
+  "backgroundColor": "#eef1f2",
+  "enableNotifications": false,
+  "startUrl": "/",
+  "iconUrl": "https://sotabkalimba.pages.dev/kalimba/icon-512.png",
+  "maskableIconUrl": "https://sotabkalimba.pages.dev/kalimba/icon-512-maskable.png",
+  "webManifestUrl": "https://sotabkalimba.pages.dev/manifest.webmanifest",
+  "splashScreenFadeOutDuration": 300,
+  "signingKey": {
+    "path": "./android.keystore",
+    "alias": "harptabs"
+  },
+  "appVersionCode": 1,
+  "appVersion": "1.0.0",
+  "fallbackType": "customtabs",
+  "enableSiteSettingsShortcut": true,
+  "minSdkVersion": 24,
+  "shortcuts": [],
+  "features": {},
+  "alphaDependencies": {
+    "enabled": false
+  },
+  "isChromeOSOnly": false,
+  "isMetaQuest": false,
+  "fullScopeUrl": "https://sotabkalimba.pages.dev/",
+  "generatorApp": "bubblewrap-cli",
+  "shareTarget": {
+    "action": "/",
+    "method": "GET",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url"
+    }
+  }
+}

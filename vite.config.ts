@@ -2,9 +2,12 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 
-// cùng mã nguồn ra hai app: VITE_APP=recorder → Sổ Tab Sáo (tên, biểu tượng, mô tả riêng)
+// cùng mã nguồn ra ba app: VITE_APP=recorder → Sổ Tab Sáo, VITE_APP=kalimba → Sổ Tab Kalimba (tên, biểu tượng, mô tả riêng)
 const RECORDER = process.env.VITE_APP === 'recorder';
-const BRAND = RECORDER
+const KALIMBA = process.env.VITE_APP === 'kalimba';
+const BRAND = KALIMBA
+  ? { name: 'Sổ Tab Kalimba', short: 'Kalimba Tab', desc: 'Sổ bài kalimba 17 phím: tab số kèm vị trí phím, phát nhạc đệm, karaoke, dò nốt để chỉnh dây, học chơi. Chạy offline.', icons: 'kalimba/' }
+  : RECORDER
   ? { name: 'Sổ Tab Sáo', short: 'Sáo Tab', desc: 'Sổ bài sáo dọc alto / soprano: tab tên nốt kèm thế bấm, phát nhạc đệm, dò nốt, học thổi. Chạy offline.', icons: 'recorder/' }
   : { name: 'Sổ Tab Harmonica', short: 'Harp Tab', desc: 'Sổ tab harmonica diatonic 10 lỗ: lưu bài, phát beat mẫu, dò nốt, học kỹ thuật. Chạy offline.', icons: '' };
 

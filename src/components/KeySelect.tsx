@@ -1,5 +1,5 @@
 import { BRAND, SHOWN_HARP_TYPES } from '../appConfig';
-import { HARP_KEYS, HARP_TYPE_LABEL, HarpKey, harpKeyLabel, HarpType, harpName, holeCount, isChromatic, isRecorder, isSaoTruc, isTremolo } from '../lib/harp';
+import { HARP_KEYS, HARP_TYPE_LABEL, HarpKey, harpKeyLabel, HarpType, harpName, holeCount, isChromatic, isKalimba, isRecorder, isSaoTruc, isTremolo } from '../lib/harp';
 
 interface Props {
   value: HarpKey | 'auto';
@@ -19,7 +19,7 @@ export function KeySelect({ value, onChange, allowAuto, id, label = 'Tông kèn'
       <span className="field-label">{label}</span>
       <select id={id} value={value} onChange={(e) => onChange(e.target.value as HarpKey | 'auto')}>
         {allowAuto && <option value="auto">Tự chọn kèn hợp nhất</option>}
-        {HARP_KEYS.map((k) => <option key={k} value={k}>{isSaoTruc(harpType) ? `Sáo ${k}` : `Kèn ${harpKeyLabel(k, harpType)}`}</option>)}
+        {HARP_KEYS.map((k) => <option key={k} value={k}>{isSaoTruc(harpType) ? `Sáo ${k}` : isKalimba(harpType) ? `Kalimba ${k}` : `Kèn ${harpKeyLabel(k, harpType)}`}</option>)}
       </select>
     </label>
   );

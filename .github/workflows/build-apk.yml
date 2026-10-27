@@ -8,6 +8,7 @@ on:
     paths:
       - 'android/twa-manifest.json'
       - 'android-recorder/twa-manifest.json'
+      - 'android-kalimba/twa-manifest.json'
       - '.github/workflows/build-apk.yml'
   workflow_dispatch:
 
@@ -37,6 +38,12 @@ jobs:
             tag: sao-apk
             title: Sổ Tab Sáo
             host: sotabsao.pages.dev
+            latest: 'false'
+          - dir: android-kalimba
+            file: sotabkalimba
+            tag: kalimba-apk
+            title: Sổ Tab Kalimba
+            host: sotabkalimba.pages.dev
             latest: 'false'
     env:
       VERSION_CODE: ${{ github.run_number }}

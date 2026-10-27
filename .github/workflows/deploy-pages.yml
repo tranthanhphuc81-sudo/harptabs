@@ -42,3 +42,14 @@ jobs:
         run: |
           npx --yes wrangler@4 pages project create sotabsao --production-branch main >/dev/null 2>&1 || true
           npx --yes wrangler@4 pages deploy dist-recorder --project-name sotabsao --branch main --commit-hash "$GITHUB_SHA" --commit-message "$(printf '%s' "$COMMIT_MSG" | head -n 1)"
+      # bản Sổ Tab Kalimba ra dự án Pages riêng
+      - name: Build Sổ Tab Kalimba
+        env:
+          VITE_APP: kalimba
+        run: npx vite build --outDir dist-kalimba --emptyOutDir
+      - name: Deploy Sổ Tab Kalimba lên Pages
+        env:
+          COMMIT_MSG: ${{ github.event.head_commit.message || 'manual deploy' }}
+        run: |
+          npx --yes wrangler@4 pages project create sotabkalimba --production-branch main >/dev/null 2>&1 || true
+          npx --yes wrangler@4 pages deploy dist-kalimba --project-name sotabkalimba --branch main --commit-hash "$GITHUB_SHA" --commit-message "$(printf '%s' "$COMMIT_MSG" | head -n 1)"
