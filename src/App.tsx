@@ -1,3 +1,4 @@
+import { BRAND } from './appConfig';
 import { lazy, Suspense, useEffect, useState } from 'react';
 import { HashRouter, NavLink, Route, Routes, useLocation } from 'react-router-dom';
 import { AppStateProvider, useOnline } from './state';
@@ -48,7 +49,7 @@ function Shell() {
           <span className="brand-mark">
             {Array.from({ length: 10 }, (_, i) => <i key={i} />)}
           </span>
-          <span className="brand-name">Sổ Tab<br />Harmonica</span>
+          <span className="brand-name">{BRAND.line1}<br />{BRAND.line2}</span>
         </div>
         {NAV.map((n) => (
           <NavLink key={n.to} to={n.to} end={n.end} className="nav-item">

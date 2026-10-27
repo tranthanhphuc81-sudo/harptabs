@@ -1,4 +1,5 @@
 import type { PaletteId } from './themes';
+import { IS_RECORDER_APP } from '../appConfig';
 import type { HarpKey, HarpType, NoteNameStyle } from './harp';
 import type { BeatStyle } from '../audio/patterns';
 
@@ -70,8 +71,8 @@ export const DEFAULT_SETTINGS: Settings = {
   tabSize: 'm',
   theme: 'system',
   palette: 'steel',
-  defaultHarpKey: 'C',
-  defaultHarpType: 'diatonic',
+  defaultHarpKey: IS_RECORDER_APP ? 'F' : 'C',
+  defaultHarpType: IS_RECORDER_APP ? 'recorderAlto' : 'diatonic',
   shareStats: true,
   keepAwake: true,
   syncOffsetMs: 0,

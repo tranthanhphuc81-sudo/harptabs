@@ -31,3 +31,14 @@ jobs:
         env:
           COMMIT_MSG: ${{ github.event.head_commit.message || 'manual deploy' }}
         run: npx --yes wrangler@4 pages deploy dist --project-name harptabs --branch main --commit-hash "$GITHUB_SHA" --commit-message "$(printf '%s' "$COMMIT_MSG" | head -n 1)"
+      # cùng mã nguồn, bản Sổ Tab Sáo (sáo dọc) ra dự án Pages riêng
+      - name: Build Sổ Tab Sáo
+        env:
+          VITE_APP: recorder
+        run: npx vite build --outDir dist-recorder --emptyOutDir
+      - name: Deploy Sổ Tab Sáo lên Pages
+        env:
+          COMMIT_MSG: ${{ github.event.head_commit.message || 'manual deploy' }}
+        run: |
+          npx --yes wrangler@4 pages project create sotabsao --production-branch main >/dev/null 2>&1 || true
+          npx --yes wrangler@4 pages deploy dist-recorder --project-name sotabsao --branch main --commit-hash "$GITHUB_SHA" --commit-message "$(printf '%s' "$COMMIT_MSG" | head -n 1)"

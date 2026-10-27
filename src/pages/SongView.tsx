@@ -2,7 +2,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { db, deleteSongs, downloadJson, exportOne, newId, slugify } from '../lib/db';
-import { SHOWN_HARP_TYPES } from '../appConfig';
+import { BRAND, SHOWN_HARP_TYPES } from '../appConfig';
 import { HARP_KEYS, HARP_TYPE_LABEL, HarpKey, harpKeyLabel, HarpType, harpName, harpTypeOf, isChromatic, isTremolo, midiToName, parseToken, songTonality } from '../lib/harp';
 import { countTechniques, flatten, parseTab } from '../lib/tabText';
 import { rekeyBody } from '../lib/converter';
@@ -420,7 +420,7 @@ function SongPlayerView({ song, original, fit, view, choice, onChoice }: {
       {showDiagram && <HarpDiagram harpKey={song.harpKey} harpType={harpType} highlight={activeToken ? [activeToken] : []} nameStyle={settings.noteNames} />}
 
       <ScanSection songId={song.id} />
-      <p className="print-only print-foot">In từ Sổ Tab Harmonica · harptabs.pages.dev · © Trần Thanh Phúc · 0913.65.65.39</p>
+      <p className="print-only print-foot">In từ {BRAND.name} · {BRAND.host} · © Trần Thanh Phúc · 0913.65.65.39</p>
 
       <PlayerBar
         p={player}

@@ -1,4 +1,5 @@
 /** Lưu trữ offline bằng IndexedDB (Dexie). Mọi dữ liệu nằm trên thiết bị. */
+import { BRAND } from '../appConfig';
 import Dexie, { Table } from 'dexie';
 import { FIRST_SAMPLE_IDS, SAMPLE_SONGS } from '../data/samples';
 import { HARP_TYPES, normalizeKey } from './harp';
@@ -180,7 +181,7 @@ function sanitizeChords(v: unknown): Record<string, string> | undefined {
 export async function importBackup(json: unknown): Promise<{ added: number; updated: number; skipped: number }> {
   const obj = json as Partial<BackupFile>;
   if (!obj || obj.app !== 'harptabs' || !Array.isArray(obj.songs)) {
-    throw new Error('File không đúng định dạng sao lưu của Sổ Tab Harmonica');
+    throw new Error(`File không đúng định dạng sao lưu của ${BRAND.name}`);
   }
   let added = 0, updated = 0, skipped = 0;
   await db.transaction('rw', db.songs, async () => {

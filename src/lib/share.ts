@@ -2,10 +2,11 @@
  * Chia sẻ bài bằng đường link: cả bài (tab, lời, nhịp, tempo, hợp âm) nén vào phần sau dấu # của link,
  * nên không đi qua máy chủ nào. Người nhận bấm link → app mở bài xem trước → "Thêm vào thư viện".
  */
+import { BRAND } from '../appConfig';
 import { sanitizeSong } from './db';
 import type { Song } from './types';
 
-export const APP_URL = 'https://harptabs.pages.dev/';
+export const APP_URL = BRAND.url;
 /** link dài quá thì một số app nhắn tin cắt mất */
 export const MAX_LINK = 16_000;
 
@@ -64,8 +65,8 @@ export async function shareLink(song: Song): Promise<string> {
 export async function shareSong(song: Song): Promise<{ status: 'shared' | 'copied' | 'cancelled' | 'too-long' | 'failed'; url: string; text: string }> {
   const url = await shareLink(song);
   const done = (status: 'shared' | 'copied' | 'cancelled' | 'too-long' | 'failed') => ({ status, url, text });
-  const title = song.title || 'Bài harmonica';
-  const text = `🎵 ${title}${song.artist ? ` — ${song.artist}` : ''} · tab harmonica. Bấm link để mở trong Sổ Tab Harmonica:`;
+  const title = song.title || `Bài ${BRAND.instrument}`;
+  const text = `🎵 ${title}${song.artist ? ` — ${song.artist}` : ''} · tab ${BRAND.instrument}. Bấm link để mở trong ${BRAND.name}:`;
   if (url.length > MAX_LINK) return done('too-long');
   if (typeof navigator !== 'undefined' && navigator.share) {
     try {

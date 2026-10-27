@@ -2,18 +2,32 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 
+// cùng mã nguồn ra hai app: VITE_APP=recorder → Sổ Tab Sáo (tên, biểu tượng, mô tả riêng)
+const RECORDER = process.env.VITE_APP === 'recorder';
+const BRAND = RECORDER
+  ? { name: 'Sổ Tab Sáo', short: 'Sáo Tab', desc: 'Sổ bài sáo dọc alto / soprano: tab tên nốt kèm thế bấm, phát nhạc đệm, dò nốt, học thổi. Chạy offline.', icons: 'recorder/' }
+  : { name: 'Sổ Tab Harmonica', short: 'Harp Tab', desc: 'Sổ tab harmonica diatonic 10 lỗ: lưu bài, phát beat mẫu, dò nốt, học kỹ thuật. Chạy offline.', icons: '' };
+
 export default defineConfig({
   base: './',
   plugins: [
     react(),
+    {
+      name: 'brand-html',
+      transformIndexHtml: (html: string) => html
+        .replace(/<title>.*<\/title>/, `<title>${BRAND.name}</title>`)
+        .replace(/(<meta name="description" content=")[^"]*"/, `$1${BRAND.desc}"`)
+        .replace(/href="\.\/icon\.svg"/, `href="./${BRAND.icons}icon.svg"`)
+        .replace(/href="\.\/icon-192\.png"/, `href="./${BRAND.icons}icon-192.png"`),
+    },
     VitePWA({
       // không tự tải lại khi có bản mới: người dùng bấm "Cập nhật" khi xong việc
       registerType: 'prompt',
-      includeAssets: ['icon.svg'],
+      includeAssets: [`${BRAND.icons}icon.svg`],
       manifest: {
-        name: 'Sổ Tab Harmonica',
-        short_name: 'Harp Tab',
-        description: 'Lưu và tập harptab diatonic 10 lỗ, chạy offline',
+        name: BRAND.name,
+        short_name: BRAND.short,
+        description: BRAND.desc,
         lang: 'vi',
         theme_color: '#1f2a33',
         background_color: '#eef1f2',
@@ -24,9 +38,9 @@ export default defineConfig({
         // nhận chia sẻ từ trình duyệt/app khác (bôi đen tab → Chia sẻ → Harp Tab)
         share_target: { action: './', method: 'GET', params: { title: 'title', text: 'text', url: 'url' } },
         icons: [
-          { src: 'icon-192.png', sizes: '192x192', type: 'image/png' },
-          { src: 'icon-512.png', sizes: '512x512', type: 'image/png' },
-          { src: 'icon-512-maskable.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' }
+          { src: `${BRAND.icons}icon-192.png`, sizes: '192x192', type: 'image/png' },
+          { src: `${BRAND.icons}icon-512.png`, sizes: '512x512', type: 'image/png' },
+          { src: `${BRAND.icons}icon-512-maskable.png`, sizes: '512x512', type: 'image/png', purpose: 'maskable' }
         ]
       },
       workbox: {
