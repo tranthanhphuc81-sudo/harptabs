@@ -2,6 +2,8 @@
  * Bài mẫu — chỉ dùng giai điệu và lời đã thuộc phạm vi công cộng (public domain).
  * Tất cả viết cho kèn C (diatonic); bản cho kèn C chromatic tạo ở samples4.ts.
  */
+import { IS_RECORDER_APP } from '../appConfig';
+import { recorderSamples } from './recorderSamples';
 import type { Song } from '../lib/types';
 import { MORE_SAMPLES } from './samples2';
 import { FOLK_SAMPLES } from './samples3';
@@ -163,4 +165,7 @@ Sol Fa Rê Đô# Đô Sib Sol
 ];
 
 const DIATONIC_SAMPLES: SampleSong[] = [...BASE_SAMPLES, ...MORE_SAMPLES, ...FOLK_SAMPLES];
-export const SAMPLE_SONGS: SampleSong[] = [...DIATONIC_SAMPLES, ...chromaticSamples(DIATONIC_SAMPLES), ...tremoloSamples(DIATONIC_SAMPLES)];
+/** app sáo: bài mẫu xếp lại cho sáo alto; app harmonica: bài kèn diatonic / chromatic / tremolo */
+export const SAMPLE_SONGS: SampleSong[] = IS_RECORDER_APP
+  ? recorderSamples(DIATONIC_SAMPLES)
+  : [...DIATONIC_SAMPLES, ...chromaticSamples(DIATONIC_SAMPLES), ...tremoloSamples(DIATONIC_SAMPLES)];

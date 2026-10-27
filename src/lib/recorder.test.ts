@@ -34,3 +34,19 @@ describe('sáo dọc alto (Fa) và soprano (Đô)', () => {
     }
   });
 });
+
+describe('nội dung app sáo', () => {
+  it('bài mẫu xếp lại cho sáo alto: đủ nhiều bài, không lỗi ký hiệu', async () => {
+    const { recorderSamples } = await import('../data/recorderSamples');
+    const base = SAMPLE_SONGS.filter((s) => !s.harpType || s.harpType === 'diatonic');
+    const out = recorderSamples(base);
+    expect(out.length).toBeGreaterThan(10);
+    for (const s of out) expect(parseTab(s.body, 'F', 'recorderAlto').issues.filter((i) => i.level === 'error'), s.title).toEqual([]);
+  });
+  it('bài học sáo: mọi tab đọc được trên sáo alto', async () => {
+    const { RECORDER_LESSONS } = await import('../data/recorderLessons');
+    for (const l of RECORDER_LESSONS) for (const b of l.blocks) {
+      if (b.t === 'tab') expect(parseTab(b.body, 'F', 'recorderAlto').issues, `${l.id}`).toEqual([]);
+    }
+  });
+});

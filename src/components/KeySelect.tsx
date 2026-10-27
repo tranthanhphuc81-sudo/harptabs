@@ -1,4 +1,4 @@
-import { SHOWN_HARP_TYPES } from '../appConfig';
+import { BRAND, SHOWN_HARP_TYPES } from '../appConfig';
 import { HARP_KEYS, HARP_TYPE_LABEL, HarpKey, harpKeyLabel, HarpType, harpName, holeCount, isChromatic, isRecorder, isTremolo } from '../lib/harp';
 
 interface Props {
@@ -25,7 +25,7 @@ export function KeySelect({ value, onChange, allowAuto, id, label = 'Tông kèn'
   );
 }
 
-export function HarpTypeSelect({ value, onChange, id, label = 'Loại kèn' }: { value: HarpType; onChange: (t: HarpType) => void; id?: string; label?: string }) {
+export function HarpTypeSelect({ value, onChange, id, label = `Loại ${BRAND.noun}` }: { value: HarpType; onChange: (t: HarpType) => void; id?: string; label?: string }) {
   return (
     <label className="field" htmlFor={id}>
       <span className="field-label">{label}</span>

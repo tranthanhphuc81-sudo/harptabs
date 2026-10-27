@@ -1,5 +1,7 @@
 /** Nội dung học offline: kỹ thuật, thủ thuật, mẹo thổi harmonica diatonic và chromatic. */
 import type { BeatStyle } from '../audio/patterns';
+import { IS_RECORDER_APP } from '../appConfig';
+import { RECORDER_LESSON_GROUPS, RECORDER_LESSONS } from './recorderLessons';
 import type { HarpKey, HarpType } from '../lib/harp';
 
 export type Block =
@@ -23,9 +25,9 @@ export interface Lesson {
   blocks: Block[];
 }
 
-export const LESSON_GROUPS = ['Bắt đầu', 'Kỹ thuật cơ bản', 'Bend và nâng cao', 'Âm nhạc', 'Bảo quản và mẹo', 'Kèn chromatic'];
+const HARMONICA_LESSON_GROUPS = ['Bắt đầu', 'Kỹ thuật cơ bản', 'Bend và nâng cao', 'Âm nhạc', 'Bảo quản và mẹo', 'Kèn chromatic'];
 
-export const LESSONS: Lesson[] = [
+const HARMONICA_LESSONS: Lesson[] = [
   // ---------------- BẮT ĐẦU ----------------
   {
     id: 'chon-va-cam-ken',
@@ -519,3 +521,7 @@ export const LESSONS: Lesson[] = [
     ],
   },
 ];
+
+/** bộ bài học theo app: Sổ Tab Sáo dùng bài học sáo dọc */
+export const LESSON_GROUPS = IS_RECORDER_APP ? RECORDER_LESSON_GROUPS : HARMONICA_LESSON_GROUPS;
+export const LESSONS: Lesson[] = IS_RECORDER_APP ? RECORDER_LESSONS : HARMONICA_LESSONS;

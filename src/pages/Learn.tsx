@@ -1,3 +1,4 @@
+import { BRAND, IS_RECORDER_APP } from '../appConfig';
 import { Fragment, ReactNode, useMemo } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { Block, LESSON_GROUPS, LESSONS } from '../data/lessons';
@@ -26,13 +27,13 @@ export default function Learn() {
     <div className="page page-learn">
       <header className="page-head">
         <div>
-          <h1>Học thổi harmonica</h1>
-          <p className="muted">Kỹ thuật, thủ thuật và mẹo, kèm bài tập nghe được. Tất cả dùng offline. Chơi kèn chromatic: xem nhóm bài cuối.</p>
+          <h1>Học thổi {BRAND.instrument}</h1>
+          <p className="muted">Kỹ thuật, thủ thuật và mẹo, kèm bài tập nghe được. Tất cả dùng offline.{IS_RECORDER_APP ? '' : ' Chơi kèn chromatic: xem nhóm bài cuối.'}</p>
         </div>
       </header>
       <Link to="/jam" className="jam-card">
-        <strong>Tập ngẫu hứng blues</strong>
-        <span>Nền nhạc 12 ô nhịp, thang âm blues trên kèn của bạn, máy hỏi – bạn đáp và 20 lick mẫu.</span>
+        <strong>{IS_RECORDER_APP ? 'Tập ngẫu hứng jazz' : 'Tập ngẫu hứng blues & jazz'}</strong>
+        <span>{IS_RECORDER_APP ? 'Nền nhạc swing các vòng ii–V–I, thế bấm các nốt của hợp âm đang vang, máy hỏi – bạn đáp và lick mẫu.' : 'Nền nhạc 12 ô nhịp, thang âm blues trên kèn của bạn, máy hỏi – bạn đáp và lick mẫu; có cả chế độ jazz.'}</span>
       </Link>
       {LESSON_GROUPS.map((g) => (
         <section key={g} className="lesson-group">
