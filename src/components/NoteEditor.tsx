@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { HarpType, holeCount, isChromatic, isTremolo, midiToName, NoteNameStyle, tremoloDir } from '../lib/harp';
+import { HarpType, harpLayout, holeCount, isChromatic, isRecorder, isTremolo, midiToName, NoteNameStyle, recorderKey, tremoloDir } from '../lib/harp';
+import { TokenText } from './TabView';
 import { joinToken, splitToken } from '../lib/tabEdit';
 import type { FlatEvent } from '../lib/tabText';
 import { Icon } from './Icon';
@@ -35,6 +36,10 @@ const BEAT_CHOICES: { v: number; label: string }[] = [
 export function NoteEditor({ note, harpType, nameStyle, playing, onToken, onBeats, onRemove, onDuplicate, onStep, canUndo, onUndo, onPickPlaying, onHearToken, onInsert, onClose }: Props) {
   const trem = isTremolo(harpType);
   const chrom = isChromatic(harpType);
+  // sáo dọc: chọn theo tên nốt (mỗi nốt một thế bấm), không có thổi / hút / bend
+  const rec = isRecorder(harpType);
+  const recNotes = rec ? harpLayout(recorderKey(harpType), harpType) : [];
+  const pick = (t: string) => { setPend(t); onHearToken(t); };
   const holes = Array.from({ length: holeCount(harpType) }, (_, i) => i + 1);
   const cur = splitToken(note?.token ?? null);
   const isRest = !!note && note.token === null;
@@ -79,8 +84,10 @@ export function NoteEditor({ note, harpType, nameStyle, playing, onToken, onBeat
 
       {note && (
         <>
-          <div className="keypad ne-keys" role="toolbar" aria-label="Chọn lỗ">
-            {trem ? holes.map((h) => {
+          <div className={`keypad ne-keys${rec ? ' recorder' : ''}`} role="toolbar" aria-label={rec ? 'Chọn nốt' : 'Chọn lỗ'}>
+            {rec ? recNotes.map((n) => (
+              <button type="button" key={n.token} className={`blow${(pend ?? note.token) === n.token ? ' on' : ''}`} onClick={() => pick(n.token)} aria-label={`Nốt ${n.token}`}><TokenText token={n.token} nameStyle={nameStyle} /></button>
+            )) : trem ? holes.map((h) => {
               const d = tremoloDir(h) === 'draw';
               return <button type="button" key={h} className={`${d ? 'draw' : 'blow'}${shown.hole === h ? ' on' : ''}`} onClick={() => setHole(h, d)} aria-label={`Lỗ ${h} ${d ? 'hút' : 'thổi'}`}>{d ? `−${h}` : h}</button>;
             }) : <>
@@ -98,7 +105,7 @@ export function NoteEditor({ note, harpType, nameStyle, playing, onToken, onBeat
             </div>
           )}
           <div className="ne-row">
-            {!trem && (chrom
+            {!trem && !rec && (chrom
               ? <button type="button" className={`chip${shown.slide ? ' on' : ''}`} aria-pressed={shown.slide} disabled={shown.hole == null} onClick={() => withMod({ slide: !shown.slide })}>Bấm gạt &lt;</button>
               : <>
                 <button type="button" className={`chip${shown.bend === 0 && !shown.over ? ' on' : ''}`} disabled={shown.hole == null} onClick={() => withMod({ bend: 0, over: false })}>Thường</button>

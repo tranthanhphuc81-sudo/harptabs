@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { JazzJam } from './JazzJam';
+import { IS_RECORDER_APP } from '../appConfig';
 import { Link } from 'react-router-dom';
 import { HarpKey, harpName, pitchClassName } from '../lib/harp';
 import {
@@ -207,7 +208,9 @@ const GENRE_KEY = 'harptabs.jamGenre';
 
 /** Tập ngẫu hứng: chọn blues (vị trí 2, 12 ô) hoặc jazz (vòng ii–V–I…); nhớ lựa chọn trên máy */
 export default function Jam() {
-  const [genre, setGenre] = useState<'blues' | 'jazz'>(() => { try { return localStorage.getItem(GENRE_KEY) === 'jazz' ? 'jazz' : 'blues'; } catch { return 'blues'; } });
+  const [picked, setGenre] = useState<'blues' | 'jazz'>(() => { try { return localStorage.getItem(GENRE_KEY) === 'jazz' ? 'jazz' : 'blues'; } catch { return 'blues'; } });
+  // app sáo: phần blues viết cho kèn diatonic vị trí 2 → chỉ có jazz (lick viết bằng tên nốt)
+  const genre = IS_RECORDER_APP ? 'jazz' : picked;
   const pick = (g: 'blues' | 'jazz') => { setGenre(g); try { localStorage.setItem(GENRE_KEY, g); } catch { /* không lưu được thì thôi */ } };
   return (
     <div className="page page-jam">
@@ -216,10 +219,10 @@ export default function Jam() {
           <Link to="/learn" className="icon-btn" aria-label="Về trang Học"><Icon name="back" /></Link>
           <h1>Tập ngẫu hứng</h1>
         </div>
-        <div className="segmented" role="tablist" aria-label="Thể loại">
+        {!IS_RECORDER_APP && <div className="segmented" role="tablist" aria-label="Thể loại">
           <button type="button" role="tab" aria-selected={genre === 'blues'} className={genre === 'blues' ? 'on' : ''} onClick={() => pick('blues')}>Blues</button>
           <button type="button" role="tab" aria-selected={genre === 'jazz'} className={genre === 'jazz' ? 'on' : ''} onClick={() => pick('jazz')}>Jazz</button>
-        </div>
+        </div>}
       </header>
       {genre === 'blues' ? <BluesJam key="blues" /> : <JazzJam key="jazz" />}
     </div>

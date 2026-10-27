@@ -1085,3 +1085,5 @@ button, a, select { -webkit-tap-highlight-color: transparent; }
 .rc-note.on { border-color: var(--ink); box-shadow: 0 0 0 2px var(--ink) inset; }
 .rc-note.rc-halfHole, .rc-note.rc-crossFingered { background: var(--surface-2); }
 .rc-name { font-size: 0.8rem; font-weight: 600; }
+.keypad.recorder button { min-width: 44px; padding: 0 4px; }
+.keypad.ne-keys.recorder { grid-template-columns: repeat(auto-fill, minmax(40px, 1fr)); }

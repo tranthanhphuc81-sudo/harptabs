@@ -2,13 +2,13 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { fixGarbled, VN_ENCODINGS } from '../lib/vnEncoding';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { blankSong, db, deleteSongs } from '../lib/db';
-import { HarpKey, HarpType, harpTypeOf, holeCount, isChromatic, isTremolo, midiToName, normalizeKey, parseToken, songTonality, tremoloDir } from '../lib/harp';
+import { HarpKey, HarpType, harpTypeOf, holeCount, harpLayout, isChromatic, isRecorder, isTremolo, midiToName, normalizeKey, parseToken, recorderKey, songTonality, tremoloDir } from '../lib/harp';
 import { flatten, parseTab } from '../lib/tabText';
 import { beatsPerBar, Song } from '../lib/types';
 import { STYLE_OPTIONS, BeatStyle } from '../audio/patterns';
 import { suggestStyle } from '../audio/suggest';
 import { HarpTypeSelect, KeySelect } from '../components/KeySelect';
-import { TabView } from '../components/TabView';
+import { TabView, TokenText } from '../components/TabView';
 import { Icon } from '../components/Icon';
 import { MiniPlay } from '../components/PlayerBar';
 import { usePlayer } from '../components/usePlayer';
@@ -57,6 +57,8 @@ function Editor({ initial, isNew, draft }: { initial: Song; isNew: boolean; draf
   const harpType = harpTypeOf(s);
   const chrom = isChromatic(harpType);
   const trem = isTremolo(harpType);
+  const rec = isRecorder(harpType);
+  const recNotes = rec ? harpLayout(recorderKey(harpType), harpType) : [];
   const holes = Array.from({ length: holeCount(harpType) }, (_, i) => i + 1);
   const parsed = useMemo(() => parseTab(s.body, s.harpKey, harpType), [s.body, s.harpKey, harpType]);
   const flat = useMemo(() => flatten(parsed), [parsed]);
@@ -228,9 +230,9 @@ function Editor({ initial, isNew, draft }: { initial: Song; isNew: boolean; draf
             <span className="field-label">Tác giả / ca sĩ</span>
             <input value={s.artist ?? ''} onChange={(e) => set('artist', e.target.value || undefined)} />
           </label>
-          <HarpTypeSelect value={harpType} onChange={(t: HarpType) => setS((prev) => ({ ...prev, harpType: t === 'diatonic' ? undefined : t, position: t === 'diatonic' ? prev.position : 1 }))} />
+          <HarpTypeSelect value={harpType} onChange={(t: HarpType) => setS((prev) => ({ ...prev, harpType: t === 'diatonic' ? undefined : t, position: t === 'diatonic' ? prev.position : 1, ...(isRecorder(t) ? { harpKey: recorderKey(t) } : {}) }))} />
           <KeySelect value={s.harpKey} onChange={(k) => set('harpKey', k as HarpKey)} harpType={harpType} />
-          {!chrom && !trem && (
+          {!chrom && !trem && !rec && (
             <label className="field">
               <span className="field-label">Vị trí</span>
               <select value={s.position ?? 1} onChange={(e) => set('position', Number(e.target.value) as 1 | 2 | 3)}>
@@ -294,10 +296,11 @@ function Editor({ initial, isNew, draft }: { initial: Song; isNew: boolean; draf
             <details className="syntax-help">
               <summary>Cách ghi</summary>
               <ul>
-                {trem
+                {rec && <li>Ghi <strong>tên nốt có quãng tám</strong>: <code>F4</code> <code>Bb4</code> <code>C#5</code> (sáo alto từ F4 tới G6; soprano ghi từ C4). Dưới mỗi nốt app vẽ thế bấm.</li>}
+                {rec ? null : trem
                   ? <li>Kèn tremolo: lỗ lẻ là thổi, lỗ chẵn là hút. Gõ <code>3</code> hay <code>4</code> là đủ — app tự ghi lỗ hút thành <code>-4</code>. Kèn này không bend.</li>
                   : <li><code>4</code> thổi lỗ 4, <code>-4</code> hút lỗ 4</li>}
-                {trem ? null : chrom
+                {trem || rec ? null : chrom
                   ? <li><code>4&lt;</code> thổi lỗ 4 bấm nút gạt, <code>-4&lt;</code> hút bấm nút gạt (cao lên nửa cung)</li>
                   : <li><code>-3'</code> bend nửa cung, <code>-3''</code> bend 1 cung, <code>6o</code> overblow</li>}
                 <li><code>4:2</code> giữ 2 phách, <code>4:0.5</code> nửa phách, <code>r</code> dấu nghỉ</li>
@@ -306,8 +309,10 @@ function Editor({ initial, isNew, draft }: { initial: Song; isNew: boolean; draf
               </ul>
             </details>
           </div>
-          <div className={`keypad${trem ? ' tremolo' : ''}`} role="toolbar" aria-label="Bàn phím tab">
-            {trem ? holes.map((h) => {
+          <div className={`keypad${trem ? ' tremolo' : ''}${rec ? ' recorder' : ''}`} role="toolbar" aria-label="Bàn phím tab">
+            {rec ? recNotes.map((n) => (
+              <button type="button" key={n.token} className="blow" onClick={() => pickHole(n.token)} aria-label={`Nốt ${n.token}`}><TokenText token={n.token} nameStyle={settings.noteNames} /></button>
+            )) : trem ? holes.map((h) => {
               const d = tremoloDir(h) === 'draw';
               return <button type="button" key={h} className={d ? 'draw' : 'blow'} onClick={() => pickHole(`${d ? '-' : ''}${h}`)} aria-label={`Lỗ ${h} ${d ? 'hút' : 'thổi'}`}>{d ? `−${h}` : h}</button>;
             }) : <>
@@ -318,7 +323,7 @@ function Editor({ initial, isNew, draft }: { initial: Song; isNew: boolean; draf
                 <button type="button" key={h} className={draw ? 'draw' : 'blow'} onClick={() => pickHole(`${draw ? '-' : ''}${h}`)}>{draw ? `−${h}` : h}</button>
               ))}
             </>}
-            {trem ? null : chrom
+            {trem || rec ? null : chrom
               ? <button type="button" onClick={() => pickMod('<')} aria-label="Bấm nút gạt">&lt;</button>
               : <button type="button" onClick={() => pickMod("'")} aria-label="Thêm bend">′</button>}
             <button type="button" onClick={() => pickDur(':2')}>:2</button>
@@ -330,12 +335,12 @@ function Editor({ initial, isNew, draft }: { initial: Song; isNew: boolean; draf
             <button type="button" className={`chip${hearFirst ? ' on' : ''}`} aria-pressed={hearFirst} onClick={toggleHearFirst}>Nghe trước khi thêm</button>
             {hearFirst && (pend ? (
               <>
-                <span className="hear-cur">{pend.token}{pend.dur}{pendNote ? <span className="muted"> ({midiToName(pendNote.midi, settings.noteNames)})</span> : <span className="danger"> — kèn này không có nốt đó</span>}</span>
+                <span className="hear-cur">{pend.token}{pend.dur}{pendNote ? <span className="muted"> ({midiToName(pendNote.midi, settings.noteNames)})</span> : <span className="danger"> — {rec ? 'sáo' : 'kèn'} này không có nốt đó</span>}</span>
                 <button type="button" className="btn btn-ghost btn-sm" onClick={() => hear(pend.token)} disabled={!pendNote}>Nghe lại</button>
                 <button type="button" className="btn btn-primary btn-sm" onClick={addPending} disabled={!pendNote}>Thêm vào tab</button>
                 <button type="button" className="btn btn-ghost btn-sm" onClick={() => setPend(null)}>Bỏ</button>
               </>
-            ) : <span className="muted small">Chạm lỗ để nghe, rồi bấm “Thêm vào tab”.</span>)}
+            ) : <span className="muted small">Chạm {rec ? 'nốt' : 'lỗ'} để nghe, rồi bấm “Thêm vào tab”.</span>)}
           </div>
           <textarea
             ref={taRef}

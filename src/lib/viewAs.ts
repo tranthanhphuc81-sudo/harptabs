@@ -4,7 +4,7 @@
  */
 import { transposeChords } from '../audio/harmony';
 import { fitToHarp, midisOf, rekeyBody, TabFit } from './converter';
-import { HARP_KEYS, HARP_TYPES, HarpKey, HarpType, harpTypeOf, songTonality } from './harp';
+import { HARP_KEYS, HARP_TYPES, HarpKey, HarpType, harpTypeOf, isRecorder, recorderKey, songTonality } from './harp';
 import { parseTab } from './tabText';
 import type { Song } from './types';
 
@@ -95,11 +95,13 @@ export function bestHarp(song: Song): BestHarp {
   const hit = bestCache.get(ck);
   if (hit) return hit;
   const midis = midisOf(parseTab(song.body, song.harpKey, origType));
-  const types = [origType, ...TYPE_ORDER.filter((t) => t !== origType)];
+  // bài sáo dọc: chỉ so sáo alto / soprano (mỗi loại một tông); bài kèn: các loại kèn
+  const order: HarpType[] = isRecorder(origType) ? ['recorderAlto', 'recorderSoprano'] : TYPE_ORDER;
+  const types = [origType, ...order.filter((t) => t !== origType)];
   const originalFit = fitToHarp(midis, song.harpKey, { transpose: 'octave', type: origType });
   let best: { score: number[]; view: ViewAs; fit: TabFit } | null = null;
   types.forEach((type, ti) => {
-    for (const key of HARP_KEYS) {
+    for (const key of isRecorder(type) ? [recorderKey(type)] : HARP_KEYS) {
       const fit = type === origType && key === song.harpKey ? originalFit : fitToHarp(midis, key, { transpose: 'octave', type });
       const keyRank = type === origType && key === song.harpKey ? 0 : key === 'C' ? 1 : 2;
       // kèn tông lạ (không phải tông của bài, không phải C) ít người có sẵn: chỉ chọn khi đỡ khó rõ rệt

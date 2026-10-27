@@ -1,5 +1,5 @@
 import { SHOWN_HARP_TYPES } from '../appConfig';
-import { HARP_KEYS, HARP_TYPE_LABEL, HarpKey, harpKeyLabel, HarpType, harpName, holeCount, isChromatic, isTremolo } from '../lib/harp';
+import { HARP_KEYS, HARP_TYPE_LABEL, HarpKey, harpKeyLabel, HarpType, harpName, holeCount, isChromatic, isRecorder, isTremolo } from '../lib/harp';
 
 interface Props {
   value: HarpKey | 'auto';
@@ -12,6 +12,8 @@ interface Props {
 }
 
 export function KeySelect({ value, onChange, allowAuto, id, label = 'Tông kèn', harpType }: Props) {
+  // sáo dọc chỉ có một tông (alto Fa, soprano Đô): không cần chọn
+  if (isRecorder(harpType)) return null;
   return (
     <label className="field" htmlFor={id}>
       <span className="field-label">{label}</span>

@@ -3,7 +3,7 @@ import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { db, deleteSongs, downloadJson, exportOne, newId, slugify } from '../lib/db';
 import { BRAND, SHOWN_HARP_TYPES } from '../appConfig';
-import { HARP_KEYS, HARP_TYPE_LABEL, HarpKey, harpKeyLabel, HarpType, harpName, harpTypeOf, isChromatic, isTremolo, midiToName, parseToken, songTonality } from '../lib/harp';
+import { HARP_KEYS, HARP_TYPE_LABEL, HarpKey, harpKeyLabel, HarpType, harpName, harpTypeOf, isChromatic, isRecorder, isTremolo, midiToName, parseToken, recorderKey, songTonality } from '../lib/harp';
 import { countTechniques, flatten, parseTab } from '../lib/tabText';
 import { rekeyBody } from '../lib/converter';
 import { beatsPerBar, Song } from '../lib/types';
@@ -67,6 +67,7 @@ function SongPlayerView({ song, original, fit, view, choice, onChoice }: {
   const harpType = harpTypeOf(song);
   const chrom = isChromatic(harpType);
   const trem = isTremolo(harpType);
+  const rec = isRecorder(harpType);
   const parsed = useMemo(() => parseTab(song.body, song.harpKey, harpType), [song.body, song.harpKey, harpType]);
   const flat = useMemo(() => flatten(parsed), [parsed]);
   const stats = useMemo(() => countTechniques(parsed), [parsed]);
@@ -341,7 +342,7 @@ function SongPlayerView({ song, original, fit, view, choice, onChoice }: {
           {song.artist && <p className="muted">{song.artist}</p>}
           <p className="sh-meta">
             <span>{harpName(song.harpKey, harpType)}</span>
-            {!chrom && !trem && song.position && <span>Vị trí {song.position}</span>}
+            {!chrom && !trem && !rec && song.position && <span>Vị trí {song.position}</span>}
             {song.songKey && <span>Giọng {song.songKey}</span>}
             <span>{song.timeSig}</span>
             <span>{stats.notes} nốt</span>
@@ -354,7 +355,7 @@ function SongPlayerView({ song, original, fit, view, choice, onChoice }: {
           <button type="button" className={`icon-btn${song.favorite ? ' starred' : ''}`} onClick={toggleFav} aria-pressed={song.favorite} aria-label="Yêu thích">
             <Icon name="star" filled={song.favorite} />
           </button>
-          <button type="button" className="icon-btn" onClick={() => setRekeyOpen(true)} aria-label="Chuyển sang kèn khác"><Icon name="swap" /></button>
+          <button type="button" className="icon-btn" onClick={() => setRekeyOpen(true)} aria-label={`Chuyển sang ${BRAND.noun} khác`}><Icon name="swap" /></button>
           <button type="button" className="icon-btn" onClick={share} aria-label="Chia sẻ bài"><Icon name="share" /></button>
           <button type="button" className="icon-btn" onClick={printSong} aria-label="In / lưu PDF" title="In / lưu PDF"><Icon name="print" /></button>
           <button type="button" className="icon-btn" onClick={exportSong} aria-label="Xuất file bài"><Icon name="download" /></button>
@@ -374,9 +375,11 @@ function SongPlayerView({ song, original, fit, view, choice, onChoice }: {
       )}
 
       <p className="legend">
+        {rec ? <>Tên nốt kèm thế bấm: <strong>●</strong> bịt kín, <strong>○</strong> mở, <strong>◐</strong> bịt nửa (lỗ trên cùng lệch trái là ngón cái)</> : <>
         <span className="lg blow">4</span> thổi
         <span className="lg draw">−4</span> hút
         {trem ? null : chrom ? <><span className="lg bend">&lt;</span> bấm nút gạt</> : <><span className="lg bend">′</span> bend nửa cung</>}
+        </>}
         <span className="lg-dur print-only">Ô dài = giữ lâu hơn (ô thường 1 phách) · <strong>–</strong> nghỉ</span>
         <span className="muted no-print">Chạm vào nốt để nghe, hoặc chọn chỗ bắt đầu phát.</span>
         <button type="button" className={`chip legend-chords${beatPrefs.showChords ? ' on' : ''}`} aria-pressed={beatPrefs.showChords}
@@ -523,7 +526,9 @@ function RekeyDialog({ song, onClose, onDone }: { song: Song; onClose: () => voi
   const { toast } = useAppState();
   const fromType = harpTypeOf(song);
   const [toType, setToType] = useState<HarpType>(fromType);
-  const [target, setTarget] = useState<HarpKey>(song.harpKey === 'C' ? 'G' : 'C');
+  const [target0, setTarget] = useState<HarpKey>(song.harpKey === 'C' ? 'G' : 'C');
+  // sáo dọc chỉ có một tông
+  const target = isRecorder(toType) ? recorderKey(toType) : target0;
   const [mode, setMode] = useState<'octave' | 'any'>('any');
   const preview = useMemo(() => rekeyBody(song.body, song.harpKey, target, mode, fromType, toType), [song, target, mode, fromType, toType]);
   const toName = harpName(target, toType).replace(/^Kèn/, 'kèn');
@@ -549,26 +554,26 @@ function RekeyDialog({ song, onClose, onDone }: { song: Song; onClose: () => voi
 
   return (
     <dialog ref={dialogRef} className="sheet" onClose={onClose} aria-labelledby="rekey-title">
-      <h2 id="rekey-title">Chuyển sang kèn khác</h2>
+      <h2 id="rekey-title">Chuyển sang {BRAND.noun} khác</h2>
       <label className="field">
-        <span className="field-label">Loại kèn</span>
+        <span className="field-label">Loại {BRAND.noun}</span>
         <select value={toType} onChange={(e) => setToType(e.target.value as HarpType)}>
           {SHOWN_HARP_TYPES.map((t) => <option key={t} value={t}>{HARP_TYPE_LABEL[t]}</option>)}
         </select>
       </label>
-      <label className="field">
+      {!isRecorder(toType) && <label className="field">
         <span className="field-label">Kèn bạn có</span>
         <select value={target} onChange={(e) => setTarget(e.target.value as HarpKey)}>
           {HARP_KEYS.map((k) => <option key={k} value={k}>Kèn {harpKeyLabel(k, toType)}</option>)}
         </select>
-      </label>
+      </label>}
       <fieldset className="radio-group">
         <legend className="field-label">Cách chuyển</legend>
         <label><input type="radio" checked={mode === 'any'} onChange={() => setMode('any')} /> Dịch giọng cho dễ thổi nhất <span className="muted">(giai điệu giữ nguyên, cao độ thay đổi)</span></label>
-        <label><input type="radio" checked={mode === 'octave'} onChange={() => setMode('octave')} /> Giữ đúng giọng gốc <span className="muted">(để chơi cùng bản thu{isTremolo(toType) ? ', nốt thăng giáng không có trên kèn tremolo' : isChromatic(toType) ? ', có thể phải bấm gạt nhiều hơn' : ', có thể phải bend'})</span></label>
+        <label><input type="radio" checked={mode === 'octave'} onChange={() => setMode('octave')} /> Giữ đúng giọng gốc <span className="muted">(để chơi cùng bản thu{isRecorder(toType) ? ', nốt ngoài tầm sáo sẽ thiếu' : isTremolo(toType) ? ', nốt thăng giáng không có trên kèn tremolo' : isChromatic(toType) ? ', có thể phải bấm gạt nhiều hơn' : ', có thể phải bend'})</span></label>
       </fieldset>
       <p className="rekey-stats">
-        {isTremolo(toType)
+        {isTremolo(toType) || isRecorder(toType)
           ? <><strong>{s.natural}</strong> nốt chơi được</>
           : isChromatic(toType)
           ? <><strong>{s.natural}</strong> nốt thường, <strong>{s.slides}</strong> nốt bấm gạt</>
@@ -679,18 +684,18 @@ function ViewAsBar({ original, viewed, view, fit, choice, onChoice, onSaved }: {
     <section className={`viewas${active ? ' on' : ''}`} aria-label="Xem bài cho kèn khác">
       <div className="row gap wrap center">
         <label className="field viewas-field">
-          <span className="field-label">Xem cho kèn</span>
+          <span className="field-label">Xem cho {BRAND.noun}</span>
           <select value={manual ? choice.type : choice} onChange={(e) => {
             const v = e.target.value;
             if (v === 'auto' || v === 'original') onChoice(v);
-            else onChoice({ type: v as HarpType, key, mode: 'any' });
+            else onChoice({ type: v as HarpType, key: isRecorder(v as HarpType) ? recorderKey(v as HarpType) : key, mode: 'any' });
           }}>
-            <option value="auto">✨ Tự chọn kèn hợp nhất</option>
+            <option value="auto">✨ Tự chọn {BRAND.noun} hợp nhất</option>
             <option value="original">Bản gốc ({harpName(original.harpKey, origType).replace(/^Kèn /, '')})</option>
             {SHOWN_HARP_TYPES.map((t) => <option key={t} value={t}>{HARP_TYPE_LABEL[t]}</option>)}
           </select>
         </label>
-        {manual && (
+        {manual && !isRecorder(type) && (
           <label className="field viewas-field">
             <span className="field-label">Tông kèn</span>
             <select value={key} onChange={(e) => set({ key: e.target.value as HarpKey })}>

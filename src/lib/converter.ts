@@ -3,7 +3,7 @@
  * (ưu tiên nốt tự nhiên, hạn chế bend/overblow, hạn chế nhảy lỗ xa),
  * và tìm tông kèn / quãng dịch giọng phù hợp nhất. Dùng chung cho diatonic và chromatic.
  */
-import { HARP_KEYS, HarpKey, HarpNote, HarpType, harpLayout, isTremolo, techniqueCost } from './harp';
+import { HARP_KEYS, HarpKey, HarpNote, HarpType, harpLayout, isRecorder, isTremolo, recorderKey, techniqueCost } from './harp';
 import { ParsedTab, TabSection, parseTab, serializeTab } from './tabText';
 
 const UNPLAYABLE_COST = 60;
@@ -108,6 +108,8 @@ export interface FitOptions {
 
 /** Tìm quãng dịch tốt nhất để chơi bài trên một kèn cho trước */
 export function fitToHarp(midis: (number | null)[], key: HarpKey, opts: FitOptions = { transpose: 'octave' }): TabFit {
+  // sáo dọc chỉ có một tông (alto Fa, soprano Đô)
+  if (isRecorder(opts.type)) key = recorderKey(opts.type!);
   const shifts: number[] = [];
   const range = opts.transpose === 'any' ? 11 : 0;
   for (let semi = -range; semi <= range; semi++) for (const oct of [-36, -24, -12, 0, 12, 24, 36]) shifts.push(semi + oct);
@@ -123,6 +125,7 @@ export function fitToHarp(midis: (number | null)[], key: HarpKey, opts: FitOptio
 
 /** Xếp hạng các tông kèn phù hợp để chơi bài ở đúng giọng gốc (chỉ dịch quãng tám) */
 export function rankHarpKeys(midis: (number | null)[], limit = 3, type: HarpType = 'diatonic'): TabFit[] {
+  if (isRecorder(type)) return [fitToHarp(midis, recorderKey(type), { transpose: 'octave', type })];
   return HARP_KEYS.map((k) => fitToHarp(midis, k, { transpose: 'octave', type }))
     .sort((a, b) => a.cost - b.cost)
     .slice(0, limit);

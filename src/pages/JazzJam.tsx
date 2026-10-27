@@ -135,7 +135,7 @@ export function JazzJam() {
       </p>
       <div className="row gap wrap end-align">
         <HarpTypeSelect value={harpType} onChange={(t) => setHarpType(isTremolo(t) ? 'diatonic' : t)} />
-        <KeySelect value={harpKey} onChange={(k) => k !== 'auto' && setHarpKey(k)} label="Kèn của bạn" />
+        <KeySelect value={harpKey} onChange={(k) => k !== 'auto' && setHarpKey(k)} label="Kèn của bạn" harpType={harpType} />
         <label className="field">
           <span className="field-label">Giọng</span>
           <select value={tonic} onChange={(e) => setTonic(Number(e.target.value))}>

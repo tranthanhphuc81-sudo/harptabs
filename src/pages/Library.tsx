@@ -1,3 +1,4 @@
+import { IS_RECORDER_APP } from '../appConfig';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
@@ -127,6 +128,7 @@ export default function Library() {
           <button type="button" className={`chip${fav ? ' on' : ''}`} aria-pressed={fav} onClick={() => setFav(!fav)}>
             <Icon name="star" size={15} filled={fav} /> Yêu thích
           </button>
+          {!IS_RECORDER_APP && <>
           <select aria-label="Lọc theo loại kèn" value={kind} onChange={(e) => setKind(e.target.value as typeof kind)} className="chip-select">
             <option value="">Mọi loại kèn</option>
             <option value="diatonic">Diatonic</option>
@@ -137,6 +139,7 @@ export default function Library() {
             <option value="">Mọi kèn</option>
             {HARP_KEYS.map((k) => <option key={k} value={k}>Kèn {k}</option>)}
           </select>
+          </>}
           <select aria-label="Lọc theo độ khó" value={diff} onChange={(e) => setDiff(Number(e.target.value))} className="chip-select">
             <option value={0}>Mọi độ khó</option>
             <option value={1}>Dễ</option>
