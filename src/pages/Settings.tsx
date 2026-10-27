@@ -1,3 +1,4 @@
+import { DEGREE_NAMES } from '../data/saoTrucFingerings';
 import { BRAND, IS_RECORDER_APP } from '../appConfig';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useEffect, useRef, useState } from 'react';
@@ -160,6 +161,15 @@ export default function SettingsPage() {
                 <option value="baroque">Baroque (phổ biến, lỗ 4 nhỏ hơn lỗ 5)</option>
                 <option value="german">German (lỗ 4 to hơn lỗ 5)</option>
               </select>
+            </label>
+          )}
+          {IS_RECORDER_APP && (
+            <label className="field">
+              <span className="field-label">Sáo trúc: bịt hết lỗ ra nốt</span>
+              <select value={s.saoTrucClosed ?? 5} onChange={(e) => update({ saoTrucClosed: Number(e.target.value) })}>
+                {DEGREE_NAMES.map((n, i) => <option key={n} value={i + 1}>{n} {i === 4 ? '(sáo Đô bịt hết ra Sol — phổ biến)' : `(sáo Đô bịt hết ra ${n})`}</option>)}
+              </select>
+              <span className="small muted">Tính theo tông sáo: sáo Đô chọn "Sol" thì bịt hết lỗ ra Sol, mở dần ra La, Si, Đô…</span>
             </label>
           )}
           <KeySelect value={s.defaultHarpKey} onChange={(k) => update({ defaultHarpKey: k as HarpKey })} label="Kèn mặc định" harpType={s.defaultHarpType} />

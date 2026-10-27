@@ -60,6 +60,8 @@ export interface Settings {
   shareStats: boolean;
   /** sáo dọc: kiểu bấm Baroque (mặc định) hay German */
   recorderFingering: 'baroque' | 'german';
+  /** sáo trúc: bịt hết lỗ ra bậc mấy của tông sáo (1 = Đô … 7 = Si; mặc định 5 = Sol như sáo Đô bịt hết ra Sol) */
+  saoTrucClosed: number;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -77,6 +79,7 @@ export const DEFAULT_SETTINGS: Settings = {
   defaultHarpType: IS_RECORDER_APP ? 'recorderAlto' : 'diatonic',
   shareStats: true,
   recorderFingering: 'baroque',
+  saoTrucClosed: 5,
   keepAwake: true,
   syncOffsetMs: 0,
   micLatencyMs: 60,

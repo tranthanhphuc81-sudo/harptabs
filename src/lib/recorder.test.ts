@@ -108,7 +108,7 @@ describe('sáo trúc 6 lỗ', () => {
     expect(tok('xxxxxo')).toBe('A4');
     expect(tok('xxxooo')).toBe('C5');
     expect(tok('oooooo')).toBe('F5');
-    expect(harpName('C', 'saoTruc6')).toBe('Sáo trúc Đô (C)');
+    expect(harpName('C', 'saoTruc6')).toBe('Sáo trúc Đô (C, bịt hết ra Sol)');
   });
   it('sáo Sol bịt hết ra Rê4; bài mẫu chuyển được sang sáo Đô hoặc chọn được tông sáo hợp', async () => {
     expect(harpLayout('G', 'saoTruc6')[0].token).toBe('D4');
@@ -117,5 +117,28 @@ describe('sáo trúc 6 lỗ', () => {
       const best = rankHarpKeys(midisOf(parseTab(s.body, s.harpKey, s.harpType ?? 'diatonic')), 1, 'saoTruc6')[0];
       expect(best.stats.unplayable, s.title).toBe(0);
     }
+  });
+});
+
+describe('sáo trúc: nhiều cách gọi "bịt hết ra nốt"', () => {
+  it('mỗi cách gọi đủ 24 nốt liền nửa cung, mở dần đúng thang trưởng của tông sáo', async () => {
+    const { setSaoTrucClosed } = await import('./harp');
+    const { DEGREE_NAMES } = await import('../data/saoTrucFingerings');
+    for (let d = 1; d <= 7; d++) {
+      setSaoTrucClosed(d);
+      const l = harpLayout('C', 'saoTruc6');
+      expect(l, DEGREE_NAMES[d - 1]).toHaveLength(24);
+      expect(l.every((n) => n.fingers && n.fingers.length === 6)).toBe(true);
+      // các nốt mở dần 0…6 lỗ (thế thường) đều thuộc thang Đô trưởng
+      const naturals = l.filter((n) => /^x*o*$/.test(n.fingers!) && n.technique === 'fingered').map((n) => n.midi % 12);
+      expect(naturals.every((pc) => [0, 2, 4, 5, 7, 9, 11].includes(pc))).toBe(true);
+    }
+    setSaoTrucClosed(1);
+    expect(harpLayout('C', 'saoTruc6')[0].token).toBe('C5'); // sáo Đô bịt hết ra Đô
+    expect(harpLayout('C', 'saoTruc6').find((n) => n.fingers === 'oooooo' && n.technique === 'fingered')?.token).toBe('B5');
+    setSaoTrucClosed(2);
+    expect(harpLayout('D', 'saoTruc6')[0].token).toBe('E5'); // sáo Rê bịt hết ra Mi
+    setSaoTrucClosed(5);
+    expect(harpLayout('C', 'saoTruc6')[0].token).toBe('G4');
   });
 });

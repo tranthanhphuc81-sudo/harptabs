@@ -112,7 +112,7 @@ export const RECORDER_LESSONS: Lesson[] = [
     blocks: [
       { t: 'list', items: [
         'Sáo trúc gọi tên theo **tông**: sáo Đô, sáo Rê… Chọn tông sáo ở ô **Tông** khi soạn / xem bài; khi nhập bài, để **Tự chọn** thì app tìm tông sáo hợp nhất.',
-        '**Cách gọi nốt** trong app: sáo Đô bịt hết 6 lỗ ra **Sol**, mở dần từ lỗ dưới: La, Si, **Đô** (bịt 3 lỗ trên), Rê, Mi, mở hết ra Fa.',
+        '**Cách gọi nốt** trong app: sáo Đô bịt hết 6 lỗ ra **Sol**, mở dần từ lỗ dưới: La, Si, **Đô** (bịt 3 lỗ trên), Rê, Mi, mở hết ra Fa. Sáo của bạn gọi khác (bịt hết ra Đô, ra Rê…)? Vào **Cài đặt → Sáo trúc: bịt hết lỗ ra nốt** để chọn, app tự xếp lại thế bấm.',
         'Tay trái bịt 3 lỗ gần lỗ thổi, tay phải 3 lỗ dưới. Bịt bằng đệm ngón tay, ngón thả lỏng.',
         'Môi mím nhẹ, thổi **chếch** vào mép lỗ thổi (như thổi miệng chai). Xoay sáo ra / vào một chút đến khi tiếng tròn nhất.',
       ] },
@@ -129,7 +129,7 @@ export const RECORDER_LESSONS: Lesson[] = [
       { t: 'diagram', ...SAO_DO },
       { t: 'tab', caption: 'Thang âm trên sáo Đô (bịt hết lỗ = Sol)', body: 'G4 A4 B4 C5 D5 E5 F5 G5:2\nG5 F5 E5 D5 C5 B4 A4 G4:2\n', bpm: 66, style: 'metronome', ...SAO_DO },
       { t: 'p', text: 'Nốt thăng / giáng (Đô#, Rê#, Sib…): **bịt nửa lỗ** ngay dưới lỗ đang mở — trong hình thế bấm là ô nửa tròn. Fa# khó, dùng thế chéo ở quãng 2.' },
-      { t: 'warn', text: 'Mỗi nơi dạy sáo trúc có thể gọi tên tông / nốt hơi khác. Nếu sáo của bạn bịt hết lỗ không ra Sol (với sáo Đô), hãy báo để chỉnh lại.' },
+      { t: 'warn', text: 'Mỗi nơi dạy sáo trúc có thể gọi tên tông / nốt hơi khác. Bài này vẽ theo cách gọi "sáo Đô bịt hết ra Sol"; nếu sáo của bạn khác, đổi trong **Cài đặt → Sáo trúc: bịt hết lỗ ra nốt**.' },
     ],
   },
   {

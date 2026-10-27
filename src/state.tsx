@@ -1,4 +1,4 @@
-import { setRecorderFingering } from './lib/harp';
+import { setRecorderFingering, setSaoTrucClosed } from './lib/harp';
 import { createContext, ReactNode, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { loadSettings, saveSettings } from './lib/db';
 import { DEFAULT_SETTINGS, Settings } from './lib/types';
@@ -31,6 +31,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => { setSyncOffsetMs(settings.syncOffsetMs); }, [settings.syncOffsetMs]);
   useEffect(() => { setRecorderFingering(settings.recorderFingering ?? 'baroque'); }, [settings.recorderFingering]);
+  useEffect(() => { setSaoTrucClosed(settings.saoTrucClosed ?? 5); }, [settings.saoTrucClosed]);
 
   // bảng màu + sáng/tối; "theo máy" thì đổi theo khi máy chuyển chế độ
   useEffect(() => {

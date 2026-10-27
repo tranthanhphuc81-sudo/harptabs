@@ -21,7 +21,18 @@
  * (src/data/recorderFingerings.ts). Alto tông F và tenor tông C ghi đúng cao độ; soprano tông C ghi thấp hơn tiếng thật một quãng tám.
  */
 import { GERMAN_OVERRIDES, RECORDER_FINGERINGS } from '../data/recorderFingerings';
-import { SAO_TRUC6_FINGERINGS } from '../data/saoTrucFingerings';
+import { closedOffset, saoTrucTable } from '../data/saoTrucFingerings';
+
+/** sáo trúc: bịt hết lỗ ra bậc mấy của tông sáo (1 = Đô của sáo Đô … 7; mặc định 5 = Sol), theo Cài đặt */
+let saoTrucClosed = 5;
+export function setSaoTrucClosed(degree: number) {
+  if (degree === saoTrucClosed || !(degree >= 1 && degree <= 7)) return;
+  saoTrucClosed = degree;
+  for (const k of [...layoutCache.keys()]) if (k.startsWith('saoTruc')) layoutCache.delete(k);
+}
+export function getSaoTrucClosed(): number {
+  return saoTrucClosed;
+}
 
 /** kiểu bấm sáo dọc đang dùng (theo Cài đặt); đổi thì xoá bảng nốt sáo đã tính */
 let recorderSystem: 'baroque' | 'german' = 'baroque';
@@ -124,7 +135,7 @@ export function harpTypeOf(s: { harpType?: HarpType }): HarpType {
 /** "Kèn C" hoặc "Kèn C chromatic" */
 export function harpName(key: string, t: HarpType = 'diatonic'): string {
   if (isTremolo(t)) return `Kèn ${harpKeyLabel(key, t)} tremolo ${holeCount(t)} lỗ`;
-  if (isSaoTruc(t)) return `Sáo trúc ${pitchClassName(KEY_OFFSET[normalizeKey(key) ?? 'C'], 'solfege')} (${key})`;
+  if (isSaoTruc(t)) return `Sáo trúc ${pitchClassName(KEY_OFFSET[normalizeKey(key) ?? 'C'], 'solfege')} (${key}, bịt hết ra ${pitchClassName(KEY_OFFSET[normalizeKey(key) ?? 'C'] + [0, 2, 4, 5, 7, 9, 11][saoTrucClosed - 1], 'solfege')})`;
   if (isRecorder(t)) return t === 'recorderAlto' ? 'Sáo alto (Fa)' : t === 'recorderTenor' ? 'Sáo tenor (Đô)' : t === 'recorderBass' ? 'Sáo bass (Fa)' : 'Sáo soprano (Đô)';
   return t === 'diatonic' ? `Kèn ${key}` : t === 'chromatic16' ? `Kèn ${key} chromatic 16 lỗ` : `Kèn ${key} chromatic`;
 }
@@ -212,9 +223,10 @@ export function harpLayout(key: HarpKey, type: HarpType = 'diatonic'): HarpNote[
 
   if (isSaoTruc(type)) {
     // sáo trúc Đô bịt hết ra Sol4; tông khác dịch theo (sáo Sol bịt hết ra Rê4, sáo Fa ra Đô5)
-    const base = 67 + off;
+    // nốt bịt hết: bậc `saoTrucClosed` của tông sáo, đặt quanh Đô5 của sáo Đô (sáo Đô bịt hết ra Sol → Sol4)
+    const base = 72 + off + closedOffset(saoTrucClosed);
     const KIND: Record<string, Technique> = { normal: 'fingered', cross: 'crossFingered', half: 'halfHole', high: 'highRegister' };
-    SAO_TRUC6_FINGERINGS.forEach((f, i) => notes.push({
+    saoTrucTable(saoTrucClosed).forEach((f, i) => notes.push({
       hole: i + 1, dir: 'blow', bend: 0, over: false, slide: false, midi: base + i,
       technique: KIND[f.kind], token: midiToName(base + i), fingers: f.fingers, fingerCost: f.cost,
     }));
