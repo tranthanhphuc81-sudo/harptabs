@@ -215,7 +215,7 @@ export default function FileImport({ onImages, onAudio }: { onImages?: (files: F
                 {noLyrics && <li>File không có lời — thêm lời trong trang Sửa bài nếu cần.</li>}
               </ul>
             )}
-            <TabView parsed={parsed} flat={flat} active={player.active} size="s" showNames={settings.showNoteNames} nameStyle={settings.noteNames} harpType={converted.harpType} />
+            <TabView parsed={parsed} flat={flat} active={player.active} size="s" showNames={settings.showNoteNames} nameStyle={settings.noteNames} harpType={converted.harpType} harpKey={converted.harpKey} />
             <div className="row gap preview-actions">
               <MiniPlay p={player} />
               <button type="button" className="btn btn-primary" onClick={save}>Lưu vào thư viện</button>

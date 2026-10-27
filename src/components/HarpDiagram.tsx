@@ -1,4 +1,4 @@
-import { HarpKey, HarpNote, HarpType, harpLayout, harpName, holeCount, isChromatic, isRecorder, isTremolo, midiToName, NoteNameStyle } from '../lib/harp';
+import { HarpKey, HarpNote, HarpType, harpLayout, harpName, holeCount, isChromatic, isFingered, isTremolo, midiToName, NoteNameStyle } from '../lib/harp';
 import { RecorderChart } from './Fingering';
 import { previewNote } from '../audio/engine';
 
@@ -67,7 +67,7 @@ function TremoloDiagram({ harpKey, harpType, highlight, nameStyle, interactive }
 }
 
 export function HarpDiagram({ harpKey, harpType = 'diatonic', highlight = [], nameStyle = 'letter', showAdvanced = true, interactive = true }: Props) {
-  if (isRecorder(harpType)) return <RecorderChart harpType={harpType} highlight={highlight} nameStyle={nameStyle} interactive={interactive} />;
+  if (isFingered(harpType)) return <RecorderChart harpType={harpType} harpKey={harpKey} highlight={highlight} nameStyle={nameStyle} interactive={interactive} />;
   if (isTremolo(harpType)) return <TremoloDiagram harpKey={harpKey} harpType={harpType} highlight={highlight} nameStyle={nameStyle} interactive={interactive} />;
   const layout = harpLayout(harpKey, harpType);
   const chrom = isChromatic(harpType);

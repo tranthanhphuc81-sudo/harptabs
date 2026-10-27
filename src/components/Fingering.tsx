@@ -1,43 +1,47 @@
-import { HarpType, harpLayout, isRecorder, midiToName, NoteNameStyle, recorderKey } from '../lib/harp';
+import { fingeringKey, HarpKey, HarpType, harpLayout, isFingered, midiToName, NoteNameStyle } from '../lib/harp';
 import { previewNote } from '../audio/engine';
 
 /**
- * Hình thế bấm sáo dọc: ngón cái (lỗ sau, lệch trái) rồi 7 lỗ trước từ trên xuống — 3 lỗ tay trái, khoảng hở, 4 lỗ tay phải.
- * fingers: 8 ký tự x (kín) / o (mở) / h (nửa).
+ * Hình thế bấm: sáo dọc 8 lỗ = ngón cái (lỗ sau, lệch trái) rồi 7 lỗ trước — 3 lỗ tay trái, khoảng hở, 4 lỗ tay phải;
+ * sáo trúc 6 lỗ = 3 lỗ tay trái, khoảng hở, 3 lỗ tay phải. fingers: x (kín) / o (mở) / h (nửa).
  */
 export function FingeringIcon({ fingers, size = 'm' }: { fingers: string; size?: 's' | 'm' | 'l' }) {
   const r = size === 's' ? 3.2 : size === 'l' ? 6 : 4.5;
   const gap = r * 2.6;
-  const w = r * 6;
-  const h = gap * 8 + r * 2.5;
-  const y = (i: number) => r * 1.4 + gap * i + (i >= 4 ? gap * 0.5 : 0);
+  const six = fingers.length === 6;
+  const w = six ? r * 3 : r * 6;
+  const rows = six ? 6 : 8;
+  const h = gap * rows + r * 2.5;
+  // nhóm tay trái 3 lỗ, tay phải phần còn lại; 8 lỗ có thêm ngón cái ở hàng đầu
+  const y = (i: number) => r * 1.4 + gap * i + (six ? (i >= 3 ? gap * 0.5 : 0) : (i >= 4 ? gap * 0.5 : 0));
   const hole = (i: number, cx: number, cy: number) => {
-    const s = fingers[i] ?? 'o';
+    const st = fingers[i] ?? 'o';
     return (
       <g key={i}>
         <circle cx={cx} cy={cy} r={r} className="fg-ring" />
-        {s === 'x' && <circle cx={cx} cy={cy} r={r * 0.78} className="fg-fill" />}
-        {s === 'h' && <path d={`M ${cx} ${cy - r * 0.78} A ${r * 0.78} ${r * 0.78} 0 0 0 ${cx} ${cy + r * 0.78} Z`} className="fg-fill" />}
+        {st === 'x' && <circle cx={cx} cy={cy} r={r * 0.78} className="fg-fill" />}
+        {st === 'h' && <path d={`M ${cx} ${cy - r * 0.78} A ${r * 0.78} ${r * 0.78} 0 0 0 ${cx} ${cy + r * 0.78} Z`} className="fg-fill" />}
       </g>
     );
   };
   return (
     <svg className={`fingering size-${size}`} width={w} height={h} viewBox={`0 0 ${w} ${h}`} aria-hidden="true">
-      {hole(0, r * 1.3, y(0))}
-      {[1, 2, 3, 4, 5, 6, 7].map((i) => hole(i, w - r * 2.2, y(i)))}
+      {six
+        ? [0, 1, 2, 3, 4, 5].map((i) => hole(i, w / 2, y(i)))
+        : <>{hole(0, r * 1.3, y(0))}{[1, 2, 3, 4, 5, 6, 7].map((i) => hole(i, w - r * 2.2, y(i)))}</>}
     </svg>
   );
 }
 
-/** thế bấm của một nốt (token tên nốt) trên sáo `type`, hoặc null */
-export function fingeringOf(token: string | null | undefined, type: HarpType): string | null {
-  if (!token || !isRecorder(type)) return null;
-  return harpLayout(recorderKey(type), type).find((n) => n.token === token)?.fingers ?? null;
+/** thế bấm của một nốt (token tên nốt) trên sáo `type` (sáo trúc cần tông), hoặc null */
+export function fingeringOf(token: string | null | undefined, type: HarpType, key: HarpKey = 'C'): string | null {
+  if (!token || !isFingered(type)) return null;
+  return harpLayout(fingeringKey(type, key), type).find((n) => n.token === token)?.fingers ?? null;
 }
 
 /** Bảng thế bấm cả tầm sáo: chạm để nghe, tô sáng các nốt `highlight` */
-export function RecorderChart({ harpType, highlight = [], nameStyle = 'letter', interactive = true }: { harpType: HarpType; highlight?: string[]; nameStyle?: NoteNameStyle; interactive?: boolean }) {
-  const layout = harpLayout(recorderKey(harpType), harpType);
+export function RecorderChart({ harpType, harpKey = 'C', highlight = [], nameStyle = 'letter', interactive = true }: { harpType: HarpType; harpKey?: HarpKey; highlight?: string[]; nameStyle?: NoteNameStyle; interactive?: boolean }) {
+  const layout = harpLayout(fingeringKey(harpType, harpKey), harpType);
   const written = (midi: number) => (harpType === 'recorderSoprano' ? midi - 12 : midi);
   return (
     <div className="recorder-chart" role="list" aria-label="Bảng thế bấm sáo">

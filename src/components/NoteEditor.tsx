@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { HarpType, harpLayout, holeCount, isChromatic, isRecorder, isTremolo, midiToName, NoteNameStyle, recorderKey, tremoloDir } from '../lib/harp';
+import { fingeringKey, HarpKey, HarpType, harpLayout, holeCount, isChromatic, isFingered, isTremolo, midiToName, NoteNameStyle, tremoloDir } from '../lib/harp';
 import { TokenText } from './TabView';
 import { joinToken, splitToken } from '../lib/tabEdit';
 import type { FlatEvent } from '../lib/tabText';
@@ -9,6 +9,8 @@ interface Props {
   /** nốt đang chọn (null: chưa chọn nốt nào) */
   note: FlatEvent | null;
   harpType: HarpType;
+  /** tông (sáo trúc: tông sáo) */
+  harpKey?: HarpKey;
   nameStyle: NoteNameStyle;
   playing: boolean;
   /** sửa token (null = nghỉ) */
@@ -33,12 +35,12 @@ const BEAT_CHOICES: { v: number; label: string }[] = [
 ];
 
 /** Bảng sửa một nốt ngay khi đang nghe: nhạc vẫn chạy, chạm nốt trên tab rồi đổi lỗ / độ dài tại chỗ */
-export function NoteEditor({ note, harpType, nameStyle, playing, onToken, onBeats, onRemove, onDuplicate, onStep, canUndo, onUndo, onPickPlaying, onHearToken, onInsert, onClose }: Props) {
+export function NoteEditor({ note, harpType, harpKey = 'C', nameStyle, playing, onToken, onBeats, onRemove, onDuplicate, onStep, canUndo, onUndo, onPickPlaying, onHearToken, onInsert, onClose }: Props) {
   const trem = isTremolo(harpType);
   const chrom = isChromatic(harpType);
   // sáo dọc: chọn theo tên nốt (mỗi nốt một thế bấm), không có thổi / hút / bend
-  const rec = isRecorder(harpType);
-  const recNotes = rec ? harpLayout(recorderKey(harpType), harpType) : [];
+  const rec = isFingered(harpType);
+  const recNotes = rec ? harpLayout(fingeringKey(harpType, harpKey), harpType) : [];
   const pick = (t: string) => { setPend(t); onHearToken(t); };
   const holes = Array.from({ length: holeCount(harpType) }, (_, i) => i + 1);
   const cur = splitToken(note?.token ?? null);

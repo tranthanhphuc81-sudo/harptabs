@@ -3,7 +3,9 @@ import type { Lesson } from './lessons';
 
 const ALTO = { harpKey: 'F' as const, harpType: 'recorderAlto' as const };
 
-export const RECORDER_LESSON_GROUPS = ['Bắt đầu', 'Kỹ thuật', 'Âm nhạc', 'Bảo quản và mẹo'];
+export const RECORDER_LESSON_GROUPS = ['Bắt đầu', 'Kỹ thuật', 'Âm nhạc', 'Sáo trúc', 'Bảo quản và mẹo'];
+
+const SAO_DO = { harpKey: 'C' as const, harpType: 'saoTruc6' as const };
 
 export const RECORDER_LESSONS: Lesson[] = [
   {
@@ -99,6 +101,35 @@ export const RECORDER_LESSONS: Lesson[] = [
         'Nhập bài: file MIDI / MusicXML, ảnh khuông nhạc, file mp3 đều được xếp lại cho sáo alto.',
       ] },
       { t: 'link', to: '/jam', label: 'Tập ngẫu hứng jazz trên nền nhạc', text: 'Nền nhạc swing chạy các vòng ii–V–I, hiện thế bấm các nốt của hợp âm đang vang.' },
+    ],
+  },
+  {
+    id: 'sao-truc-cam-va-thoi',
+    group: 'Sáo trúc',
+    title: 'Sáo trúc: cầm sáo và lấy hơi',
+    summary: 'Thổi chếch qua lỗ thổi, tay trái gần miệng, bịt bằng đệm ngón.',
+    minutes: 6,
+    blocks: [
+      { t: 'list', items: [
+        'Sáo trúc gọi tên theo **tông**: sáo Đô, sáo Rê… Chọn tông sáo ở ô **Tông** khi soạn / xem bài; khi nhập bài, để **Tự chọn** thì app tìm tông sáo hợp nhất.',
+        '**Cách gọi nốt** trong app: sáo Đô bịt hết 6 lỗ ra **Sol**, mở dần từ lỗ dưới: La, Si, **Đô** (bịt 3 lỗ trên), Rê, Mi, mở hết ra Fa.',
+        'Tay trái bịt 3 lỗ gần lỗ thổi, tay phải 3 lỗ dưới. Bịt bằng đệm ngón tay, ngón thả lỏng.',
+        'Môi mím nhẹ, thổi **chếch** vào mép lỗ thổi (như thổi miệng chai). Xoay sáo ra / vào một chút đến khi tiếng tròn nhất.',
+      ] },
+      { t: 'tip', text: 'Quãng 2: giữ nguyên thế bấm, mím môi hẹp hơn và thổi nhanh hơi hơn (không phải mạnh hơn).' },
+    ],
+  },
+  {
+    id: 'sao-truc-the-bam',
+    group: 'Sáo trúc',
+    title: 'Bảng thế bấm sáo trúc 6 lỗ',
+    summary: 'Thang âm sáo Đô và cách bịt nửa lỗ để ra nốt thăng / giáng.',
+    minutes: 8,
+    blocks: [
+      { t: 'diagram', ...SAO_DO },
+      { t: 'tab', caption: 'Thang âm trên sáo Đô (bịt hết lỗ = Sol)', body: 'G4 A4 B4 C5 D5 E5 F5 G5:2\nG5 F5 E5 D5 C5 B4 A4 G4:2\n', bpm: 66, style: 'metronome', ...SAO_DO },
+      { t: 'p', text: 'Nốt thăng / giáng (Đô#, Rê#, Sib…): **bịt nửa lỗ** ngay dưới lỗ đang mở — trong hình thế bấm là ô nửa tròn. Fa# khó, dùng thế chéo ở quãng 2.' },
+      { t: 'warn', text: 'Mỗi nơi dạy sáo trúc có thể gọi tên tông / nốt hơi khác. Nếu sáo của bạn bịt hết lỗ không ra Sol (với sáo Đô), hãy báo để chỉnh lại.' },
     ],
   },
   {

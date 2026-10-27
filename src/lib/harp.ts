@@ -21,6 +21,7 @@
  * (src/data/recorderFingerings.ts). Alto tông F và tenor tông C ghi đúng cao độ; soprano tông C ghi thấp hơn tiếng thật một quãng tám.
  */
 import { GERMAN_OVERRIDES, RECORDER_FINGERINGS } from '../data/recorderFingerings';
+import { SAO_TRUC6_FINGERINGS } from '../data/saoTrucFingerings';
 
 /** kiểu bấm sáo dọc đang dùng (theo Cài đặt); đổi thì xoá bảng nốt sáo đã tính */
 let recorderSystem: 'baroque' | 'german' = 'baroque';
@@ -37,9 +38,9 @@ export type Technique = 'blow' | 'draw' | 'drawBend' | 'blowBend' | 'overblow' |
 
 /** Loại kèn. Bài cũ không ghi loại là diatonic. */
 export type HarpType = 'diatonic' | 'chromatic' | 'chromatic16' | 'tremolo24' | 'tremolo21' | 'tremolo16' | 'tremolo24m' | 'tremolo21m' | 'tremolo16m'
-  | 'recorderAlto' | 'recorderSoprano' | 'recorderTenor' | 'recorderBass';
+  | 'recorderAlto' | 'recorderSoprano' | 'recorderTenor' | 'recorderBass' | 'saoTruc6';
 /** mọi loại hợp lệ (để đọc bài đã lưu); ô chọn chỉ hiện SHOWN_HARP_TYPES của bản build (src/appConfig.ts) */
-export const HARP_TYPES: readonly HarpType[] = ['diatonic', 'chromatic', 'chromatic16', 'tremolo24', 'tremolo21', 'tremolo16', 'tremolo24m', 'tremolo21m', 'tremolo16m', 'recorderAlto', 'recorderSoprano', 'recorderTenor', 'recorderBass'];
+export const HARP_TYPES: readonly HarpType[] = ['diatonic', 'chromatic', 'chromatic16', 'tremolo24', 'tremolo21', 'tremolo16', 'tremolo24m', 'tremolo21m', 'tremolo16m', 'recorderAlto', 'recorderSoprano', 'recorderTenor', 'recorderBass', 'saoTruc6'];
 
 export const HARP_TYPE_LABEL: Record<HarpType, string> = {
   diatonic: 'Diatonic 10 lỗ',
@@ -55,7 +56,23 @@ export const HARP_TYPE_LABEL: Record<HarpType, string> = {
   recorderSoprano: 'Sáo dọc soprano (Đô)',
   recorderTenor: 'Sáo dọc tenor (Đô trầm)',
   recorderBass: 'Sáo dọc bass (Fa trầm)',
+  saoTruc6: 'Sáo trúc 6 lỗ',
 };
+
+/** sáo trúc: tông sáo chọn được (sáo Đô, sáo Rê…), bịt hết lỗ ra nốt bậc 5 dưới tông */
+export function isSaoTruc(t: HarpType | undefined): boolean {
+  return t === 'saoTruc6';
+}
+
+/** nhạc cụ bấm ngón (sáo dọc, sáo trúc): tab ghi tên nốt, mỗi nốt một thế bấm */
+export function isFingered(t: HarpType | undefined): boolean {
+  return isRecorder(t) || isSaoTruc(t);
+}
+
+/** tông dùng để tra bảng nốt: sáo dọc có tông cố định, sáo trúc theo tông đã chọn */
+export function fingeringKey(t: HarpType, key: HarpKey): HarpKey {
+  return isRecorder(t) ? recorderKey(t) : key;
+}
 
 export function isRecorder(t: HarpType | undefined): boolean {
   return t === 'recorderAlto' || t === 'recorderSoprano' || t === 'recorderTenor' || t === 'recorderBass';
@@ -92,6 +109,7 @@ export function holeCount(t: HarpType = 'diatonic'): number {
     case 'tremolo21': case 'tremolo21m': return 21;
     case 'tremolo16': case 'tremolo16m': return 16;
     case 'recorderAlto': case 'recorderSoprano': case 'recorderTenor': case 'recorderBass': return 8;
+    case 'saoTruc6': return 6;
     default: return 10;
   }
 }
@@ -106,6 +124,7 @@ export function harpTypeOf(s: { harpType?: HarpType }): HarpType {
 /** "Kèn C" hoặc "Kèn C chromatic" */
 export function harpName(key: string, t: HarpType = 'diatonic'): string {
   if (isTremolo(t)) return `Kèn ${harpKeyLabel(key, t)} tremolo ${holeCount(t)} lỗ`;
+  if (isSaoTruc(t)) return `Sáo trúc ${pitchClassName(KEY_OFFSET[normalizeKey(key) ?? 'C'], 'solfege')} (${key})`;
   if (isRecorder(t)) return t === 'recorderAlto' ? 'Sáo alto (Fa)' : t === 'recorderTenor' ? 'Sáo tenor (Đô)' : t === 'recorderBass' ? 'Sáo bass (Fa)' : 'Sáo soprano (Đô)';
   return t === 'diatonic' ? `Kèn ${key}` : t === 'chromatic16' ? `Kèn ${key} chromatic 16 lỗ` : `Kèn ${key} chromatic`;
 }
@@ -191,6 +210,18 @@ export function harpLayout(key: HarpKey, type: HarpType = 'diatonic'): HarpNote[
   const push = (hole: number, dir: Direction, bend: number, over: boolean, midi: number, technique: Technique, slide = false) =>
     notes.push({ hole, dir, bend, over, slide, midi: midi + off, technique, token: makeToken(hole, dir, bend, over, slide) });
 
+  if (isSaoTruc(type)) {
+    // sáo trúc Đô bịt hết ra Sol4; tông khác dịch theo (sáo Sol bịt hết ra Rê4, sáo Fa ra Đô5)
+    const base = 67 + off;
+    const KIND: Record<string, Technique> = { normal: 'fingered', cross: 'crossFingered', half: 'halfHole', high: 'highRegister' };
+    SAO_TRUC6_FINGERINGS.forEach((f, i) => notes.push({
+      hole: i + 1, dir: 'blow', bend: 0, over: false, slide: false, midi: base + i,
+      technique: KIND[f.kind], token: midiToName(base + i), fingers: f.fingers, fingerCost: f.cost,
+    }));
+    layoutCache.set(ck, notes);
+    return notes;
+  }
+
   if (isRecorder(type)) {
     // sáo: không phụ thuộc tông kèn; hole = thứ tự nốt (để bộ chọn tính khoảng nhảy theo cao độ)
     // nốt thấp nhất: alto F4, tenor C4 (ghi đúng cao độ), soprano C5 (ghi C4, thấp hơn tiếng thật một quãng tám)
@@ -259,7 +290,7 @@ export const TREM_TOKEN_RE = /^([+-])?(2[0-4]|1[0-9]|[1-9])()$/;
 export const RECORDER_TOKEN_RE = /^([A-G])([#b]?)(\d)$/;
 
 function tokenRe(type: HarpType): RegExp {
-  return isRecorder(type) ? RECORDER_TOKEN_RE : isTremolo(type) ? TREM_TOKEN_RE : isChromatic(type) ? CHROM_TOKEN_RE : TOKEN_RE;
+  return isFingered(type) ? RECORDER_TOKEN_RE : isTremolo(type) ? TREM_TOKEN_RE : isChromatic(type) ? CHROM_TOKEN_RE : TOKEN_RE;
 }
 
 /** Chuẩn hoá các dấu nháy hay gặp khi copy từ web: ’ ′ ` ″ */
@@ -278,7 +309,7 @@ export function parseToken(raw: string, key: HarpKey, type: HarpType = 'diatonic
   const t = cleanToken(raw);
   const m = tokenRe(type).exec(t);
   if (!m) return null;
-  if (isRecorder(type)) {
+  if (isFingered(type)) {
     // khớp theo cao độ viết (Bb4 và A#4 là một nốt)
     const w = nameToMidi(t);
     return harpLayout(key, type).find((n) => nameToMidi(n.token) === w) ?? null;

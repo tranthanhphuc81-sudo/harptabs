@@ -147,7 +147,7 @@ export default function PasteTab() {
             {parsed && (
               <section className="ai-result" aria-label="Xem trước">
                 {!hasDurations && <p className="small muted">Mẹo: mở bài rồi bật <strong>Chờ nốt</strong> — app chờ bạn thổi đúng mới chuyển nốt, không cần nhịp.</p>}
-                <TabView parsed={parsed} flat={flat} active={player.active} size="s" showNames={settings.showNoteNames} nameStyle={settings.noteNames} harpType={harpType} />
+                <TabView parsed={parsed} flat={flat} active={player.active} size="s" showNames={settings.showNoteNames} nameStyle={settings.noteNames} harpType={harpType} harpKey={harpKey} />
                 <div className="row gap preview-actions">
                   <MiniPlay p={player} />
                   <button type="button" className="btn btn-primary" onClick={save}>Lưu vào thư viện</button>

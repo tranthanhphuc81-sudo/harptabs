@@ -71,7 +71,7 @@ function LessonTab({ b }: { b: Extract<Block, { t: 'tab' }> }) {
         <span>{b.caption ?? 'Bài tập'} <span className="muted">({harpName(key, type).replace(/^Kèn/, 'kèn')}, {b.bpm ?? 80} bpm)</span></span>
         <MiniPlay p={p} />
       </figcaption>
-      <TabView parsed={parsed} flat={flat} active={p.active} size="s" showNames={settings.showNoteNames} nameStyle={settings.noteNames} />
+      <TabView parsed={parsed} flat={flat} active={p.active} size="s" showNames={settings.showNoteNames} nameStyle={settings.noteNames} harpType={type} harpKey={key} />
     </figure>
   );
 }

@@ -43,10 +43,10 @@ describe('nội dung app sáo', () => {
     expect(out.length).toBeGreaterThan(10);
     for (const s of out) expect(parseTab(s.body, 'F', 'recorderAlto').issues.filter((i) => i.level === 'error'), s.title).toEqual([]);
   });
-  it('bài học sáo: mọi tab đọc được trên sáo alto', async () => {
+  it('bài học sáo: mọi tab đọc được trên đúng loại sáo của bài', async () => {
     const { RECORDER_LESSONS } = await import('../data/recorderLessons');
     for (const l of RECORDER_LESSONS) for (const b of l.blocks) {
-      if (b.t === 'tab') expect(parseTab(b.body, 'F', 'recorderAlto').issues, `${l.id}`).toEqual([]);
+      if (b.t === 'tab') expect(parseTab(b.body, b.harpKey ?? 'F', b.harpType ?? 'recorderAlto').issues, `${l.id}`).toEqual([]);
     }
   });
 });
@@ -96,5 +96,26 @@ describe('sáo bass và kiểu bấm German', () => {
     expect(bb()).toMatchObject({ fingers: 'xxxxxooo', technique: 'fingered' });
     setRecorderFingering('baroque');
     expect(bb().technique).toBe('crossFingered');
+  });
+});
+
+describe('sáo trúc 6 lỗ', () => {
+  it('sáo Đô: bịt hết ra Sol4, mở dần La Si Đô Rê Mi, mở hết Fa', () => {
+    const l = harpLayout('C', 'saoTruc6');
+    expect(l).toHaveLength(24);
+    const tok = (f: string) => l.find((n) => n.fingers === f && n.technique === 'fingered')?.token;
+    expect(tok('xxxxxx')).toBe('G4');
+    expect(tok('xxxxxo')).toBe('A4');
+    expect(tok('xxxooo')).toBe('C5');
+    expect(tok('oooooo')).toBe('F5');
+    expect(harpName('C', 'saoTruc6')).toBe('Sáo trúc Đô (C)');
+  });
+  it('sáo Sol bịt hết ra Rê4; bài mẫu chuyển được sang sáo Đô hoặc chọn được tông sáo hợp', async () => {
+    expect(harpLayout('G', 'saoTruc6')[0].token).toBe('D4');
+    const { rankHarpKeys, midisOf } = await import('./converter');
+    for (const s of SAMPLE_SONGS.slice(0, 10)) {
+      const best = rankHarpKeys(midisOf(parseTab(s.body, s.harpKey, s.harpType ?? 'diatonic')), 1, 'saoTruc6')[0];
+      expect(best.stats.unplayable, s.title).toBe(0);
+    }
   });
 });

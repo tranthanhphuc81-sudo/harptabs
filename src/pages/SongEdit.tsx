@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { fixGarbled, VN_ENCODINGS } from '../lib/vnEncoding';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { blankSong, db, deleteSongs } from '../lib/db';
-import { HarpKey, HarpType, harpTypeOf, holeCount, harpLayout, isChromatic, isRecorder, isTremolo, midiToName, normalizeKey, parseToken, recorderKey, songTonality, tremoloDir } from '../lib/harp';
+import { HarpKey, HarpType, harpTypeOf, holeCount, harpLayout, fingeringKey, isChromatic, isFingered, isRecorder, isSaoTruc, isTremolo, midiToName, normalizeKey, parseToken, recorderKey, songTonality, tremoloDir } from '../lib/harp';
 import { flatten, parseTab } from '../lib/tabText';
 import { beatsPerBar, Song } from '../lib/types';
 import { STYLE_OPTIONS, BeatStyle } from '../audio/patterns';
@@ -57,8 +57,8 @@ function Editor({ initial, isNew, draft }: { initial: Song; isNew: boolean; draf
   const harpType = harpTypeOf(s);
   const chrom = isChromatic(harpType);
   const trem = isTremolo(harpType);
-  const rec = isRecorder(harpType);
-  const recNotes = rec ? harpLayout(recorderKey(harpType), harpType) : [];
+  const rec = isFingered(harpType);
+  const recNotes = rec ? harpLayout(fingeringKey(harpType, s.harpKey), harpType) : [];
   const holes = Array.from({ length: holeCount(harpType) }, (_, i) => i + 1);
   const parsed = useMemo(() => parseTab(s.body, s.harpKey, harpType), [s.body, s.harpKey, harpType]);
   const flat = useMemo(() => flatten(parsed), [parsed]);
@@ -296,7 +296,7 @@ function Editor({ initial, isNew, draft }: { initial: Song; isNew: boolean; draf
             <details className="syntax-help">
               <summary>Cách ghi</summary>
               <ul>
-                {rec && <li>Ghi <strong>tên nốt có quãng tám</strong>: <code>F4</code> <code>Bb4</code> <code>C#5</code> (sáo alto từ F4 tới G6; soprano ghi từ C4). Dưới mỗi nốt app vẽ thế bấm.</li>}
+                {rec && <li>Ghi <strong>tên nốt có quãng tám</strong>: <code>F4</code> <code>Bb4</code> <code>C#5</code> ({isSaoTruc(harpType) ? 'sáo trúc Đô từ G4: bịt hết lỗ ra Sol' : 'sáo alto từ F4 tới G6; soprano ghi từ C4'}). Dưới mỗi nốt app vẽ thế bấm.</li>}
                 {rec ? null : trem
                   ? <li>Kèn tremolo: lỗ lẻ là thổi, lỗ chẵn là hút. Gõ <code>3</code> hay <code>4</code> là đủ — app tự ghi lỗ hút thành <code>-4</code>. Kèn này không bend.</li>
                   : <li><code>4</code> thổi lỗ 4, <code>-4</code> hút lỗ 4</li>}
@@ -365,7 +365,7 @@ function Editor({ initial, isNew, draft }: { initial: Song; isNew: boolean; draf
             <h2 className="h-small">Xem trước</h2>
             <MiniPlay p={preview} />
           </div>
-          <TabView parsed={parsed} flat={flat} active={preview.active} showNames={settings.showNoteNames} nameStyle={settings.noteNames} size="s" harpType={harpType} />
+          <TabView parsed={parsed} flat={flat} active={preview.active} showNames={settings.showNoteNames} nameStyle={settings.noteNames} size="s" harpType={harpType} harpKey={s.harpKey} />
         </div>
       </div>
     </div>

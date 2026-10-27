@@ -14,5 +14,5 @@ export const BRAND = IS_RECORDER_APP
 
 /** loại nhạc cụ hiện trong các ô chọn của bản build này (bài cũ thuộc loại khác vẫn mở được) */
 export const SHOWN_HARP_TYPES: readonly HarpType[] = IS_RECORDER_APP
-  ? ['recorderAlto', 'recorderSoprano', 'recorderTenor', 'recorderBass']
+  ? ['recorderAlto', 'recorderSoprano', 'recorderTenor', 'recorderBass', 'saoTruc6']
   : ['diatonic', 'chromatic', 'chromatic16', 'tremolo24', 'tremolo21', 'tremolo16', 'tremolo24m', 'tremolo21m', 'tremolo16m'];

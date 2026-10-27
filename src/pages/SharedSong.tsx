@@ -80,7 +80,7 @@ function Preview({ song }: { song: Song }) {
           </p>
         </div>
       </header>
-      <TabView parsed={parsed} flat={flat} active={player.active} showNames={settings.showNoteNames} nameStyle={settings.noteNames} size={settings.tabSize} harpType={type} />
+      <TabView parsed={parsed} flat={flat} active={player.active} showNames={settings.showNoteNames} nameStyle={settings.noteNames} size={settings.tabSize} harpType={type} harpKey={song.harpKey} />
       <div className="row gap wrap preview-actions">
         <button type="button" className="btn btn-primary" onClick={add}>
           <Icon name={existing ? 'library' : 'plus'} size={18} /> {existing ? 'Đã có trong thư viện — mở bài' : 'Thêm vào thư viện'}

@@ -208,7 +208,7 @@ function BluesJam() {
           <section className="lick-detail">
             <h2 className="h-small">{lick.title}</h2>
             <p className="small muted">{LICK_PLACES[lick.over]} · nền: {lickDegrees(lick).map((d) => chordName((tonic + { I: 0, IV: 5, V: 7 }[d]) % 12, false, flats, true)).join(' → ')}</p>
-            <TabView parsed={lickParsed} flat={lickFlat} active={lickActive != null && lickActive >= 0 ? lickActive : null} size="m" showNames={settings.showNoteNames} nameStyle={settings.noteNames} harpType={harpType} />
+            <TabView parsed={lickParsed} flat={lickFlat} active={lickActive != null && lickActive >= 0 ? lickActive : null} size="m" showNames={settings.showNoteNames} nameStyle={settings.noteNames} harpType={harpType} harpKey={harpKey} />
             {lick.tip && <p className="small">{lick.tip}</p>}
             <div className="row gap wrap">
               <button type="button" className={`chip${!p.opts.melody ? ' on' : ''}`} aria-pressed={!p.opts.melody} onClick={() => setOpts({ melody: !p.opts.melody })}>Tắt giai điệu, tôi tự thổi</button>
