@@ -7,6 +7,7 @@ on:
     branches: [main]
     paths:
       - 'android/twa-manifest.json'
+      - 'android-recorder/twa-manifest.json'
       - '.github/workflows/build-apk.yml'
   workflow_dispatch:
 
@@ -20,6 +21,23 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    # cùng mã nguồn, hai app: Sổ Tab Harmonica và Sổ Tab Sáo (mỗi app một twa-manifest.json)
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - dir: android
+            file: harptabs
+            tag: apk
+            title: Harp Tab
+            host: harptabs.pages.dev
+            latest: 'true'
+          - dir: android-recorder
+            file: sotabsao
+            tag: sao-apk
+            title: Sổ Tab Sáo
+            host: sotabsao.pages.dev
+            latest: 'false'
     env:
       VERSION_CODE: ${{ github.run_number }}
       VERSION_NAME: 1.0.${{ github.run_number }}
@@ -44,7 +62,7 @@ jobs:
           [ -e "$ANDROID_HOME/bin" ] || sudo ln -s "$ANDROID_HOME/cmdline-tools/latest/bin" "$ANDROID_HOME/bin"
 
       - name: Đặt phiên bản và khoá ký
-        working-directory: android
+        working-directory: ${{ matrix.dir }}
         env:
           KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
         run: |
@@ -54,11 +72,11 @@ jobs:
           echo "$KEYSTORE_BASE64" | base64 -d > android.keystore
 
       - name: Sinh dự án Android
-        working-directory: android
+        working-directory: ${{ matrix.dir }}
         run: bubblewrap update --skipVersionUpgrade
 
       - name: Build và ký APK
-        working-directory: android
+        working-directory: ${{ matrix.dir }}
         env:
           BUBBLEWRAP_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           BUBBLEWRAP_KEY_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
@@ -70,18 +88,18 @@ jobs:
             echo "::error title=bubblewrap build (cuối log)::$(grep -v '^\s*$' build.log | tail -n 20 | sed 's/%/%25/g' | tr '\n' '|' | sed 's/|/%0A/g')"
             exit 1
           }
-          mv app-release-signed.apk "harptabs-$VERSION_NAME.apk"
+          mv app-release-signed.apk "${{ matrix.file }}-$VERSION_NAME.apk"
 
       - uses: actions/upload-artifact@v4
         with:
-          name: harptabs-apk
-          path: android/harptabs-*.apk
+          name: ${{ matrix.file }}-apk
+          path: ${{ matrix.dir }}/${{ matrix.file }}-*.apk
 
       - name: Đăng lên GitHub Releases
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "apk-v$VERSION_NAME" "android/harptabs-$VERSION_NAME.apk" \
-            --title "Harp Tab $VERSION_NAME (Android)" \
-            --notes "Tải file .apk về điện thoại Android rồi mở để cài. Nội dung app tự cập nhật theo harptabs.pages.dev." \
-            --latest
+          gh release create "${{ matrix.tag }}-v$VERSION_NAME" "${{ matrix.dir }}/${{ matrix.file }}-$VERSION_NAME.apk" \
+            --title "${{ matrix.title }} $VERSION_NAME (Android)" \
+            --notes "Tải file .apk về điện thoại Android rồi mở để cài. Nội dung app tự cập nhật theo ${{ matrix.host }}." \
+            --latest=${{ matrix.latest }}
