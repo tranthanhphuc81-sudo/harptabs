@@ -145,15 +145,40 @@ function BeatTuner({ style, styleName, autoInstrument, sing }: { style: BeatStyl
   );
 }
 
+const COLLAPSED_KEY = 'harptabs.pbCollapsed';
+
 export function PlayerBar({ p, loopLabel, onToggleLoop, extra, above, autoStyle, autoApplied = false, autoInstrument }: Props) {
   const { opts, setOpts } = p;
   const [tuner, setTuner] = useState(false);
+  // thu gọn: chỉ còn nút phát ở cuối màn hình, không che tab; chạm nút mở rộng để hiện đủ
+  const [collapsed, setCollapsed] = useState(() => { try { return localStorage.getItem(COLLAPSED_KEY) !== '0'; } catch { return true; } });
+  const toggleCollapsed = () => setCollapsed((v) => {
+    try { localStorage.setItem(COLLAPSED_KEY, v ? '0' : '1'); } catch { /* không lưu được thì thôi */ }
+    return !v;
+  });
   const [autoPicked, setAutoPicked] = useState(autoApplied);
   useEffect(() => { setAutoPicked(autoApplied); }, [autoApplied]);
   const styleLabel = (v: BeatStyle) => STYLE_OPTIONS.find((s) => s.value === v)?.label ?? v;
   const prefs = useBeatPrefs();
   const eff = Math.round(opts.bpm * opts.tempoScale);
   const step = (d: number) => setOpts({ tempoScale: Math.min(1.6, Math.max(0.4, Math.round((opts.tempoScale + d) * 100) / 100)) });
+  if (collapsed) {
+    return (
+      <div className={`playerbar collapsed${above ? ' with-above' : ''}`} role="region" aria-label="Điều khiển phát (thu gọn)">
+        <div className="pb-main">
+          <button type="button" className="pb-play" onClick={p.toggle} aria-label={p.playing ? 'Dừng' : 'Phát'}>
+            <Icon name={p.playing ? 'stop' : 'play'} size={26} />
+          </button>
+          {p.countIn != null && <div className="pb-countin" aria-live="assertive">{p.countIn}</div>}
+          {p.countIn == null && p.chord && <div className="pb-chord" title="Hợp âm đệm">{p.chord}</div>}
+          <button type="button" className="icon-btn pb-expand" onClick={toggleCollapsed} aria-label="Hiện đủ thanh điều khiển" aria-expanded={false} title="Hiện đủ: tốc độ, beat, lặp đoạn…">
+            <Icon name="sliders" size={20} />
+          </button>
+        </div>
+        {above}
+      </div>
+    );
+  }
   return (
     <div className={`playerbar${tuner ? ' tuning' : ''}`} role="region" aria-label="Điều khiển phát">
       <div className="pb-main">
@@ -185,6 +210,9 @@ export function PlayerBar({ p, loopLabel, onToggleLoop, extra, above, autoStyle,
             {STYLE_OPTIONS.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
           </select>
         </label>
+        <button type="button" className="icon-btn pb-collapse" onClick={toggleCollapsed} aria-label="Thu gọn thanh điều khiển" aria-expanded={true} title="Thu gọn">
+          <Icon name="minus" size={20} />
+        </button>
         <button type="button" className={`icon-btn pb-tune${tuner ? ' on' : ''}`} aria-pressed={tuner} aria-label="Chỉnh âm thanh: nhạc cụ, beat, bass" title="Chỉnh âm thanh" onClick={() => setTuner(!tuner)}>
           <Icon name="sliders" size={20} />
         </button>

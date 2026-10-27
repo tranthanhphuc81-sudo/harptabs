@@ -1096,3 +1096,9 @@ button, a, select { -webkit-tap-highlight-color: transparent; }
 .keypad.recorder button { min-width: 44px; padding: 0 4px; }
 .keypad.ne-keys.recorder { grid-template-columns: repeat(auto-fill, minmax(40px, 1fr)); }
 .kara-stage { position: relative; }
+
+/* thanh phát thu gọn: chỉ nút phát (và hợp âm đang vang) ở góc dưới, không che tab */
+.playerbar.collapsed { width: fit-content; margin-left: auto; padding: 6px; gap: 6px; border-radius: 999px; overflow: visible; }
+.playerbar.collapsed.with-above { width: auto; margin-left: 0; border-radius: var(--r-l); padding: 10px 12px; }
+.playerbar.collapsed .pb-main { flex-wrap: nowrap; gap: 6px; }
+.playerbar.collapsed.with-above .pb-main { justify-content: flex-end; }
