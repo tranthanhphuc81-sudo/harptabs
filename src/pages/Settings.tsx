@@ -1,4 +1,4 @@
-import { BRAND } from '../appConfig';
+import { BRAND, IS_RECORDER_APP } from '../appConfig';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useEffect, useRef, useState } from 'react';
 import { db, ensureSeeded, importBackup } from '../lib/db';
@@ -152,7 +152,16 @@ export default function SettingsPage() {
               <option value="letter">C D E F G A B</option><option value="solfege">Đô Rê Mi Fa Sol La Si</option>
             </select>
           </label>
-          <HarpTypeSelect value={s.defaultHarpType} onChange={(t) => update({ defaultHarpType: t })} label="Loại kèn mặc định" />
+          <HarpTypeSelect value={s.defaultHarpType} onChange={(t) => update({ defaultHarpType: t })} label={`Loại ${BRAND.noun} mặc định`} />
+          {IS_RECORDER_APP && (
+            <label className="field">
+              <span className="field-label">Kiểu bấm sáo</span>
+              <select value={s.recorderFingering ?? 'baroque'} onChange={(e) => update({ recorderFingering: e.target.value as 'baroque' | 'german' })}>
+                <option value="baroque">Baroque (phổ biến, lỗ 4 nhỏ hơn lỗ 5)</option>
+                <option value="german">German (lỗ 4 to hơn lỗ 5)</option>
+              </select>
+            </label>
+          )}
           <KeySelect value={s.defaultHarpKey} onChange={(k) => update({ defaultHarpKey: k as HarpKey })} label="Kèn mặc định" harpType={s.defaultHarpType} />
           <label className="check wide">
             <input type="checkbox" checked={s.showNoteNames} onChange={(e) => update({ showNoteNames: e.target.checked })} />

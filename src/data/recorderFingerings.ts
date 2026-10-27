@@ -40,3 +40,14 @@ export const RECORDER_FINGERINGS: RecorderFingering[] = [
   { fingers: 'hxoxxoxx', cost: 3, kind: 'high' }, // C#
   { fingers: 'hxoxxoxo', cost: 2.5, kind: 'high' }, // D
 ];
+
+/**
+ * Kiểu bấm German (hay gặp ở sáo học sinh rẻ): khác Baroque ở nốt thứ 6 của thang (F trên soprano / Bb trên alto)
+ * cho dễ bấm, đổi lại nốt kế bên (F# / B) và F quãng 2 khó hơn. Chỉ số như bảng trên.
+ * Kiểm lại với bảng đi kèm sáo: các hãng ghi hơi khác nhau ở quãng cao.
+ */
+export const GERMAN_OVERRIDES: Record<number, RecorderFingering> = {
+  5: { fingers: 'xxxxxooo', cost: 0, kind: 'normal' }, // F (soprano) / Bb (alto): nhấc lần lượt như thang thường
+  6: { fingers: 'xxxxoxxx', cost: 1.5, kind: 'cross' }, // F#: thế chéo khó hơn Baroque
+  17: { fingers: 'hxxxxooo', cost: 1, kind: 'high' }, // F quãng 2
+};

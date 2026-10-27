@@ -20,7 +20,15 @@
  * Sáo dọc (recorder, bấm Baroque): tab ghi bằng TÊN NỐT có quãng tám (F4, Bb4, C#5); mỗi nốt một thế bấm
  * (src/data/recorderFingerings.ts). Alto tông F và tenor tông C ghi đúng cao độ; soprano tông C ghi thấp hơn tiếng thật một quãng tám.
  */
-import { RECORDER_FINGERINGS } from '../data/recorderFingerings';
+import { GERMAN_OVERRIDES, RECORDER_FINGERINGS } from '../data/recorderFingerings';
+
+/** kiểu bấm sáo dọc đang dùng (theo Cài đặt); đổi thì xoá bảng nốt sáo đã tính */
+let recorderSystem: 'baroque' | 'german' = 'baroque';
+export function setRecorderFingering(sys: 'baroque' | 'german') {
+  if (sys === recorderSystem) return;
+  recorderSystem = sys;
+  for (const k of [...layoutCache.keys()]) if (k.startsWith('recorder')) layoutCache.delete(k);
+}
 
 export type Direction = 'blow' | 'draw';
 export type Technique = 'blow' | 'draw' | 'drawBend' | 'blowBend' | 'overblow' | 'overdraw' | 'blowSlide' | 'drawSlide'
@@ -29,9 +37,9 @@ export type Technique = 'blow' | 'draw' | 'drawBend' | 'blowBend' | 'overblow' |
 
 /** Loại kèn. Bài cũ không ghi loại là diatonic. */
 export type HarpType = 'diatonic' | 'chromatic' | 'chromatic16' | 'tremolo24' | 'tremolo21' | 'tremolo16' | 'tremolo24m' | 'tremolo21m' | 'tremolo16m'
-  | 'recorderAlto' | 'recorderSoprano' | 'recorderTenor';
+  | 'recorderAlto' | 'recorderSoprano' | 'recorderTenor' | 'recorderBass';
 /** mọi loại hợp lệ (để đọc bài đã lưu); ô chọn chỉ hiện SHOWN_HARP_TYPES của bản build (src/appConfig.ts) */
-export const HARP_TYPES: readonly HarpType[] = ['diatonic', 'chromatic', 'chromatic16', 'tremolo24', 'tremolo21', 'tremolo16', 'tremolo24m', 'tremolo21m', 'tremolo16m', 'recorderAlto', 'recorderSoprano', 'recorderTenor'];
+export const HARP_TYPES: readonly HarpType[] = ['diatonic', 'chromatic', 'chromatic16', 'tremolo24', 'tremolo21', 'tremolo16', 'tremolo24m', 'tremolo21m', 'tremolo16m', 'recorderAlto', 'recorderSoprano', 'recorderTenor', 'recorderBass'];
 
 export const HARP_TYPE_LABEL: Record<HarpType, string> = {
   diatonic: 'Diatonic 10 lỗ',
@@ -46,15 +54,16 @@ export const HARP_TYPE_LABEL: Record<HarpType, string> = {
   recorderAlto: 'Sáo dọc alto (Fa)',
   recorderSoprano: 'Sáo dọc soprano (Đô)',
   recorderTenor: 'Sáo dọc tenor (Đô trầm)',
+  recorderBass: 'Sáo dọc bass (Fa trầm)',
 };
 
 export function isRecorder(t: HarpType | undefined): boolean {
-  return t === 'recorderAlto' || t === 'recorderSoprano' || t === 'recorderTenor';
+  return t === 'recorderAlto' || t === 'recorderSoprano' || t === 'recorderTenor' || t === 'recorderBass';
 }
 
-/** tông cố định của sáo dọc: alto Fa, soprano và tenor Đô */
+/** tông cố định của sáo dọc: alto và bass Fa, soprano và tenor Đô */
 export function recorderKey(t: HarpType): HarpKey {
-  return t === 'recorderAlto' ? 'F' : 'C';
+  return t === 'recorderAlto' || t === 'recorderBass' ? 'F' : 'C';
 }
 
 export function isChromatic(t: HarpType | undefined): boolean {
@@ -82,7 +91,7 @@ export function holeCount(t: HarpType = 'diatonic'): number {
     case 'tremolo24': case 'tremolo24m': return 24;
     case 'tremolo21': case 'tremolo21m': return 21;
     case 'tremolo16': case 'tremolo16m': return 16;
-    case 'recorderAlto': case 'recorderSoprano': case 'recorderTenor': return 8;
+    case 'recorderAlto': case 'recorderSoprano': case 'recorderTenor': case 'recorderBass': return 8;
     default: return 10;
   }
 }
@@ -97,7 +106,7 @@ export function harpTypeOf(s: { harpType?: HarpType }): HarpType {
 /** "Kèn C" hoặc "Kèn C chromatic" */
 export function harpName(key: string, t: HarpType = 'diatonic'): string {
   if (isTremolo(t)) return `Kèn ${harpKeyLabel(key, t)} tremolo ${holeCount(t)} lỗ`;
-  if (isRecorder(t)) return t === 'recorderAlto' ? 'Sáo alto (Fa)' : t === 'recorderTenor' ? 'Sáo tenor (Đô)' : 'Sáo soprano (Đô)';
+  if (isRecorder(t)) return t === 'recorderAlto' ? 'Sáo alto (Fa)' : t === 'recorderTenor' ? 'Sáo tenor (Đô)' : t === 'recorderBass' ? 'Sáo bass (Fa)' : 'Sáo soprano (Đô)';
   return t === 'diatonic' ? `Kèn ${key}` : t === 'chromatic16' ? `Kèn ${key} chromatic 16 lỗ` : `Kèn ${key} chromatic`;
 }
 
@@ -185,10 +194,11 @@ export function harpLayout(key: HarpKey, type: HarpType = 'diatonic'): HarpNote[
   if (isRecorder(type)) {
     // sáo: không phụ thuộc tông kèn; hole = thứ tự nốt (để bộ chọn tính khoảng nhảy theo cao độ)
     // nốt thấp nhất: alto F4, tenor C4 (ghi đúng cao độ), soprano C5 (ghi C4, thấp hơn tiếng thật một quãng tám)
-    const sounding = type === 'recorderAlto' ? 65 : type === 'recorderTenor' ? 60 : 72;
-    const written = type === 'recorderAlto' ? 65 : 60;
+    // bass: F3, ghi đúng cao độ (app không dùng khoá Fa)
+    const sounding = type === 'recorderAlto' ? 65 : type === 'recorderTenor' ? 60 : type === 'recorderBass' ? 53 : 72;
+    const written = type === 'recorderAlto' ? 65 : type === 'recorderBass' ? 53 : 60;
     const KIND: Record<string, Technique> = { normal: 'fingered', cross: 'crossFingered', half: 'halfHole', high: 'highRegister' };
-    RECORDER_FINGERINGS.forEach((f, i) => notes.push({
+    RECORDER_FINGERINGS.map((f, i) => (recorderSystem === 'german' ? GERMAN_OVERRIDES[i] ?? f : f)).forEach((f, i) => notes.push({
       hole: i + 1, dir: 'blow', bend: 0, over: false, slide: false, midi: sounding + i,
       technique: KIND[f.kind], token: midiToName(written + i), fingers: f.fingers, fingerCost: f.cost,
     }));

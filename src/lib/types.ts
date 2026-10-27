@@ -58,6 +58,8 @@ export interface Settings {
   micLatencyMs: number;
   /** gửi thống kê ẩn danh lượt cài / lượt dùng (lib/usageStats.ts) */
   shareStats: boolean;
+  /** sáo dọc: kiểu bấm Baroque (mặc định) hay German */
+  recorderFingering: 'baroque' | 'german';
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -74,6 +76,7 @@ export const DEFAULT_SETTINGS: Settings = {
   defaultHarpKey: IS_RECORDER_APP ? 'F' : 'C',
   defaultHarpType: IS_RECORDER_APP ? 'recorderAlto' : 'diatonic',
   shareStats: true,
+  recorderFingering: 'baroque',
   keepAwake: true,
   syncOffsetMs: 0,
   micLatencyMs: 60,

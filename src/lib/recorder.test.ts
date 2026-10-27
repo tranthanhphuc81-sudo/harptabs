@@ -81,3 +81,20 @@ describe('blues cho sáo', () => {
     expect(t).toContain('C#5');
   });
 });
+
+describe('sáo bass và kiểu bấm German', () => {
+  it('bass Fa: F3–G5', () => {
+    const b = harpLayout('F', 'recorderBass');
+    expect(b[0]).toMatchObject({ token: 'F3', midi: 53 });
+    expect(b[26].token).toBe('G5');
+  });
+  it('German: Bb4 trên alto bấm thẳng, đổi lại thì Baroque', async () => {
+    const { setRecorderFingering } = await import('./harp');
+    const bb = () => harpLayout('F', 'recorderAlto').find((n) => n.token === 'Bb4')!;
+    expect(bb().technique).toBe('crossFingered');
+    setRecorderFingering('german');
+    expect(bb()).toMatchObject({ fingers: 'xxxxxooo', technique: 'fingered' });
+    setRecorderFingering('baroque');
+    expect(bb().technique).toBe('crossFingered');
+  });
+});
