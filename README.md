@@ -73,6 +73,7 @@ Bản web: https://sotabguitar.pages.dev · APK: gói `dev.pages.sotabguitar.twa
 | Đàn | Guitar 6 dây và ukulele 4 dây |
 | Tab | Ghi `dây.phím` (`2.3` = dây 2 phím 3), mỗi nốt vẽ như một cột tab. Bộ chọn vị trí ưu tiên dây buông, thế đầu cần và dây cao cho giai điệu. Sơ đồ cần đàn chạm để nghe, sửa nốt và soạn bài ngay trên cần đàn |
 | Hợp âm | Sơ đồ hợp âm cho các hợp âm trong bài (thế mở, thế chặn, tự dò thế cho hợp âm khác), chạm để nghe. Capo theo từng bài (phím 1–7), gợi ý capo khi bài có nhiều hợp âm chặn khó. Bộ đoán hợp âm ưu tiên các vòng hay gặp (V–I, IV–V, ii–V, vi–IV…) |
+| Đệm rải | Tab rải hợp âm (fingerstyle) sinh từ hợp âm của bài: bass dây trầm rồi dây 3 – 2 – 1 (ukulele rải dây 4 → 1), theo nhịp 4/4, 3/4, 6/8, tính capo; lời vẫn nằm dưới nốt, phát và sáng theo nhạc |
 | Lời + hợp âm | Tên hợp âm đặt trên chữ chỗ đổi hợp âm, chữ sáng theo nhạc, chạm chữ để phát từ đó, gợi ý điệu quạt theo kiểu nhịp |
 | Dán hợp âm | Dán bài lời + hợp âm từ mạng (kiểu `[Am]lời` hoặc dòng hợp âm trên dòng lời), không cần giai điệu: app phát nhạc đệm theo hợp âm. Ở bài đã có giai điệu, dán hợp âm sẽ khớp từng chữ với lời để đặt hợp âm đúng chỗ. Hợp âm lạ (sus, add9, C/G) được đổi về hợp âm chơi được |
 | Karaoke | Hình cần đàn và sơ đồ hợp âm đang vang |

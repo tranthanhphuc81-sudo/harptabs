@@ -3,6 +3,7 @@ import { ChordSheet, strumHint } from '../components/ChordSheet';
 import { StrumStrip } from '../components/StrumStrip';
 import { STYLE_OPTIONS } from '../audio/patterns';
 import { SheetView } from '../components/SheetView';
+import { buildArpeggio } from '../lib/arpeggio';
 import { chordsFromSheet, parseSheet, sheetChords, sheetPlayback, sheetSlots } from '../lib/chordSheet';
 import { SheetApplyDialog } from '../components/SheetApplyDialog';
 import { bestCapo, MAX_CAPO, shapeName, soundingName } from '../lib/capo';
@@ -46,6 +47,7 @@ const KaraokeView = lazy(() => import('../components/KaraokeView'));
 const PAGE_TURN_KEY = 'harptabs.pageTurn';
 
 const SHEET_KEY = 'harptabs.chordSheet';
+const ARP_KEY = 'harptabs.arpeggio';
 
 export default function SongView() {
   const { id } = useParams();
@@ -90,10 +92,20 @@ function SongPlayerView({ song, original, fit, view, choice, onChoice }: {
     const slots = sheetSlots(ps.lines, song.sheetBeats ?? bpb);
     return { lines: ps.lines, slots, ...sheetPlayback(slots, bpb === 4 ? 2 : bpb >= 6 && bpb % 2 === 0 ? bpb / 2 : bpb) };
   }, [song.sheet, song.sheetBeats, bpb]);
-  const flat = useMemo(() => sheetData?.flat ?? flatten(parsed), [parsed, sheetData]);
+  const melodyFlat = useMemo(() => sheetData?.flat ?? flatten(parsed), [parsed, sheetData]);
   const stats = useMemo(() => countTechniques(parsed), [parsed]);
   const sections = useMemo(() => parsed.sections.map((s) => s.title), [parsed]);
   const chordOverrides = sheetData?.overrides ?? song.chords;
+  // guitar / ukulele: "Đệm rải" thay giai điệu bằng tab rải hợp âm sinh từ các khúc hợp âm của bài
+  const canArp = isFretted(harpType);
+  const [arpOn, setArpOn] = useState(() => { try { return canArp && localStorage.getItem(ARP_KEY) === '1'; } catch { return false; } });
+  const arp = useMemo(() => {
+    if (!canArp || !arpOn) return null;
+    const ton = parseTonality(song.songKey || songTonality(song.harpKey, song.position, harpType));
+    const segs = harmonizeSegments(melodyFlat, bpb, song.pickupBeats, ton, chordOverrides);
+    return buildArpeggio(segs, { inst: harpType === 'ukulele4' ? 'ukulele' : 'guitar', capo: song.capo ?? 0, beatsPerBar: bpb, pickupBeats: song.pickupBeats, lyrics: melodyFlat });
+  }, [canArp, arpOn, melodyFlat, bpb, song.pickupBeats, song.songKey, song.harpKey, song.position, song.capo, harpType, chordOverrides]);
+  const flat = arp?.flat ?? melodyFlat;
 
   // tự động tối ưu: mở bài là áp kiểu nhịp hợp nhất (trừ bài để "Không beat" / "Máy đếm nhịp")
   const beatPrefs = useBeatPrefs();
@@ -121,13 +133,16 @@ function SongPlayerView({ song, original, fit, view, choice, onChoice }: {
   const inst = harpType === 'ukulele4' ? 'ukulele' : 'guitar';
   const capo = fretted ? song.capo ?? 0 : 0;
   const [sheet, setSheet] = useState(() => { try { return fretted && localStorage.getItem(SHEET_KEY) === '1'; } catch { return false; } });
-  const toggleSheet = () => { const v = !sheet; setSheet(v); try { localStorage.setItem(SHEET_KEY, v ? '1' : '0'); } catch { /* không lưu được thì thôi */ } };
+  const remember = (k: string, v: boolean) => { try { localStorage.setItem(k, v ? '1' : '0'); } catch { /* không lưu được thì thôi */ } };
+  // "Lời + hợp âm" và "Đệm rải" là hai cách xem thay cho tab giai điệu: bật cái này thì tắt cái kia
+  const toggleSheet = () => { const v = !sheet; setSheet(v); remember(SHEET_KEY, v); if (v && arpOn) { setArpOn(false); remember(ARP_KEY, false); } };
+  const toggleArp = () => { const v = !arpOn; setArpOn(v); remember(ARP_KEY, v); if (v && sheet) { setSheet(false); remember(SHEET_KEY, false); } };
   const setCapo = (n: number) => { void db.songs.update(song.id, { capo: n || undefined, updatedAt: Date.now() }); };
   // đệm hát: luôn hiện hợp âm trên lời để hát theo
   const showChords = beatPrefs.showChords || !!p.opts.sing || (fretted && sheet) || !!sheetData;
   const chordSegs = useMemo(
-    () => (showChords ? harmonizeSegments(flat, bpb, song.pickupBeats, tonality, chordOverrides) : null),
-    [showChords, flat, bpb, song.pickupBeats, tonality, chordOverrides],
+    () => (showChords || arp ? harmonizeSegments(melodyFlat, bpb, song.pickupBeats, tonality, chordOverrides) : null),
+    [showChords, arp, melodyFlat, bpb, song.pickupBeats, tonality, chordOverrides],
   );
   // có capo: hiện tên thế bấm (thấp hơn tiếng thật `capo` nửa cung)
   const shownSegs = useMemo(() => (chordSegs && capo ? transposeSpans(chordSegs, -capo) : chordSegs), [chordSegs, capo]);
@@ -477,6 +492,7 @@ function SongPlayerView({ song, original, fit, view, choice, onChoice }: {
       {fretted && (
         <div className="guitar-tools no-print">
           {!sheetData && <button type="button" className={`chip${sheet ? ' on' : ''}`} aria-pressed={sheet} onClick={toggleSheet}>Lời + hợp âm</button>}
+          {!sheetData && <button type="button" className={`chip${arpOn ? ' on' : ''}`} aria-pressed={arpOn} onClick={toggleArp}>Đệm rải</button>}
           {!sheetData && flat.some((e) => e.lyric) && <button type="button" className="chip" onClick={() => setSheetApply(true)}>Dán hợp âm</button>}
           <label className="capo-field">
             <span>Capo</span>
@@ -531,7 +547,7 @@ function SongPlayerView({ song, original, fit, view, choice, onChoice }: {
         : <TabView
         harpType={harpType}
         harpKey={song.harpKey}
-        parsed={parsed}
+        parsed={arp?.parsed ?? parsed}
         flat={flat}
         active={activeIdx}
         selected={editMode && canEdit ? focus : null}
@@ -588,7 +604,9 @@ function SongPlayerView({ song, original, fit, view, choice, onChoice }: {
         ) : (
           <p className="small muted">{`Đang xem bản đã đổi sang ${BRAND.noun} khác — chọn “Bản gốc” ở trên để sửa nốt.`} <button type="button" className="link-btn" onClick={() => setEditMode(false)}>Đóng</button></p>
         ))}
-        extra={sheetData ? (
+        extra={arp ? (
+          <span className="small muted">Đang xem tab đệm rải — tắt "Đệm rải" để sửa nốt, chờ nốt, karaoke.</span>
+        ) : sheetData ? (
           // bài lời + hợp âm không có giai điệu: sửa lời và hợp âm trong Sửa bài
           <Link to={`/song/${song.id}/edit`} className="chip"><Icon name="edit" size={15} /> Sửa lời + hợp âm</Link>
         ) : <>
