@@ -4,6 +4,8 @@ import { KALIMBA_KEYS, parseKalimbaFingers } from '../data/kalimba';
 import { parseFretFingers } from '../data/guitar';
 import { FretIcon } from './Fretboard';
 import { PianoIcon } from './Keyboard';
+import { TranhIcon } from './Tranh';
+import { parseTranhFingers } from '../data/tranh';
 import { TokenText } from './TabView';
 
 /**
@@ -15,6 +17,8 @@ export function FingeringIcon({ fingers, size = 'm' }: { fingers: string; size?:
   if (k) return <KalimbaIcon pos={k.pos} keys={k.keys} size={size} />;
   if (/^p\d+$/.test(fingers)) return <PianoIcon midi={Number(fingers.slice(1))} size={size} />;
   if (fingers.length === 12) return <OcarinaIcon fingers={fingers} size={size} />;
+  const tr = parseTranhFingers(fingers);
+  if (tr) return <TranhIcon count={tr.count} string={tr.string} press={tr.press} size={size} />;
   const g = parseFretFingers(fingers);
   if (g) return <FretIcon strings={g.strings} string={g.string} fret={g.fret} size={size} />;
   const r = size === 's' ? 3.2 : size === 'l' ? 6 : 4.5;

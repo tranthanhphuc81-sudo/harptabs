@@ -4,9 +4,9 @@ App lưu và tập harptab cho kèn **diatonic 10 lỗ**, **chromatic 12 / 16 l�
 
 Bản đang chạy: https://harptabs.pages.dev
 
-Trang giới thiệu chung cả năm app (mở app, tải APK mới nhất, hướng dẫn cài): https://sotab.pages.dev — mã trong `landing/`, tự deploy cùng các app.
+Trang giới thiệu chung cả sáu app (mở app, tải APK mới nhất, hướng dẫn cài): https://sotab.pages.dev — mã trong `landing/`, tự deploy cùng các app.
 
-Cùng mã nguồn này còn build ra bốn app khác cho [sáo](#sổ-tab-sáo), [kalimba](#sổ-tab-kalimba), [guitar / ukulele](#sổ-tab-guitar) và [pianica](#sổ-tab-pianica):
+Cùng mã nguồn này còn build ra năm app khác cho [sáo](#sổ-tab-sáo), [kalimba](#sổ-tab-kalimba), [guitar / ukulele](#sổ-tab-guitar), [pianica](#sổ-tab-pianica) và [đàn tranh](#sổ-tab-đàn-tranh):
 
 | App | Nhạc cụ | Bản web | APK Android |
 |---|---|---|---|
@@ -15,8 +15,9 @@ Cùng mã nguồn này còn build ra bốn app khác cho [sáo](#sổ-tab-sáo),
 | Sổ Tab Kalimba | Kalimba 17, 10, 8 phím | https://sotabkalimba.pages.dev | [Releases `kalimba-apk-v…`](https://github.com/tranthanhphuc81-sudo/harptabs/releases?q=kalimba-apk&expanded=true) |
 | Sổ Tab Guitar | Guitar 6 dây, ukulele 4 dây | https://sotabguitar.pages.dev | [Releases `guitar-apk-v…`](https://github.com/tranthanhphuc81-sudo/harptabs/releases?q=guitar-apk&expanded=true) |
 | Sổ Tab Pianica | Kèn pianica (melodica) 32 / 37 phím | https://sotabpianica.pages.dev | [Releases `pianica-apk-v…`](https://github.com/tranthanhphuc81-sudo/harptabs/releases?q=pianica-apk&expanded=true) |
+| Sổ Tab Đàn Tranh | Đàn tranh 16 / 17 dây | https://sotabdantranh.pages.dev | [Releases `tranh-apk-v…`](https://github.com/tranthanhphuc81-sudo/harptabs/releases?q=tranh-apk&expanded=true) |
 
-Cả năm app có chung thư viện bài, phát nhạc đệm, karaoke, chia sẻ bài, nhập MIDI / MusicXML, quét khuông nhạc, dò nốt, tập ngẫu hứng, chạy offline. Phần riêng của từng app nằm ở các mục bên dưới.
+Cả sáu app có chung thư viện bài, phát nhạc đệm, karaoke, chia sẻ bài, nhập MIDI / MusicXML, quét khuông nhạc, dò nốt, tập ngẫu hứng, chạy offline. Phần riêng của từng app nằm ở các mục bên dưới.
 
 ## Tính năng
 
@@ -91,6 +92,16 @@ Bản web: https://sotabpianica.pages.dev · APK: gói `dev.pages.sotabpianica.t
 | Bài và học | Bài mẫu ghi lại cho pianica (giữ giọng gốc, giữ hợp âm chuẩn), 5 bài học: làm quen, đọc tab, đặt ngón và thang âm Đô, hơi thổi và đánh lưỡi, bảo quản |
 | Tập ngẫu hứng | Blues / jazz với lick xếp thành tên nốt trên bàn phím |
 
+## Sổ Tab Đàn Tranh
+
+Bản web: https://sotabdantranh.pages.dev · APK: gói `dev.pages.sotabdantranh.twa`, tag `tranh-apk-v…` trên GitHub Releases.
+
+| Phần | Nội dung |
+|---|---|
+| Đàn | Đàn tranh 16 / 17 dây, lên dây Bắc (Sol La Đô Rê Mi) hoặc Đảo (Sol La Đô Rê Fa) — chọn trong Cài đặt; tông đàn chọn được |
+| Tab | Số dây (1 = dây trầm nhất), `7^` nhấn nửa cung, `7^^` nhấn một cung; bộ chọn ưu tiên dây buông, chỉ nhấn khi nốt không có trên dây. Hình các dây dưới mỗi nốt, sơ đồ đàn chạm để nghe |
+| Bài và học | Bài mẫu xếp lại cho đàn tranh (giữ hợp âm chuẩn), 5 bài học: làm quen, đọc tab, nhấn, rung – vỗ – vuốt, lên dây |
+
 ## Chạy thử
 
 Cần Node.js 18 trở lên.
@@ -112,9 +123,10 @@ VITE_APP=recorder npx vite build --outDir dist-recorder   # Sổ Tab Sáo
 VITE_APP=kalimba npx vite build --outDir dist-kalimba     # Sổ Tab Kalimba
 VITE_APP=guitar npx vite build --outDir dist-guitar       # Sổ Tab Guitar
 VITE_APP=pianica npx vite build --outDir dist-pianica     # Sổ Tab Pianica
+VITE_APP=tranh npx vite build --outDir dist-tranh         # Sổ Tab Đàn Tranh
 ```
 
-Mỗi lần push lên `main`, GitHub Actions chạy lint + test + build rồi deploy cả năm app lên Cloudflare Pages (`.github/workflows/deploy-pages.yml`): `dist/` → dự án `harptabs`, `dist-recorder/` → `sotabsao`, `dist-kalimba/` → `sotabkalimba`, `dist-guitar/` → `sotabguitar`, `dist-pianica/` → `sotabpianica`. Mở link của app bằng trình duyệt điện thoại → "Thêm vào màn hình chính" là app chạy offline.
+Mỗi lần push lên `main`, GitHub Actions chạy lint + test + build rồi deploy cả sáu app lên Cloudflare Pages (`.github/workflows/deploy-pages.yml`): `dist/` → dự án `harptabs`, `dist-recorder/` → `sotabsao`, `dist-kalimba/` → `sotabkalimba`, `dist-guitar/` → `sotabguitar`, `dist-pianica/` → `sotabpianica`, `dist-tranh/` → `sotabdantranh`. Mở link của app bằng trình duyệt điện thoại → "Thêm vào màn hình chính" là app chạy offline.
 
 Các phần nặng (quét nhạc, đọc file, PDF, OCR) chỉ tải khi dùng. Bộ đọc PDF và OCR được lưu lại sau lần dùng đầu, nên muốn dùng offline thì mở thử một lần khi có mạng.
 
@@ -229,6 +241,7 @@ Bản Android là **TWA** (Trusted Web Activity) do Bubblewrap tạo: mở trang
 | Sổ Tab Kalimba | `android-kalimba/twa-manifest.json` | `dev.pages.sotabkalimba.twa` | `kalimba-apk-v…` |
 | Sổ Tab Guitar | `android-guitar/twa-manifest.json` | `dev.pages.sotabguitar.twa` | `guitar-apk-v…` |
 | Sổ Tab Pianica | `android-pianica/twa-manifest.json` | `dev.pages.sotabpianica.twa` | `pianica-apk-v…` |
+| Sổ Tab Đàn Tranh | `android-tranh/twa-manifest.json` | `dev.pages.sotabdantranh.twa` | `tranh-apk-v…` |
 
 - Workflow `build-apk.yml` build cả bốn app (mỗi app một dòng trong matrix), chỉ chạy khi một trong các file cấu hình trên đổi (hoặc bấm chạy tay), rồi đăng APK lên [GitHub Releases](https://github.com/tranthanhphuc81-sudo/harptabs/releases).
 - Cần secret `ANDROID_KEYSTORE_BASE64` và `ANDROID_KEYSTORE_PASSWORD` (cả bốn app dùng chung khoá). Vân tay SHA-256 của khoá ký phải khớp với `public/.well-known/assetlinks.json` (có mục cho từng gói), nếu không app sẽ hiện thanh địa chỉ trình duyệt.

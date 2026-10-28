@@ -23,6 +23,7 @@
 import { GERMAN_OVERRIDES, RECORDER_FINGERINGS } from '../data/recorderFingerings';
 import { closedOffset, saoTrucTable } from '../data/saoTrucFingerings';
 import { OCARINA_FINGERINGS } from '../data/ocarinaFingerings';
+import { parseTranhToken, TRANH_TOKEN_RE, tranhCost, tranhFingers, tranhStrings, tranhToken, type TranhTuning } from '../data/tranh';
 import { cleanKalimbaToken, kalimbaFingers, kalimbaTines } from '../data/kalimba';
 import { FRET_TOKEN_RE, fretCost, fretFingers, fretToken, GUITAR_FRETS, GUITAR_TUNING, parseFretToken, UKULELE_FRETS, UKULELE_TUNING } from '../data/guitar';
 
@@ -48,13 +49,15 @@ export function setRecorderFingering(sys: 'baroque' | 'german') {
 export type Direction = 'blow' | 'draw';
 export type Technique = 'blow' | 'draw' | 'drawBend' | 'blowBend' | 'overblow' | 'overdraw' | 'blowSlide' | 'drawSlide'
   // sáo dọc: thế thường, thế chéo, bịt nửa lỗ, quãng cao (ngón cái hé)
-  | 'fingered' | 'crossFingered' | 'halfHole' | 'highRegister';
+  | 'fingered' | 'crossFingered' | 'halfHole' | 'highRegister'
+  // đàn tranh: tay trái nhấn dây cho cao lên
+  | 'press';
 
 /** Loại kèn. Bài cũ không ghi loại là diatonic. */
 export type HarpType = 'diatonic' | 'chromatic' | 'chromatic16' | 'tremolo24' | 'tremolo21' | 'tremolo16' | 'tremolo24m' | 'tremolo21m' | 'tremolo16m'
-  | 'recorderAlto' | 'recorderSoprano' | 'recorderTenor' | 'recorderBass' | 'saoTruc6' | 'kalimba17' | 'kalimba10' | 'kalimba8' | 'guitar6' | 'ukulele4' | 'pianica32' | 'pianica37' | 'ocarina12';
+  | 'recorderAlto' | 'recorderSoprano' | 'recorderTenor' | 'recorderBass' | 'saoTruc6' | 'kalimba17' | 'kalimba10' | 'kalimba8' | 'guitar6' | 'ukulele4' | 'pianica32' | 'pianica37' | 'ocarina12' | 'tranh16' | 'tranh17';
 /** mọi loại hợp lệ (để đọc bài đã lưu); ô chọn chỉ hiện SHOWN_HARP_TYPES của bản build (src/appConfig.ts) */
-export const HARP_TYPES: readonly HarpType[] = ['diatonic', 'chromatic', 'chromatic16', 'tremolo24', 'tremolo21', 'tremolo16', 'tremolo24m', 'tremolo21m', 'tremolo16m', 'recorderAlto', 'recorderSoprano', 'recorderTenor', 'recorderBass', 'saoTruc6', 'kalimba17', 'kalimba10', 'kalimba8', 'guitar6', 'ukulele4', 'pianica32', 'pianica37', 'ocarina12'];
+export const HARP_TYPES: readonly HarpType[] = ['diatonic', 'chromatic', 'chromatic16', 'tremolo24', 'tremolo21', 'tremolo16', 'tremolo24m', 'tremolo21m', 'tremolo16m', 'recorderAlto', 'recorderSoprano', 'recorderTenor', 'recorderBass', 'saoTruc6', 'kalimba17', 'kalimba10', 'kalimba8', 'guitar6', 'ukulele4', 'pianica32', 'pianica37', 'ocarina12', 'tranh16', 'tranh17'];
 
 export const HARP_TYPE_LABEL: Record<HarpType, string> = {
   diatonic: 'Diatonic 10 lỗ',
@@ -79,7 +82,25 @@ export const HARP_TYPE_LABEL: Record<HarpType, string> = {
   pianica32: 'Pianica 32 phím',
   pianica37: 'Pianica 37 phím',
   ocarina12: 'Ocarina 12 lỗ (alto Đô)',
+  tranh16: 'Đàn tranh 16 dây',
+  tranh17: 'Đàn tranh 17 dây',
 };
+
+/** đàn tranh: tab ghi số dây (1 = dây trầm nhất), ^ = nhấn nửa cung, ^^ = nhấn một cung (src/data/tranh.ts) */
+export function isTranh(t: HarpType | undefined): boolean {
+  return t === 'tranh16' || t === 'tranh17';
+}
+
+/** cách lên dây đàn tranh đang dùng (theo Cài đặt); đổi thì xoá bảng nốt đã tính */
+let tranhTuning: TranhTuning = 'bac';
+export function setTranhTuning(t: TranhTuning) {
+  if (t === tranhTuning) return;
+  tranhTuning = t;
+  for (const k of [...layoutCache.keys()]) if (k.startsWith('tranh')) layoutCache.delete(k);
+}
+export function getTranhTuning(): TranhTuning {
+  return tranhTuning;
+}
 
 /** ocarina 12 lỗ alto Đô: tab tên nốt như sáo dọc, dưới nốt có hình thế bấm (src/data/ocarinaFingerings.ts) */
 export function isOcarina(t: HarpType | undefined): boolean {
@@ -119,7 +140,7 @@ export function isSaoTruc(t: HarpType | undefined): boolean {
  * Sáo ghi tên nốt (F4, Bb4); kalimba ghi số 1–7 có chấm quãng tám.
  */
 export function isFingered(t: HarpType | undefined): boolean {
-  return isRecorder(t) || isSaoTruc(t) || isKalimba(t) || isFretted(t) || isPianica(t) || isOcarina(t);
+  return isRecorder(t) || isSaoTruc(t) || isKalimba(t) || isFretted(t) || isPianica(t) || isOcarina(t) || isTranh(t);
 }
 
 /** tông dùng để tra bảng nốt: sáo dọc có tông cố định, sáo trúc theo tông đã chọn */
@@ -171,6 +192,8 @@ export function holeCount(t: HarpType = 'diatonic'): number {
     case 'pianica32': return 32;
     case 'pianica37': return 37;
     case 'ocarina12': return 12;
+    case 'tranh16': return 16;
+    case 'tranh17': return 17;
     default: return 10;
   }
 }
@@ -190,6 +213,7 @@ export function harpName(key: string, t: HarpType = 'diatonic'): string {
   if (t === 'ukulele4') return 'Ukulele';
   if (isPianica(t)) return `Kèn pianica ${holeCount(t)} phím`;
   if (isOcarina(t)) return 'Ocarina 12 lỗ (Đô)';
+  if (isTranh(t)) return `Đàn tranh ${holeCount(t)} dây (${key}, dây ${tranhTuning === 'dao' ? 'Đảo' : 'Bắc'})`;
   if (isSaoTruc(t)) return `Sáo trúc ${pitchClassName(KEY_OFFSET[normalizeKey(key) ?? 'C'], 'solfege')} (${key}, bịt hết ra ${pitchClassName(KEY_OFFSET[normalizeKey(key) ?? 'C'] + [0, 2, 4, 5, 7, 9, 11][saoTrucClosed - 1], 'solfege')})`;
   if (isRecorder(t)) return t === 'recorderAlto' ? 'Sáo alto (Fa)' : t === 'recorderTenor' ? 'Sáo tenor (Đô)' : t === 'recorderBass' ? 'Sáo bass (Fa)' : 'Sáo soprano (Đô)';
   return t === 'diatonic' ? `Kèn ${key}` : t === 'chromatic16' ? `Kèn ${key} chromatic 16 lỗ` : `Kèn ${key} chromatic`;
@@ -275,6 +299,19 @@ export function harpLayout(key: HarpKey, type: HarpType = 'diatonic'): HarpNote[
   const notes: HarpNote[] = [];
   const push = (hole: number, dir: Direction, bend: number, over: boolean, midi: number, technique: Technique, slide = false) =>
     notes.push({ hole, dir, bend, over, slide, midi: midi + off, technique, token: makeToken(hole, dir, bend, over, slide) });
+
+  if (isTranh(type)) {
+    // mỗi dây: gảy thường, nhấn nửa cung, nhấn một cung; tông dời cả bộ nhạn
+    const n = holeCount(type);
+    tranhStrings(n, tranhTuning).forEach((open, i) => {
+      for (let press = 0; press <= 2; press++) notes.push({
+        hole: i + 1, dir: 'blow', bend: 0, over: false, slide: false, midi: open + off + press,
+        technique: press ? 'press' : 'fingered', token: tranhToken(i + 1, press), fingers: tranhFingers(n, i + 1, press), fingerCost: tranhCost(press),
+      });
+    });
+    layoutCache.set(ck, notes);
+    return notes;
+  }
 
   if (isOcarina(type)) {
     const KIND: Record<string, Technique> = { normal: 'fingered', sub: 'fingered', cross: 'crossFingered', half: 'halfHole', high: 'highRegister' };
@@ -410,7 +447,7 @@ export const KALIMBA_TOKEN_RE = /^([1-7])([°'*˚º·]{0,2})$/;
 export { FRET_TOKEN_RE };
 
 function tokenRe(type: HarpType): RegExp {
-  return isFretted(type) ? FRET_TOKEN_RE : isKalimba(type) ? KALIMBA_TOKEN_RE : isFingered(type) ? RECORDER_TOKEN_RE : isTremolo(type) ? TREM_TOKEN_RE : isChromatic(type) ? CHROM_TOKEN_RE : TOKEN_RE;
+  return isTranh(type) ? TRANH_TOKEN_RE : isFretted(type) ? FRET_TOKEN_RE : isKalimba(type) ? KALIMBA_TOKEN_RE : isFingered(type) ? RECORDER_TOKEN_RE : isTremolo(type) ? TREM_TOKEN_RE : isChromatic(type) ? CHROM_TOKEN_RE : TOKEN_RE;
 }
 
 /** Chuẩn hoá các dấu nháy hay gặp khi copy từ web: ’ ′ ` ″ */
@@ -429,6 +466,10 @@ export function parseToken(raw: string, key: HarpKey, type: HarpType = 'diatonic
   const t = cleanToken(raw);
   const m = tokenRe(type).exec(t);
   if (!m) return null;
+  if (isTranh(type)) {
+    const p = parseTranhToken(t);
+    return p ? harpLayout(key, type).find((n) => n.token === tranhToken(p.string, p.press)) ?? null : null;
+  }
   if (isFretted(type)) {
     const p = parseFretToken(t);
     return p ? harpLayout(key, type).find((n) => n.token === fretToken(p.string, p.fret)) ?? null : null;
@@ -510,6 +551,7 @@ export const TECHNIQUE_LABEL: Record<Technique, string> = {
   crossFingered: 'Thế chéo',
   halfHole: 'Bịt nửa lỗ',
   highRegister: 'Quãng cao',
+  press: 'Nhấn',
 };
 
 /** Độ khó khi chơi một nốt — dùng cho bộ chọn lỗ tối ưu */
@@ -535,6 +577,8 @@ export function techniqueCost(n: HarpNote): number {
     case 'highRegister':
       return 1;
     case 'halfHole':
+      return 1.5;
+    case 'press':
       return 1.5;
   }
 }

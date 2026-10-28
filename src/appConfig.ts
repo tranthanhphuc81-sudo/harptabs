@@ -4,18 +4,21 @@
  */
 import type { HarpType } from './lib/harp';
 
-export type AppKind = 'harmonica' | 'recorder' | 'kalimba' | 'guitar' | 'pianica';
+export type AppKind = 'harmonica' | 'recorder' | 'kalimba' | 'guitar' | 'pianica' | 'tranh';
 const ENV = import.meta.env.VITE_APP;
-export const APP: AppKind = ENV === 'recorder' || ENV === 'kalimba' || ENV === 'guitar' || ENV === 'pianica' ? ENV : 'harmonica';
+export const APP: AppKind = ENV === 'recorder' || ENV === 'kalimba' || ENV === 'guitar' || ENV === 'pianica' || ENV === 'tranh' ? ENV : 'harmonica';
 export const IS_RECORDER_APP = APP === 'recorder';
 export const IS_KALIMBA_APP = APP === 'kalimba';
 export const IS_GUITAR_APP = APP === 'guitar';
 export const IS_PIANICA_APP = APP === 'pianica';
+export const IS_TRANH_APP = APP === 'tranh';
 export const IS_HARMONICA_APP = APP === 'harmonica';
 
 /** tên app, link, danh từ nhạc cụ, động từ chơi — dùng trong chữ hiển thị */
 export const BRAND = IS_RECORDER_APP
   ? { name: 'Sổ Tab Sáo', line1: 'Sổ Tab', line2: 'Sáo', url: 'https://sotabsao.pages.dev/', host: 'sotabsao.pages.dev', instrument: 'sáo dọc', noun: 'sáo', verb: 'thổi' }
+  : IS_TRANH_APP
+  ? { name: 'Sổ Tab Đàn Tranh', line1: 'Sổ Tab', line2: 'Đàn Tranh', url: 'https://sotabdantranh.pages.dev/', host: 'sotabdantranh.pages.dev', instrument: 'đàn tranh', noun: 'đàn', verb: 'chơi' }
   : IS_PIANICA_APP
   ? { name: 'Sổ Tab Pianica', line1: 'Sổ Tab', line2: 'Pianica', url: 'https://sotabpianica.pages.dev/', host: 'sotabpianica.pages.dev', instrument: 'kèn pianica', noun: 'pianica', verb: 'thổi' }
   : IS_GUITAR_APP
@@ -27,6 +30,8 @@ export const BRAND = IS_RECORDER_APP
 /** loại nhạc cụ hiện trong các ô chọn của bản build này (bài cũ thuộc loại khác vẫn mở được) */
 export const SHOWN_HARP_TYPES: readonly HarpType[] = IS_RECORDER_APP
   ? ['recorderAlto', 'recorderSoprano', 'recorderTenor', 'recorderBass', 'saoTruc6', 'ocarina12']
+  : IS_TRANH_APP
+  ? ['tranh17', 'tranh16']
   : IS_PIANICA_APP
   ? ['pianica32', 'pianica37']
   : IS_GUITAR_APP

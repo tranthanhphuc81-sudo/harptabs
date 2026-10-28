@@ -3,13 +3,16 @@ import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 
 // cùng mã nguồn ra năm app: VITE_APP=recorder → Sổ Tab Sáo, VITE_APP=kalimba → Sổ Tab Kalimba, VITE_APP=guitar → Sổ Tab Guitar,
-// VITE_APP=pianica → Sổ Tab Pianica
+// VITE_APP=pianica → Sổ Tab Pianica, VITE_APP=tranh → Sổ Tab Đàn Tranh
 // (tên, biểu tượng, mô tả riêng)
 const RECORDER = process.env.VITE_APP === 'recorder';
 const KALIMBA = process.env.VITE_APP === 'kalimba';
 const GUITAR = process.env.VITE_APP === 'guitar';
 const PIANICA = process.env.VITE_APP === 'pianica';
-const BRAND = PIANICA
+const TRANH = process.env.VITE_APP === 'tranh';
+const BRAND = TRANH
+  ? { name: 'Sổ Tab Đàn Tranh', short: 'Đàn Tranh Tab', desc: 'Sổ bài đàn tranh 16 / 17 dây: tab số dây kèm nhấn, hình dây đàn dưới mỗi nốt, phát nhạc đệm, karaoke, dò nốt để lên dây, học chơi. Chạy offline.', icons: 'tranh/' }
+  : PIANICA
   ? { name: 'Sổ Tab Pianica', short: 'Pianica Tab', desc: 'Sổ bài kèn pianica (melodica) 32 phím: tab tên nốt kèm hình bàn phím, phát nhạc đệm, karaoke, dò nốt, học thổi. Chạy offline.', icons: 'pianica/' }
   : GUITAR
   ? { name: 'Sổ Tab Guitar', short: 'Guitar Tab', desc: 'Sổ bài guitar và ukulele: tab dây.phím, sơ đồ hợp âm, phát nhạc đệm, karaoke, dò nốt để lên dây, học chơi. Chạy offline.', icons: 'guitar/' }

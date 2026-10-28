@@ -1200,3 +1200,17 @@ button, a, select { -webkit-tap-highlight-color: transparent; }
 .pc-name { font-size: 0.68rem; font-weight: 700; }
 
 .fingering.ocarina .oc-body { fill: color-mix(in srgb, var(--accent) 14%, transparent); stroke: color-mix(in srgb, var(--ink-2) 40%, transparent); stroke-width: 0.8; }
+
+/* ===== Đàn tranh ===== */
+.tok-press { font-size: 0.55em; font-weight: 800; color: var(--accent); margin-left: 1px; }
+.tranh-icon .tr-off { fill: color-mix(in srgb, var(--ink-2) 50%, transparent); }
+.tranh-icon .tr-on { fill: var(--accent); }
+.tranh-icon .tr-press path { fill: #d9534f; }
+.tranh-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.tranh-chart { display: grid; gap: 3px; align-items: start; height: 13rem; min-width: max-content; padding: 8px; border-radius: var(--r-l); background: linear-gradient(180deg, #8a4b22, #5e3115); }
+.tc-string { display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 2px; padding: 0 0 6px; border: 0; border-radius: 6px; background: linear-gradient(90deg, transparent 44%, #e9e2d0 46%, #f7f2e4 50%, #c8bfa8 54%, transparent 56%); color: #fff6e6; font: inherit; cursor: pointer; min-width: 1.9rem; }
+.tc-string.on, .tc-string.sel { background: linear-gradient(90deg, transparent 38%, var(--accent) 40%, var(--accent) 60%, transparent 62%); }
+.tc-string.sel { outline: 2px solid #f7d27a; }
+.tc-num { font-weight: 800; font-size: 0.8rem; background: rgba(0,0,0,0.35); border-radius: 999px; padding: 0 5px; }
+.tc-name { font-size: 0.66rem; font-weight: 700; background: rgba(0,0,0,0.35); border-radius: 4px; padding: 0 3px; }
+.tc-hint { margin: 4px 0 0; }

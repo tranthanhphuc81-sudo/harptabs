@@ -1,5 +1,5 @@
 import { DEGREE_NAMES } from '../data/saoTrucFingerings';
-import { BRAND, IS_GUITAR_APP, IS_HARMONICA_APP, IS_RECORDER_APP } from '../appConfig';
+import { BRAND, IS_GUITAR_APP, IS_HARMONICA_APP, IS_RECORDER_APP, IS_TRANH_APP } from '../appConfig';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useEffect, useRef, useState } from 'react';
 import { db, ensureSeeded, importBackup } from '../lib/db';
@@ -176,6 +176,15 @@ export default function SettingsPage() {
                 {DEGREE_NAMES.map((n, i) => <option key={n} value={i + 1}>{n} {i === 4 ? '(sáo Đô bịt hết ra Sol — phổ biến)' : `(sáo Đô bịt hết ra ${n})`}</option>)}
               </select>
               <span className="small muted">Tính theo tông sáo: sáo Đô chọn "Sol" thì bịt hết lỗ ra Sol, mở dần ra La, Si, Đô…</span>
+            </label>
+          )}
+          {IS_TRANH_APP && (
+            <label className="field">
+              <span className="field-label">Lên dây đàn tranh</span>
+              <select value={s.tranhTuning ?? 'bac'} onChange={(e) => update({ tranhTuning: e.target.value as 'bac' | 'dao' })}>
+                <option value="bac">Dây Bắc: Sol La Đô Rê Mi (phổ biến, người mới học)</option>
+                <option value="dao">Dây Đảo: Sol La Đô Rê Fa</option>
+              </select>
             </label>
           )}
           {IS_GUITAR_APP && (

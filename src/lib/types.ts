@@ -1,5 +1,5 @@
 import type { PaletteId } from './themes';
-import { IS_GUITAR_APP, IS_KALIMBA_APP, IS_RECORDER_APP, IS_PIANICA_APP } from '../appConfig';
+import { IS_GUITAR_APP, IS_KALIMBA_APP, IS_RECORDER_APP, IS_PIANICA_APP, IS_TRANH_APP } from '../appConfig';
 import type { HarpKey, HarpType, NoteNameStyle } from './harp';
 import type { BeatStyle } from '../audio/patterns';
 
@@ -64,6 +64,8 @@ export interface Settings {
   chordHorizontal?: boolean;
   /** cỡ hình nhỏ dưới mỗi nốt (bàn phím pianica, thế bấm sáo, phím kalimba): 1 = mặc định */
   fingerScale?: number;
+  /** đàn tranh: lên dây Bắc (Sol La Đô Rê Mi) hay Đảo (Sol La Đô Rê Fa) */
+  tranhTuning?: 'bac' | 'dao';
   /** bù trễ đèn nốt (ms): dương = đèn sáng muộn hơn; dùng khi loa / tai nghe Bluetooth trễ hơn máy báo */
   syncOffsetMs: number;
   /** độ trễ micro (ms) khi chấm điểm karaoke: giọng hát tới bộ dò trễ chừng này */
@@ -88,7 +90,7 @@ export const DEFAULT_SETTINGS: Settings = {
   theme: 'system',
   palette: 'steel',
   defaultHarpKey: IS_RECORDER_APP ? 'F' : 'C',
-  defaultHarpType: IS_RECORDER_APP ? 'recorderAlto' : IS_KALIMBA_APP ? 'kalimba17' : IS_GUITAR_APP ? 'guitar6' : IS_PIANICA_APP ? 'pianica32' : 'diatonic',
+  defaultHarpType: IS_RECORDER_APP ? 'recorderAlto' : IS_KALIMBA_APP ? 'kalimba17' : IS_GUITAR_APP ? 'guitar6' : IS_PIANICA_APP ? 'pianica32' : IS_TRANH_APP ? 'tranh17' : 'diatonic',
   shareStats: true,
   recorderFingering: 'baroque',
   saoTrucClosed: 5,

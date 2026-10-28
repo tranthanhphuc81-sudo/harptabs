@@ -26,6 +26,9 @@ interface Props {
 }
 
 export function TokenText({ token, nameStyle, strings }: { token: string; nameStyle?: NoteNameStyle; strings?: number }) {
+  // đàn tranh: số dây, ^ = nhấn nửa cung, ^^ = nhấn một cung
+  const tr = /^(\d+)(\^{1,2})$/.exec(token);
+  if (tr) return <>{tr[1]}<sup className="tok-press">{tr[2].length === 2 ? '↑1' : '↑½'}</sup></>;
   // guitar / ukulele: dây.phím vẽ như một cột tab
   if (/^[1-6]\.\d{1,2}$/.test(token)) return <FretTokenText token={token} strings={strings ?? 6} />;
   // kalimba: số 1–7, chấm trên = lên quãng tám (1°, 1°°)
