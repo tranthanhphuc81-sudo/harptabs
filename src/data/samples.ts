@@ -6,7 +6,8 @@ import { IS_GUITAR_APP, IS_KALIMBA_APP, IS_RECORDER_APP } from '../appConfig';
 import { guitarSamples } from './guitarSamples';
 import { kalimbaSamples } from './kalimbaSamples';
 import { recorderSamples } from './recorderSamples';
-import type { Song } from '../lib/types';
+import { beatsPerBar, type Song } from '../lib/types';
+import { CHORD_TRUTH, truthOverrides } from '../audio/harmonyBench';
 import { MORE_SAMPLES } from './samples2';
 import { FOLK_SAMPLES } from './samples3';
 import { chromaticSamples, tremoloSamples } from './samples4';
@@ -166,7 +167,12 @@ Sol Fa Rê Đô# Đô Sib Sol
   },
 ];
 
-const DIATONIC_SAMPLES: SampleSong[] = [...BASE_SAMPLES, ...MORE_SAMPLES, ...FOLK_SAMPLES];
+/** bài có hợp âm chuẩn (src/audio/harmonyBench.ts): gắn sẵn để đệm đúng thay cho hợp âm tự đoán */
+const withChords = (s: SampleSong): SampleSong => {
+  const truth = CHORD_TRUTH[s.sampleId];
+  return truth && !s.chords ? { ...s, chords: truthOverrides(truth, beatsPerBar(s.timeSig), s.pickupBeats) } : s;
+};
+const DIATONIC_SAMPLES: SampleSong[] = [...BASE_SAMPLES, ...MORE_SAMPLES, ...FOLK_SAMPLES].map(withChords);
 /** app sáo: bài mẫu xếp lại cho sáo alto; app harmonica: bài kèn diatonic / chromatic / tremolo */
 export const SAMPLE_SONGS: SampleSong[] = IS_RECORDER_APP
   ? recorderSamples(DIATONIC_SAMPLES)

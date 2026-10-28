@@ -457,7 +457,7 @@ function SongPlayerView({ song, original, fit, view, choice, onChoice }: {
         <button type="button" className={`chip no-print${pageTurn ? ' on' : ''}`} aria-pressed={pageTurn} onClick={togglePageTurn}>Chạm lật trang</button>
         <button type="button" className={`chip legend-chords${beatPrefs.showChords ? ' on' : ''}`} aria-pressed={beatPrefs.showChords}
           onClick={() => setBeatPrefs({ showChords: !beatPrefs.showChords })}>
-          Hợp âm{manualCount > 0 ? ` (${manualCount} chọn tay)` : ''}
+          Hợp âm{manualCount > 0 ? (original.source === 'sample' ? ' (hợp âm chuẩn)' : ` (${manualCount} chọn tay)`) : ''}
         </button>
       </p>
       {fretted && (

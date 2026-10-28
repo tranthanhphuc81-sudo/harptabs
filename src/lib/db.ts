@@ -60,6 +60,7 @@ export async function deleteSongs(ids: string[]): Promise<void> {
  * Danh sách bài mẫu đã từng thêm lưu ở kv 'seededSamples'.
  */
 export async function ensureSeeded(): Promise<void> {
+  await fillSampleChords();
   const [seeded, list] = await Promise.all([db.kv.get('seeded'), db.kv.get('seededSamples')]);
   // máy cài từ bản cũ: đã có 8 bài mẫu đầu tiên
   const done = new Set<string>((list?.value as string[] | undefined) ?? (seeded ? FIRST_SAMPLE_IDS : []));
@@ -80,6 +81,19 @@ export async function ensureSeeded(): Promise<void> {
     { key: 'seeded', value: 1 },
     { key: 'seededSamples', value: SAMPLE_SONGS.map((s) => s.sampleId) },
   ]);
+}
+
+/**
+ * Bài mẫu đã có trong máy từ bản cũ: gắn hợp âm chuẩn (một lần). Bài người dùng đã chọn hợp âm tay hoặc đã sửa nhạc thì giữ nguyên.
+ */
+async function fillSampleChords(): Promise<void> {
+  const done = await db.kv.get('sampleChords');
+  if (done) return;
+  const withChords = SAMPLE_SONGS.filter((s) => s.chords);
+  const rows = await db.songs.bulkGet(withChords.map((s) => `sample-${s.sampleId}`));
+  const updates = rows.flatMap((row, i) => (row && !row.chords && row.body === withChords[i].body ? [{ ...row, chords: withChords[i].chords }] : []));
+  if (updates.length) await db.songs.bulkPut(updates);
+  await db.kv.put({ key: 'sampleChords', value: 1 });
 }
 
 export async function loadSettings(): Promise<Settings> {

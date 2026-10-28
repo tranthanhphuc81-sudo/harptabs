@@ -2,6 +2,7 @@
  * Bài mẫu cho app Sổ Tab Sáo: lấy từ bài mẫu harmonica (nhạc phạm vi công cộng), bộ chọn nốt xếp lại cho sáo alto.
  * Giữ giọng gốc nếu vừa tầm sáo, không thì dịch giọng cho vừa; bỏ bài luyện riêng cho kèn (bend, vị trí 2).
  */
+import { transposeChords } from '../audio/harmony';
 import { rekeyBody } from '../lib/converter';
 import type { SampleSong } from './samples';
 
@@ -36,7 +37,7 @@ export function recorderSamples(base: SampleSong[]): SampleSong[] {
       harpType: 'recorderAlto',
       position: 1,
       songKey: r.fit.shift % 12 === 0 ? s.songKey : undefined,
-      chords: undefined,
+      chords: transposeChords(s.chords, r.fit.shift),
       body: r.body,
       tags: s.tags.filter((t) => t !== 'tremolo' && t !== 'chromatic'),
       notes: undefined,
