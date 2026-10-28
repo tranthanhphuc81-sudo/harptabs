@@ -46,5 +46,17 @@
         "8E:94:A5:3A:AB:71:ED:C1:CB:A4:CC:50:3F:88:D5:8D:79:B8:C2:B3:13:36:93:41:54:97:EB:08:6E:3E:2F:88"
       ]
     }
+  },
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "dev.pages.sotabpianica.twa",
+      "sha256_cert_fingerprints": [
+        "8E:94:A5:3A:AB:71:ED:C1:CB:A4:CC:50:3F:88:D5:8D:79:B8:C2:B3:13:36:93:41:54:97:EB:08:6E:3E:2F:88"
+      ]
+    }
   }
 ]

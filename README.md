@@ -4,7 +4,7 @@ App lưu và tập harptab cho kèn **diatonic 10 lỗ**, **chromatic 12 / 16 l�
 
 Bản đang chạy: https://harptabs.pages.dev
 
-Cùng mã nguồn này còn build ra ba app khác cho [sáo](#sổ-tab-sáo), [kalimba](#sổ-tab-kalimba) và [guitar / ukulele](#sổ-tab-guitar):
+Cùng mã nguồn này còn build ra bốn app khác cho [sáo](#sổ-tab-sáo), [kalimba](#sổ-tab-kalimba), [guitar / ukulele](#sổ-tab-guitar) và [pianica](#sổ-tab-pianica):
 
 | App | Nhạc cụ | Bản web | APK Android |
 |---|---|---|---|
@@ -12,8 +12,9 @@ Cùng mã nguồn này còn build ra ba app khác cho [sáo](#sổ-tab-sáo), [k
 | Sổ Tab Sáo | Sáo dọc soprano / alto / tenor / bass, sáo trúc 6 lỗ | https://sotabsao.pages.dev | [Releases `sao-apk-v…`](https://github.com/tranthanhphuc81-sudo/harptabs/releases?q=sao-apk&expanded=true) |
 | Sổ Tab Kalimba | Kalimba 17, 10, 8 phím | https://sotabkalimba.pages.dev | [Releases `kalimba-apk-v…`](https://github.com/tranthanhphuc81-sudo/harptabs/releases?q=kalimba-apk&expanded=true) |
 | Sổ Tab Guitar | Guitar 6 dây, ukulele 4 dây | https://sotabguitar.pages.dev | [Releases `guitar-apk-v…`](https://github.com/tranthanhphuc81-sudo/harptabs/releases?q=guitar-apk&expanded=true) |
+| Sổ Tab Pianica | Kèn pianica (melodica) 32 / 37 phím | https://sotabpianica.pages.dev | [Releases `pianica-apk-v…`](https://github.com/tranthanhphuc81-sudo/harptabs/releases?q=pianica-apk&expanded=true) |
 
-Cả bốn app có chung thư viện bài, phát nhạc đệm, karaoke, chia sẻ bài, nhập MIDI / MusicXML, quét khuông nhạc, dò nốt, tập ngẫu hứng, chạy offline. Phần riêng của từng app nằm ở các mục bên dưới.
+Cả năm app có chung thư viện bài, phát nhạc đệm, karaoke, chia sẻ bài, nhập MIDI / MusicXML, quét khuông nhạc, dò nốt, tập ngẫu hứng, chạy offline. Phần riêng của từng app nằm ở các mục bên dưới.
 
 ## Tính năng
 
@@ -76,6 +77,17 @@ Bản web: https://sotabguitar.pages.dev · APK: gói `dev.pages.sotabguitar.twa
 | Tập ngẫu hứng | Blues / jazz trên cần đàn, tô cả hình thang blues |
 | Bài và học | 34 bài mẫu guitar, 8 bài ukulele, 7 bài học; dò nốt để lên dây |
 
+## Sổ Tab Pianica
+
+Bản web: https://sotabpianica.pages.dev · APK: gói `dev.pages.sotabpianica.twa`, tag `pianica-apk-v…` trên GitHub Releases.
+
+| Phần | Nội dung |
+|---|---|
+| Kèn | Pianica / melodica 32 phím (Fa3 → Đô6, loại học sinh hay dùng) và 37 phím (Fa3 → Fa6) |
+| Tab | Tên nốt có quãng tám (`C4` = Đô giữa, `F#4`, `Bb4`), dưới mỗi nốt là hình cả bàn phím tô phím cần bấm. Sơ đồ bàn phím chạm để nghe; sửa nốt và soạn bài bằng cách chạm phím |
+| Bài và học | Bài mẫu ghi lại cho pianica (giữ giọng gốc, giữ hợp âm chuẩn), 5 bài học: làm quen, đọc tab, đặt ngón và thang âm Đô, hơi thổi và đánh lưỡi, bảo quản |
+| Tập ngẫu hứng | Blues / jazz với lick xếp thành tên nốt trên bàn phím |
+
 ## Chạy thử
 
 Cần Node.js 18 trở lên.
@@ -90,15 +102,16 @@ npm run build      # xuất ra dist/ (app Harmonica)
 npm run preview    # chạy bản build (có service worker offline)
 ```
 
-Ba app còn lại build bằng biến `VITE_APP` (Git Bash / macOS / Linux):
+Các app còn lại build bằng biến `VITE_APP` (Git Bash / macOS / Linux):
 
 ```bash
 VITE_APP=recorder npx vite build --outDir dist-recorder   # Sổ Tab Sáo
 VITE_APP=kalimba npx vite build --outDir dist-kalimba     # Sổ Tab Kalimba
 VITE_APP=guitar npx vite build --outDir dist-guitar       # Sổ Tab Guitar
+VITE_APP=pianica npx vite build --outDir dist-pianica     # Sổ Tab Pianica
 ```
 
-Mỗi lần push lên `main`, GitHub Actions chạy lint + test + build rồi deploy cả bốn app lên Cloudflare Pages (`.github/workflows/deploy-pages.yml`): `dist/` → dự án `harptabs`, `dist-recorder/` → `sotabsao`, `dist-kalimba/` → `sotabkalimba`, `dist-guitar/` → `sotabguitar`. Mở link của app bằng trình duyệt điện thoại → "Thêm vào màn hình chính" là app chạy offline.
+Mỗi lần push lên `main`, GitHub Actions chạy lint + test + build rồi deploy cả năm app lên Cloudflare Pages (`.github/workflows/deploy-pages.yml`): `dist/` → dự án `harptabs`, `dist-recorder/` → `sotabsao`, `dist-kalimba/` → `sotabkalimba`, `dist-guitar/` → `sotabguitar`, `dist-pianica/` → `sotabpianica`. Mở link của app bằng trình duyệt điện thoại → "Thêm vào màn hình chính" là app chạy offline.
 
 Các phần nặng (quét nhạc, đọc file, PDF, OCR) chỉ tải khi dùng. Bộ đọc PDF và OCR được lưu lại sau lần dùng đầu, nên muốn dùng offline thì mở thử một lần khi có mạng.
 
@@ -212,6 +225,7 @@ Bản Android là **TWA** (Trusted Web Activity) do Bubblewrap tạo: mở trang
 | Sổ Tab Sáo | `android-recorder/twa-manifest.json` | `dev.pages.sotabsao.twa` | `sao-apk-v…` |
 | Sổ Tab Kalimba | `android-kalimba/twa-manifest.json` | `dev.pages.sotabkalimba.twa` | `kalimba-apk-v…` |
 | Sổ Tab Guitar | `android-guitar/twa-manifest.json` | `dev.pages.sotabguitar.twa` | `guitar-apk-v…` |
+| Sổ Tab Pianica | `android-pianica/twa-manifest.json` | `dev.pages.sotabpianica.twa` | `pianica-apk-v…` |
 
 - Workflow `build-apk.yml` build cả bốn app (mỗi app một dòng trong matrix), chỉ chạy khi một trong các file cấu hình trên đổi (hoặc bấm chạy tay), rồi đăng APK lên [GitHub Releases](https://github.com/tranthanhphuc81-sudo/harptabs/releases).
 - Cần secret `ANDROID_KEYSTORE_BASE64` và `ANDROID_KEYSTORE_PASSWORD` (cả bốn app dùng chung khoá). Vân tay SHA-256 của khoá ký phải khớp với `public/.well-known/assetlinks.json` (có mục cho từng gói), nếu không app sẽ hiện thanh địa chỉ trình duyệt.

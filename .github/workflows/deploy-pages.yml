@@ -64,3 +64,14 @@ jobs:
         run: |
           npx --yes wrangler@4 pages project create sotabguitar --production-branch main >/dev/null 2>&1 || true
           npx --yes wrangler@4 pages deploy dist-guitar --project-name sotabguitar --branch main --commit-hash "$GITHUB_SHA" --commit-message "$(printf '%s' "$COMMIT_MSG" | head -n 1)"
+      # bản Sổ Tab Pianica (kèn pianica / melodica) ra dự án Pages riêng
+      - name: Build Sổ Tab Pianica
+        env:
+          VITE_APP: pianica
+        run: npx vite build --outDir dist-pianica --emptyOutDir
+      - name: Deploy Sổ Tab Pianica lên Pages
+        env:
+          COMMIT_MSG: ${{ github.event.head_commit.message || 'manual deploy' }}
+        run: |
+          npx --yes wrangler@4 pages project create sotabpianica --production-branch main >/dev/null 2>&1 || true
+          npx --yes wrangler@4 pages deploy dist-pianica --project-name sotabpianica --branch main --commit-hash "$GITHUB_SHA" --commit-message "$(printf '%s' "$COMMIT_MSG" | head -n 1)"

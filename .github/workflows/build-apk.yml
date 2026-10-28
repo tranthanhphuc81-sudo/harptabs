@@ -10,6 +10,7 @@ on:
       - 'android-recorder/twa-manifest.json'
       - 'android-kalimba/twa-manifest.json'
       - 'android-guitar/twa-manifest.json'
+      - 'android-pianica/twa-manifest.json'
       - '.github/workflows/build-apk.yml'
   workflow_dispatch:
 
@@ -23,7 +24,7 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
-    # cùng mã nguồn, bốn app: Harmonica, Sáo, Kalimba, Guitar (mỗi app một twa-manifest.json)
+    # cùng mã nguồn, năm app: Harmonica, Sáo, Kalimba, Guitar, Pianica (mỗi app một twa-manifest.json)
     strategy:
       fail-fast: false
       matrix:
@@ -51,6 +52,12 @@ jobs:
             tag: guitar-apk
             title: Sổ Tab Guitar
             host: sotabguitar.pages.dev
+            latest: 'false'
+          - dir: android-pianica
+            file: sotabpianica
+            tag: pianica-apk
+            title: Sổ Tab Pianica
+            host: sotabpianica.pages.dev
             latest: 'false'
     env:
       VERSION_CODE: ${{ github.run_number }}

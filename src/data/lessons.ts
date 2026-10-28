@@ -1,7 +1,8 @@
 /** Nội dung học offline: kỹ thuật, thủ thuật, mẹo thổi harmonica diatonic và chromatic. */
 import type { BeatStyle } from '../audio/patterns';
-import { IS_GUITAR_APP, IS_KALIMBA_APP, IS_RECORDER_APP } from '../appConfig';
+import { IS_GUITAR_APP, IS_KALIMBA_APP, IS_RECORDER_APP, IS_PIANICA_APP } from '../appConfig';
 import { GUITAR_LESSON_GROUPS, GUITAR_LESSONS } from './guitarLessons';
+import { PIANICA_LESSON_GROUPS, PIANICA_LESSONS } from './pianicaLessons';
 import { KALIMBA_LESSON_GROUPS, KALIMBA_LESSONS } from './kalimbaLessons';
 import { RECORDER_LESSON_GROUPS, RECORDER_LESSONS } from './recorderLessons';
 import type { HarpKey, HarpType } from '../lib/harp';
@@ -525,5 +526,5 @@ const HARMONICA_LESSONS: Lesson[] = [
 ];
 
 /** bộ bài học theo app: Sổ Tab Sáo dùng bài học sáo dọc */
-export const LESSON_GROUPS = IS_RECORDER_APP ? RECORDER_LESSON_GROUPS : IS_KALIMBA_APP ? KALIMBA_LESSON_GROUPS : IS_GUITAR_APP ? GUITAR_LESSON_GROUPS : HARMONICA_LESSON_GROUPS;
-export const LESSONS: Lesson[] = IS_RECORDER_APP ? RECORDER_LESSONS : IS_KALIMBA_APP ? KALIMBA_LESSONS : IS_GUITAR_APP ? GUITAR_LESSONS : HARMONICA_LESSONS;
+export const LESSON_GROUPS = IS_RECORDER_APP ? RECORDER_LESSON_GROUPS : IS_KALIMBA_APP ? KALIMBA_LESSON_GROUPS : IS_GUITAR_APP ? GUITAR_LESSON_GROUPS : IS_PIANICA_APP ? PIANICA_LESSON_GROUPS : HARMONICA_LESSON_GROUPS;
+export const LESSONS: Lesson[] = IS_RECORDER_APP ? RECORDER_LESSONS : IS_KALIMBA_APP ? KALIMBA_LESSONS : IS_GUITAR_APP ? GUITAR_LESSONS : IS_PIANICA_APP ? PIANICA_LESSONS : HARMONICA_LESSONS;

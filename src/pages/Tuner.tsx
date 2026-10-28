@@ -1,6 +1,6 @@
 import { BRAND } from '../appConfig';
 import { useEffect, useRef, useState } from 'react';
-import { HarpKey, HarpType, harpLayout, holeCount, isChromatic, isFingered, isFretted, isKalimba, isRecorder, isSaoTruc, isTremolo, midiToName, TECHNIQUE_LABEL } from '../lib/harp';
+import { HarpKey, HarpType, harpLayout, holeCount, isChromatic, isFingered, isFretted, isKalimba, isPianica, isRecorder, isSaoTruc, isTremolo, midiToName, TECHNIQUE_LABEL } from '../lib/harp';
 import { MicPitch, PitchReading } from '../audio/pitch';
 import { HarpDiagram } from '../components/HarpDiagram';
 import { HarpTypeSelect, KeySelect } from '../components/KeySelect';
@@ -61,7 +61,7 @@ export default function Tuner() {
       <header className="page-head">
         <div>
           <h1>Dò nốt</h1>
-          <p className="muted">{isFretted(type) ? 'Gảy dây đàn, app cho biết nốt gì, nằm ở dây nào phím nào và có chuẩn không — dùng để lên dây.' : isKalimba(type) ? 'Gảy phím kalimba, app cho biết nốt gì, phím nào và có chuẩn không — dùng để chỉnh dây (gõ phím lên / xuống).' : isFingered(type) ? 'Thổi sáo, app cho biết bạn đang ra nốt gì, thế bấm nào và có chuẩn không.' : <>Thổi vào kèn, app cho biết bạn đang ra nốt gì, lỗ nào{trem ? ' và có chuẩn không.' : chrom ? ', có bấm nút gạt hay không, và có chuẩn không.' : ', và bend đã đủ sâu chưa.'}</>}</p>
+          <p className="muted">{isPianica(type) ? 'Thổi kèn pianica, app cho biết nốt gì, phím nào và có chuẩn không.' : isFretted(type) ? 'Gảy dây đàn, app cho biết nốt gì, nằm ở dây nào phím nào và có chuẩn không — dùng để lên dây.' : isKalimba(type) ? 'Gảy phím kalimba, app cho biết nốt gì, phím nào và có chuẩn không — dùng để chỉnh dây (gõ phím lên / xuống).' : isFingered(type) ? 'Thổi sáo, app cho biết bạn đang ra nốt gì, thế bấm nào và có chuẩn không.' : <>Thổi vào kèn, app cho biết bạn đang ra nốt gì, lỗ nào{trem ? ' và có chuẩn không.' : chrom ? ', có bấm nút gạt hay không, và có chuẩn không.' : ', và bend đã đủ sâu chưa.'}</>}</p>
         </div>
       </header>
 
@@ -97,7 +97,9 @@ export default function Tuner() {
       </div>
 
       <HarpDiagram harpKey={key} harpType={type} highlight={matches.map((m) => m.token)} nameStyle={settings.noteNames} />
-      {isFretted(type)
+      {isPianica(type)
+        ? <p className="muted small">Mẹo: pianica thổi mạnh quá thì nốt hơi cao và rè, yếu quá thì tiếng nhỏ, hơi thấp. Nhìn kim cent để tập giữ hơi đều; nốt lệch hẳn dù thổi đều là lưỡi gà cần chỉnh ở tiệm nhạc.</p>
+        : isFretted(type)
         ? <p className="muted small">Lên dây chuẩn: {type === 'ukulele4' ? <>dây 4 → 1: <strong>G4 C4 E4 A4</strong> (Sol Đô Mi La, dây 4 Sol cao)</> : <>dây 6 → 1: <strong>E2 A2 D3 G3 B3 E4</strong> (Mi La Rê Sol Si Mi)</>}. Gảy dây buông: kim lệch trái là thấp → vặn khoá căng dây; lệch phải là cao → nới dây. Nới thấp một chút rồi vặn lên tới chuẩn để dây giữ tông lâu.</p>
         : isKalimba(type)
         ? <p className="muted small">Mẹo chỉnh dây kalimba: nốt thấp (kim lệch trái) thì gõ nhẹ phím vào trong cho phím ngắn lại; nốt cao thì gõ phím ra ngoài cho dài ra. Gõ từng chút rồi đo lại.</p>

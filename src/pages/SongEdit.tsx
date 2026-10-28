@@ -1,9 +1,10 @@
 import { FretboardChart } from '../components/Fretboard';
+import { PianoChart } from '../components/Keyboard';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { fixGarbled, VN_ENCODINGS } from '../lib/vnEncoding';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { blankSong, db, deleteSongs } from '../lib/db';
-import { HarpKey, HarpType, harpTypeOf, holeCount, harpLayout, fingeringKey, isChromatic, isFingered, isFixedKey, isFretted, isKalimba, isSaoTruc, isTremolo, midiToName, normalizeKey, parseToken, recorderKey, songTonality, tremoloDir } from '../lib/harp';
+import { HarpKey, HarpType, harpTypeOf, holeCount, harpLayout, fingeringKey, isChromatic, isFingered, isFixedKey, isFretted, isKalimba, isPianica, isSaoTruc, isTremolo, midiToName, normalizeKey, parseToken, recorderKey, songTonality, tremoloDir } from '../lib/harp';
 import { flatten, parseTab } from '../lib/tabText';
 import { beatsPerBar, Song } from '../lib/types';
 import { STYLE_OPTIONS, BeatStyle } from '../audio/patterns';
@@ -315,9 +316,10 @@ function Editor({ initial, isNew, draft }: { initial: Song; isNew: boolean; draf
             <details className="syntax-help">
               <summary>Cách ghi</summary>
               <ul>
+                {isPianica(harpType) && <li>Ghi <strong>tên nốt có quãng tám</strong>: <code>C4</code> (Đô giữa) <code>F#4</code> <code>Bb4</code> <code>C5</code>; pianica 32 phím từ <code>F3</code> tới <code>C6</code>. Chạm bàn phím bên dưới để nghe và thêm nốt.</li>}
                 {isFretted(harpType) && <li>Ghi <strong>dây.phím</strong>: <code>1.0</code> dây 1 (dây mảnh nhất) buông, <code>2.3</code> dây 2 phím 3{harpType === 'guitar6' ? <>, <code>6.3</code> dây 6 (dây Mi trầm) phím 3</> : <>; ukulele dây 4 là dây Sol</>}. Chạm cần đàn bên dưới để nghe và thêm nốt.</li>}
                 {isKalimba(harpType) && <li>Ghi <strong>số 1–7</strong> (Đô–Si theo tông kalimba), thêm <code>'</code> hoặc <code>°</code> để lên quãng tám: <code>1 2 3 5'</code>. <code>0</code> hoặc <code>r</code> là nghỉ.</li>}
-                {rec && !isKalimba(harpType) && !isFretted(harpType) && <li>Ghi <strong>tên nốt có quãng tám</strong>: <code>F4</code> <code>Bb4</code> <code>C#5</code> ({isSaoTruc(harpType) ? 'sáo trúc Đô từ G4: bịt hết lỗ ra Sol' : 'sáo alto từ F4 tới G6; soprano ghi từ C4'}). Dưới mỗi nốt app vẽ thế bấm.</li>}
+                {rec && !isKalimba(harpType) && !isFretted(harpType) && !isPianica(harpType) && <li>Ghi <strong>tên nốt có quãng tám</strong>: <code>F4</code> <code>Bb4</code> <code>C#5</code> ({isSaoTruc(harpType) ? 'sáo trúc Đô từ G4: bịt hết lỗ ra Sol' : 'sáo alto từ F4 tới G6; soprano ghi từ C4'}). Dưới mỗi nốt app vẽ thế bấm.</li>}
                 {rec ? null : trem
                   ? <li>Kèn tremolo: lỗ lẻ là thổi, lỗ chẵn là hút. Gõ <code>3</code> hay <code>4</code> là đủ — app tự ghi lỗ hút thành <code>-4</code>. Kèn này không bend.</li>
                   : <li><code>4</code> thổi lỗ 4, <code>-4</code> hút lỗ 4</li>}
@@ -331,7 +333,7 @@ function Editor({ initial, isNew, draft }: { initial: Song; isNew: boolean; draf
             </details>
           </div>
           <div className={`keypad${trem ? ' tremolo' : ''}${rec ? ' recorder' : ''}`} role="toolbar" aria-label="Bàn phím tab">
-            {isFretted(harpType) ? <FretboardChart harpType={harpType} nameStyle={settings.noteNames} onPick={pickHole} maxFret={12} /> : rec ? recNotes.map((n) => (
+            {isPianica(harpType) ? <PianoChart harpType={harpType} nameStyle={settings.noteNames} onPick={pickHole} /> : isFretted(harpType) ? <FretboardChart harpType={harpType} nameStyle={settings.noteNames} onPick={pickHole} maxFret={12} /> : rec ? recNotes.map((n) => (
               <button type="button" key={n.token} className="blow" onClick={() => pickHole(n.token)} aria-label={`Nốt ${n.token}`}><TokenText token={n.token} nameStyle={settings.noteNames} /></button>
             )) : trem ? holes.map((h) => {
               const d = tremoloDir(h) === 'draw';

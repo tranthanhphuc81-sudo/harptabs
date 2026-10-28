@@ -1,5 +1,5 @@
 import type { PaletteId } from './themes';
-import { IS_GUITAR_APP, IS_KALIMBA_APP, IS_RECORDER_APP } from '../appConfig';
+import { IS_GUITAR_APP, IS_KALIMBA_APP, IS_RECORDER_APP, IS_PIANICA_APP } from '../appConfig';
 import type { HarpKey, HarpType, NoteNameStyle } from './harp';
 import type { BeatStyle } from '../audio/patterns';
 
@@ -86,7 +86,7 @@ export const DEFAULT_SETTINGS: Settings = {
   theme: 'system',
   palette: 'steel',
   defaultHarpKey: IS_RECORDER_APP ? 'F' : 'C',
-  defaultHarpType: IS_RECORDER_APP ? 'recorderAlto' : IS_KALIMBA_APP ? 'kalimba17' : IS_GUITAR_APP ? 'guitar6' : 'diatonic',
+  defaultHarpType: IS_RECORDER_APP ? 'recorderAlto' : IS_KALIMBA_APP ? 'kalimba17' : IS_GUITAR_APP ? 'guitar6' : IS_PIANICA_APP ? 'pianica32' : 'diatonic',
   shareStats: true,
   recorderFingering: 'baroque',
   saoTrucClosed: 5,

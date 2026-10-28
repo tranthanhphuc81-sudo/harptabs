@@ -3,6 +3,7 @@ dist
 dist-recorder
 dist-kalimba
 dist-guitar
+dist-pianica
 dev-dist
 worker/node_modules
 worker/.wrangler
