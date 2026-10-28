@@ -1,5 +1,7 @@
 import { ChordStrip } from '../components/Fretboard';
 import { ChordSheet, strumHint } from '../components/ChordSheet';
+import { StrumStrip } from '../components/StrumStrip';
+import { STYLE_OPTIONS } from '../audio/patterns';
 import { SheetView } from '../components/SheetView';
 import { chordsFromSheet, parseSheet, sheetChords, sheetPlayback, sheetSlots } from '../lib/chordSheet';
 import { SheetApplyDialog } from '../components/SheetApplyDialog';
@@ -9,7 +11,7 @@ import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { db, deleteSongs, downloadJson, exportOne, newId, slugify } from '../lib/db';
 import { BRAND, SHOWN_HARP_TYPES } from '../appConfig';
-import { HARP_KEYS, HARP_TYPE_LABEL, HarpKey, harpKeyLabel, HarpType, harpName, harpTypeOf, isChromatic, isFingered, isFixedKey, isFretted, isKalimba, isRecorder, isTremolo, midiToName, parseToken, recorderKey, songTonality } from '../lib/harp';
+import { HARP_KEYS, HARP_TYPE_LABEL, HarpKey, harpKeyLabel, HarpType, harpName, harpTypeOf, isChromatic, isFingered, isFixedKey, isFretted, isKalimba, isRecorder, isSaoTruc, isTremolo, midiToName, parseToken, recorderKey, songTonality } from '../lib/harp';
 import { countTechniques, flatten, parseTab } from '../lib/tabText';
 import { rekeyBody } from '../lib/converter';
 import { beatsPerBar, Song } from '../lib/types';
@@ -31,7 +33,7 @@ import { useAppState } from '../state';
 import { MicPitch, PitchReading } from '../audio/pitch';
 import { previewNote } from '../audio/engine';
 import { ChordSegment, harmonizeSegments, parseTonality, segKey, transposeChords, transposeSpans } from '../audio/harmony';
-import { setBeatPrefs, setSongInstrument, useBeatPrefs } from '../audio/beatPrefs';
+import { getEffectivePrefs, setBeatPrefs, setSongInstrument, useBeatPrefs } from '../audio/beatPrefs';
 import { ChordPicker } from '../components/ChordPicker';
 import { NoteEditor } from '../components/NoteEditor';
 import { LyricEditor } from '../components/LyricEditor';
@@ -107,6 +109,9 @@ function SongPlayerView({ song, original, fit, view, choice, onChoice }: {
   const autoInstrument = useMemo(() => suggestInstrument(song, flat, p.opts.style), [song, flat, p.opts.style]);
   useEffect(() => { setSongInstrument(autoInstrument.instrument); }, [autoInstrument]);
   useEffect(() => () => setSongInstrument(null), []);
+  // bài chỉ có lời + hợp âm: không có giai điệu để phát, bật sẵn guitar đệm hát
+  const { setOpts } = p;
+  useEffect(() => { if (song.sheet) setOpts({ sing: true }); }, [song.sheet, setOpts]);
 
   // ----- hợp âm đệm: hiện trên tab, chọn tay khi máy đoán sai -----
   const tonality = useMemo(() => parseTonality(song.songKey || songTonality(song.harpKey, song.position, harpType))!, [song.songKey, song.harpKey, song.position, harpType]);
@@ -472,9 +477,23 @@ function SongPlayerView({ song, original, fit, view, choice, onChoice }: {
             </button>
           )}
           {!chordSegs && <span className="small muted">Bật Hợp âm để xem gợi ý capo.</span>}
-          {(sheet || sheetData) && (() => { const h = strumHint(autoApplied ? autoStyle.style : song.style, song.timeSig); return <span className="strum-hint">Điệu {h.name}: <strong>{h.pattern}</strong></span>; })()}
         </div>
       )}
+      {fretted && (sheet || sheetData) && (() => {
+        // điệu quạt đúng như nhạc đệm đang đánh (kiểu nhịp đang phát), ô đang đánh sáng theo nhạc
+        const style = p.opts.style;
+        const accomp = getEffectivePrefs(style).accomp;
+        const guitarAccomp = accomp === 'gobo' || accomp === 'strum';
+        return (
+          <div className="strum-row no-print">
+            <span className="strum-hint">{guitarAccomp ? (accomp === 'gobo' ? 'Gõ bo' : 'Quạt chả') : 'Điệu'} {STYLE_OPTIONS.find((s) => s.value === style)?.label ?? strumHint(style, song.timeSig).name}:</span>
+            {guitarAccomp && <StrumStrip style={style} beatsPerBar={bpb} pickupBeats={song.pickupBeats} accomp={accomp} playing={p.playing && !!p.opts.sing} beatAt={p.beatAt} />}
+            {!p.opts.sing
+              ? <button type="button" className="chip" onClick={() => p.setOpts({ sing: true })}>🎤 Nghe guitar đệm theo điệu này</button>
+              : !guitarAccomp && <span className="small muted">Đang đệm {accomp === 'piano' ? 'piano' : 'ban nhạc'} — chọn Guitar gõ bo / quạt chả ở thanh phát để xem điệu quạt.</span>}
+          </div>
+        );
+      })()}
       {showChords && !(fretted && sheet) && !sheetData && <p className="small muted">Chạm vào tên hợp âm trên nốt để đổi. Viền đậm là hợp âm bạn đã chọn tay.</p>}
 
       {waitMode && (
@@ -801,15 +820,15 @@ function ViewAsBar({ original, viewed, view, fit, choice, onChoice, onSaved }: {
         </label>
         {manual && !isFixedKey(type) && (
           <label className="field viewas-field">
-            <span className="field-label">Tông kèn</span>
+            <span className="field-label">{isKalimba(type) ? 'Tông kalimba' : isSaoTruc(type) ? 'Tông sáo' : 'Tông kèn'}</span>
             <select value={key} onChange={(e) => set({ key: e.target.value as HarpKey })}>
-              {HARP_KEYS.map((k) => <option key={k} value={k}>Kèn {harpKeyLabel(k, type)}</option>)}
+              {HARP_KEYS.map((k) => <option key={k} value={k}>{isKalimba(type) ? `Kalimba ${k}` : isSaoTruc(type) ? `Sáo ${k}` : `Kèn ${harpKeyLabel(k, type)}`}</option>)}
             </select>
           </label>
         )}
         {manual && active && (
           <div className="segmented" role="radiogroup" aria-label="Cách xếp tab">
-            <button type="button" role="radio" aria-checked={mode === 'any'} className={mode === 'any' ? 'on' : ''} onClick={() => set({ mode: 'any' })}>Dễ thổi nhất</button>
+            <button type="button" role="radio" aria-checked={mode === 'any'} className={mode === 'any' ? 'on' : ''} onClick={() => set({ mode: 'any' })}>Dễ {BRAND.verb} nhất</button>
             <button type="button" role="radio" aria-checked={mode === 'octave'} className={mode === 'octave' ? 'on' : ''} onClick={() => set({ mode: 'octave' })}>Giữ giọng gốc</button>
           </div>
         )}

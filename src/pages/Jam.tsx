@@ -1,14 +1,15 @@
 import { useEffect, useMemo, useState } from 'react';
 import { JazzJam } from './JazzJam';
-import { BRAND, IS_GUITAR_APP, IS_RECORDER_APP } from '../appConfig';
+import { BRAND, IS_GUITAR_APP, IS_KALIMBA_APP, IS_RECORDER_APP } from '../appConfig';
 import { lickForRecorder } from '../lib/jazz';
 import { Link } from 'react-router-dom';
-import { HarpKey, harpName, HarpType, isFixedKey, keyOffset, pitchClassName, recorderKey } from '../lib/harp';
+import { HarpKey, harpName, HarpType, isFixedKey, isKalimba, keyOffset, pitchClassName, recorderKey } from '../lib/harp';
 import {
   BAR_BEATS, barAt, BARS, bluesChords, bluesDegrees, bluesOverrides, bluesScaleTokens, bluesTonic, BluesVariant,
-  CALL_BARS, chordToneTokens, isCallBar, jamEvents, lickEvents, usesFlats,
+  CALL_BARS, chordToneTokens, isCallBar, jamEvents, lickEvents, pentatonicTokens, usesFlats,
 } from '../lib/blues';
-import { Lick, LICK_PLACES, lickDegrees, LICKS } from '../data/licks';
+import { Lick, LICK_PLACES, lickDegrees, LICKS as HARP_LICKS } from '../data/licks';
+import { KALIMBA_LICKS } from '../data/kalimbaLicks';
 import { chordName } from '../audio/harmony';
 import { HarpDiagram } from '../components/HarpDiagram';
 import { HarpTypeSelect, KeySelect } from '../components/KeySelect';
@@ -29,6 +30,9 @@ const PIN_KEY = 'harptabs.jamPins';
 const loadPins = (): string[] => { try { return JSON.parse(localStorage.getItem(PIN_KEY) ?? '[]'); } catch { return []; } };
 const savePins = (ids: string[]) => { try { localStorage.setItem(PIN_KEY, JSON.stringify(ids)); } catch { /* không lưu được thì thôi */ } };
 
+// kalimba: lick riêng ghi bằng tab số (thang ngũ cung), các app khác: lick kèn đổi theo nhạc cụ
+const LICKS = IS_KALIMBA_APP ? KALIMBA_LICKS : HARP_LICKS;
+
 /** chọn lick cho các ô "hỏi": ưu tiên lick đã ghim, đổi vòng theo `seed` */
 function pickCalls(seed: number, pins: string[]) {
   return CALL_BARS.map(({ bar, degree }, i) => {
@@ -45,7 +49,9 @@ function BluesJam() {
   const [harpKey0, setHarpKey] = useState<HarpKey>(settings.defaultHarpKey);
   // app sáo: chọn loại sáo và giọng blues; lick (viết theo lỗ kèn) đổi sang tên nốt
   const rec = IS_RECORDER_APP || IS_GUITAR_APP;
-  const [harpType, setHarpType] = useState<HarpType>(isFixedKey(settings.defaultHarpType) ? settings.defaultHarpType : IS_GUITAR_APP ? 'guitar6' : rec ? 'recorderAlto' : 'diatonic');
+  // kalimba: blues giọng trưởng ở vị trí 1 (kalimba C chơi blues Đô), chỉ tô thang ngũ cung
+  const kal = IS_KALIMBA_APP;
+  const [harpType, setHarpType] = useState<HarpType>(kal ? (isKalimba(settings.defaultHarpType) ? settings.defaultHarpType : 'kalimba17') : isFixedKey(settings.defaultHarpType) ? settings.defaultHarpType : IS_GUITAR_APP ? 'guitar6' : rec ? 'recorderAlto' : 'diatonic');
   const harpKey = rec ? recorderKey(harpType) : harpKey0;
   const [recTonic, setRecTonic] = useState(() => (((keyOffset(recorderKey(harpType)) % 12) + 12) % 12));
   const conv = (body: string) => (rec ? lickForRecorder(body, recTonic, harpType) : body);
@@ -57,12 +63,12 @@ function BluesJam() {
   const [level, setLevel] = useState<0 | 1 | 2 | 3>(0);
   const [place, setPlace] = useState<Lick['over'] | 'all'>('all');
 
-  const tonic = rec ? recTonic : bluesTonic(harpKey);
+  const tonic = rec ? recTonic : kal ? keyOffset(harpKey) % 12 : bluesTonic(harpKey);
   const songKey = pitchClassName(tonic);
   const flats = usesFlats(tonic);
   const chords = useMemo(() => bluesChords(tonic, variant), [tonic, variant]);
   const degrees = useMemo(() => bluesDegrees(variant), [variant]);
-  const scale = useMemo(() => (rec ? bluesScaleTokens(harpKey, harpType, tonic) : bluesScaleTokens(harpKey)), [rec, harpKey, harpType, tonic]);
+  const scale = useMemo(() => (kal ? pentatonicTokens(harpKey, harpType, tonic) : rec ? bluesScaleTokens(harpKey, harpType, tonic) : bluesScaleTokens(harpKey)), [kal, rec, harpKey, harpType, tonic]);
   const lick = LICKS.find((l) => l.id === lickId) ?? LICKS[0];
   const calls = useMemo(() => pickCalls(seed, pins), [seed, pins]);
 
@@ -117,8 +123,9 @@ function BluesJam() {
     <>
       {rec
         ? <p className="muted small">Blues giọng <strong>{songKey}</strong> trên {harpName(harpKey, harpType).toLowerCase()}. {IS_GUITAR_APP ? 'Lick được xếp lên cần đàn (dây.phím) theo giọng bạn chọn.' : 'Lick được đổi sang tên nốt và thế bấm theo giọng bạn chọn.'}</p>
+        : kal ? <p className="muted small">Blues giọng <strong>{songKey}</strong> trên {harpName(harpKey, harpType)}. Kalimba không có nốt giáng nên tập bằng thang ngũ cung 1 2 3 5 6: gảy nốt nào trong đó cũng hợp nền nhạc.</p>
         : <p className="muted small">Vị trí 2: {harpName(harpKey)} chơi blues giọng <strong>{songKey}</strong>. Tab tính theo lỗ nên đổi kèn vẫn thổi y như vậy.</p>}
-      {!rec && settings.defaultHarpType !== 'diatonic' && <p className="alert">Trang này dành cho kèn diatonic 10 lỗ (kiểu blues phổ biến nhất).</p>}
+      {!rec && !kal && settings.defaultHarpType !== 'diatonic' && <p className="alert">Trang này dành cho kèn diatonic 10 lỗ (kiểu blues phổ biến nhất).</p>}
 
       <div className="row gap wrap end-align">
         {rec ? <>
@@ -129,6 +136,9 @@ function BluesJam() {
               {Array.from({ length: 12 }, (_, i) => <option key={i} value={i}>{chordName(i, false, usesFlats(i))}</option>)}
             </select>
           </label>
+        </> : kal ? <>
+          <HarpTypeSelect value={harpType} onChange={(t) => isKalimba(t) && setHarpType(t)} />
+          <KeySelect value={harpKey} onChange={(k) => k !== 'auto' && setHarpKey(k)} label="Tông kalimba" harpType={harpType} />
         </> : <KeySelect value={harpKey} onChange={(k) => k !== 'auto' && setHarpKey(k)} label="Kèn của bạn" />}
         <div className="segmented" role="tablist" aria-label="Chế độ">
           <button type="button" role="tab" aria-selected={tab === 'jam'} className={tab === 'jam' ? 'on' : ''} onClick={() => setTab('jam')}>Jam 12 ô</button>
@@ -169,14 +179,14 @@ function BluesJam() {
           </ol>
 
           <section>
-            <h2 className="h-small">Thang âm blues trên {BRAND.noun} của bạn</h2>
+            <h2 className="h-small">{kal ? 'Thang ngũ cung' : 'Thang âm blues'} trên {BRAND.noun} của bạn</h2>
             <p className="small muted">Khi nền nhạc chạy, {BRAND.verb} nốt nào trong các ô sáng cũng hợp. Chạm vào ô để nghe.</p>
             <HarpDiagram harpKey={harpKey} harpType={harpType} highlight={scale} nameStyle={settings.noteNames} />
             <p className="small">
               Nốt hợp âm đang vang (dừng câu ở đây nghe "chắc"):{' '}
               {tones.length ? tones.map((t) => <span key={t} className="jam-tone"><TokenText token={t} nameStyle={settings.noteNames} /></span>) : <span className="muted">phát nhạc để xem</span>}
             </p>
-            <p className="small muted">Mẹo: chơi 2 ô, nghỉ 2 ô; lặp lại câu của mình rồi đổi một chút (nhịp, độ dài{rec ? '' : ', bend'}). Khoảng lặng cũng là nhạc.</p>
+            <p className="small muted">Mẹo: chơi 2 ô, nghỉ 2 ô; lặp lại câu của mình rồi đổi một chút (nhịp, độ dài{rec || kal ? '' : ', bend'}). Khoảng lặng cũng là nhạc.</p>
           </section>
         </>
       ) : (
@@ -211,10 +221,10 @@ function BluesJam() {
             <TabView parsed={lickParsed} flat={lickFlat} active={lickActive != null && lickActive >= 0 ? lickActive : null} size="m" showNames={settings.showNoteNames} nameStyle={settings.noteNames} harpType={harpType} harpKey={harpKey} />
             {lick.tip && <p className="small">{lick.tip}</p>}
             <div className="row gap wrap">
-              <button type="button" className={`chip${!p.opts.melody ? ' on' : ''}`} aria-pressed={!p.opts.melody} onClick={() => setOpts({ melody: !p.opts.melody })}>Tắt giai điệu, tôi tự thổi</button>
+              <button type="button" className={`chip${!p.opts.melody ? ' on' : ''}`} aria-pressed={!p.opts.melody} onClick={() => setOpts({ melody: !p.opts.melody })}>Tắt giai điệu, tôi tự {BRAND.verb}</button>
               <button type="button" className={`chip${pins.includes(lick.id) ? ' on' : ''}`} aria-pressed={pins.includes(lick.id)} onClick={() => togglePin(lick.id)}>Dùng trong hỏi–đáp</button>
             </div>
-            <p className="small muted">Bấm phát: lick lặp liên tục trên nền nhạc. Nghe vài lượt, rồi tắt giai điệu và thổi theo.</p>
+            <p className="small muted">Bấm phát: lick lặp liên tục trên nền nhạc. Nghe vài lượt, rồi tắt giai điệu và {BRAND.verb} theo.</p>
           </section>
         </>
       )}
@@ -229,7 +239,8 @@ const GENRE_KEY = 'harptabs.jamGenre';
 /** Tập ngẫu hứng: chọn blues (vị trí 2, 12 ô) hoặc jazz (vòng ii–V–I…); nhớ lựa chọn trên máy */
 export default function Jam() {
   const [picked, setGenre] = useState<'blues' | 'jazz'>(() => { try { return localStorage.getItem(GENRE_KEY) === 'jazz' ? 'jazz' : 'blues'; } catch { return 'blues'; } });
-  const genre = picked;
+  // kalimba chỉ có nốt của một giọng trưởng: hợp âm jazz (m7b5, dim7…) thiếu nốt nên chỉ có blues
+  const genre = IS_KALIMBA_APP ? 'blues' : picked;
   const pick = (g: 'blues' | 'jazz') => { setGenre(g); try { localStorage.setItem(GENRE_KEY, g); } catch { /* không lưu được thì thôi */ } };
   return (
     <div className="page page-jam">
@@ -238,10 +249,12 @@ export default function Jam() {
           <Link to="/learn" className="icon-btn" aria-label="Về trang Học"><Icon name="back" /></Link>
           <h1>Tập ngẫu hứng</h1>
         </div>
-        <div className="segmented" role="tablist" aria-label="Thể loại">
-          <button type="button" role="tab" aria-selected={genre === 'blues'} className={genre === 'blues' ? 'on' : ''} onClick={() => pick('blues')}>Blues</button>
-          <button type="button" role="tab" aria-selected={genre === 'jazz'} className={genre === 'jazz' ? 'on' : ''} onClick={() => pick('jazz')}>Jazz</button>
-        </div>
+        {!IS_KALIMBA_APP && (
+          <div className="segmented" role="tablist" aria-label="Thể loại">
+            <button type="button" role="tab" aria-selected={genre === 'blues'} className={genre === 'blues' ? 'on' : ''} onClick={() => pick('blues')}>Blues</button>
+            <button type="button" role="tab" aria-selected={genre === 'jazz'} className={genre === 'jazz' ? 'on' : ''} onClick={() => pick('jazz')}>Jazz</button>
+          </div>
+        )}
       </header>
       {genre === 'blues' ? <BluesJam key="blues" /> : <JazzJam key="jazz" />}
     </div>

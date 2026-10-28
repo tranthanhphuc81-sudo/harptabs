@@ -1152,6 +1152,17 @@ button, a, select { -webkit-tap-highlight-color: transparent; }
 .capo-field select { padding: 4px 8px; border-radius: 999px; }
 .strum-hint { font-size: 0.85rem; color: var(--ink-2); }
 .strum-hint strong { color: var(--ink); letter-spacing: 0.05em; }
+.strum-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0 0 10px; }
+.strum-strip { display: inline-flex; gap: 2px; padding: 4px; border-radius: var(--r-m); background: var(--surface); border: 1px solid var(--line); }
+.ss-cell { display: flex; flex-direction: column; align-items: center; min-width: 1.5em; padding: 2px 1px; border-radius: 6px; line-height: 1.1; }
+.ss-cell b { font-size: 1.05rem; font-weight: 800; }
+.ss-cell small { font-size: 0.62rem; color: var(--ink-2); }
+.ss-cell.beat small { color: var(--ink); font-weight: 700; }
+.ss-cell.rest b { color: var(--ink-2); opacity: 0.5; }
+.ss-cell.soft b { opacity: 0.6; }
+.ss-cell.hit b { color: var(--accent); }
+.ss-cell.on { background: var(--accent); }
+.ss-cell.on b, .ss-cell.on small { color: #1d1206; opacity: 1; }
 .chord-sheet { font-size: calc(1.05rem * var(--tab-scale, 1)); line-height: 1.2; }
 .cs-title { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-2); margin: 14px 0 4px; }
 .cs-line { display: flex; flex-wrap: wrap; align-items: flex-end; margin: 0 0 10px; }

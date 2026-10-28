@@ -20,7 +20,7 @@ export function lyricBands(page: Pick<OmrPage, 'image' | 'staves' | 'notes'>, si
   const sp = st.space;
   // đuôi nốt quay xuống (nốt từ dòng giữa trở lên) dài ~3,5 khe; nốt dưới khuông thêm dòng kẻ phụ
   let low = st.bottom + 1.5 * sp;
-  for (const n of page.notes) if (n.staff === si && !n.rest) low = Math.max(low, n.y + (n.step >= 4 ? 3.5 * sp : 0.8 * sp));
+  for (const n of page.notes) if (n.staff === si && !n.rest) low = Math.max(low, n.y + (n.y <= (st.top + st.bottom) / 2 ? 3.5 * sp : 0.8 * sp));
   const y0 = Math.round(low + 0.3 * sp);
   const next = page.staves[si + 1];
   const yMax = Math.min(g.height, Math.round(next ? next.top - 1.5 * sp : y0 + 9 * sp), Math.round(y0 + 9 * sp));

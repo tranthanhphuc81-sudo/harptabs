@@ -8,7 +8,8 @@
  *     vị trí dọc là cao độ luôn, không phụ thuộc bước xoá dòng kẻ (ảnh nhỏ, nét mờ vẫn đọc được).
  *  4. Hoá biểu: dấu thăng / giáng ở các bậc cố định theo thứ tự cố định; đối chiếu giữa các khuông.
  *  5. Trường độ: thân nốt, móc / vạch nối (đếm theo độ đậm), chấm dôi, dấu lặng; dấu hoá trước nốt.
- * Giả định: khoá Sol, một bè giai điệu (không hợp âm), bản in.
+ * Khoá Sol hoặc khoá Fa (nhận theo từng khuông), dấu nhắc lại ‖: :‖. Giả định: một bè giai điệu (nốt chồng thì giữ
+ * nốt cao nhất), bản in. Tên hợp âm in trên khuông đọc riêng bằng máy đọc chữ (lib/chordOcr.ts).
  *
  * Mọi toạ độ là trên ảnh đã chuẩn hoá (khoảng cách dòng kẻ ≈ TARGET_SPACE px).
  */
@@ -24,7 +25,7 @@ export interface OmrNote {
   staff: number;
   x: number;
   y: number;
-  /** bậc so với dòng dưới cùng khoá Sol (0 = E4), mỗi bậc = nửa khe */
+  /** bậc so với dòng dưới cùng khoá Sol (0 = E4), mỗi bậc = nửa khe — khuông khoá Fa đã quy đổi (dòng dưới = G2 = -12) */
   step: number;
   /** dấu hoá riêng của nốt: null = theo hoá biểu, 1 = thăng, -1 = giáng, 0 = bình */
   accidental: -1 | 0 | 1 | null;
@@ -38,10 +39,16 @@ export interface OmrNote {
   guess?: boolean;
   /** âm tiết lời in dưới nốt (máy đọc chữ, người dùng sửa được) */
   lyric?: string;
+  /** tên hợp âm in phía trên nốt (máy đọc chữ) — hợp âm đệm từ nốt này */
+  chord?: string;
 }
 
 export interface OmrStaff {
   page: number; top: number; bottom: number; space: number; bars: number[]; xRight: number;
+  /** khuông khoá Fa (không ghi = khoá Sol) */
+  clef?: 'F';
+  /** dấu nhắc lại (vạch nhịp kèm hai chấm): "start" = chấm bên phải ‖:, "end" = chấm bên trái :‖ */
+  repeats?: { x: number; kind: 'start' | 'end' }[];
   /** ngoặc liên ba "⌐3¬" (khoảng x) — trường độ các nốt bên dưới được sửa ở fillRests */
   tuplets?: [number, number][];
 }
@@ -580,16 +587,41 @@ function hasDot(img: Bits, o: Box, s: number) {
   return false;
 }
 
-/** Khoá nhạc: khối cao > 5 khe ở đầu khuông; trả mép phải */
-function clefEnd(img: Bits, top: number, bottom: number, s: number, xLeft: number) {
-  const band = img.crop(Math.trunc(top - 3 * s), Math.trunc(bottom + 3 * s), xLeft, xLeft + Math.trunc(6 * s));
+/**
+ * Khoá nhạc ở đầu khuông; trả mép phải và loại khoá.
+ * Khoá Sol: khối cao > 5 khe (nhô ra trên và dưới khuông).
+ * Khoá Fa: thân cong cao ~3 khe từ dòng trên xuống, bên phải có hai chấm kẹp dòng Fa (dòng thứ hai từ trên).
+ */
+function clefInfo(img: Bits, top: number, bottom: number, s: number, xLeft: number): { end: number; clef: 'G' | 'F' } {
+  const by0 = Math.trunc(top - 3 * s);
+  const band = img.crop(by0, Math.trunc(bottom + 3 * s), xLeft, xLeft + Math.trunc(6 * s));
+  const { boxes } = label(band);
   let best = 0;
-  for (const o of label(band).boxes) if (bh(o) >= 5 * s) best = Math.max(best, o.x1);
-  return xLeft + (best || Math.trunc(3.6 * s));
+  for (const o of boxes) if (bh(o) >= 5 * s) best = Math.max(best, o.x1);
+  if (best) return { end: xLeft + best, clef: 'G' };
+  // khoá Fa: các mảnh thân (dòng kẻ xoá xong có thể vỡ) nằm trong nửa trên khuông, sát mép trái
+  const t = top - by0;
+  const body = boxes.filter((o) => o.x0 < 2.5 * s && o.y0 >= t - 0.9 * s && o.y1 <= t + 4 * s && Math.max(bh(o), bw(o)) >= 0.6 * s);
+  if (body.length) {
+    const u = { x0: Math.min(...body.map((o) => o.x0)), x1: Math.max(...body.map((o) => o.x1)), y0: Math.min(...body.map((o) => o.y0)), y1: Math.max(...body.map((o) => o.y1)) };
+    const dot = (yc: number) => boxes.find((o) => o.x0 >= u.x1 - 0.6 * s && o.x0 <= u.x1 + 1.5 * s
+      && bh(o) >= 0.2 * s && bh(o) <= 0.8 * s && bw(o) >= 0.2 * s && bw(o) <= 0.8 * s && Math.abs(cy(o) - yc) <= 0.35 * s);
+    const d1 = dot(t + 0.5 * s), d2 = dot(t + 1.5 * s);
+    if (bh(u) >= 2.2 * s && bh(u) <= 4.3 * s && u.y0 <= t + 0.6 * s && d1 && d2 && Math.abs(cx(d1) - cx(d2)) <= 0.6 * s) {
+      return { end: xLeft + Math.max(d1.x1, d2.x1) + 1, clef: 'F' };
+    }
+  }
+  return { end: xLeft + Math.trunc(3.6 * s), clef: 'G' };
 }
+
+/** khoá Fa: dòng dưới cùng là G2, thấp hơn E4 (dòng dưới khoá Sol) 12 bậc */
+const F_CLEF_SHIFT = -12;
 
 const SHARP_STEPS = [8, 5, 9, 6, 3, 7, 4]; // F♯5 C♯5 G♯5 D♯5 A♯4 E♯5 B♯4
 const FLAT_STEPS = [4, 7, 3, 6, 2, 5, 1]; // B♭4 E♭5 A♭4 D♭5 G♭4 C♭5 F♭4
+// khoá Fa: cùng hình xếp, thấp hơn một quãng ba trên khuông (F♯3 ở dòng thứ hai từ trên, B♭2 ở dòng thứ hai từ dưới)
+const SHARP_STEPS_F = SHARP_STEPS.map((x) => x - 2);
+const FLAT_STEPS_F = FLAT_STEPS.map((x) => x - 2);
 
 /**
  * Hoá biểu theo vị trí chuẩn: dấu thăng / giáng luôn nằm ở các bậc cố định theo thứ tự cố định
@@ -599,13 +631,20 @@ const FLAT_STEPS = [4, 7, 3, 6, 2, 5, 1]; // B♭4 E♭5 A♭4 D♭5 G♭4 C♭5
  * Mỗi dấu: hộp quanh vị trí phải có mực, phần khuông còn lại cùng cột phải trống
  * (chữ số chỉ nhịp, thân nốt phủ cả chiều cao khuông thì không đạt).
  */
-function keySignatureByPosition(img: Bits, top: number, bottom: number, s: number, xFrom: number): { key: number; ends: Map<number, number> } {
+function keySignatureByPosition(img: Bits, top: number, bottom: number, s: number, xFrom: number, clef: 'G' | 'F' = 'G'): { key: number; ends: Map<number, number> } {
   const frac = (x0: number, x1: number, y0: number, y1: number) => {
     x0 = Math.max(0, Math.round(x0)); x1 = Math.min(img.w, Math.round(x1)); y0 = Math.max(0, Math.round(y0)); y1 = Math.min(img.h, Math.round(y1));
     if (x1 <= x0 || y1 <= y0) return 0;
     let n = 0;
     for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) n += img.d[y * img.w + x];
     return n / ((x1 - x0) * (y1 - y0));
+  };
+  /** số cột có mực trong hộp */
+  const inkCols = (x0: number, x1: number, y0: number, y1: number) => {
+    x0 = Math.max(0, Math.round(x0)); x1 = Math.min(img.w, Math.round(x1)); y0 = Math.max(0, Math.round(y0)); y1 = Math.min(img.h, Math.round(y1));
+    let n = 0;
+    for (let x = x0; x < x1; x++) for (let y = y0; y < y1; y++) if (img.d[y * img.w + x]) { n++; break; }
+    return n;
   };
   const ct = top - 0.5 * s, cb = bottom + 0.5 * s;
   const glyph = (kind: number, x: number, step: number) => {
@@ -614,6 +653,8 @@ function keySignatureByPosition(img: Bits, top: number, bottom: number, s: numbe
     const [gy0, gy1] = kind > 0 ? [y - 1.25 * s, y + 1.25 * s] : [y - 1.9 * s, y + 0.6 * s];
     const gx0 = x - 0.4 * s, gx1 = x + 0.4 * s;
     const f = Math.min(frac(gx0, gx1, gy0, (gy0 + gy1) / 2), frac(gx0, gx1, (gy0 + gy1) / 2, gy1));
+    // dấu thăng / bụng dấu giáng có bề ngang; thân nốt đứng gần đó chỉ là một nét dọc mảnh
+    if (f && inkCols(gx0, gx1, (gy0 + gy1) / 2, gy1) < 0.3 * s) return 0;
     let fc = 0;
     if (gy0 - 0.3 * s > ct) fc = Math.max(fc, frac(gx0, gx1, ct, gy0 - 0.3 * s));
     if (gy1 + 0.3 * s < cb) fc = Math.max(fc, frac(gx0, gx1, gy1 + 0.3 * s, cb));
@@ -624,7 +665,7 @@ function keySignatureByPosition(img: Bits, top: number, bottom: number, s: numbe
   const ends = new Map<number, number>([[0, xFrom]]);
   const endScore = new Map<number, number>();
   for (const kind of [1, -1]) {
-    const steps = kind > 0 ? SHARP_STEPS : FLAT_STEPS;
+    const steps = clef === 'F' ? (kind > 0 ? SHARP_STEPS_F : FLAT_STEPS_F) : (kind > 0 ? SHARP_STEPS : FLAT_STEPS);
     for (let x1 = xFrom + 0.4 * s; x1 <= xFrom + 2.4 * s; x1++) {
       for (let dx = 0.65 * s; dx <= 1.45 * s; dx += 0.5) {
         let n = 0, sc = 0;
@@ -765,6 +806,35 @@ function barlines(img: Bits, top: number, bottom: number, s: number, xFrom: numb
   const groups: number[][] = [];
   for (const x of xs) { const g = groups[groups.length - 1]; if (g && x - g[g.length - 1] <= 2) g.push(x); else groups.push([x]); }
   return groups.map(mean);
+}
+
+/**
+ * Dấu nhắc lại: hai chấm ở hai khe giữa khuông (kẹp dòng giữa) đứng sát một vạch phủ cả khuông.
+ * Vạch bên phải hai chấm → kết đoạn nhắc lại (:‖); vạch bên trái → mở đoạn (‖:).
+ */
+function findRepeats(img: Bits, top: number, bottom: number, s: number, xFrom: number, xTo: number): { x: number; kind: 'start' | 'end' }[] {
+  const mid = (top + bottom) / 2;
+  const y0 = Math.max(0, Math.round(mid - 1.4 * s));
+  const band = img.crop(y0, Math.min(img.h, Math.round(mid + 1.4 * s)), Math.max(0, xFrom), Math.min(img.w, xTo));
+  const dots = label(band).boxes.filter((o) => bh(o) >= 0.2 * s && bh(o) <= 0.8 * s && bw(o) >= 0.2 * s && bw(o) <= 0.8 * s);
+  const fullBar = (x: number) => {
+    const r = verticalRun(img, x, Math.round(mid));
+    return !!r && Math.abs(r[0] - top) <= 0.6 * s && Math.abs(r[1] - bottom) <= 0.6 * s;
+  };
+  const out: { x: number; kind: 'start' | 'end' }[] = [];
+  for (const a of dots) {
+    if (Math.abs(cy(a) + y0 - (mid - 0.5 * s)) > 0.3 * s) continue;
+    const b = dots.find((o) => Math.abs(cy(o) + y0 - (mid + 0.5 * s)) <= 0.3 * s && Math.abs(cx(o) - cx(a)) <= 0.5 * s);
+    if (!b) continue;
+    const dl = Math.max(0, xFrom) + Math.min(a.x0, b.x0), dr = Math.max(0, xFrom) + Math.max(a.x1, b.x1);
+    // vạch gần nhất mỗi bên (trong 1.2 khe)
+    let right = -1, left = -1;
+    for (let x = dr; x <= dr + 1.2 * s && right < 0; x++) if (fullBar(x)) right = x;
+    for (let x = dl - 1; x >= dl - 1.2 * s && left < 0; x--) if (fullBar(x)) left = x;
+    if (right >= 0 && (left < 0 || right - dr <= dl - left)) out.push({ x: right, kind: 'end' });
+    else if (left >= 0) out.push({ x: left, kind: 'start' });
+  }
+  return out.sort((p, q) => p.x - q.x);
 }
 
 /** kind 2: thăng hoặc bình (ảnh mờ không phân biệt được) — quyết theo ngữ cảnh: nốt đang bị hoá thì là bình */
@@ -1196,8 +1266,8 @@ export function readPage(input: Gray, page = 0): OmrPage | null {
       if (n >= 4) { xLeft = Math.min(xLeft, x); xRight = x; }
     }
     if (xRight < 0) return null;
-    const ce = clefEnd(thin, top, bottom, s, xLeft);
-    return { s, top, bottom, xLeft, xRight, ce, ks: keySignatureByPosition(thin, top, bottom, s, ce + 1) };
+    const { end: ce, clef } = clefInfo(thin, top, bottom, s, xLeft);
+    return { s, top, bottom, xLeft, xRight, ce, clef, ks: keySignatureByPosition(thin, top, bottom, s, ce + 1, clef) };
   });
   // hoá biểu in lại ở mọi khuông, chỉ đổi khi chuyển giọng (từ đó về sau): khuông lệch hẳn với hai khuông
   // kề bên (hoặc hai khuông kế tiếp ở đầu/cuối bài) là đọc nhầm
@@ -1212,7 +1282,9 @@ export function readPage(input: Gray, page = 0): OmrPage | null {
   staves.forEach((_, si) => {
     const fr = frames[si];
     if (!fr) return;
-    const { s, top, bottom, xRight, ce } = fr;
+    const { s, top, bottom, xRight, ce, clef } = fr;
+    // bậc theo khoá Sol (0 = E4): khuông khoá Fa dời xuống
+    const shift = clef === 'F' ? F_CLEF_SHIFT : 0;
     const y0 = Math.max(Math.trunc(top - 3.5 * s), 0), y1 = Math.trunc(bottom + 2.2 * s);
     const roi = clean.rows(y0, y1); roi.clearLeft(ce);
     const thinRoi = thin.rows(y0, y1);
@@ -1316,7 +1388,7 @@ export function readPage(input: Gray, page = 0): OmrPage | null {
       const y = cy(o) + y0;
       staffNotes.push({
         id: `n${++noteSeq}`, page, staff: outStaves.length, x, y,
-        step: Math.round((bottom - y) / (s / 2)), accidental: acc ? (acc.kind as OmrNote['accidental']) : null,
+        step: Math.round((bottom - y) / (s / 2)) + shift, accidental: acc ? (acc.kind as OmrNote['accidental']) : null,
         beats: beats * (dot ? 1.5 : 1), hollow, dot, rest: false,
       });
     }
@@ -1346,14 +1418,14 @@ export function readPage(input: Gray, page = 0): OmrPage | null {
       const y = cy(o) + y0;
       staffNotes.push({
         id: `n${++noteSeq}`, page, staff: outStaves.length, x: cx(o), y,
-        step: Math.round((bottom - y) / (s / 2)), accidental: acc ? (acc.kind as OmrNote['accidental']) : null,
+        step: Math.round((bottom - y) / (s / 2)) + shift, accidental: acc ? (acc.kind as OmrNote['accidental']) : null,
         beats: beats * (dot ? 1.5 : 1), hollow: head.hollow, dot, rest: false,
       });
     }
     // dấu lặng vẽ trong khuông
     for (const r of findRests(thinRoi, roi, top - y0, bottom - y0, s, contentFrom + 1, xRight + 1, occupied)) {
       staffNotes.push({
-        id: `n${++noteSeq}`, page, staff: outStaves.length, x: r.x, y: r.y + y0, step: 4, accidental: null,
+        id: `n${++noteSeq}`, page, staff: outStaves.length, x: r.x, y: r.y + y0, step: 4 + shift, accidental: null,
         beats: r.beats, hollow: false, dot: false, rest: true,
       });
     }
@@ -1394,7 +1466,12 @@ export function readPage(input: Gray, page = 0): OmrPage | null {
     for (const t of findTuplets(lineInk, top, bottom, s, contentFrom, xRight + 1)) {
       if (!tuplets.some(([a, b]) => a < t[1] && t[0] < b)) tuplets.push(t);
     }
-    outStaves.push({ page, top, bottom, space: s, bars, xRight, ...(tuplets.length ? { tuplets } : {}) });
+    // dấu nhắc lại: tìm cả trước nốt đầu (‖: ngay sau khoá / hoá biểu)
+    const repeats = findRepeats(thin, top, bottom, s, contentFrom - Math.round(2 * s), xRight + 2);
+    outStaves.push({
+      page, top, bottom, space: s, bars, xRight,
+      ...(clef === 'F' ? { clef } : {}), ...(tuplets.length ? { tuplets } : {}), ...(repeats.length ? { repeats } : {}),
+    });
     notes.push(...staffNotes);
   });
 
@@ -1668,6 +1745,33 @@ export function keyName(keySig: number) {
   return ['Cb', 'Gb', 'Db', 'Ab', 'Eb', 'Bb', 'F', 'C', 'G', 'D', 'A', 'E', 'B', 'F#', 'C#'][keySig + 7] ?? 'C';
 }
 
+/**
+ * Thứ tự chơi: trang → khuông → trái sang phải, mở dấu nhắc lại (đoạn giữa ‖: và :‖ — hoặc từ đầu bài nếu
+ * không có ‖: — chơi thêm một lần ngay sau :‖). `again` = nốt chơi lại; `line` = dòng tab của nốt.
+ */
+export function playOrder(pages: Pick<OmrPage, 'notes' | 'staves'>[]): { n: OmrNote; again: boolean; line: string }[] {
+  const out: { n: OmrNote; again: boolean; line: string }[] = [];
+  let from = 0, pass = 0;
+  pages.forEach((p, pi) => p.staves.forEach((st, si) => {
+    const marks = st.repeats ?? [];
+    const notes = p.notes.filter((m) => m.staff === si).sort((a, b) => a.x - b.x);
+    let mi = 0;
+    const flush = (x: number) => {
+      for (; mi < marks.length && marks[mi].x < x; mi++) {
+        if (marks[mi].kind === 'start') { from = out.length; continue; }
+        // chép lại các nốt gốc từ đầu đoạn tới đây, mỗi khuông vẫn là một dòng
+        pass++;
+        const seg = out.slice(from).filter((e) => !e.again);
+        for (const e of seg) out.push({ n: e.n, again: true, line: `${e.line}~${pass}` });
+        from = out.length;
+      }
+    };
+    for (const n of notes) { flush(n.x); out.push({ n, again: false, line: `${pi}:${si}` }); }
+    flush(Infinity);
+  }));
+  return out;
+}
+
 /** Đổi kết quả đọc sang cấu trúc dùng chung với AI → dùng lại bộ chuyển tab có sẵn. Mỗi khuông một dòng. */
 export function toTranscription(
   pages: Pick<OmrPage, 'notes' | 'staves'>[],
@@ -1675,18 +1779,19 @@ export function toTranscription(
 ): AiTranscription {
   const lines: { notes: { pitch: string; beats: number; lyric: string }[] }[] = [];
   let last: { pitch: string; beats: number } | null = null;
-  for (const p of pages) p.staves.forEach((_, si) => {
-    const notes: { pitch: string; beats: number; lyric: string }[] = [];
-    for (const n of p.notes.filter((m) => m.staff === si).sort((a, b) => a.x - b.x)) {
-      const pitch = notePitch(n, opts.keySig);
-      // nốt nối (kể cả nối sang khuông sau) cộng trường độ vào nốt trước
-      if (n.tied && !n.rest && last && last.pitch === pitch) { last.beats += n.beats; continue; }
-      const e = { pitch, beats: n.beats, lyric: n.rest ? '' : n.lyric ?? '' };
-      notes.push(e);
-      last = n.rest ? null : e;
-    }
-    if (notes.length) lines.push({ notes });
-  });
+  let cur: { key: string; notes: { pitch: string; beats: number; lyric: string }[] } | null = null;
+  let again = 0;
+  for (const { n, again: rep, line } of playOrder(pages)) {
+    if (rep) again++;
+    if (!cur || cur.key !== line) { cur = { key: line, notes: [] }; lines.push(cur); }
+    const pitch = notePitch(n, opts.keySig);
+    // nốt nối (kể cả nối sang khuông sau) cộng trường độ vào nốt trước
+    if (n.tied && !n.rest && last && last.pitch === pitch) { last.beats += n.beats; continue; }
+    // lần chơi lại: lời in dưới nốt thường là lời 1 → để trống, người dùng tự thêm lời 2
+    const e: { pitch: string; beats: number; lyric: string } = { pitch, beats: n.beats, lyric: n.rest || rep ? '' : n.lyric ?? '' };
+    cur.notes.push(e);
+    last = n.rest ? null : e;
+  }
   return {
     title: opts.title || 'Bài quét',
     songKey: keyName(opts.keySig),
@@ -1694,7 +1799,7 @@ export function toTranscription(
     timeSignature: opts.timeSig,
     pickupBeats: opts.pickupBeats ?? 0,
     confidence: 1,
-    warnings: [],
-    sections: [{ name: 'Đoạn 1', lines }],
+    warnings: again ? [`Đã mở dấu nhắc lại: ${again} nốt được chơi thêm lần hai (lời lần hai để trống).`] : [],
+    sections: [{ name: 'Đoạn 1', lines: lines.filter((l) => l.notes.length).map((l) => ({ notes: l.notes })) }],
   };
 }

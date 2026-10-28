@@ -12,6 +12,24 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "preview"],
       "port": 4173
+    },
+    {
+      "name": "recorder-dev",
+      "runtimeExecutable": "cmd",
+      "runtimeArgs": ["/c", "set VITE_APP=recorder&& npx vite --port 5174 --strictPort"],
+      "port": 5174
+    },
+    {
+      "name": "kalimba-dev",
+      "runtimeExecutable": "cmd",
+      "runtimeArgs": ["/c", "set VITE_APP=kalimba&& npx vite --port 5175 --strictPort"],
+      "port": 5175
+    },
+    {
+      "name": "guitar-dev",
+      "runtimeExecutable": "cmd",
+      "runtimeArgs": ["/c", "set VITE_APP=guitar&& npx vite --port 5176 --strictPort"],
+      "port": 5176
     }
   ]
 }

@@ -71,6 +71,11 @@ export function bluesScaleTokens(harpKey: HarpKey, type: HarpType = 'diatonic', 
   return holesFor(harpKey, tonic, [0, 3, 5, 6, 7, 10], type === 'diatonic' ? 4 : 99, type);
 }
 
+/** Thang ngũ cung trưởng (1 2 3 5 6) — cho kalimba: không có nốt giáng nên thang blues thiếu nốt, ngũ cung thì đủ */
+export function pentatonicTokens(harpKey: HarpKey, type: HarpType, tonic: number): string[] {
+  return holesFor(harpKey, tonic, [0, 2, 4, 7, 9], 99, type);
+}
+
 /** Lỗ không cần bend ra nốt của hợp âm đang vang (nốt "an toàn" để dừng câu) */
 export function chordToneTokens(harpKey: HarpKey, degree: Degree, type: HarpType = 'diatonic', tonic = bluesTonic(harpKey)): string[] {
   const root = pc(tonic + DEGREE_SHIFT[degree]);

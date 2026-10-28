@@ -22,7 +22,7 @@
  */
 import { GERMAN_OVERRIDES, RECORDER_FINGERINGS } from '../data/recorderFingerings';
 import { closedOffset, saoTrucTable } from '../data/saoTrucFingerings';
-import { cleanKalimbaToken, KALIMBA_KEYS, KALIMBA_TINES } from '../data/kalimba';
+import { cleanKalimbaToken, kalimbaFingers, kalimbaTines } from '../data/kalimba';
 import { FRET_TOKEN_RE, fretCost, fretFingers, fretToken, GUITAR_FRETS, GUITAR_TUNING, parseFretToken, UKULELE_FRETS, UKULELE_TUNING } from '../data/guitar';
 
 /** sáo trúc: bịt hết lỗ ra bậc mấy của tông sáo (1 = Đô của sáo Đô … 7; mặc định 5 = Sol), theo Cài đặt */
@@ -51,9 +51,9 @@ export type Technique = 'blow' | 'draw' | 'drawBend' | 'blowBend' | 'overblow' |
 
 /** Loại kèn. Bài cũ không ghi loại là diatonic. */
 export type HarpType = 'diatonic' | 'chromatic' | 'chromatic16' | 'tremolo24' | 'tremolo21' | 'tremolo16' | 'tremolo24m' | 'tremolo21m' | 'tremolo16m'
-  | 'recorderAlto' | 'recorderSoprano' | 'recorderTenor' | 'recorderBass' | 'saoTruc6' | 'kalimba17' | 'guitar6' | 'ukulele4';
+  | 'recorderAlto' | 'recorderSoprano' | 'recorderTenor' | 'recorderBass' | 'saoTruc6' | 'kalimba17' | 'kalimba10' | 'kalimba8' | 'guitar6' | 'ukulele4';
 /** mọi loại hợp lệ (để đọc bài đã lưu); ô chọn chỉ hiện SHOWN_HARP_TYPES của bản build (src/appConfig.ts) */
-export const HARP_TYPES: readonly HarpType[] = ['diatonic', 'chromatic', 'chromatic16', 'tremolo24', 'tremolo21', 'tremolo16', 'tremolo24m', 'tremolo21m', 'tremolo16m', 'recorderAlto', 'recorderSoprano', 'recorderTenor', 'recorderBass', 'saoTruc6', 'kalimba17', 'guitar6', 'ukulele4'];
+export const HARP_TYPES: readonly HarpType[] = ['diatonic', 'chromatic', 'chromatic16', 'tremolo24', 'tremolo21', 'tremolo16', 'tremolo24m', 'tremolo21m', 'tremolo16m', 'recorderAlto', 'recorderSoprano', 'recorderTenor', 'recorderBass', 'saoTruc6', 'kalimba17', 'kalimba10', 'kalimba8', 'guitar6', 'ukulele4'];
 
 export const HARP_TYPE_LABEL: Record<HarpType, string> = {
   diatonic: 'Diatonic 10 lỗ',
@@ -71,6 +71,8 @@ export const HARP_TYPE_LABEL: Record<HarpType, string> = {
   recorderBass: 'Sáo dọc bass (Fa trầm)',
   saoTruc6: 'Sáo trúc 6 lỗ',
   kalimba17: 'Kalimba 17 phím',
+  kalimba10: 'Kalimba 10 phím',
+  kalimba8: 'Kalimba 8 phím',
   guitar6: 'Guitar 6 dây',
   ukulele4: 'Ukulele 4 dây',
 };
@@ -86,7 +88,7 @@ export function isFixedKey(t: HarpType | undefined): boolean {
 }
 
 export function isKalimba(t: HarpType | undefined): boolean {
-  return t === 'kalimba17';
+  return t === 'kalimba17' || t === 'kalimba10' || t === 'kalimba8';
 }
 
 /** sáo trúc: tông sáo chọn được (sáo Đô, sáo Rê…), bịt hết lỗ ra nốt bậc 5 dưới tông */
@@ -143,7 +145,9 @@ export function holeCount(t: HarpType = 'diatonic'): number {
     case 'tremolo16': case 'tremolo16m': return 16;
     case 'recorderAlto': case 'recorderSoprano': case 'recorderTenor': case 'recorderBass': return 8;
     case 'saoTruc6': return 6;
-    case 'kalimba17': return KALIMBA_KEYS;
+    case 'kalimba17': return 17;
+    case 'kalimba10': return 10;
+    case 'kalimba8': return 8;
     case 'guitar6': return 6;
     case 'ukulele4': return 4;
     default: return 10;
@@ -160,7 +164,7 @@ export function harpTypeOf(s: { harpType?: HarpType }): HarpType {
 /** "Kèn C" hoặc "Kèn C chromatic" */
 export function harpName(key: string, t: HarpType = 'diatonic'): string {
   if (isTremolo(t)) return `Kèn ${harpKeyLabel(key, t)} tremolo ${holeCount(t)} lỗ`;
-  if (isKalimba(t)) return `Kalimba 17 phím (${key})`;
+  if (isKalimba(t)) return `${HARP_TYPE_LABEL[t]} (${key})`;
   if (t === 'guitar6') return 'Guitar';
   if (t === 'ukulele4') return 'Ukulele';
   if (isSaoTruc(t)) return `Sáo trúc ${pitchClassName(KEY_OFFSET[normalizeKey(key) ?? 'C'], 'solfege')} (${key}, bịt hết ra ${pitchClassName(KEY_OFFSET[normalizeKey(key) ?? 'C'] + [0, 2, 4, 5, 7, 9, 11][saoTrucClosed - 1], 'solfege')})`;
@@ -266,9 +270,10 @@ export function harpLayout(key: HarpKey, type: HarpType = 'diatonic'): HarpNote[
   if (isKalimba(type)) {
     // kalimba tông C: Đô4 … Mi6; tông khác dịch theo (B: Si3 …, D: Rê4 …)
     const base = 60 + off;
-    KALIMBA_TINES.forEach((t) => notes.push({
+    const keys = holeCount(type);
+    kalimbaTines(keys).forEach((t) => notes.push({
       hole: t.pos + 1, dir: 'blow', bend: 0, over: false, slide: false, midi: base + t.semis,
-      technique: 'fingered', token: t.token, fingers: `k${t.pos}`, fingerCost: 0,
+      technique: 'fingered', token: t.token, fingers: kalimbaFingers(t.pos, keys), fingerCost: 0,
     }));
     layoutCache.set(ck, notes);
     return notes;

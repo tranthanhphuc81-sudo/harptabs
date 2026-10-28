@@ -69,7 +69,7 @@ function TremoloDiagram({ harpKey, harpType, highlight, nameStyle, interactive }
 
 export function HarpDiagram({ harpKey, harpType = 'diatonic', highlight = [], nameStyle = 'letter', showAdvanced = true, interactive = true }: Props) {
   if (isFretted(harpType)) return <FretboardChart harpType={harpType} highlight={highlight} nameStyle={nameStyle} interactive={interactive} />;
-  if (isKalimba(harpType)) return <KalimbaChart harpKey={harpKey} highlight={highlight} nameStyle={nameStyle} interactive={interactive} />;
+  if (isKalimba(harpType)) return <KalimbaChart harpKey={harpKey} harpType={harpType} highlight={highlight} nameStyle={nameStyle} interactive={interactive} />;
   if (isFingered(harpType)) return <RecorderChart harpType={harpType} harpKey={harpKey} highlight={highlight} nameStyle={nameStyle} interactive={interactive} />;
   if (isTremolo(harpType)) return <TremoloDiagram harpKey={harpKey} harpType={harpType} highlight={highlight} nameStyle={nameStyle} interactive={interactive} />;
   const layout = harpLayout(harpKey, harpType);

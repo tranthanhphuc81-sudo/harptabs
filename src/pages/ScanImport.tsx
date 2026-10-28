@@ -4,9 +4,11 @@ import { MAX_IMAGES } from '../../shared/ai';
 import { aiToTab } from '../lib/ai';
 import { blankSong, db } from '../lib/db';
 import { HarpKey, HarpType, harpName } from '../lib/harp';
-import { Gray, OmrNote, OmrPage, findHeaderBoxes, keyName, midiToStep, notePitch, readSheet, toGray, toTranscription } from '../lib/omr';
+import { Gray, OmrNote, OmrPage, findHeaderBoxes, keyName, midiToStep, notePitch, playOrder, readSheet, toGray, toTranscription } from '../lib/omr';
 import { MIN_CONFIDENCE, cleanArtist, cleanTitle, cropToCanvas, hasDiacritics, looksLikeTitle, readLine, readWords, titleFromFilename } from '../lib/titleOcr';
 import { assignSyllables, looksLikeLyrics, lyricBands, lyricSlots, relyric, staffLyrics, toSyllables } from '../lib/lyricOcr';
+import { assignChords, chordBand, chordOverrides, chordWords } from '../lib/chordOcr';
+import { transposeChords } from '../audio/harmony';
 import { loadScanPages, saveScan, SongScan } from '../lib/scanStore';
 import { scanDraftId } from '../lib/drafts';
 import { isPdf, pdfToImages } from '../lib/pdf';
@@ -230,6 +232,31 @@ export default function ScanImport({ editSongId, initialFiles }: { editSongId?: 
     setLyricMsg(found ? null : 'Không thấy lời in dưới khuông — gõ lời vào ô bên dưới nếu cần.');
   };
 
+  // ───── tên hợp âm in trên khuông: đọc sau lời (cùng bộ đọc chữ), dùng làm hợp âm đệm của bài ─────
+  const [chordMsg, setChordMsg] = useState<string | null>(null);
+  const chordRun = useRef(0);
+  const readChords = async (ps: OmrPage[]) => {
+    const run = ++chordRun.current;
+    const found = new Map<string, string>();
+    const touched = new Set<string>();
+    for (const p of ps) for (let si = 0; si < p.staves.length; si++) {
+      const band = chordBand(p, si);
+      if (!band) continue;
+      const words = await readWords(cropToCanvas(p.image, band, 2), 2);
+      if (run !== chordRun.current) return;
+      if (!words) return; // chưa tải được bộ đọc chữ: phần lời đã báo
+      const cs = chordWords(words.map((w) => ({ ...w, x0: w.x0 + band.x0, x1: w.x1 + band.x0 })));
+      if (!cs.length) continue;
+      assignChords(p.notes, si, cs, p.staves[si].space).forEach((c, id) => found.set(id, c));
+      for (const n of p.notes) if (n.staff === si) touched.add(n.id);
+    }
+    if (run !== chordRun.current) return;
+    setPages((cur) => cur.map((p) => (p.notes.some((n) => touched.has(n.id) || n.chord)
+      ? { ...p, notes: p.notes.map((n) => (touched.has(n.id) || n.chord ? { ...n, chord: found.get(n.id) } : n)) }
+      : p)));
+    setChordMsg(found.size ? `Đọc được ${found.size} tên hợp âm in trên khuông — nhạc đệm chơi theo các hợp âm này.` : null);
+  };
+
   const read = (list: Gray[]) => {
     setBusy(true);
     setError(null);
@@ -242,7 +269,7 @@ export default function ScanImport({ editSongId, initialFiles }: { editSongId?: 
           setError('Không tìm thấy khuông nhạc. Hãy chụp thẳng, đủ sáng, thấy rõ cả 5 dòng kẻ và lấp đầy khung hình bằng bản nhạc.');
         } else {
           setPages(r.pages);
-          void readLyrics(r.pages);
+          void readLyrics(r.pages).then(() => readChords(r.pages));
           setKeySig(r.keySig);
           setTimeSig(r.timeSig);
           if (r.pages.length < list.length) toast(`Có ${list.length - r.pages.length} ảnh không thấy khuông nhạc, đã bỏ qua`);
@@ -385,24 +412,32 @@ export default function ScanImport({ editSongId, initialFiles }: { editSongId?: 
     [pages, title, keySig, timeSig, tempo],
   );
   const converted = useMemo(() => (transcription ? aiToTab(transcription, target, allowTranspose, harpType) : null), [transcription, target, allowTranspose, harpType]);
+  /** hợp âm in trên khuông → hợp âm đệm (dịch theo giọng nếu tab đã dịch giọng) */
+  const printedChords = useMemo(() => {
+    if (!converted) return undefined;
+    const c = chordOverrides(playOrder(pages), beatsPerBar(timeSig), converted.pickupBeats);
+    if (!Object.keys(c).length) return undefined;
+    return transposeChords(c, converted.fit.shift, keySig < 0);
+  }, [pages, timeSig, converted, keySig]);
   const parsed = useMemo(() => (converted ? parseTab(converted.body, converted.harpKey, converted.harpType) : null), [converted]);
   const flat = useMemo(() => (parsed ? flatten(parsed) : []), [parsed]);
   const player = usePlayer(flat, {
     bpm: tempo, tempoScale: 1, beatsPerBar: beatsPerBar(timeSig), pickupBeats: converted?.pickupBeats ?? 0,
-    style: converted?.style ?? 'ballad', melody: true, beat: true, click: false, countIn: false,
+    style: converted?.style ?? 'ballad', melody: true, beat: true, click: false, countIn: false, chordOverrides: printedChords,
   });
 
   /** token kèn của từng nốt (cùng thứ tự với bản chuyển: trang → khuông → trái sang phải) */
   const tokenOf = useMemo(() => {
     const m = new Map<string, string | null>();
     if (!converted) return m;
-    const order = pages.flatMap((p) => p.staves.flatMap((_, si) => p.notes.filter((n) => n.staff === si).sort((a, b) => a.x - b.x)));
     let i = 0;
     let last: OmrNote | null = null;
-    for (const n of order) {
+    // cùng thứ tự với toTranscription (kể cả đoạn nhắc lại — nốt chơi lại không ghi đè token lần đầu)
+    for (const { n, again } of playOrder(pages)) {
       // giống toTranscription: nốt nối cùng cao độ được gộp vào nốt trước
-      if (n.tied && !n.rest && last && notePitch(last, keySig) === notePitch(n, keySig)) { m.set(n.id, '⌒'); continue; }
-      m.set(n.id, converted.fit.tokens[i++] ?? null);
+      if (n.tied && !n.rest && last && notePitch(last, keySig) === notePitch(n, keySig)) { if (!again) m.set(n.id, '⌒'); continue; }
+      const tok = converted.fit.tokens[i++] ?? null;
+      if (!again) m.set(n.id, tok);
       last = n.rest ? null : n;
     }
     return m;
@@ -513,6 +548,8 @@ export default function ScanImport({ editSongId, initialFiles }: { editSongId?: 
       pickupBeats: converted.pickupBeats,
       style: converted.style,
       body: converted.body,
+      // không có hợp âm in thì giữ hợp âm đã chọn tay của bài (khi quét lại bài cũ)
+      ...(printedChords ? { chords: printedChords } : {}),
       difficulty: difficultyOf(converted.fit.stats),
     };
     const existing = editSongId ? await db.songs.get(editSongId) : undefined;
@@ -549,7 +586,7 @@ export default function ScanImport({ editSongId, initialFiles }: { editSongId?: 
             <button type="button" className="btn btn-primary" onClick={() => camRef.current?.click()} disabled={busy}><Icon name="camera" size={18} /> Chụp bản nhạc</button>
             <button type="button" className="btn btn-ghost" onClick={() => galRef.current?.click()} disabled={busy}><Icon name="image" size={18} /> Chọn ảnh / PDF có sẵn</button>
             <p className="muted small">
-              Máy tự đọc nốt ngay trên điện thoại — <strong>không cần mạng, không tốn tiền</strong>. Hợp với bản nhạc in khoá Sol, một bè giai điệu.
+              Máy tự đọc nốt ngay trên điện thoại — <strong>không cần mạng, không tốn tiền</strong>. Hợp với bản nhạc in khoá Sol hoặc khoá Fa, một bè giai điệu (đọc cả tên hợp âm in trên khuông).
               Chụp thẳng, đủ sáng, cho bản nhạc lấp đầy khung hình.
             </p>
           </div>
@@ -648,6 +685,7 @@ export default function ScanImport({ editSongId, initialFiles }: { editSongId?: 
             <p className="muted small">
               {lyricMsg ?? 'Mỗi ô là lời dưới một khuông, các chữ cách nhau bằng dấu cách — chữ thứ mấy vào nốt có lời thứ mấy. Máy đọc có thể sai dấu: sửa lại cho đúng rồi nghe thử.'}
             </p>
+            {chordMsg && <p className="small" role="status">{chordMsg} Sửa hợp âm sau khi lưu, ở trang bài (nút Hợp âm).</p>}
             {pages.map((p, pi) => p.staves.map((_, si) => {
               const no = pages.slice(0, pi).reduce((t, q) => t + q.staves.length, 0) + si + 1;
               return (

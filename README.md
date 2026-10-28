@@ -10,7 +10,7 @@ Cùng mã nguồn này còn build ra ba app khác cho [sáo](#sổ-tab-sáo), [k
 |---|---|---|---|
 | Sổ Tab Harmonica | Harmonica diatonic, chromatic, tremolo | https://harptabs.pages.dev | [Bản mới nhất `apk-v…`](https://github.com/tranthanhphuc81-sudo/harptabs/releases/latest) |
 | Sổ Tab Sáo | Sáo dọc soprano / alto / tenor / bass, sáo trúc 6 lỗ | https://sotabsao.pages.dev | [Releases `sao-apk-v…`](https://github.com/tranthanhphuc81-sudo/harptabs/releases?q=sao-apk&expanded=true) |
-| Sổ Tab Kalimba | Kalimba 17 phím | https://sotabkalimba.pages.dev | [Releases `kalimba-apk-v…`](https://github.com/tranthanhphuc81-sudo/harptabs/releases?q=kalimba-apk&expanded=true) |
+| Sổ Tab Kalimba | Kalimba 17, 10, 8 phím | https://sotabkalimba.pages.dev | [Releases `kalimba-apk-v…`](https://github.com/tranthanhphuc81-sudo/harptabs/releases?q=kalimba-apk&expanded=true) |
 | Sổ Tab Guitar | Guitar 6 dây, ukulele 4 dây | https://sotabguitar.pages.dev | [Releases `guitar-apk-v…`](https://github.com/tranthanhphuc81-sudo/harptabs/releases?q=guitar-apk&expanded=true) |
 
 Cả bốn app có chung thư viện bài, phát nhạc đệm, karaoke, chia sẻ bài, nhập MIDI / MusicXML, quét khuông nhạc, dò nốt, tập ngẫu hứng, chạy offline. Phần riêng của từng app nằm ở các mục bên dưới.
@@ -32,7 +32,7 @@ Cả bốn app có chung thư viện bài, phát nhạc đệm, karaoke, chia s�
 | Học | Offline | 23 bài: cầm kèn, hơi thở, đơn âm, vibrato, wah, tonguing, bend hút/thổi, overblow, vị trí, blues 12 ô nhịp, bảo quản, lỗi thường gặp, lộ trình 30 ngày, kèm bài tập phát được |
 | Dán tab từ mạng | Offline | Copy tab trên web (`4 -4`, `4↑ 4↓`, `B4 D4`, `-3b`, `(4)`…) dán vào, app tự nhận dòng tab, lời, tên bài, tông kèn và chuyển sang định dạng của app |
 | File nhạc | Offline | Nhập MIDI (`.mid`, `.kar` karaoke có lời), MusicXML (`.musicxml`, `.mxl`) → tab chính xác tuyệt đối; ảnh `.jpg/.png` và `.pdf` được chuyển sang Quét khuông nhạc |
-| Quét khuông nhạc | Offline | Chụp ảnh hoặc chọn PDF bản nhạc in (khoá Sol, một bè), máy tự đọc cao độ + trường độ + vạch nhịp ngay trên điện thoại, đọc tên bài (OCR tiếng Việt), hiện số lỗ trên từng nốt để chạm vào sửa |
+| Quét khuông nhạc | Offline | Chụp ảnh hoặc chọn PDF bản nhạc in (khoá Sol hoặc khoá Fa, một bè; mở dấu nhắc lại ‖: :‖; tên hợp âm in trên khuông thành hợp âm đệm), máy tự đọc cao độ + trường độ + vạch nhịp ngay trên điện thoại, đọc tên bài (OCR tiếng Việt), hiện số lỗ trên từng nốt để chạm vào sửa |
 | Bản thu → tab | Offline | Thu âm trong app hoặc chọn file (tự hát / ngân nga / thổi kèn, hoặc bài hát MP3): máy dò giai điệu, đoán tempo, làm tròn theo phách rồi xếp tab cho loại kèn đã chọn. Bài có nhạc đệm chỉ là bản nháp |
 | Đối chiếu bản thu | Offline (micro / file âm thanh) | Hát, thổi hoặc mở bài gốc có nhạc đệm (MP3, M4A, WAV), app dò giai điệu và gợi ý sửa những nốt quét sai |
 | Nhập AI | Online (Gemini) | Nhờ AI đọc ảnh hoặc nhớ bài theo tên → app tự xếp tab, beat, ghép lời. Đọc ảnh bằng AI còn hay sai cao độ, bản in nên dùng Quét khuông nhạc |
@@ -55,9 +55,10 @@ Bản web: https://sotabkalimba.pages.dev · APK: gói `dev.pages.sotabkalimba.t
 
 | Phần | Nội dung |
 |---|---|
-| Đàn | Kalimba 17 phím giọng trưởng (tông C: Đô4 → Mi6), phím thấp nhất ở giữa, lên cao xen kẽ trái / phải |
+| Đàn | Kalimba 17 phím (tông C: Đô4 → Mi6), 10 phím (Đô4 → Mi5), 8 phím (Đô4 → Đô5), giọng trưởng chọn tông được; phím thấp nhất ở giữa, lên cao xen kẽ trái / phải. Bài mẫu xem được cho đàn nhỏ (tự dịch giọng, báo nốt ngoài tầm) |
 | Tab | Kiểu số 1–7 theo tông đàn, chấm `°` = lên một quãng tám (`1` = Đô4, `1°` = Đô5, `1°°` = Đô6; gõ `'` hoặc `*` cũng được). Dưới mỗi nốt có hình phím cần gảy, kèm sơ đồ cả cây đàn |
-| Bài và học | Bài mẫu xếp lại cho kalimba, 4 bài học (bắt đầu, kỹ thuật, bảo quản) |
+| Tập ngẫu hứng | Nền blues 12 ô, tô thang ngũ cung 1 2 3 5 6 trên cây đàn (kalimba không có nốt giáng), 13 lick ghi bằng tab số, máy hỏi – bạn đáp |
+| Bài và học | Bài mẫu xếp lại cho kalimba, 10 bài học: làm quen, đọc tab, chọn đàn 8 / 10 / 17 phím, hai tay, giữ nhịp, hợp âm I – IV – V, rung tiếng và láy, ngẫu hứng ngũ cung, giai điệu kèm nốt trầm, chỉnh dây |
 | Dò nốt | Dùng để chỉnh dây từng phím |
 
 ## Sổ Tab Guitar
@@ -82,7 +83,7 @@ Cần Node.js 18 trở lên.
 ```bash
 npm install
 npm run dev        # http://localhost:5173
-npm test           # ~730 test: lý thuyết harp, parser, chuyển tab, YIN, OMR, AI, worker, giao diện
+npm test           # ~740 test: lý thuyết harp, parser, chuyển tab, YIN, OMR, AI, worker, giao diện
 npm run lint       # ESLint (gồm luật react-hooks)
 npm run typecheck
 npm run build      # xuất ra dist/ (app Harmonica)
@@ -111,7 +112,9 @@ Các phần nặng (quét nhạc, đọc file, PDF, OCR) chỉ tải khi dùng. 
 4. Cao độ = vị trí đầu nốt so với dòng dưới cùng (khoá Sol: dòng dưới = Mi 4), cộng hoá biểu đầu khuông.
 5. Trường độ: đầu rỗng/đặc, số móc ở đầu thân, chấm dôi. Vạch nhịp chia ô; ô thiếu phách được chèn dấu lặng.
 
-Chưa đọc: khoá Fa, hợp âm, dấu hoá bất thường giữa bài, liên ba, dấu nhắc lại, lời bài hát, chữ viết tay. Ảnh nghiêng nhiều cũng chưa xử lý.
+Đọc thêm: dấu hoá giữa bài, liên ba có ngoặc, dấu nối, lời in dưới khuông và tên hợp âm in trên khuông (OCR, `src/lib/lyricOcr.ts`, `src/lib/chordOcr.ts`), khoá Fa (dòng dưới = Sol2), dấu nhắc lại ‖: :‖ (đoạn nhắc lại được chơi hai lần khi chuyển tab, lời lần hai để trống).
+
+Chưa đọc: khoá Đô, ngoặc lần 1 / lần 2 (volta), D.C. / D.S. / Coda, liên ba chỉ có số "3" không ngoặc, nhiều bè / hợp âm chồng nốt (giữ nốt cao nhất), chữ viết tay. Ảnh nghiêng nhiều cũng chưa xử lý.
 Kết quả hiện trên ảnh để người dùng sửa từng nốt trước khi lưu.
 
 ## Kết nối AI

@@ -3,9 +3,9 @@ import { Gray, OmrNote, OmrPage, fillRests, keyName, midiToStep, notePitch, read
 import { nameToMidi } from './harp';
 
 /** Vẽ một khuông nhạc giả lập: khoá (khối cao), nốt, vạch nhịp — đủ để kiểm tra các luật đọc */
-type Sym = { kind: 'note'; step: number; beats: 0.5 | 1 | 1.5 | 2 | 3 | 4; sharp?: boolean } | { kind: 'bar' };
+type Sym = { kind: 'note'; step: number; beats: 0.5 | 1 | 1.5 | 2 | 3 | 4; sharp?: boolean } | { kind: 'bar' } | { kind: 'repStart' } | { kind: 'repEnd' };
 
-function render(symbols: Sym[], S = 14): Gray {
+function render(symbols: Sym[], S = 14, clef: 'G' | 'F' = 'G'): Gray {
   const width = 80 + symbols.length * 4 * S + 40, height = 14 * S;
   const data = new Uint8Array(width * height).fill(255);
   const dot = (x: number, y: number) => {
@@ -16,14 +16,38 @@ function render(symbols: Sym[], S = 14): Gray {
   const top = 5 * S, bottom = top + 4 * S;
   const right = width - 20;
   for (let i = 0; i < 5; i++) rect(20, top + i * S - 1, right, top + i * S + 1);
-  // "khoá Sol": khối cao 7 khe
-  for (let y = top - 1.5 * S; y < bottom + 1.5 * S; y++) for (let x = 26; x < 26 + 2 * S; x++) {
-    const dx = (x - 26 - S) / S, dy = (y - (top + 2 * S)) / (3.5 * S);
-    if (Math.abs(dx * dx + dy * dy - 0.8) < 0.25) dot(x, y);
+  if (clef === 'G') {
+    // "khoá Sol": khối cao 7 khe
+    for (let y = top - 1.5 * S; y < bottom + 1.5 * S; y++) for (let x = 26; x < 26 + 2 * S; x++) {
+      const dx = (x - 26 - S) / S, dy = (y - (top + 2 * S)) / (3.5 * S);
+      if (Math.abs(dx * dx + dy * dy - 0.8) < 0.25) dot(x, y);
+    }
+  } else {
+    // "khoá Fa": chấm đặc trên dòng Fa, nét cong lên dòng trên rồi vòng xuống ~3 khe, hai chấm kẹp dòng Fa
+    const fx = 26 + 0.3 * S, fy = top + S;
+    for (let yy = -0.3 * S; yy <= 0.3 * S; yy++) for (let xx = -0.3 * S; xx <= 0.3 * S; xx++) if (xx * xx + yy * yy <= 0.09 * S * S) dot(fx + xx, fy + yy);
+    for (let a = -Math.PI; a <= Math.PI / 2; a += 0.01) {
+      const px = fx + 0.6 * S + 0.9 * S * Math.cos(a), py = top + 0.9 * S + 0.9 * S * Math.sin(a);
+      for (let k = -1; k <= 1; k++) for (let j = -1; j <= 1; j++) dot(px + k, py + j);
+    }
+    for (let t = 0; t <= 1; t += 0.01) {
+      const px = fx + 0.6 * S - t * 1.0 * S, py = top + 1.8 * S + t * 1.3 * S;
+      for (let k = -1; k <= 1; k++) for (let j = -1; j <= 1; j++) dot(px + k, py + j);
+    }
+    for (const dy of [0.5, 1.5]) for (let yy = -3; yy <= 3; yy++) for (let xx = -3; xx <= 3; xx++) if (xx * xx + yy * yy <= 9) dot(26 + 2.4 * S + xx, top + dy * S + yy);
   }
   let x = 30 + 3.5 * S;
   for (const sym of symbols) {
     if (sym.kind === 'bar') { rect(Math.round(x), top - 1, Math.round(x) + 2, bottom + 1); x += 1.5 * S; continue; }
+    if (sym.kind === 'repStart' || sym.kind === 'repEnd') {
+      // dấu nhắc lại: vạch đậm + vạch mảnh, hai chấm ở hai khe giữa khuông (phía trong đoạn nhắc lại)
+      const mid = (top + bottom) / 2;
+      const dots = (dx: number) => { for (const dy of [-0.5, 0.5]) for (let yy = -3; yy <= 3; yy++) for (let xx = -3; xx <= 3; xx++) if (xx * xx + yy * yy <= 9) dot(dx + xx, mid + dy * S + yy); };
+      const X = Math.round(x);
+      if (sym.kind === 'repStart') { rect(X, top - 1, X + 6, bottom + 1); rect(X + 11, top - 1, X + 13, bottom + 1); dots(X + 20); }
+      else { dots(X); rect(X + 7, top - 1, X + 9, bottom + 1); rect(X + 14, top - 1, X + 20, bottom + 1); }
+      x += 2.5 * S; continue;
+    }
     const cyy = bottom - sym.step * (S / 2);
     const hollow = sym.beats >= 2;
     if (sym.sharp) x += 1.5 * S; // chừa chỗ cho dấu thăng
@@ -69,6 +93,8 @@ function render(symbols: Sym[], S = 14): Gray {
 
 const N = (step: number, beats: 0.5 | 1 | 1.5 | 2 | 3 | 4 = 1, sharp = false): Sym => ({ kind: 'note', step, beats, sharp });
 const BAR: Sym = { kind: 'bar' };
+const REP_START: Sym = { kind: 'repStart' };
+const REP_END: Sym = { kind: 'repEnd' };
 
 describe('đọc khuông nhạc (OMR)', () => {
   it('tên nốt theo bậc, hoá biểu và dấu hoá riêng', () => {
@@ -171,6 +197,33 @@ describe('đọc khuông nhạc (OMR)', () => {
     expect(midiToStep(65, 1)).toEqual({ step: 1, accidental: 0 }); // F4 ở Sol trưởng: dấu bình
     expect(midiToStep(70, -2)).toEqual({ step: 4, accidental: null }); // Bb4 ở Si giáng trưởng
     expect(midiToStep(61, -2)).toEqual({ step: -1, accidental: -1 }); // Db4 ở giọng giáng
+  });
+
+  it('khoá Fa: nhận khoá, cao độ dời xuống (dòng dưới = Sol2)', () => {
+    const steps = [0, 1, 2, 3, 4, 5, 6, 7, 8];
+    const r = readSheet([render(steps.map((s) => N(s)), 14, 'F')]);
+    expect(r.pages[0].staves[0].clef).toBe('F');
+    expect(r.pages[0].notes.filter((n) => !n.rest).map((n) => notePitch(n, 0)))
+      .toEqual(['G2', 'A2', 'B2', 'C3', 'D3', 'E3', 'F3', 'G3', 'A3']);
+    // khuông khoá Sol không bị nhận nhầm
+    expect(readSheet([render([N(2), N(3)])]).pages[0].staves[0].clef).toBeUndefined();
+  });
+
+  it('dấu nhắc lại: chơi lại đoạn giữa ‖: và :‖ (không có ‖: thì từ đầu bài)', () => {
+    const pitches = (syms: Sym[]) => {
+      const r = readSheet([render(syms)]);
+      const t = toTranscription(r.pages, { title: '', keySig: 0, timeSig: '4/4', tempo: 90 });
+      return { r, t, seq: t.sections[0].lines.flatMap((l) => l.notes.map((n) => n.pitch)).filter((p) => p !== 'R') };
+    };
+    const a = pitches([N(2), N(3), N(4), N(5), REP_END, N(6), N(6), N(6), N(6)]);
+    expect(a.r.pages[0].staves[0].repeats?.map((m) => m.kind)).toEqual(['end']);
+    expect(a.seq).toEqual(['G4', 'A4', 'B4', 'C5', 'G4', 'A4', 'B4', 'C5', 'D5', 'D5', 'D5', 'D5']);
+    expect(a.t.warnings[0]).toMatch(/nhắc lại/);
+    const b = pitches([N(2), N(2), N(2), N(2), BAR, REP_START, N(3), N(4), N(3), N(4), REP_END, N(5), N(5), N(5), N(5)]);
+    expect(b.r.pages[0].staves[0].repeats?.map((m) => m.kind)).toEqual(['start', 'end']);
+    expect(b.seq).toEqual(['G4', 'G4', 'G4', 'G4', 'A4', 'B4', 'A4', 'B4', 'A4', 'B4', 'A4', 'B4', 'C5', 'C5', 'C5', 'C5']);
+    // không có dấu nhắc lại thì không chép
+    expect(pitches([N(2), N(3), BAR, N(4), N(5)]).r.pages[0].staves[0].repeats).toBeUndefined();
   });
 
   it('không thấy khuông nhạc thì không bịa nốt', () => {

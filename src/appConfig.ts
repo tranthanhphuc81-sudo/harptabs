@@ -27,5 +27,5 @@ export const SHOWN_HARP_TYPES: readonly HarpType[] = IS_RECORDER_APP
   : IS_GUITAR_APP
   ? ['guitar6', 'ukulele4']
   : IS_KALIMBA_APP
-  ? ['kalimba17']
+  ? ['kalimba17', 'kalimba10', 'kalimba8']
   : ['diatonic', 'chromatic', 'chromatic16', 'tremolo24', 'tremolo21', 'tremolo16', 'tremolo24m', 'tremolo21m', 'tremolo16m'];

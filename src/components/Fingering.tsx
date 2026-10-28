@@ -1,6 +1,6 @@
 import { fingeringKey, HarpKey, HarpType, harpLayout, isFingered, midiToName, NoteNameStyle } from '../lib/harp';
 import { previewNote } from '../audio/engine';
-import { KALIMBA_KEYS } from '../data/kalimba';
+import { KALIMBA_KEYS, parseKalimbaFingers } from '../data/kalimba';
 import { parseFretFingers } from '../data/guitar';
 import { FretIcon } from './Fretboard';
 import { TokenText } from './TabView';
@@ -10,7 +10,8 @@ import { TokenText } from './TabView';
  * sáo trúc 6 lỗ = 3 lỗ tay trái, khoảng hở, 3 lỗ tay phải. fingers: x (kín) / o (mở) / h (nửa).
  */
 export function FingeringIcon({ fingers, size = 'm' }: { fingers: string; size?: 's' | 'm' | 'l' }) {
-  if (fingers.startsWith('k')) return <KalimbaIcon pos={Number(fingers.slice(1))} size={size} />;
+  const k = parseKalimbaFingers(fingers);
+  if (k) return <KalimbaIcon pos={k.pos} keys={k.keys} size={size} />;
   const g = parseFretFingers(fingers);
   if (g) return <FretIcon strings={g.strings} string={g.string} fret={g.fret} size={size} />;
   const r = size === 's' ? 3.2 : size === 'l' ? 6 : 4.5;
@@ -40,9 +41,9 @@ export function FingeringIcon({ fingers, size = 'm' }: { fingers: string; size?:
   );
 }
 
-/** Kalimba thu nhỏ: 17 phím, phím giữa dài nhất, tô phím cần gảy */
-export function KalimbaIcon({ pos, size = 'm' }: { pos: number; size?: 's' | 'm' | 'l' }) {
-  const n = KALIMBA_KEYS;
+/** Kalimba thu nhỏ: 17 (hoặc 8, 10) phím, phím giữa dài nhất, tô phím cần gảy */
+export function KalimbaIcon({ pos, keys = KALIMBA_KEYS, size = 'm' }: { pos: number; keys?: number; size?: 's' | 'm' | 'l' }) {
+  const n = keys;
   const bw = size === 's' ? 2.4 : size === 'l' ? 6 : 3.6;
   const gap = bw * 0.45;
   const H = size === 's' ? 26 : size === 'l' ? 90 : 44;
@@ -59,9 +60,9 @@ export function KalimbaIcon({ pos, size = 'm' }: { pos: number; size?: 's' | 'm'
 }
 
 /** Sơ đồ kalimba: phím đúng thứ tự trên đàn, ghi số tab, chạm để nghe, tô sáng các nốt `highlight` */
-export function KalimbaChart({ harpKey = 'C', highlight = [], nameStyle = 'letter', interactive = true }: { harpKey?: HarpKey; highlight?: string[]; nameStyle?: NoteNameStyle; interactive?: boolean }) {
-  const layout = [...harpLayout(harpKey, 'kalimba17')].sort((a, b) => a.hole - b.hole);
-  const center = Math.floor(KALIMBA_KEYS / 2);
+export function KalimbaChart({ harpKey = 'C', harpType = 'kalimba17', highlight = [], nameStyle = 'letter', interactive = true }: { harpKey?: HarpKey; harpType?: HarpType; highlight?: string[]; nameStyle?: NoteNameStyle; interactive?: boolean }) {
+  const layout = [...harpLayout(harpKey, harpType)].sort((a, b) => a.hole - b.hole);
+  const center = Math.floor(layout.length / 2);
   return (
     <div className="kalimba-chart" role="list" aria-label="Sơ đồ kalimba">
       {layout.map((n) => (
