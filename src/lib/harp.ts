@@ -58,9 +58,9 @@ export type Technique = 'blow' | 'draw' | 'drawBend' | 'blowBend' | 'overblow' |
 
 /** Loại kèn. Bài cũ không ghi loại là diatonic. */
 export type HarpType = 'diatonic' | 'chromatic' | 'chromatic16' | 'tremolo24' | 'tremolo21' | 'tremolo16' | 'tremolo24m' | 'tremolo21m' | 'tremolo16m'
-  | 'recorderAlto' | 'recorderSoprano' | 'recorderTenor' | 'recorderBass' | 'saoTruc6' | 'kalimba17' | 'kalimba10' | 'kalimba8' | 'guitar6' | 'ukulele4' | 'pianica32' | 'pianica37' | 'ocarina12' | 'tranh16' | 'tranh17' | 'danbau';
+  | 'recorderAlto' | 'recorderSoprano' | 'recorderTenor' | 'recorderBass' | 'saoTruc6' | 'kalimba17' | 'kalimba10' | 'kalimba8' | 'guitar6' | 'ukulele4' | 'pianica32' | 'pianica37' | 'ocarina12' | 'tranh16' | 'tranh17' | 'tranh19' | 'tranh21' | 'tranh22' | 'danbau';
 /** mọi loại hợp lệ (để đọc bài đã lưu); ô chọn chỉ hiện SHOWN_HARP_TYPES của bản build (src/appConfig.ts) */
-export const HARP_TYPES: readonly HarpType[] = ['diatonic', 'chromatic', 'chromatic16', 'tremolo24', 'tremolo21', 'tremolo16', 'tremolo24m', 'tremolo21m', 'tremolo16m', 'recorderAlto', 'recorderSoprano', 'recorderTenor', 'recorderBass', 'saoTruc6', 'kalimba17', 'kalimba10', 'kalimba8', 'guitar6', 'ukulele4', 'pianica32', 'pianica37', 'ocarina12', 'tranh16', 'tranh17', 'danbau'];
+export const HARP_TYPES: readonly HarpType[] = ['diatonic', 'chromatic', 'chromatic16', 'tremolo24', 'tremolo21', 'tremolo16', 'tremolo24m', 'tremolo21m', 'tremolo16m', 'recorderAlto', 'recorderSoprano', 'recorderTenor', 'recorderBass', 'saoTruc6', 'kalimba17', 'kalimba10', 'kalimba8', 'guitar6', 'ukulele4', 'pianica32', 'pianica37', 'ocarina12', 'tranh16', 'tranh17', 'tranh19', 'tranh21', 'tranh22', 'danbau'];
 
 export const HARP_TYPE_LABEL: Record<HarpType, string> = {
   diatonic: 'Diatonic 10 lỗ',
@@ -87,6 +87,9 @@ export const HARP_TYPE_LABEL: Record<HarpType, string> = {
   ocarina12: 'Ocarina 12 lỗ (alto Đô)',
   tranh16: 'Đàn tranh 16 dây',
   tranh17: 'Đàn tranh 17 dây',
+  tranh19: 'Đàn tranh 19 dây',
+  tranh21: 'Đàn tranh 21 dây',
+  tranh22: 'Đàn tranh 22 dây',
   danbau: 'Đàn bầu',
 };
 
@@ -97,7 +100,7 @@ export function isDanBau(t: HarpType | undefined): boolean {
 
 /** đàn tranh: tab ghi số dây (1 = dây trầm nhất), ^ = nhấn nửa cung, ^^ = nhấn một cung (src/data/tranh.ts) */
 export function isTranh(t: HarpType | undefined): boolean {
-  return t === 'tranh16' || t === 'tranh17';
+  return t === 'tranh16' || t === 'tranh17' || t === 'tranh19' || t === 'tranh21' || t === 'tranh22';
 }
 
 /** cách lên dây đàn tranh đang dùng (theo Cài đặt); đổi thì xoá bảng nốt đã tính */
@@ -203,6 +206,9 @@ export function holeCount(t: HarpType = 'diatonic'): number {
     case 'ocarina12': return 12;
     case 'tranh16': return 16;
     case 'tranh17': return 17;
+    case 'tranh19': return 19;
+    case 'tranh21': return 21;
+    case 'tranh22': return 22;
     case 'danbau': return 8;
     default: return 10;
   }

@@ -857,7 +857,7 @@ function ViewAsBar({ original, viewed, view, fit, choice, onChoice, onSaved }: {
           <label className="field viewas-field">
             <span className="field-label">{isKalimba(type) ? 'Tông kalimba' : isSaoTruc(type) ? 'Tông sáo' : `Tông ${BRAND.noun}`}</span>
             <select value={key} onChange={(e) => set({ key: e.target.value as HarpKey })}>
-              {HARP_KEYS.map((k) => <option key={k} value={k}>{isKalimba(type) ? `Kalimba ${k}` : isSaoTruc(type) ? `Sáo ${k}` : `Kèn ${harpKeyLabel(k, type)}`}</option>)}
+              {HARP_KEYS.map((k) => <option key={k} value={k}>{isKalimba(type) ? `Kalimba ${k}` : isSaoTruc(type) ? `Sáo ${k}` : isTranh(type) || isDanBau(type) ? `Đàn ${k}` : `Kèn ${harpKeyLabel(k, type)}`}</option>)}
             </select>
           </label>
         )}

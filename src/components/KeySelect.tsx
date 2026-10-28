@@ -19,7 +19,7 @@ export function KeySelect({ value, onChange, allowAuto, id, label = `Tông ${BRA
       <span className="field-label">{label}</span>
       <select id={id} value={value} onChange={(e) => onChange(e.target.value as HarpKey | 'auto')}>
         {allowAuto && <option value="auto">Tự chọn {BRAND.noun} hợp nhất</option>}
-        {HARP_KEYS.map((k) => <option key={k} value={k}>{isSaoTruc(harpType) ? `Sáo ${k}` : isKalimba(harpType) ? `Kalimba ${k}` : `Kèn ${harpKeyLabel(k, harpType)}`}</option>)}
+        {HARP_KEYS.map((k) => <option key={k} value={k}>{isSaoTruc(harpType) ? `Sáo ${k}` : isKalimba(harpType) ? `Kalimba ${k}` : isTranh(harpType) || isDanBau(harpType) ? `Đàn ${k}` : `Kèn ${harpKeyLabel(k, harpType)}`}</option>)}
       </select>
     </label>
   );

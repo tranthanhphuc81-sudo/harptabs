@@ -15,7 +15,7 @@ Cùng mã nguồn này còn build ra năm app khác cho [sáo](#sổ-tab-sáo), 
 | Sổ Tab Kalimba | Kalimba 17, 10, 8 phím | https://sotabkalimba.pages.dev | [Releases `kalimba-apk-v…`](https://github.com/tranthanhphuc81-sudo/harptabs/releases?q=kalimba-apk&expanded=true) |
 | Sổ Tab Guitar | Guitar 6 dây, ukulele 4 dây | https://sotabguitar.pages.dev | [Releases `guitar-apk-v…`](https://github.com/tranthanhphuc81-sudo/harptabs/releases?q=guitar-apk&expanded=true) |
 | Sổ Tab Pianica | Kèn pianica (melodica) 32 / 37 phím | https://sotabpianica.pages.dev | [Releases `pianica-apk-v…`](https://github.com/tranthanhphuc81-sudo/harptabs/releases?q=pianica-apk&expanded=true) |
-| Sổ Tab Đàn Tranh – Đàn Bầu | Đàn tranh 16 / 17 dây, đàn bầu | https://sotabdantranh.pages.dev | [Releases `tranh-apk-v…`](https://github.com/tranthanhphuc81-sudo/harptabs/releases?q=tranh-apk&expanded=true) |
+| Sổ Tab Đàn Tranh – Đàn Bầu | Đàn tranh 16 / 17 / 19 / 21 / 22 dây, đàn bầu | https://sotabdantranh.pages.dev | [Releases `tranh-apk-v…`](https://github.com/tranthanhphuc81-sudo/harptabs/releases?q=tranh-apk&expanded=true) |
 
 Cả sáu app có chung thư viện bài, phát nhạc đệm, karaoke, chia sẻ bài, nhập MIDI / MusicXML, quét khuông nhạc, dò nốt, tập ngẫu hứng, chạy offline. Phần riêng của từng app nằm ở các mục bên dưới.
 
@@ -98,7 +98,7 @@ Bản web: https://sotabdantranh.pages.dev · APK: gói `dev.pages.sotabdantranh
 
 | Phần | Nội dung |
 |---|---|
-| Đàn | Đàn tranh 16 / 17 dây, lên dây Bắc (Sol La Đô Rê Mi) hoặc Đảo (Sol La Đô Rê Fa) — chọn trong Cài đặt; tông đàn chọn được |
+| Đàn | Đàn tranh 16 / 17 dây (và đàn cải tiến 19 / 21 / 22 dây: thêm dây trầm, 22 dây xuống tới Sol2), lên dây Bắc (Sol La Đô Rê Mi) hoặc Đảo (Sol La Đô Rê Fa) — chọn trong Cài đặt; tông đàn chọn được |
 | Tab | Số dây (1 = dây trầm nhất), `7^` nhấn nửa cung, `7^^` nhấn một cung; bộ chọn ưu tiên dây buông, chỉ nhấn khi nốt không có trên dây. Hình các dây dưới mỗi nốt, sơ đồ đàn chạm để nghe |
 | Đàn bầu | Tab ghi điểm bồi (`b2` = ½ dây, `b3` = ⅓… `b8`; `b1` dây buông), nắn cần `b4+2` lên 2 nửa cung, `b5-1` xuống nửa cung; hiện bằng ½ ⅓ ¼ kèm ↑ / ↓. Hình dây đàn với điểm cần chạm dưới mỗi nốt, sơ đồ các điểm bồi chạm để nghe. Dây Đô: ½ Đô4, ⅓ Sol4, ¼ Đô5, ⅕ Mi5, ⅙ Sol5, ⅐ Sib5, ⅛ Đô6 |
 | Bài và học | Bài mẫu xếp lại cho đàn tranh và 8 bài cho đàn bầu (giữ hợp âm chuẩn), 7 bài học: làm quen, đọc tab, nhấn, rung – vỗ – vuốt, lên dây, làm quen đàn bầu, nắn cần |

@@ -31,7 +31,7 @@ export const BRAND = IS_RECORDER_APP
 export const SHOWN_HARP_TYPES: readonly HarpType[] = IS_RECORDER_APP
   ? ['recorderAlto', 'recorderSoprano', 'recorderTenor', 'recorderBass', 'saoTruc6', 'ocarina12']
   : IS_TRANH_APP
-  ? ['tranh17', 'tranh16', 'danbau']
+  ? ['tranh17', 'tranh16', 'tranh19', 'tranh21', 'tranh22', 'danbau']
   : IS_PIANICA_APP
   ? ['pianica32', 'pianica37']
   : IS_GUITAR_APP

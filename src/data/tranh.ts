@@ -1,5 +1,7 @@
 /**
  * Đàn tranh 16 / 17 dây, lên dây ngũ cung. Dây 1 là dây trầm nhất (dây Hò), tông Đô: Sol3.
+ * Đàn cải tiến 19 / 21 / 22 dây: thêm dây ở phía trầm (cùng vòng ngũ cung đi xuống), các dây cao giữ như đàn 17 dây —
+ * 19 dây bắt đầu từ Rê3, 21 dây từ La2, 22 dây từ Sol2 (dây Bắc tông Đô).
  *   Dây Bắc (thường dạy người mới): Sol La Đô Rê Mi lặp lại → G3 A3 C4 D4 E4 G4 …
  *   Dây Đảo: Sol La Đô Rê Fa lặp lại
  * Nguồn: hocdan.org/dan-tranh-17-day, dantranhpvv.wordpress.com (bài lên dây), senvietmusic.com (dây 1 = Sol3).
@@ -16,13 +18,17 @@ const PATTERN: Record<TranhTuning, number[]> = {
   dao: [0, 2, 5, 7, 10], // Sol La Đô Rê Fa
 };
 
-/** cao độ dây buông (dây 1 → dây cuối), tông Đô: dây 1 = Sol3 (55) */
+/** cao độ dây buông (dây 1 → dây cuối), tông Đô: đàn 16 / 17 dây có dây 1 = Sol3 (55); đàn nhiều dây hơn thêm dây trầm */
 export function tranhStrings(count: number, tuning: TranhTuning): number[] {
   const p = PATTERN[tuning];
-  return Array.from({ length: count }, (_, i) => 55 + 12 * Math.floor(i / 5) + p[i % 5]);
+  const extra = Math.max(0, count - 17);
+  return Array.from({ length: count }, (_, i) => {
+    const k = i - extra; // vị trí trong vòng ngũ cung tính từ Sol3 (âm = dây trầm thêm)
+    return 55 + 12 * Math.floor(k / 5) + p[((k % 5) + 5) % 5];
+  });
 }
 
-export const TRANH_TOKEN_RE = /^(1[0-7]|[1-9])(\^{0,2})$/;
+export const TRANH_TOKEN_RE = /^(2[0-2]|1[0-9]|[1-9])(\^{0,2})$/;
 
 export function tranhToken(string: number, press: number): string {
   return `${string}${'^'.repeat(press)}`;

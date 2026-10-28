@@ -18,6 +18,15 @@ describe('đàn tranh', () => {
     expect(harpName('C', 'tranh17')).toBe('Đàn tranh 17 dây (C, dây Bắc)');
   });
 
+  it('đàn 19 / 21 / 22 dây thêm dây trầm, dây cao giữ như đàn 17 dây', () => {
+    const lo = (t: 'tranh19' | 'tranh21' | 'tranh22') => midiToName(parseToken('1', 'C', t)!.midi);
+    expect([lo('tranh19'), lo('tranh21'), lo('tranh22')]).toEqual(['D3', 'A2', 'G2']);
+    expect(midiToName(parseToken('22', 'C', 'tranh22')!.midi)).toBe('A6');
+    expect(midiToName(parseToken('19', 'C', 'tranh19')!.midi)).toBe('A6');
+    expect(parseToken('20', 'C', 'tranh19')).toBeNull();
+    expect(harpLayout('C', 'tranh21')).toHaveLength(21 * 3);
+  });
+
   it('dây Đảo: Sol La Đô Rê Fa', () => {
     setTranhTuning('dao');
     expect(midiToName(parseToken('5', 'C', 'tranh17')!.midi)).toBe('F4');
