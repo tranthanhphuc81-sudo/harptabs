@@ -62,6 +62,8 @@ export interface Settings {
   keepAwakeAlways: boolean;
   /** guitar / ukulele: vẽ sơ đồ hợp âm nằm ngang cùng hướng với tab (mặc định dựng đứng như sách hợp âm) */
   chordHorizontal?: boolean;
+  /** cỡ hình nhỏ dưới mỗi nốt (bàn phím pianica, thế bấm sáo, phím kalimba): 1 = mặc định */
+  fingerScale?: number;
   /** bù trễ đèn nốt (ms): dương = đèn sáng muộn hơn; dùng khi loa / tai nghe Bluetooth trễ hơn máy báo */
   syncOffsetMs: number;
   /** độ trễ micro (ms) khi chấm điểm karaoke: giọng hát tới bộ dò trễ chừng này */

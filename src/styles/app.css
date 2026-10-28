@@ -1086,6 +1086,10 @@ button, a, select { -webkit-tap-highlight-color: transparent; }
 .fingering .fg-ring { fill: var(--surface); stroke: var(--ink-2); stroke-width: 1; }
 .fingering .fg-fill { fill: var(--ink); }
 .nt-finger { display: flex; justify-content: center; margin-top: 2px; }
+/* cỡ hình dưới nốt chỉnh được (Cài đặt / nút − + trên trang bài) */
+.nt-finger > svg { zoom: var(--finger-scale, 1); }
+.finger-size { display: inline-flex; align-items: center; gap: 4px; }
+.finger-size output { min-width: 3.2em; text-align: center; font-size: 0.85rem; }
 .nt.is-active .fingering .fg-ring { stroke: var(--ink); }
 .tok-oct { font-size: 0.55em; opacity: 0.7; margin-left: 1px; }
 .recorder-chart { display: grid; grid-template-columns: repeat(auto-fill, minmax(52px, 1fr)); gap: 6px; }

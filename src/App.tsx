@@ -35,6 +35,8 @@ function Shell() {
   // giữ màn hình sáng suốt lúc app đang mở (Cài đặt → Luôn giữ sáng); tay bận cầm kèn / sáo
   const { settings } = useAppState();
   useWakeLock(settings.keepAwakeAlways ?? true);
+  // cỡ hình dưới mỗi nốt (bàn phím pianica, thế bấm sáo, phím kalimba) dùng chung mọi trang có tab
+  useEffect(() => { document.documentElement.style.setProperty('--finger-scale', String(settings.fingerScale ?? 1)); }, [settings.fingerScale]);
   const { pathname } = useLocation();
   const [ready, setReady] = useState(false);
   const [err, setErr] = useState<string | null>(null);

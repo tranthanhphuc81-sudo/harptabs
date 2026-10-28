@@ -75,7 +75,7 @@ function SongPlayerView({ song, original, fit, view, choice, onChoice }: {
   choice: ViewChoice;
   onChoice: (c: ViewChoice) => void;
 }) {
-  const { settings, toast } = useAppState();
+  const { settings, toast, update } = useAppState();
   const nav = useNavigate();
   const harpType = harpTypeOf(song);
   const chrom = isChromatic(harpType);
@@ -456,6 +456,19 @@ function SongPlayerView({ song, original, fit, view, choice, onChoice }: {
         <span className="lg-dur print-only">Ô dài = giữ lâu hơn (ô thường 1 phách) · <strong>–</strong> nghỉ</span>
         {!sheetData && <span className="muted no-print">Chạm vào nốt để nghe, hoặc chọn chỗ bắt đầu phát.</span>}
         <button type="button" className={`chip no-print${pageTurn ? ' on' : ''}`} aria-pressed={pageTurn} onClick={togglePageTurn}>Chạm lật trang</button>
+        {rec && !isFretted(harpType) && !sheetData && (() => {
+          // cỡ hình dưới nốt: 60% – 250%, mỗi bước 20%
+          const fs = settings.fingerScale ?? 1;
+          const setFs = (v: number) => update({ fingerScale: Math.round(Math.min(2.5, Math.max(0.6, v)) * 10) / 10 });
+          return (
+            <span className="finger-size no-print" role="group" aria-label="Cỡ hình dưới nốt">
+              <span className="small muted">Hình dưới nốt</span>
+              <button type="button" className="icon-btn" onClick={() => setFs(fs - 0.2)} disabled={fs <= 0.6} aria-label="Thu nhỏ hình dưới nốt">−</button>
+              <output>{Math.round(fs * 100)}%</output>
+              <button type="button" className="icon-btn" onClick={() => setFs(fs + 0.2)} disabled={fs >= 2.5} aria-label="Phóng to hình dưới nốt">+</button>
+            </span>
+          );
+        })()}
         <button type="button" className={`chip legend-chords${beatPrefs.showChords ? ' on' : ''}`} aria-pressed={beatPrefs.showChords}
           onClick={() => setBeatPrefs({ showChords: !beatPrefs.showChords })}>
           Hợp âm{manualCount > 0 ? (original.source === 'sample' ? ' (chuẩn)' : ` (${manualCount} chọn tay)`) : ''}

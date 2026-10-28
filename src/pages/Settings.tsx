@@ -1,5 +1,5 @@
 import { DEGREE_NAMES } from '../data/saoTrucFingerings';
-import { BRAND, IS_GUITAR_APP, IS_RECORDER_APP } from '../appConfig';
+import { BRAND, IS_GUITAR_APP, IS_HARMONICA_APP, IS_RECORDER_APP } from '../appConfig';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useEffect, useRef, useState } from 'react';
 import { db, ensureSeeded, importBackup } from '../lib/db';
@@ -147,6 +147,12 @@ export default function SettingsPage() {
               <option value="s">Nhỏ</option><option value="m">Vừa</option><option value="l">Lớn (để xa khi thổi)</option>
             </select>
           </label>
+          {!IS_HARMONICA_APP && !IS_GUITAR_APP && (
+            <label className="field">
+              <span className="field-label">Cỡ hình dưới nốt: {Math.round((s.fingerScale ?? 1) * 100)}%</span>
+              <input type="range" min={0.6} max={2.5} step={0.1} value={s.fingerScale ?? 1} onChange={(e) => update({ fingerScale: Number(e.target.value) })} />
+            </label>
+          )}
           <label className="field">
             <span className="field-label">Tên nốt</span>
             <select value={s.noteNames} onChange={(e) => update({ noteNames: e.target.value as typeof s.noteNames })}>
