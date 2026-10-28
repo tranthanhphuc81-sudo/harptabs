@@ -1251,3 +1251,27 @@ button, a, select { -webkit-tap-highlight-color: transparent; }
 .bp-dot.k-open, .bp-dot.k-wrong { background: #e5a23a; }
 .bp-dot.k-muted, .bp-dot.k-off { background: #d9534f; }
 .bp-tips { margin-top: 14px; }
+.bp-mode { margin: 4px 0 12px; }
+.bend-meter { margin: 18px 6px 30px; }
+.bm-track { position: relative; height: 18px; border-radius: 9px; background: var(--line); }
+.bm-zone { position: absolute; top: 0; bottom: 0; background: #3aa76d; opacity: 0.55; border-radius: 9px; }
+.bm-mark { position: absolute; top: -4px; bottom: -4px; width: 2px; background: var(--ink-2); transform: translateX(-1px); }
+.bm-mark.target { background: #3aa76d; }
+.bm-mark span { position: absolute; top: 28px; left: 50%; transform: translateX(-50%); font-size: 0.75rem; white-space: nowrap; }
+.bm-dot { position: absolute; top: 50%; width: 20px; height: 20px; border-radius: 50%; background: #d9534f; border: 2px solid var(--surface); transform: translate(-50%, -50%); transition: left 80ms linear; }
+
+.cp-chords { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0; }
+.cp-chip { min-width: 3.2em; padding: 6px 10px; border-radius: var(--r-s); border: 1px solid var(--line); background: var(--surface); font-weight: 700; display: flex; flex-direction: column; align-items: center; line-height: 1.1; cursor: pointer; color: var(--ink); }
+.cp-chip small { font-size: 0.68rem; font-weight: 400; opacity: 0.8; }
+.cp-chip.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.cp-target { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-start; }
+.cp-neck { flex: 1 1 16em; min-width: 0; overflow-x: auto; }
+.cp-neck p { margin: 4px 0 0; }
+.cp-issues { margin: 6px 0 0; padding-left: 1.2em; }
+.cp-levels { display: flex; gap: 8px; align-items: flex-end; margin-top: 10px; }
+.cp-lv { display: flex; flex-direction: column; align-items: center; width: 30px; }
+.cp-lv .cp-bar { display: block; width: 14px; background: #3aa76d; border-radius: 3px 3px 0 0; }
+.cp-lv { height: 76px; justify-content: flex-end; }
+.cp-lv.weak .cp-bar { background: #d9534f; }
+.cp-lv.off .cp-bar { background: transparent; }
+.cp-lv small { font-size: 0.7rem; line-height: 1.2; }

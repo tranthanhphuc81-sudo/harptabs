@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { classifyPluck, nodeMidi, PluckDetector } from './bauPractice';
+import { BendHold, bendStatus, classifyPluck, nodeMidi, PluckDetector } from './bauPractice';
 
 describe('chấm lần gảy đàn bầu', () => {
   it('đúng tiếng bồi ½ (Đô4 trên dây Đô), kèm lệch cent', () => {
@@ -39,5 +39,34 @@ describe('chấm lần gảy đàn bầu', () => {
     let n = 0;
     for (let i = 0; i < 300; i++) if (d.feed(i / 60, 0.05, 60)) n++;
     expect(n).toBe(1);
+  });
+});
+
+describe('tập nắn cần', () => {
+  it('đẩy cần lên: thấp = thiếu, cao = quá, ±25 cent = đúng', () => {
+    expect(bendStatus(60, 62, 2).status).toBe('under');
+    expect(bendStatus(62.2, 62, 2)).toEqual({ status: 'ok', cents: 20 });
+    expect(bendStatus(62.6, 62, 2).status).toBe('over');
+    expect(bendStatus(null, 62, 2).status).toBe('none');
+  });
+
+  it('kéo cần xuống: cao = thiếu, thấp = quá', () => {
+    expect(bendStatus(72, 71, -1).status).toBe('under');
+    expect(bendStatus(70.5, 71, -1).status).toBe('over');
+  });
+
+  it('giữ đúng nửa giây mới tính một lần; giữ tiếp không tính thêm; gảy lại mới tính lần sau', () => {
+    const h = new BendHold();
+    let n = 0;
+    let t = 0;
+    const run = (frames: number, s: 'ok' | 'under' | 'none') => { for (let i = 0; i < frames; i++) { if (h.feed(t, s)) n++; t += 1 / 60; } };
+    run(20, 'ok');     // 0,33 giây: chưa đủ
+    run(5, 'under');
+    expect(n).toBe(0);
+    run(120, 'ok');    // giữ 2 giây: tính đúng một lần
+    expect(n).toBe(1);
+    run(10, 'none');   // tắt tiếng, gảy lại
+    run(40, 'ok');
+    expect(n).toBe(2);
   });
 });

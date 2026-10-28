@@ -119,6 +119,7 @@ export const TRANH_LESSONS: Lesson[] = [
         'Nắn liên tục lên xuống là **rung** — làm tiếng đàn ngân như giọng hát.',
       ] },
       { t: 'tab', caption: 'Thang âm Đô trưởng (nắn cần cho Rê, Fa, La, Si)', body: 'b4 b4+2 b5 b5+1 b6 b6+2 b8-1 b8:2\n', bpm: 60, style: 'metronome', ...B },
+      { t: 'link', to: '/tap-boi-am?mode=nan', label: 'Tập nắn cần với micro', text: 'Gảy bồi rồi nắn: thước cao độ cho thấy đang thiếu, đủ hay quá; giữ đúng nửa giây là đạt.' },
       { t: 'warn', text: 'Nắn nhẹ tay và từ từ; nắn mạnh quá dễ làm tuột dây hoặc lệch cần. Cao độ nắn trong app là gần đúng — luôn kiểm tra bằng tai và Dò nốt.' },
     ],
   },

@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { BRAND } from '../appConfig';
 import { useEffect, useRef, useState } from 'react';
-import { HarpKey, HarpType, harpLayout, holeCount, isChromatic, isFingered, isFretted, isKalimba, isDanBau, isOcarina, isPianica, isTranh, isRecorder, isSaoTruc, isTremolo, midiToName, TECHNIQUE_LABEL } from '../lib/harp';
+import { HarpKey, HarpType, harpLayout, holeCount, isChromatic, isFingered, isFretted, isKalimba, isDanBau, isOcarina, isPianica, isTranh, isRecorder, isSaoTruc, isTremolo, midiToHz, midiToName, TECHNIQUE_LABEL } from '../lib/harp';
 import { MicPitch, PitchReading } from '../audio/pitch';
 import { HarpDiagram } from '../components/HarpDiagram';
 import { HarpTypeSelect, KeySelect } from '../components/KeySelect';
@@ -25,10 +25,12 @@ export default function Tuner() {
 
   useEffect(() => () => micRef.current?.stop(), []);
   useWakeLock(on);
+  // dây trầm guitar (Mi2 ~82 Hz), dây buông đàn bầu (Đô3 ~131 Hz) thấp hơn tầm dò mặc định của kèn (150 Hz): hạ tầm dò theo nốt thấp nhất của đàn
+  const lowHz = Math.round(Math.min(150, midiToHz(Math.min(...harpLayout(key, type).map((n) => n.midi))) * 0.85));
 
   const start = async () => {
     setErr(null);
-    const mic = new MicPitch();
+    const mic = new MicPitch({ minHz: lowHz });
     mic.onReading = (x) => {
       const now = performance.now();
       if (!x) {
@@ -52,6 +54,14 @@ export default function Tuner() {
     }
   };
   const stop = () => { micRef.current?.stop(); micRef.current = null; setOn(false); setR(null); };
+  // đổi loại đàn khi micro đang bật: mở lại micro với tầm dò mới
+  const lowRef = useRef(lowHz);
+  useEffect(() => {
+    if (lowRef.current === lowHz) return;
+    lowRef.current = lowHz;
+    if (micRef.current) { micRef.current.stop(); micRef.current = null; void start(); }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lowHz]);
 
   const matches = r ? harpLayout(key, type).filter((n) => n.midi === r.nearest) : [];
   const cents = r ? Math.round(r.cents) : 0;
@@ -98,7 +108,8 @@ export default function Tuner() {
       </div>
 
       <HarpDiagram harpKey={key} harpType={type} highlight={matches.map((m) => m.token)} nameStyle={settings.noteNames} />
-      {isDanBau(type) && <p><Link to="/tap-boi-am" className="btn btn-ghost">Tập bồi âm: chấm từng lần gảy</Link></p>}
+      {isDanBau(type) && <p className="row gap wrap"><Link to="/tap-boi-am" className="btn btn-ghost">Tập bồi âm: chấm từng lần gảy</Link><Link to="/tap-boi-am?mode=nan" className="btn btn-ghost">Tập nắn cần</Link></p>}
+      {isFretted(type) && <p><Link to={`/tap-hop-am?inst=${type === 'ukulele4' ? 'ukulele' : 'guitar'}`} className="btn btn-ghost">Tập hợp âm: app nghe từng lần quạt</Link></p>}
       {isDanBau(type)
         ? <p className="muted small">Mẹo đàn bầu: lên dây buông đúng nốt chủ (dây Đô: Đô3), rồi gảy bồi 1/2 để kiểm tra — phải ra đúng Đô cao hơn một quãng tám. Tập nắn cần: gảy bồi rồi đẩy / kéo cần tới khi kim chỉ đúng nốt cần ra.</p>
         : isTranh(type)

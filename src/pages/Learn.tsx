@@ -36,8 +36,12 @@ export default function Learn() {
         <span>{IS_GUITAR_APP ? 'Nền nhạc 12 ô nhịp và các vòng jazz, thang âm blues trên cần đàn, máy hỏi – bạn đáp và lick mẫu xếp theo dây.phím.' : IS_RECORDER_APP ? 'Nền nhạc swing các vòng ii–V–I, thế bấm các nốt của hợp âm đang vang, máy hỏi – bạn đáp và lick mẫu.' : 'Nền nhạc 12 ô nhịp, thang âm blues trên kèn của bạn, máy hỏi – bạn đáp và lick mẫu; có cả chế độ jazz.'}</span>
       </Link>}
       {IS_TRANH_APP && <Link to="/tap-boi-am" className="jam-card">
-        <strong>Tập bồi âm đàn bầu</strong>
-        <span>Bật micro, gảy từng điểm bồi: app nghe và cho biết ra đúng tiếng bồi chưa, sai do chạm lệch, ấn mạnh hay nhầm điểm; đếm tỉ lệ đúng từng điểm.</span>
+        <strong>Tập bồi âm, nắn cần đàn bầu</strong>
+        <span>Bật micro, gảy từng điểm bồi: app nghe và cho biết ra đúng tiếng bồi chưa, sai do chạm lệch, ấn mạnh hay nhầm điểm. Chế độ nắn cần: thước cao độ báo đang thiếu, đủ hay quá.</span>
+      </Link>}
+      {IS_GUITAR_APP && <Link to="/tap-hop-am" className="jam-card">
+        <strong>Tập hợp âm với micro</strong>
+        <span>Bấm theo sơ đồ, quạt một lần: app nghe và chỉ ra dây nào câm, dây × nào bị quạt trúng, ngón nào bấm lệch phím; đếm tỉ lệ sạch từng hợp âm.</span>
       </Link>}
       {LESSON_GROUPS.map((g) => (
         <section key={g} className="lesson-group">

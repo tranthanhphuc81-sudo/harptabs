@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { previewNote, previewChord } from '../audio/engine';
 import { useAppState } from '../state';
 import { chordShape, ChordInstrument, shapeMidis } from '../data/chordShapes';
@@ -187,6 +188,7 @@ export function ChordStrip({ names, inst }: { names: string[]; inst: ChordInstru
       <div className="chord-strip" role="list" aria-label="Thế hợp âm trong bài">
         {uniq.map((n) => <ChordDiagram key={n} name={n} inst={inst} selected={picked === n} onPlay={() => pick(n)} />)}
       </div>
+      <p className="small"><Link to={`/tap-hop-am?inst=${inst}&c=${encodeURIComponent(uniq.join(','))}`}>Tập bấm sạch các hợp âm này với micro →</Link></p>
       {picked && shape && (
         <div className="chord-on-neck">
           <p className="small muted">Thế <strong>{picked}</strong> trên cần đàn (cùng hướng với tab: dây 1 ở trên). Ô sáng là chỗ bấm, cột 0 là dây buông.</p>

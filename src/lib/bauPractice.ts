@@ -102,3 +102,65 @@ export function pluckAdvice(r: PluckResult, glyph: (n: number) => string): strin
     case 'off': return 'Ra cao độ lạ: dây buông chưa đúng tông, hoặc cần đàn đang bị nắn. Lên lại dây bằng Dò nốt.';
   }
 }
+
+/* ---------- Tập nắn cần ---------- */
+
+/** các bài nắn cần thường gặp: điểm bồi + số nửa cung nắn (dương = đẩy cần lên, âm = kéo cần xuống) */
+export const BEND_DRILLS: { n: number; bend: number }[] = [
+  { n: 4, bend: 2 }, { n: 5, bend: 1 }, { n: 6, bend: 2 }, { n: 8, bend: -1 },
+  { n: 3, bend: 2 }, { n: 2, bend: 2 }, { n: 4, bend: -1 }, { n: 6, bend: 3 },
+];
+
+export type BendStatus = 'none' | 'under' | 'ok' | 'over';
+
+/** khoảng chấp nhận (nửa cung): ±25 cent */
+const BEND_TOL = 0.25;
+
+/** so cao độ đang nghe với nốt cần nắn tới; under/over tính theo hướng nắn (đẩy lên: thấp = thiếu; kéo xuống: cao = thiếu) */
+export function bendStatus(midi: number | null, target: number, bend: number): { status: BendStatus; cents: number } {
+  if (midi === null) return { status: 'none', cents: 0 };
+  const d = midi - target;
+  const cents = Math.round(d * 100);
+  if (Math.abs(d) <= BEND_TOL) return { status: 'ok', cents };
+  const short = bend >= 0 ? d < 0 : d > 0;
+  return { status: short ? 'under' : 'over', cents };
+}
+
+/** giữ đúng cao độ bao lâu thì tính một lần đạt (giây) */
+const HOLD = 0.5;
+
+/**
+ * Đếm lần nắn đạt: cao độ phải ở trong khoảng đúng liên tục HOLD giây.
+ * Sau một lần đạt, phải mất tiếng (gảy lại) mới tính lần sau — giữ nguyên không được tính nhiều lần.
+ */
+export class BendHold {
+  private since: number | null = null;
+  private done = false;
+  private silent = 0;
+
+  feed(time: number, status: BendStatus): boolean {
+    if (status === 'none') {
+      // vài khung không có cao độ liền nhau = dây tắt / gảy lại
+      if (++this.silent >= 6) { this.done = false; this.since = null; }
+      return false;
+    }
+    this.silent = 0;
+    if (status !== 'ok') { this.since = null; return false; }
+    if (this.done) return false;
+    if (this.since === null) this.since = time;
+    if (time - this.since >= HOLD) { this.done = true; return true; }
+    return false;
+  }
+
+  reset() { this.since = null; this.done = false; this.silent = 0; }
+}
+
+export function bendAdvice(status: BendStatus, bend: number): string {
+  const push = bend >= 0;
+  switch (status) {
+    case 'none': return 'Gảy bồi rồi nắn cần — app hiện cao độ ngay khi nghe thấy.';
+    case 'under': return push ? 'Thiếu: đẩy cần thêm chút nữa.' : 'Thiếu: kéo cần ra thêm chút nữa.';
+    case 'over': return push ? 'Quá tay: nới cần ra một chút.' : 'Quá tay: đẩy cần về một chút.';
+    case 'ok': return 'Đúng rồi — giữ yên tay!';
+  }
+}
