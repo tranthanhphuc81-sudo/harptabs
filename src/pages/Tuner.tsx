@@ -1,6 +1,6 @@
 import { BRAND } from '../appConfig';
 import { useEffect, useRef, useState } from 'react';
-import { HarpKey, HarpType, harpLayout, holeCount, isChromatic, isFingered, isFretted, isKalimba, isPianica, isRecorder, isSaoTruc, isTremolo, midiToName, TECHNIQUE_LABEL } from '../lib/harp';
+import { HarpKey, HarpType, harpLayout, holeCount, isChromatic, isFingered, isFretted, isKalimba, isOcarina, isPianica, isRecorder, isSaoTruc, isTremolo, midiToName, TECHNIQUE_LABEL } from '../lib/harp';
 import { MicPitch, PitchReading } from '../audio/pitch';
 import { HarpDiagram } from '../components/HarpDiagram';
 import { HarpTypeSelect, KeySelect } from '../components/KeySelect';
@@ -97,7 +97,9 @@ export default function Tuner() {
       </div>
 
       <HarpDiagram harpKey={key} harpType={type} highlight={matches.map((m) => m.token)} nameStyle={settings.noteNames} />
-      {isPianica(type)
+      {isOcarina(type)
+        ? <p className="muted small">Mẹo: ocarina rất nhạy với hơi thổi — thổi mạnh thì nốt cao lên, yếu thì thấp xuống. Nhìn kim cent để tìm độ mạnh đúng cho từng nốt (nốt trầm nhẹ, nốt cao mạnh dần); lỗ bịt chưa kín làm nốt rè.</p>
+        : isPianica(type)
         ? <p className="muted small">Mẹo: pianica thổi mạnh quá thì nốt hơi cao và rè, yếu quá thì tiếng nhỏ, hơi thấp. Nhìn kim cent để tập giữ hơi đều; nốt lệch hẳn dù thổi đều là lưỡi gà cần chỉnh ở tiệm nhạc.</p>
         : isFretted(type)
         ? <p className="muted small">Lên dây chuẩn: {type === 'ukulele4' ? <>dây 4 → 1: <strong>G4 C4 E4 A4</strong> (Sol Đô Mi La, dây 4 Sol cao)</> : <>dây 6 → 1: <strong>E2 A2 D3 G3 B3 E4</strong> (Mi La Rê Sol Si Mi)</>}. Gảy dây buông: kim lệch trái là thấp → vặn khoá căng dây; lệch phải là cao → nới dây. Nới thấp một chút rồi vặn lên tới chuẩn để dây giữ tông lâu.</p>

@@ -26,7 +26,7 @@ export const BRAND = IS_RECORDER_APP
 
 /** loại nhạc cụ hiện trong các ô chọn của bản build này (bài cũ thuộc loại khác vẫn mở được) */
 export const SHOWN_HARP_TYPES: readonly HarpType[] = IS_RECORDER_APP
-  ? ['recorderAlto', 'recorderSoprano', 'recorderTenor', 'recorderBass', 'saoTruc6']
+  ? ['recorderAlto', 'recorderSoprano', 'recorderTenor', 'recorderBass', 'saoTruc6', 'ocarina12']
   : IS_PIANICA_APP
   ? ['pianica32', 'pianica37']
   : IS_GUITAR_APP

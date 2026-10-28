@@ -3,9 +3,10 @@ import type { Lesson } from './lessons';
 
 const ALTO = { harpKey: 'F' as const, harpType: 'recorderAlto' as const };
 
-export const RECORDER_LESSON_GROUPS = ['Bắt đầu', 'Kỹ thuật', 'Âm nhạc', 'Sáo trúc', 'Bảo quản và mẹo'];
+export const RECORDER_LESSON_GROUPS = ['Bắt đầu', 'Kỹ thuật', 'Âm nhạc', 'Sáo trúc', 'Ocarina', 'Bảo quản và mẹo'];
 
 const SAO_DO = { harpKey: 'C' as const, harpType: 'saoTruc6' as const };
+const OCA = { harpKey: 'C' as const, harpType: 'ocarina12' as const };
 
 export const RECORDER_LESSONS: Lesson[] = [
   {
@@ -145,6 +146,25 @@ export const RECORDER_LESSONS: Lesson[] = [
         'Thổi xong: tháo các khúc, lau khô bằng que lau, để khô tự nhiên. Không phơi nắng.',
         'Sáo nhựa rửa được bằng nước ấm (không nóng). Sáo gỗ thỉnh thoảng lau dầu chuyên dụng theo hướng dẫn hãng.',
       ] },
+    ],
+  },
+  {
+    id: 'ocarina-lam-quen',
+    group: 'Ocarina',
+    title: 'Làm quen ocarina 12 lỗ',
+    summary: 'Cầm đàn, hai lỗ ngón cái, lỗ phụ cho nốt trầm, thang âm Đô.',
+    minutes: 6,
+    blocks: [
+      { t: 'list', items: [
+        'Ocarina alto Đô 12 lỗ: **8 lỗ mặt trước** cho 8 ngón (4 tay trái phía trên, 4 tay phải phía dưới), **2 lỗ mặt sau** cho hai ngón cái, và **2 lỗ phụ nhỏ** cạnh ngón giữa mỗi tay.',
+        'Bịt hết 10 lỗ chính ra **Đô5**. Nhấc lần lượt út, áp út, giữa, trỏ **tay phải** → Rê, Mi, Fa, Sol. Tiếp theo nhấc áp út rồi giữa **tay trái** → La, Si.',
+        '**Lỗ phụ**: trượt ngón giữa xuống bịt luôn lỗ phụ bên cạnh. Lỗ phụ phải → **Si4**, cả hai lỗ phụ → **La4** (nốt trầm nhất).',
+        'Nốt cao (Đô6 – Fa6): mở dần hai lỗ ngón cái phía sau, giữ ngón út tay trái làm điểm tựa.',
+        'Thổi **nhẹ hơn sáo dọc**: nốt trầm thổi rất nhẹ, nốt cao thổi mạnh dần. Thổi quá mạnh nốt bị phô (cao lên).',
+      ] },
+      { t: 'diagram', ...OCA },
+      { t: 'tab', caption: 'Thang âm Đô trưởng trên ocarina', body: 'C5 D5 E5 F5 G5 A5 B5 C6:2\nC6 B5 A5 G5 F5 E5 D5 C5:2\n', bpm: 72, style: 'metronome', ...OCA },
+      { t: 'warn', text: 'Thế bấm nốt thăng giáng trong app theo bảng chung của ocarina 12 lỗ kiểu châu Á; mỗi hãng có thể khác chút — nếu nốt nghe lệch, xem bảng thế bấm đi kèm cây ocarina của bạn.' },
     ],
   },
 ];

@@ -11,7 +11,7 @@ Cùng mã nguồn này còn build ra bốn app khác cho [sáo](#sổ-tab-sáo),
 | App | Nhạc cụ | Bản web | APK Android |
 |---|---|---|---|
 | Sổ Tab Harmonica | Harmonica diatonic, chromatic, tremolo | https://harptabs.pages.dev | [Bản mới nhất `apk-v…`](https://github.com/tranthanhphuc81-sudo/harptabs/releases/latest) |
-| Sổ Tab Sáo | Sáo dọc soprano / alto / tenor / bass, sáo trúc 6 lỗ | https://sotabsao.pages.dev | [Releases `sao-apk-v…`](https://github.com/tranthanhphuc81-sudo/harptabs/releases?q=sao-apk&expanded=true) |
+| Sổ Tab Sáo | Sáo dọc soprano / alto / tenor / bass, sáo trúc 6 lỗ, ocarina 12 lỗ | https://sotabsao.pages.dev | [Releases `sao-apk-v…`](https://github.com/tranthanhphuc81-sudo/harptabs/releases?q=sao-apk&expanded=true) |
 | Sổ Tab Kalimba | Kalimba 17, 10, 8 phím | https://sotabkalimba.pages.dev | [Releases `kalimba-apk-v…`](https://github.com/tranthanhphuc81-sudo/harptabs/releases?q=kalimba-apk&expanded=true) |
 | Sổ Tab Guitar | Guitar 6 dây, ukulele 4 dây | https://sotabguitar.pages.dev | [Releases `guitar-apk-v…`](https://github.com/tranthanhphuc81-sudo/harptabs/releases?q=guitar-apk&expanded=true) |
 | Sổ Tab Pianica | Kèn pianica (melodica) 32 / 37 phím | https://sotabpianica.pages.dev | [Releases `pianica-apk-v…`](https://github.com/tranthanhphuc81-sudo/harptabs/releases?q=pianica-apk&expanded=true) |

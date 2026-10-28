@@ -22,6 +22,7 @@
  */
 import { GERMAN_OVERRIDES, RECORDER_FINGERINGS } from '../data/recorderFingerings';
 import { closedOffset, saoTrucTable } from '../data/saoTrucFingerings';
+import { OCARINA_FINGERINGS } from '../data/ocarinaFingerings';
 import { cleanKalimbaToken, kalimbaFingers, kalimbaTines } from '../data/kalimba';
 import { FRET_TOKEN_RE, fretCost, fretFingers, fretToken, GUITAR_FRETS, GUITAR_TUNING, parseFretToken, UKULELE_FRETS, UKULELE_TUNING } from '../data/guitar';
 
@@ -51,9 +52,9 @@ export type Technique = 'blow' | 'draw' | 'drawBend' | 'blowBend' | 'overblow' |
 
 /** Loại kèn. Bài cũ không ghi loại là diatonic. */
 export type HarpType = 'diatonic' | 'chromatic' | 'chromatic16' | 'tremolo24' | 'tremolo21' | 'tremolo16' | 'tremolo24m' | 'tremolo21m' | 'tremolo16m'
-  | 'recorderAlto' | 'recorderSoprano' | 'recorderTenor' | 'recorderBass' | 'saoTruc6' | 'kalimba17' | 'kalimba10' | 'kalimba8' | 'guitar6' | 'ukulele4' | 'pianica32' | 'pianica37';
+  | 'recorderAlto' | 'recorderSoprano' | 'recorderTenor' | 'recorderBass' | 'saoTruc6' | 'kalimba17' | 'kalimba10' | 'kalimba8' | 'guitar6' | 'ukulele4' | 'pianica32' | 'pianica37' | 'ocarina12';
 /** mọi loại hợp lệ (để đọc bài đã lưu); ô chọn chỉ hiện SHOWN_HARP_TYPES của bản build (src/appConfig.ts) */
-export const HARP_TYPES: readonly HarpType[] = ['diatonic', 'chromatic', 'chromatic16', 'tremolo24', 'tremolo21', 'tremolo16', 'tremolo24m', 'tremolo21m', 'tremolo16m', 'recorderAlto', 'recorderSoprano', 'recorderTenor', 'recorderBass', 'saoTruc6', 'kalimba17', 'kalimba10', 'kalimba8', 'guitar6', 'ukulele4', 'pianica32', 'pianica37'];
+export const HARP_TYPES: readonly HarpType[] = ['diatonic', 'chromatic', 'chromatic16', 'tremolo24', 'tremolo21', 'tremolo16', 'tremolo24m', 'tremolo21m', 'tremolo16m', 'recorderAlto', 'recorderSoprano', 'recorderTenor', 'recorderBass', 'saoTruc6', 'kalimba17', 'kalimba10', 'kalimba8', 'guitar6', 'ukulele4', 'pianica32', 'pianica37', 'ocarina12'];
 
 export const HARP_TYPE_LABEL: Record<HarpType, string> = {
   diatonic: 'Diatonic 10 lỗ',
@@ -77,7 +78,13 @@ export const HARP_TYPE_LABEL: Record<HarpType, string> = {
   ukulele4: 'Ukulele 4 dây',
   pianica32: 'Pianica 32 phím',
   pianica37: 'Pianica 37 phím',
+  ocarina12: 'Ocarina 12 lỗ (alto Đô)',
 };
+
+/** ocarina 12 lỗ alto Đô: tab tên nốt như sáo dọc, dưới nốt có hình thế bấm (src/data/ocarinaFingerings.ts) */
+export function isOcarina(t: HarpType | undefined): boolean {
+  return t === 'ocarina12';
+}
 
 /**
  * kèn pianica (melodica): bàn phím như piano, thổi qua ống. Tab ghi tên nốt (C4, F#4) như sáo dọc;
@@ -95,7 +102,7 @@ export function isFretted(t: HarpType | undefined): boolean {
 
 /** nhạc cụ không có tông để chọn (sáo dọc, guitar, ukulele): bảng nốt cố định */
 export function isFixedKey(t: HarpType | undefined): boolean {
-  return isRecorder(t) || isFretted(t) || isPianica(t);
+  return isRecorder(t) || isFretted(t) || isPianica(t) || isOcarina(t);
 }
 
 export function isKalimba(t: HarpType | undefined): boolean {
@@ -112,7 +119,7 @@ export function isSaoTruc(t: HarpType | undefined): boolean {
  * Sáo ghi tên nốt (F4, Bb4); kalimba ghi số 1–7 có chấm quãng tám.
  */
 export function isFingered(t: HarpType | undefined): boolean {
-  return isRecorder(t) || isSaoTruc(t) || isKalimba(t) || isFretted(t) || isPianica(t);
+  return isRecorder(t) || isSaoTruc(t) || isKalimba(t) || isFretted(t) || isPianica(t) || isOcarina(t);
 }
 
 /** tông dùng để tra bảng nốt: sáo dọc có tông cố định, sáo trúc theo tông đã chọn */
@@ -163,6 +170,7 @@ export function holeCount(t: HarpType = 'diatonic'): number {
     case 'ukulele4': return 4;
     case 'pianica32': return 32;
     case 'pianica37': return 37;
+    case 'ocarina12': return 12;
     default: return 10;
   }
 }
@@ -181,6 +189,7 @@ export function harpName(key: string, t: HarpType = 'diatonic'): string {
   if (t === 'guitar6') return 'Guitar';
   if (t === 'ukulele4') return 'Ukulele';
   if (isPianica(t)) return `Kèn pianica ${holeCount(t)} phím`;
+  if (isOcarina(t)) return 'Ocarina 12 lỗ (Đô)';
   if (isSaoTruc(t)) return `Sáo trúc ${pitchClassName(KEY_OFFSET[normalizeKey(key) ?? 'C'], 'solfege')} (${key}, bịt hết ra ${pitchClassName(KEY_OFFSET[normalizeKey(key) ?? 'C'] + [0, 2, 4, 5, 7, 9, 11][saoTrucClosed - 1], 'solfege')})`;
   if (isRecorder(t)) return t === 'recorderAlto' ? 'Sáo alto (Fa)' : t === 'recorderTenor' ? 'Sáo tenor (Đô)' : t === 'recorderBass' ? 'Sáo bass (Fa)' : 'Sáo soprano (Đô)';
   return t === 'diatonic' ? `Kèn ${key}` : t === 'chromatic16' ? `Kèn ${key} chromatic 16 lỗ` : `Kèn ${key} chromatic`;
@@ -266,6 +275,16 @@ export function harpLayout(key: HarpKey, type: HarpType = 'diatonic'): HarpNote[
   const notes: HarpNote[] = [];
   const push = (hole: number, dir: Direction, bend: number, over: boolean, midi: number, technique: Technique, slide = false) =>
     notes.push({ hole, dir, bend, over, slide, midi: midi + off, technique, token: makeToken(hole, dir, bend, over, slide) });
+
+  if (isOcarina(type)) {
+    const KIND: Record<string, Technique> = { normal: 'fingered', sub: 'fingered', cross: 'crossFingered', half: 'halfHole', high: 'highRegister' };
+    OCARINA_FINGERINGS.forEach((f, i) => notes.push({
+      hole: i + 1, dir: 'blow', bend: 0, over: false, slide: false, midi: f.midi,
+      technique: KIND[f.kind], token: midiToName(f.midi), fingers: f.fingers, fingerCost: f.cost,
+    }));
+    layoutCache.set(ck, notes);
+    return notes;
+  }
 
   if (isPianica(type)) {
     // pianica: mỗi phím một nốt; thế tay giữa bàn phím (Đô4–Mi5) dễ nhất, phím đen khó hơn chút

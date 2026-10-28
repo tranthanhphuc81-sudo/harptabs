@@ -14,6 +14,7 @@ export function FingeringIcon({ fingers, size = 'm' }: { fingers: string; size?:
   const k = parseKalimbaFingers(fingers);
   if (k) return <KalimbaIcon pos={k.pos} keys={k.keys} size={size} />;
   if (/^p\d+$/.test(fingers)) return <PianoIcon midi={Number(fingers.slice(1))} size={size} />;
+  if (fingers.length === 12) return <OcarinaIcon fingers={fingers} size={size} />;
   const g = parseFretFingers(fingers);
   if (g) return <FretIcon strings={g.strings} string={g.string} fret={g.fret} size={size} />;
   const r = size === 's' ? 3.2 : size === 'l' ? 6 : 4.5;
@@ -39,6 +40,37 @@ export function FingeringIcon({ fingers, size = 'm' }: { fingers: string; size?:
       {six
         ? [0, 1, 2, 3, 4, 5].map((i) => hole(i, w / 2, y(i)))
         : <>{hole(0, r * 1.3, y(0))}{[1, 2, 3, 4, 5, 6, 7].map((i) => hole(i, w - r * 2.2, y(i)))}</>}
+    </svg>
+  );
+}
+
+/**
+ * Ocarina 12 lỗ (sơ đồ): hàng trên 4 lỗ tay trái (trỏ → út), hàng dưới 4 lỗ tay phải, lỗ phụ nhỏ dưới ngón giữa mỗi tay,
+ * hai lỗ ngón cái (mặt sau) vẽ hình vuông ở đáy: trái, phải. fingers: Lt Rt Li Lm Lr Lp Ri Rm Rr Rp Ls Rs.
+ */
+export function OcarinaIcon({ fingers, size = 'm' }: { fingers: string; size?: 's' | 'm' | 'l' }) {
+  const r = size === 's' ? 2.6 : size === 'l' ? 6 : 3.8;
+  const gap = r * 2.7;
+  const w = gap * 4 + r * 2;
+  const h = r * 13;
+  const cx = (i: number) => r * 2 + gap * i;
+  const st = (i: number) => fingers[i] ?? 'o';
+  const hole = (i: number, x: number, y: number, rr = r, square = false) => (
+    <g key={i}>
+      {square ? <rect x={x - rr} y={y - rr} width={rr * 2} height={rr * 2} rx={rr * 0.3} className="fg-ring" /> : <circle cx={x} cy={y} r={rr} className="fg-ring" />}
+      {st(i) === 'x' && (square ? <rect x={x - rr * 0.75} y={y - rr * 0.75} width={rr * 1.5} height={rr * 1.5} rx={rr * 0.2} className="fg-fill" /> : <circle cx={x} cy={y} r={rr * 0.78} className="fg-fill" />)}
+      {st(i) === 'h' && <path d={`M ${x} ${y - rr * 0.78} A ${rr * 0.78} ${rr * 0.78} 0 0 0 ${x} ${y + rr * 0.78} Z`} className="fg-fill" />}
+    </g>
+  );
+  return (
+    <svg className={`fingering ocarina size-${size}`} width={w} height={h} viewBox={`0 0 ${w} ${h}`} aria-hidden="true">
+      <rect x={0.5} y={0.5} width={w - 1} height={h * 0.74} rx={r * 3} className="oc-body" />
+      {[2, 3, 4, 5].map((i, k) => hole(i, cx(k) - r * 0.4, r * 2.3))}
+      {hole(10, cx(1) - r * 0.4, r * 4.6, r * 0.6)}
+      {[6, 7, 8, 9].map((i, k) => hole(i, cx(k) + r * 0.4, r * 6.9))}
+      {hole(11, cx(1) + r * 0.4, r * 9.0, r * 0.6)}
+      {hole(0, cx(0), h - r * 1.4, r * 0.8, true)}
+      {hole(1, cx(3), h - r * 1.4, r * 0.8, true)}
     </svg>
   );
 }

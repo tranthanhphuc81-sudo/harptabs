@@ -1198,3 +1198,5 @@ button, a, select { -webkit-tap-highlight-color: transparent; }
 .pc-key.on.black, .pc-key.sel.black { background: var(--accent); }
 .pc-key.sel { outline: 3px solid #f7d27a; outline-offset: -3px; }
 .pc-name { font-size: 0.68rem; font-weight: 700; }
+
+.fingering.ocarina .oc-body { fill: color-mix(in srgb, var(--accent) 14%, transparent); stroke: color-mix(in srgb, var(--ink-2) 40%, transparent); stroke-width: 0.8; }

@@ -4,7 +4,7 @@
  */
 import { transposeChords } from '../audio/harmony';
 import { fitToHarp, midisOf, rekeyBody, TabFit } from './converter';
-import { HARP_KEYS, HARP_TYPES, HarpKey, HarpType, harpTypeOf, isFixedKey, isFretted, isRecorder, isSaoTruc, recorderKey, songTonality } from './harp';
+import { HARP_KEYS, HARP_TYPES, HarpKey, HarpType, harpTypeOf, isFixedKey, isFretted, isOcarina, isRecorder, isSaoTruc, recorderKey, songTonality } from './harp';
 import { parseTab } from './tabText';
 import type { Song } from './types';
 
@@ -97,7 +97,7 @@ export function bestHarp(song: Song): BestHarp {
   const midis = midisOf(parseTab(song.body, song.harpKey, origType));
   // bài sáo dọc: chỉ so sáo alto / soprano (mỗi loại một tông); bài kèn: các loại kèn
   // sáo trúc: chỉ thử các tông sáo trúc (tìm cây sáo hợp bài)
-  const order: HarpType[] = isRecorder(origType) ? ['recorderAlto', 'recorderSoprano', 'recorderTenor', 'recorderBass'] : isSaoTruc(origType) ? ['saoTruc6'] : isFretted(origType) ? ['guitar6', 'ukulele4'] : TYPE_ORDER;
+  const order: HarpType[] = isRecorder(origType) || isOcarina(origType) ? ['recorderAlto', 'recorderSoprano', 'recorderTenor', 'recorderBass', 'ocarina12'] : isSaoTruc(origType) ? ['saoTruc6'] : isFretted(origType) ? ['guitar6', 'ukulele4'] : TYPE_ORDER;
   const types = [origType, ...order.filter((t) => t !== origType)];
   const originalFit = fitToHarp(midis, song.harpKey, { transpose: 'octave', type: origType });
   let best: { score: number[]; view: ViewAs; fit: TabFit } | null = null;
