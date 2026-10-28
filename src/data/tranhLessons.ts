@@ -102,6 +102,7 @@ export const TRANH_LESSONS: Lesson[] = [
       ] },
       { t: 'diagram', ...B },
       { t: 'tab', caption: 'Các điểm bồi trên dây Đô', body: 'b2 b3 b4 b5 b6:2\nb6 b5 b4 b3 b2:2\n', bpm: 66, style: 'metronome', ...B },
+      { t: 'link', to: '/tap-boi-am', label: 'Tập bồi âm với micro', text: 'Gảy từng điểm bồi, app chấm từng lần: đúng tiếng bồi, ra dây buông (chạm lệch), nhầm điểm hay tắt tiếng (ấn mạnh / nhấc tay chậm).' },
     ],
   },
   {

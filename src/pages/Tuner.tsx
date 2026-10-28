@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { BRAND } from '../appConfig';
 import { useEffect, useRef, useState } from 'react';
 import { HarpKey, HarpType, harpLayout, holeCount, isChromatic, isFingered, isFretted, isKalimba, isDanBau, isOcarina, isPianica, isTranh, isRecorder, isSaoTruc, isTremolo, midiToName, TECHNIQUE_LABEL } from '../lib/harp';
@@ -97,6 +98,7 @@ export default function Tuner() {
       </div>
 
       <HarpDiagram harpKey={key} harpType={type} highlight={matches.map((m) => m.token)} nameStyle={settings.noteNames} />
+      {isDanBau(type) && <p><Link to="/tap-boi-am" className="btn btn-ghost">Tập bồi âm: chấm từng lần gảy</Link></p>}
       {isDanBau(type)
         ? <p className="muted small">Mẹo đàn bầu: lên dây buông đúng nốt chủ (dây Đô: Đô3), rồi gảy bồi 1/2 để kiểm tra — phải ra đúng Đô cao hơn một quãng tám. Tập nắn cần: gảy bồi rồi đẩy / kéo cần tới khi kim chỉ đúng nốt cần ra.</p>
         : isTranh(type)

@@ -1231,3 +1231,23 @@ button, a, select { -webkit-tap-highlight-color: transparent; }
 .bc-frac { font-size: 1.05rem; font-weight: 800; line-height: 1; }
 .bc-name { font-size: 0.66rem; font-weight: 700; }
 .bc-hint { margin: 4px 2px 2px; color: #f3e6d4; }
+
+/* ===== Tập bồi âm ===== */
+.bp-nodes { margin: 12px 0; }
+.bp-nodes button { display: flex; flex-direction: column; align-items: center; line-height: 1.1; }
+.bp-frac { font-size: 1.2rem; font-weight: 800; }
+.bp-nodes small { font-size: 0.68rem; opacity: 0.8; }
+.bp-target { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 12px; border-radius: var(--r-m); background: var(--surface); border: 1px solid var(--line); }
+.bp-target p { margin: 0; flex: 1 1 14em; }
+.bp-result { margin: 12px 0; padding: 14px; border-radius: var(--r-m); border: 2px solid var(--line); background: var(--surface); min-height: 5.5em; }
+.bp-result p { margin: 4px 0 0; }
+.bp-kind { font-size: 1.3rem; }
+.bp-result.k-ok { border-color: #3aa76d; background: color-mix(in srgb, #3aa76d 12%, var(--surface)); }
+.bp-result.k-open, .bp-result.k-wrong { border-color: #e5a23a; background: color-mix(in srgb, #e5a23a 12%, var(--surface)); }
+.bp-result.k-muted, .bp-result.k-off { border-color: #d9534f; background: color-mix(in srgb, #d9534f 10%, var(--surface)); }
+.bp-history { display: flex; flex-wrap: wrap; gap: 5px; margin: 0 0 12px; min-height: 14px; }
+.bp-dot { width: 14px; height: 14px; border-radius: 50%; background: var(--line); }
+.bp-dot.k-ok { background: #3aa76d; }
+.bp-dot.k-open, .bp-dot.k-wrong { background: #e5a23a; }
+.bp-dot.k-muted, .bp-dot.k-off { background: #d9534f; }
+.bp-tips { margin-top: 14px; }

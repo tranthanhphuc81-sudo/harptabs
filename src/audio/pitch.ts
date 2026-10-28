@@ -74,6 +74,8 @@ export class MicPitch {
   private buf = new Float32Array(2048);
   private o: Required<MicOptions>;
   onReading?: (r: PitchReading | null) => void;
+  /** âm lượng mỗi khung hình (cả khi không đọc được cao độ) — để nhận ra tiếng gảy bị tắt */
+  onLevel?: (rms: number, time: number) => void;
 
   constructor(opts: MicOptions = {}) {
     this.o = { ...KEN, ...opts };
@@ -106,6 +108,7 @@ export class MicPitch {
       let rms = 0;
       for (let i = 0; i < this.buf.length; i++) rms += this.buf[i] * this.buf[i];
       rms = Math.sqrt(rms / this.buf.length);
+      this.onLevel?.(rms, this.ctx!.currentTime);
       if (rms < this.o.minRms) { this.onReading?.(null); return; }
       const r = yin(this.buf, this.ctx!.sampleRate, this.o.minHz, this.o.maxHz);
       if (!r || r.clarity < this.o.minClarity) { this.onReading?.(null); return; }

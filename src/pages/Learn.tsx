@@ -35,6 +35,10 @@ export default function Learn() {
         <strong>{IS_RECORDER_APP ? 'Tập ngẫu hứng jazz' : 'Tập ngẫu hứng blues & jazz'}</strong>
         <span>{IS_GUITAR_APP ? 'Nền nhạc 12 ô nhịp và các vòng jazz, thang âm blues trên cần đàn, máy hỏi – bạn đáp và lick mẫu xếp theo dây.phím.' : IS_RECORDER_APP ? 'Nền nhạc swing các vòng ii–V–I, thế bấm các nốt của hợp âm đang vang, máy hỏi – bạn đáp và lick mẫu.' : 'Nền nhạc 12 ô nhịp, thang âm blues trên kèn của bạn, máy hỏi – bạn đáp và lick mẫu; có cả chế độ jazz.'}</span>
       </Link>}
+      {IS_TRANH_APP && <Link to="/tap-boi-am" className="jam-card">
+        <strong>Tập bồi âm đàn bầu</strong>
+        <span>Bật micro, gảy từng điểm bồi: app nghe và cho biết ra đúng tiếng bồi chưa, sai do chạm lệch, ấn mạnh hay nhầm điểm; đếm tỉ lệ đúng từng điểm.</span>
+      </Link>}
       {LESSON_GROUPS.map((g) => (
         <section key={g} className="lesson-group">
           <h2>{g}</h2>

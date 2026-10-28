@@ -101,6 +101,7 @@ Bản web: https://sotabdantranh.pages.dev · APK: gói `dev.pages.sotabdantranh
 | Đàn | Đàn tranh 16 / 17 dây (và đàn cải tiến 19 / 21 / 22 dây: thêm dây trầm, 22 dây xuống tới Sol2), lên dây Bắc (Sol La Đô Rê Mi) hoặc Đảo (Sol La Đô Rê Fa) — chọn trong Cài đặt; tông đàn chọn được |
 | Tab | Số dây (1 = dây trầm nhất), `7^` nhấn nửa cung, `7^^` nhấn một cung; bộ chọn ưu tiên dây buông, chỉ nhấn khi nốt không có trên dây. Hình các dây dưới mỗi nốt, sơ đồ đàn chạm để nghe |
 | Đàn bầu | Tab ghi điểm bồi (`b2` = ½ dây, `b3` = ⅓… `b8`; `b1` dây buông), nắn cần `b4+2` lên 2 nửa cung, `b5-1` xuống nửa cung; hiện bằng ½ ⅓ ¼ kèm ↑ / ↓. Hình dây đàn với điểm cần chạm dưới mỗi nốt, sơ đồ các điểm bồi chạm để nghe. Dây Đô: ½ Đô4, ⅓ Sol4, ¼ Đô5, ⅕ Mi5, ⅙ Sol5, ⅐ Sib5, ⅛ Đô6 |
+| Tập bồi âm | Trang riêng cho đàn bầu: chọn điểm bồi, bật micro, gảy — app chấm từng lần gảy (đúng tiếng bồi / ra dây buông / nhầm điểm / tắt tiếng / lệch cao độ) kèm lời khuyên, đếm tỉ lệ đúng từng điểm, đúng 5 lần liền thì sang điểm kế |
 | Bài và học | Bài mẫu xếp lại cho đàn tranh và 8 bài cho đàn bầu (giữ hợp âm chuẩn), 7 bài học: làm quen, đọc tab, nhấn, rung – vỗ – vuốt, lên dây, làm quen đàn bầu, nắn cần |
 
 ## Chạy thử
