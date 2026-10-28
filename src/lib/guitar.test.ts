@@ -4,6 +4,7 @@ import { bestTabs, fitToHarp, rekeyBody } from './converter';
 import { parseTab } from './tabText';
 import { chordPcs, chordShape, ChordInstrument, shapeMidis } from '../data/chordShapes';
 import { guitarSamples } from '../data/guitarSamples';
+import { shapeTokens } from '../components/Fretboard';
 import { SAMPLE_SONGS } from '../data/samples';
 
 const DIATONIC_SAMPLES = SAMPLE_SONGS.filter((s) => (s.harpType ?? 'diatonic') === 'diatonic');
@@ -81,6 +82,11 @@ describe('thế hợp âm', () => {
     expect(chordShape('Am', 'guitar')).toEqual([-1, 0, 2, 2, 1, 0]);
     expect(chordShape('C', 'ukulele')).toEqual([0, 0, 0, 3]);
     expect(chordShape('F', 'ukulele')).toEqual([2, 0, 1, 0]);
+  });
+
+  it('thế hợp âm → ô trên cần đàn (dây.phím), bỏ dây không gảy', () => {
+    expect(shapeTokens(chordShape('C', 'guitar')!)).toEqual(['5.3', '4.2', '3.0', '2.1', '1.0']);
+    expect(shapeTokens(chordShape('C', 'ukulele')!)).toEqual(['4.0', '3.0', '2.0', '1.3']);
   });
 
   it('hợp âm chặn: Bb, C#m, F#', () => {

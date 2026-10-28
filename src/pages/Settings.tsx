@@ -1,5 +1,5 @@
 import { DEGREE_NAMES } from '../data/saoTrucFingerings';
-import { BRAND, IS_RECORDER_APP } from '../appConfig';
+import { BRAND, IS_GUITAR_APP, IS_RECORDER_APP } from '../appConfig';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useEffect, useRef, useState } from 'react';
 import { db, ensureSeeded, importBackup } from '../lib/db';
@@ -170,6 +170,16 @@ export default function SettingsPage() {
                 {DEGREE_NAMES.map((n, i) => <option key={n} value={i + 1}>{n} {i === 4 ? '(sáo Đô bịt hết ra Sol — phổ biến)' : `(sáo Đô bịt hết ra ${n})`}</option>)}
               </select>
               <span className="small muted">Tính theo tông sáo: sáo Đô chọn "Sol" thì bịt hết lỗ ra Sol, mở dần ra La, Si, Đô…</span>
+            </label>
+          )}
+          {IS_GUITAR_APP && (
+            <label className="field">
+              <span className="field-label">Sơ đồ hợp âm</span>
+              <select value={s.chordHorizontal ? 'h' : 'v'} onChange={(e) => update({ chordHorizontal: e.target.value === 'h' })}>
+                <option value="v">Dựng đứng (như sách hợp âm, dây trầm bên trái)</option>
+                <option value="h">Nằm ngang (cùng hướng với tab, dây 1 ở trên)</option>
+              </select>
+              <span className="small muted">Sách và trang hợp âm đều vẽ dựng đứng. Chọn nằm ngang nếu bạn chỉ dùng app này và muốn nhìn giống tab.</span>
             </label>
           )}
           <KeySelect value={s.defaultHarpKey} onChange={(k) => update({ defaultHarpKey: k as HarpKey })} label="Kèn mặc định" harpType={s.defaultHarpType} />

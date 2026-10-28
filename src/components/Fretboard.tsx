@@ -1,4 +1,6 @@
+import { useState } from 'react';
 import { previewNote, previewChord } from '../audio/engine';
+import { useAppState } from '../state';
 import { chordShape, ChordInstrument, shapeMidis } from '../data/chordShapes';
 import { GUITAR_FRETS, GUITAR_STRING_NAMES, GUITAR_TUNING, parseFretToken, UKULELE_FRETS, UKULELE_STRING_NAMES, UKULELE_TUNING } from '../data/guitar';
 import { fretToken } from '../data/guitar';
@@ -87,54 +89,110 @@ export function FretboardChart({ harpType, highlight = [], selected, nameStyle =
   );
 }
 
-/** sơ đồ một hợp âm (khung dọc như sách hợp âm): dây trầm bên trái, x = không đánh, o = buông */
-export function ChordDiagram({ name, inst, size = 'm', onPlay }: { name: string; inst: ChordInstrument; size?: 's' | 'm'; onPlay?: () => void }) {
+/** các ô (dây.phím) của một thế hợp âm, để tô trên cần đàn */
+export function shapeTokens(shape: number[]): string[] {
+  const n = shape.length;
+  return shape.flatMap((f, i) => (f < 0 ? [] : [fretToken(n - i, f)]));
+}
+
+/**
+ * Sơ đồ một hợp âm. Mặc định dựng đứng như sách hợp âm (dây trầm bên trái, đầu cần ở trên);
+ * Cài đặt "nằm ngang" thì vẽ cùng hướng với tab (dây 1 ở trên, đầu cần bên trái). × = không gảy, ○ = dây buông.
+ */
+export function ChordDiagram({ name, inst, size = 'm', onPlay, selected }: { name: string; inst: ChordInstrument; size?: 's' | 'm'; onPlay?: () => void; selected?: boolean }) {
+  const { settings } = useAppState();
+  const horiz = !!settings.chordHorizontal;
   const shape = chordShape(name, inst);
   if (!shape) return null;
   const n = shape.length;
-  const sx = size === 's' ? 9 : 13;
-  const sy = size === 's' ? 11 : 15;
+  // sA: khoảng cách giữa hai dây, sB: khoảng cách giữa hai phím
+  const sA = size === 's' ? 9 : 13;
+  const sB = size === 's' ? 11 : 15;
   const fretted = shape.filter((f) => f > 0);
   const top = fretted.length && Math.max(...fretted) > 4 ? Math.min(...fretted) : 1;
   const rows = 4;
-  const padX = sx * 1.1;
-  const padTop = sy * 1.1;
-  const w = padX * 2 + sx * (n - 1) + (top > 1 ? sx : 0);
-  const h = padTop + sy * rows + sy * 0.4;
-  const x = (i: number) => padX + sx * i;
-  const yRow = (r: number) => padTop + sy * r;
-  // chặn: cùng một phím thấp nhất trên nhiều dây liền nhau từ dây cao → vẽ thanh chặn
+  // tên dây buông từ dây trầm lên (dây 1 guitar viết "e" thường như trên cần đàn, khỏi lẫn với dây 6)
+  const names = (inst === 'guitar' ? ['E', 'A', 'D', 'G', 'B', 'e'] : ['G', 'C', 'E', 'A']);
+  // lề: phía dây (tên dây / số phím) và phía đầu cần (× ○)
+  const padA = sA * 1.1;
+  const padB = sB * 1.15;
+  const tail = sB * 1.1; // chỗ ghi tên dây
+  const posRoom = top > 1 ? sA * 1.2 : 0;
+  // toạ độ theo (thứ tự dây từ trầm lên, vị trí phím tính từ đầu cần)
+  const P = (i: number, r: number): [number, number] => horiz
+    ? [tail + padB + sB * r, padA + sA * (n - 1 - i)]
+    : [padA + sA * i, padB + sB * r];
+  const w = horiz ? tail + padB + sB * rows + sB * 0.4 : padA * 2 + sA * (n - 1) + posRoom;
+  const h = horiz ? padA * 2 + sA * (n - 1) + posRoom : padB + sB * rows + tail;
+  const line = (a: [number, number], b: [number, number], cls: string, key: string) => <line key={key} x1={a[0]} y1={a[1]} x2={b[0]} y2={b[1]} className={cls} />;
+  // chặn: cùng một phím thấp nhất trên nhiều dây liền nhau tới dây cao nhất → thanh chặn
   const minF = fretted.length ? Math.min(...fretted) : 0;
   const barreIdx = shape.map((f, i) => (f === minF ? i : -1)).filter((i) => i >= 0);
   const barre = minF > 0 && barreIdx.length >= 3 && barreIdx[barreIdx.length - 1] === n - 1 && shape.slice(barreIdx[0]).every((f) => f >= minF);
+  const dotR = Math.min(sA, sB) * 0.36;
+  const barreRect = () => {
+    const [x1, y1] = P(barreIdx[0], minF - top + 0.5);
+    const [x2, y2] = P(n - 1, minF - top + 0.5);
+    const t = sB * 0.56;
+    return <rect x={Math.min(x1, x2) - (horiz ? t / 2 : sA * 0.35)} y={Math.min(y1, y2) - (horiz ? sA * 0.35 : t / 2)}
+      width={horiz ? t : Math.abs(x2 - x1) + sA * 0.7} height={horiz ? Math.abs(y2 - y1) + sA * 0.7 : t} rx={t / 2} className="cd-dot" />;
+  };
+  const posLabel = top > 1 && (() => {
+    const [x, y] = horiz ? P(-0.9, 0.5) : P(n - 1 + 0.6, 0.5);
+    return <text x={x} y={y + sB * 0.28} className="cd-pos" fontSize={sB * 0.75} textAnchor={horiz ? 'middle' : 'start'}>{top}</text>;
+  })();
   const body = (
-    <svg className={`chord-diagram size-${size}`} width={w} height={h} viewBox={`0 0 ${w} ${h}`} aria-hidden="true">
-      {Array.from({ length: n }, (_, i) => <line key={`s${i}`} x1={x(i)} x2={x(i)} y1={yRow(0)} y2={yRow(rows)} className="cd-str" />)}
-      {Array.from({ length: rows + 1 }, (_, r) => <line key={`f${r}`} x1={x(0)} x2={x(n - 1)} y1={yRow(r)} y2={yRow(r)} className={r === 0 && top === 1 ? 'cd-nut' : 'cd-fret'} />)}
-      {top > 1 && <text x={x(n - 1) + sx * 0.6} y={yRow(0.5) + sy * 0.3} className="cd-pos" fontSize={sy * 0.75}>{top}</text>}
-      {barre && <rect x={x(barreIdx[0]) - sx * 0.35} y={yRow(minF - top + 0.5) - sy * 0.28} width={x(n - 1) - x(barreIdx[0]) + sx * 0.7} height={sy * 0.56} rx={sy * 0.28} className="cd-dot" />}
-      {shape.map((f, i) => f < 0
-        ? <text key={i} x={x(i)} y={padTop - sy * 0.3} className="cd-mark" fontSize={sy * 0.7} textAnchor="middle">×</text>
-        : f === 0
-          ? <circle key={i} cx={x(i)} cy={padTop - sy * 0.5} r={sx * 0.28} className="cd-open" />
-          : barre && f === minF ? null : <circle key={i} cx={x(i)} cy={yRow(f - top + 0.5)} r={Math.min(sx, sy) * 0.36} className="cd-dot" />)}
+    <svg className={`chord-diagram size-${size}${horiz ? ' horiz' : ''}`} width={w} height={h} viewBox={`0 0 ${w} ${h}`} aria-hidden="true">
+      {Array.from({ length: n }, (_, i) => line(P(i, 0), P(i, rows), 'cd-str', `s${i}`))}
+      {Array.from({ length: rows + 1 }, (_, r) => line(P(0, r), P(n - 1, r), r === 0 && top === 1 ? 'cd-nut' : 'cd-fret', `f${r}`))}
+      {posLabel}
+      {barre && barreRect()}
+      {shape.map((f, i) => {
+        if (f < 0) { const [x, y] = P(i, -0.5); return <text key={i} x={x} y={y + sB * 0.25} className="cd-mark" fontSize={sB * 0.7} textAnchor="middle">×</text>; }
+        if (f === 0) { const [x, y] = P(i, -0.5); return <circle key={i} cx={x} cy={y} r={sA * 0.28} className="cd-open" />; }
+        if (barre && f === minF) return null;
+        const [x, y] = P(i, f - top + 0.5);
+        return <circle key={i} cx={x} cy={y} r={dotR} className="cd-dot" />;
+      })}
+      {/* tên dây buông: dưới sơ đồ (dựng đứng) hoặc bên trái (nằm ngang) */}
+      {names.map((nm, i) => {
+        const [x, y] = horiz ? [tail * 0.45, P(i, 0)[1]] : [P(i, 0)[0], padB + sB * rows + tail * 0.75];
+        return <text key={`n${i}`} x={x} y={y + (horiz ? sB * 0.22 : 0)} className="cd-sname" fontSize={sB * 0.58} textAnchor="middle">{nm}</text>;
+      })}
     </svg>
   );
   return (
-    <button type="button" className="chord-box" onClick={onPlay ?? (() => previewChord(shapeMidis(shape, inst)))} aria-label={`Hợp âm ${name}, chạm để nghe`}>
+    <button type="button" className={`chord-box${selected ? ' on' : ''}`} onClick={onPlay ?? (() => previewChord(shapeMidis(shape, inst)))} aria-label={`Hợp âm ${name}, chạm để nghe`} aria-pressed={selected}>
       <span className="cb-name">{name}</span>
       {body}
     </button>
   );
 }
 
-/** các hợp âm trong bài, mỗi hợp âm một sơ đồ */
+/** các hợp âm trong bài, mỗi hợp âm một sơ đồ; chạm để nghe và xem thế tay đó trên cần đàn nằm ngang (cùng hướng với tab) */
 export function ChordStrip({ names, inst }: { names: string[]; inst: ChordInstrument }) {
+  const { settings } = useAppState();
+  const [picked, setPicked] = useState<string | null>(null);
   const uniq = [...new Set(names)].filter((n) => chordShape(n, inst));
   if (!uniq.length) return null;
+  const shape = picked ? chordShape(picked, inst) : null;
+  const pick = (n: string) => {
+    const s = chordShape(n, inst);
+    if (s) previewChord(shapeMidis(s, inst));
+    setPicked((p) => (p === n ? null : n));
+  };
+  const maxFret = shape ? Math.max(5, ...shape) + 1 : 5;
   return (
-    <div className="chord-strip" role="list" aria-label="Thế hợp âm trong bài">
-      {uniq.map((n) => <ChordDiagram key={n} name={n} inst={inst} />)}
-    </div>
+    <>
+      <div className="chord-strip" role="list" aria-label="Thế hợp âm trong bài">
+        {uniq.map((n) => <ChordDiagram key={n} name={n} inst={inst} selected={picked === n} onPlay={() => pick(n)} />)}
+      </div>
+      {picked && shape && (
+        <div className="chord-on-neck">
+          <p className="small muted">Thế <strong>{picked}</strong> trên cần đàn (cùng hướng với tab: dây 1 ở trên). Ô sáng là chỗ bấm, cột 0 là dây buông.</p>
+          <FretboardChart harpType={inst === 'ukulele' ? 'ukulele4' : 'guitar6'} highlight={shapeTokens(shape)} nameStyle={settings.noteNames} maxFret={maxFret} />
+        </div>
+      )}
+    </>
   );
 }
