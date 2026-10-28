@@ -1,6 +1,7 @@
 import 'fake-indexeddb/auto';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { db, importBackup } from './db';
+import { db, ensureSeeded, importBackup } from './db';
+import { SAMPLE_SONGS } from '../data/samples';
 
 beforeEach(async () => {
   await db.songs.clear();
@@ -49,5 +50,24 @@ describe('nhập file sao lưu', () => {
 
   it('từ chối file không phải sao lưu của app', async () => {
     await expect(importBackup({ songs: [] })).rejects.toThrow();
+  });
+});
+
+describe('gắn hợp âm chuẩn cho bài mẫu đã có trong máy', () => {
+  it('máy đã chạy bước cũ (lần 1) vẫn được gắn lần nữa; bài đã chọn hợp âm tay hoặc đã sửa nhạc thì giữ nguyên', async () => {
+    const twinkle = SAMPLE_SONGS.find((s) => s.sampleId === 'twinkle')!;
+    const mary = SAMPLE_SONGS.find((s) => s.sampleId === 'mary-lamb')!;
+    const ode = SAMPLE_SONGS.find((s) => s.sampleId === 'ode-to-joy')!;
+    const row = (s: typeof twinkle, extra: object) => {
+      const { sampleId, ...rest } = s;
+      return { ...rest, id: `sample-${sampleId}`, source: 'sample' as const, favorite: false, createdAt: 1, updatedAt: 1, chords: undefined, ...extra };
+    };
+    await db.songs.bulkPut([row(twinkle, {}), row(mary, { chords: { 0: 'Am' } }), row(ode, { body: '4 4 5' })]);
+    await db.kv.bulkPut([{ key: 'sampleChords', value: 1 }, { key: 'seeded', value: 1 }, { key: 'seededSamples', value: SAMPLE_SONGS.map((s) => s.sampleId) }]);
+    await ensureSeeded();
+    expect((await db.songs.get('sample-twinkle'))!.chords).toEqual(twinkle.chords);
+    expect((await db.songs.get('sample-mary-lamb'))!.chords).toEqual({ 0: 'Am' });
+    expect((await db.songs.get('sample-ode-to-joy'))!.chords).toBeUndefined();
+    expect((await db.kv.get('sampleChords'))!.value).toBe(2);
   });
 });

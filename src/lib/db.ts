@@ -87,14 +87,16 @@ export async function ensureSeeded(): Promise<void> {
  * Bài mẫu đã có trong máy từ bản cũ: gắn hợp âm chuẩn (một lần). Bài người dùng đã chọn hợp âm tay hoặc đã sửa nhạc thì giữ nguyên.
  */
 async function fillSampleChords(): Promise<void> {
+  // lần 2: bài mẫu kalimba mới có hợp âm chuẩn từ bản sau
   const done = await db.kv.get('sampleChords');
-  if (done) return;
+  if (((done?.value as number | undefined) ?? 0) >= SAMPLE_CHORDS_VERSION) return;
   const withChords = SAMPLE_SONGS.filter((s) => s.chords);
   const rows = await db.songs.bulkGet(withChords.map((s) => `sample-${s.sampleId}`));
   const updates = rows.flatMap((row, i) => (row && !row.chords && row.body === withChords[i].body ? [{ ...row, chords: withChords[i].chords }] : []));
   if (updates.length) await db.songs.bulkPut(updates);
-  await db.kv.put({ key: 'sampleChords', value: 1 });
+  await db.kv.put({ key: 'sampleChords', value: SAMPLE_CHORDS_VERSION });
 }
+const SAMPLE_CHORDS_VERSION = 2;
 
 export async function loadSettings(): Promise<Settings> {
   const row = await db.kv.get('settings');
