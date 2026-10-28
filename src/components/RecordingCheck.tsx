@@ -1,3 +1,4 @@
+import { BRAND } from '../appConfig';
 import { useEffect, useRef, useState } from 'react';
 import type { Comparison, ScoreNote, Suggestion } from '../lib/audioAlign';
 import { midiToName } from '../lib/harp';
@@ -128,7 +129,7 @@ export function RecordingCheck({ score, meter, label, onApply, onFocus }: {
       </div>
       {mode === 'solo' ? (
         <p className="small">
-          Thổi kèn, hát hoặc ngân nga <strong>giai điệu</strong> bài này (một giọng, không có nhạc đệm) — thu ngay hoặc chọn file ghi âm có sẵn.
+          {BRAND.verb === 'thổi' ? `Thổi ${BRAND.noun}` : `Chơi ${BRAND.noun}`}, hát hoặc ngân nga <strong>giai điệu</strong> bài này (một giọng, không có nhạc đệm) — thu ngay hoặc chọn file ghi âm có sẵn.
           Máy so từng nốt với bản quét rồi gợi ý chỗ sửa. Hát khác giọng, nhanh chậm tuỳ ý đều được.
         </p>
       ) : (

@@ -11,14 +11,14 @@ interface Props {
   harpType?: HarpType;
 }
 
-export function KeySelect({ value, onChange, allowAuto, id, label = 'Tông kèn', harpType }: Props) {
+export function KeySelect({ value, onChange, allowAuto, id, label = `Tông ${BRAND.noun}`, harpType }: Props) {
   // sáo dọc chỉ có một tông (alto Fa, soprano Đô): không cần chọn
   if (isFixedKey(harpType)) return null;
   return (
     <label className="field" htmlFor={id}>
       <span className="field-label">{label}</span>
       <select id={id} value={value} onChange={(e) => onChange(e.target.value as HarpKey | 'auto')}>
-        {allowAuto && <option value="auto">Tự chọn kèn hợp nhất</option>}
+        {allowAuto && <option value="auto">Tự chọn {BRAND.noun} hợp nhất</option>}
         {HARP_KEYS.map((k) => <option key={k} value={k}>{isSaoTruc(harpType) ? `Sáo ${k}` : isKalimba(harpType) ? `Kalimba ${k}` : `Kèn ${harpKeyLabel(k, harpType)}`}</option>)}
       </select>
     </label>

@@ -1,4 +1,4 @@
-import { IS_GUITAR_APP } from '../appConfig';
+import { BRAND, IS_GUITAR_APP } from '../appConfig';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { lazy, Suspense, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
@@ -261,7 +261,7 @@ export default function AiImport() {
         </label>
 
         <div className="row gap wrap end-align">
-          <KeySelect value={target} onChange={setTarget} allowAuto label="Chơi trên kèn" />
+          <KeySelect value={target} onChange={setTarget} allowAuto label={`Chơi trên ${BRAND.noun}`} />
           {target !== 'auto' && (
             <label className="check">
               <input type="checkbox" checked={allowTranspose} onChange={(e) => setAllowTranspose(e.target.checked)} />
@@ -306,7 +306,7 @@ export default function AiImport() {
           </div>
           <p className="small">
             {converted.fit.stats.natural} nốt thường, {converted.fit.stats.bends} nốt bend
-            {converted.fit.stats.unplayable > 0 && `, ${converted.fit.stats.unplayable} nốt ngoài tầm kèn (đã thành dấu nghỉ)`}
+            {converted.fit.stats.unplayable > 0 && `, ${converted.fit.stats.unplayable} nốt ngoài tầm ${BRAND.noun} (đã thành dấu nghỉ)`}
             {`. Lần này tốn khoảng ${vnd(estimateCostUsd(resp.usage))}.`}
           </p>
           {fromImage && (

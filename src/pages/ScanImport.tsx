@@ -1,3 +1,4 @@
+import { BRAND, IS_HARMONICA_APP } from '../appConfig';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MAX_IMAGES } from '../../shared/ai';
@@ -615,7 +616,7 @@ export default function ScanImport({ editSongId, initialFiles }: { editSongId?: 
           <div className="row between center wrap gap">
             <p className="small">
               Đọc được <strong>{noteCount} nốt</strong> trên {pages.reduce((t, p) => t + p.staves.length, 0)} khuông.
-              {' '}Chạm vào nốt để sửa. Số trên nốt là lỗ kèn: <span className="tok-blow">cam = thổi</span>, <span className="tok-draw">xanh = hút</span>.
+              {' '}Chạm vào nốt để sửa. {IS_HARMONICA_APP ? <>Số trên nốt là lỗ kèn: <span className="tok-blow">cam = thổi</span>, <span className="tok-draw">xanh = hút</span>.</> : <>Chữ trên nốt là cách chơi nốt đó trên {BRAND.noun}.</>}
             </p>
             <div className="row gap wrap">
               <div className="segmented" role="group" aria-label="Phóng to ảnh">
@@ -725,7 +726,7 @@ export default function ScanImport({ editSongId, initialFiles }: { editSongId?: 
           </div>
           <div className="row gap wrap end-align">
             <HarpTypeSelect value={harpType} onChange={setHarpType} />
-            <KeySelect value={target} onChange={setTarget} allowAuto label="Chơi trên kèn" harpType={harpType} />
+            <KeySelect value={target} onChange={setTarget} allowAuto label={`Chơi trên ${BRAND.noun}`} harpType={harpType} />
             {target !== 'auto' && (
               <label className="check">
                 <input type="checkbox" checked={allowTranspose} onChange={(e) => setAllowTranspose(e.target.checked)} />
@@ -746,7 +747,7 @@ export default function ScanImport({ editSongId, initialFiles }: { editSongId?: 
               </div>
               <p className="small">
                 {converted.fit.stats.natural} nốt thường, {converted.fit.stats.bends} nốt bend
-                {converted.fit.stats.unplayable > 0 && `, ${converted.fit.stats.unplayable} nốt ngoài tầm kèn (×, đã thành dấu nghỉ)`}.
+                {converted.fit.stats.unplayable > 0 && `, ${converted.fit.stats.unplayable} nốt ngoài tầm ${BRAND.noun} (×, đã thành dấu nghỉ)`}.
               </p>
               <TabView parsed={parsed} flat={flat} active={player.active} size="s" showNames={settings.showNoteNames} nameStyle={settings.noteNames} harpType={converted.harpType} harpKey={converted.harpKey} />
               <div className="row gap preview-actions">

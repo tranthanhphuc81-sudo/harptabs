@@ -86,5 +86,7 @@ describe('sửa chữ đã lưu bị vỡ dấu', () => {
     expect(fixGarbled('4 5\nTôi đi học về quê hương, Người Việt Nam ơi')).toBeNull();
     expect(fixGarbled('4 5\nHappy birthday to you')).toBeNull();
     expect(fixGarbled('Café crème à la française')).toBeNull();
+    // dấu chấm giữa / độ trong tên tác giả, lời tiếng Anh: không phải lỗi font
+    expect(fixGarbled('Amazing grace, how sweet the sound', 'Amazing Grace', 'John Newton (1779) · giai điệu New Britain')).toBeNull();
   });
 });

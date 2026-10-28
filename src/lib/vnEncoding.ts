@@ -150,7 +150,8 @@ export function detectVn(parts: Uint8Array[]): VnEncoding {
  */
 export function fixGarbled(...texts: string[]): { enc: VnEncoding; fix: (s: string) => string } | null {
   const joined = texts.join('\n');
-  if (!/[\u0080-ÿ]/.test(joined)) return null;
+  // ký hiệu hay gặp trong chữ bình thường (· ° × © «») không phải dấu hiệu lỗi font: chỉ có chúng thì bỏ qua
+  if (!/[\u0080-ÿ]/.test(joined.replace(/[·°×©®«»]/g, ''))) return null;
   // chỉ đọc lại các đoạn ký tự một byte (≤ 0xFF) có chữ ngoài ASCII; chữ Unicode khác giữ nguyên
   const via = (enc: VnEncoding) => (s: string) => s.replace(/[\t\n\r -ÿ]+/g, (run) => (/[\u0080-ÿ]/.test(run) ? decodeVn(bytes(run), enc) : run));
   const before = vnScore(joined);

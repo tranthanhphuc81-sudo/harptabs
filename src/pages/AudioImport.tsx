@@ -1,3 +1,4 @@
+import { BRAND } from '../appConfig';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { aiToTab } from '../lib/ai';
@@ -180,7 +181,7 @@ export default function AudioImport({ initialFile }: { initialFile?: File }) {
       </div>
       {kind === 'solo' ? (
         <p className="muted small">
-          Hát, ngân nga hoặc thổi kèn <strong>giai điệu</strong> (một giọng, không nhạc đệm) — thu ngay hoặc chọn file ghi âm có sẵn.
+          Hát, ngân nga hoặc {BRAND.verb} {BRAND.noun} <strong>giai điệu</strong> (một giọng, không nhạc đệm) — thu ngay hoặc chọn file ghi âm có sẵn.
           Hát đều nhịp, mỗi nốt rõ ràng, nơi yên tĩnh thì tab đúng nhất.
         </p>
       ) : (
@@ -241,7 +242,7 @@ export default function AudioImport({ initialFile }: { initialFile?: File }) {
               </select>
             </label>
             <HarpTypeSelect value={harpType} onChange={setHarpType} />
-            <KeySelect value={target} onChange={setTarget} allowAuto label="Chơi trên kèn" harpType={harpType} />
+            <KeySelect value={target} onChange={setTarget} allowAuto label={`Chơi trên ${BRAND.noun}`} harpType={harpType} />
             {target !== 'auto' && (
               <label className="check">
                 <input type="checkbox" checked={allowTranspose} onChange={(e) => setAllowTranspose(e.target.checked)} />
@@ -260,12 +261,12 @@ export default function AudioImport({ initialFile }: { initialFile?: File }) {
             </p>
             <p className="small">
               Dò được {notes.length} nốt. {stats && <>{stats.natural} nốt thường{stats.bends ? `, ${stats.bends} nốt bend` : ''}{stats.slides ? `, ${stats.slides} nốt gạt` : ''}</>}
-              {stats && stats.unplayable > 0 && `, ${stats.unplayable} nốt ngoài tầm kèn (đã thành dấu nghỉ)`}.
+              {stats && stats.unplayable > 0 && `, ${stats.unplayable} nốt ngoài tầm ${BRAND.noun} (đã thành dấu nghỉ)`}.
             </p>
             <ul className="warnings">
               <li>Bấm <strong>Nghe thử</strong> và so với bản thu. Nốt nghe dài / ngắn gấp đôi thì bấm ×2 hoặc ÷2 ở ô Tempo.</li>
               {transcription?.warnings.map((w) => <li key={w}>{w}</li>)}
-              {stats && stats.unplayable > 0 && <li>Có nốt ngoài tầm kèn — thử chọn kèn khác hoặc cho phép dịch giọng.</li>}
+              {stats && stats.unplayable > 0 && <li>{`Có nốt ngoài tầm ${BRAND.noun} — thử chọn ${BRAND.noun} khác hoặc cho phép dịch giọng.`}</li>}
               <li>Tab không có lời — thêm lời trong trang Sửa bài sau khi lưu.</li>
             </ul>
             <TabView parsed={parsed} flat={flat} active={player.active} size="s" showNames={settings.showNoteNames} nameStyle={settings.noteNames} harpType={converted.harpType} harpKey={converted.harpKey} />

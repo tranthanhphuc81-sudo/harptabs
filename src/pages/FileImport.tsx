@@ -1,3 +1,4 @@
+import { BRAND } from '../appConfig';
 import { useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { aiToTab } from '../lib/ai';
@@ -188,7 +189,7 @@ export default function FileImport({ onImages, onAudio }: { onImages?: (files: F
               </label>
             )}
             <HarpTypeSelect value={harpType} onChange={setHarpType} />
-            <KeySelect value={target} onChange={setTarget} allowAuto label="Chơi trên kèn" harpType={harpType} />
+            <KeySelect value={target} onChange={setTarget} allowAuto label={`Chơi trên ${BRAND.noun}`} harpType={harpType} />
             {target !== 'auto' && (
               <label className="check">
                 <input type="checkbox" checked={allowTranspose} onChange={(e) => setAllowTranspose(e.target.checked)} />
@@ -206,12 +207,12 @@ export default function FileImport({ onImages, onAudio }: { onImages?: (files: F
             </p>
             <p className="small">
               {converted.fit.stats.natural} nốt thường, {converted.fit.stats.bends} nốt bend
-              {converted.fit.stats.unplayable > 0 && `, ${converted.fit.stats.unplayable} nốt ngoài tầm kèn (đã thành dấu nghỉ)`}.
+              {converted.fit.stats.unplayable > 0 && `, ${converted.fit.stats.unplayable} nốt ngoài tầm ${BRAND.noun} (đã thành dấu nghỉ)`}.
             </p>
             {(converted.fit.stats.unplayable > 0 || noLyrics || (file.parts.length > 1 && part)) && (
               <ul className="warnings">
                 {file.parts.length > 1 && <li>File có {file.parts.length} bè — nghe thử, nếu không phải giai điệu chính thì chọn bè khác ở trên.</li>}
-                {converted.fit.stats.unplayable > 0 && <li>Có nốt ngoài tầm kèn — thử chọn kèn khác hoặc cho phép dịch giọng.</li>}
+                {converted.fit.stats.unplayable > 0 && <li>{`Có nốt ngoài tầm ${BRAND.noun} — thử chọn ${BRAND.noun} khác hoặc cho phép dịch giọng.`}</li>}
                 {noLyrics && <li>File không có lời — thêm lời trong trang Sửa bài nếu cần.</li>}
               </ul>
             )}

@@ -1,3 +1,4 @@
+import { BRAND, IS_HARMONICA_APP } from '../appConfig';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { db } from '../lib/db';
 import { fixGarbled } from '../lib/vnEncoding';
@@ -31,7 +32,9 @@ import type { PlayerState } from './usePlayer';
 import { useFullscreen } from './useFullscreen';
 import { useWakeLock } from './useWakeLock';
 
-const HOLES_LABEL: Record<KaraokeHoles, string> = { same: 'Giữ số lỗ', myHarp: 'Xếp lại cho kèn đang xem', hide: 'Ẩn số lỗ' };
+const HOLES_LABEL: Record<KaraokeHoles, string> = IS_HARMONICA_APP
+  ? { same: 'Giữ số lỗ', myHarp: 'Xếp lại cho kèn đang xem', hide: 'Ẩn số lỗ' }
+  : { same: 'Giữ nốt như bài', myHarp: `Xếp lại cho ${BRAND.noun} đang xem`, hide: 'Ẩn nốt' };
 
 /** tên hợp âm gắn vào âm tiết: khúc hợp âm bắt đầu trong âm tiết nào thì hiện trên âm tiết đó */
 function chordsByLine(lines: KLine[], segs: ChordSegment[]): Map<string, string> {
@@ -485,7 +488,7 @@ export default function KaraokeView({ song, original, flat, p, chordSegs, onClos
             <span className="kara-key-val" aria-live="polite">{mp3 ? 'Tông theo nhạc' : `Tông ${t > 0 ? `+${t}` : t}`}</span>
             <button type="button" className="icon-btn" disabled={mp3 || t >= MAX_TRANSPOSE} onClick={() => update({ transpose: t + 1 })} aria-label="Nâng tông"><Icon name="plus" size={18} /></button>
           </div>
-          <select className="chip-select" value={prefs.holes} onChange={(e) => update({ holes: e.target.value as KaraokeHoles })} aria-label="Số lỗ kèn">
+          <select className="chip-select" value={prefs.holes} onChange={(e) => update({ holes: e.target.value as KaraokeHoles })} aria-label="Cách hiện nốt">
             {(Object.keys(HOLES_LABEL) as KaraokeHoles[]).map((k) => <option key={k} value={k}>{HOLES_LABEL[k]}</option>)}
           </select>
           <button type="button" className={`chip${prefs.chords ? ' on' : ''}`} aria-pressed={prefs.chords} onClick={() => update({ chords: !prefs.chords })}>Hợp âm</button>
@@ -589,7 +592,7 @@ export default function KaraokeView({ song, original, flat, p, chordSegs, onClos
         <p className="kara-note small">
           {prefs.holes === 'same'
             ? <>Đã đổi tông {t > 0 ? `+${t}` : t}: thổi đúng số lỗ này bằng <strong>{playHarp}</strong>.</>
-            : <>Số lỗ xếp lại cho {harpName(song.harpKey, type).replace(/^Kèn/, 'kèn')}{missing > 0 ? ` — ${missing} nốt không có trên kèn này (–)` : ''}.</>}
+            : <>{IS_HARMONICA_APP ? 'Số lỗ' : 'Nốt'} xếp lại cho {harpName(song.harpKey, type).replace(/^Kèn/, 'kèn')}{missing > 0 ? ` — ${missing} nốt không có trên ${BRAND.noun} này (–)` : ''}.</>}
         </p>
       )}
 

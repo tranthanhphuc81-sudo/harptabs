@@ -1,3 +1,4 @@
+import { BRAND } from '../appConfig';
 import { useEffect, useRef, useState } from 'react';
 import { HarpKey, HarpType, harpLayout, holeCount, isChromatic, isFingered, isFretted, isKalimba, isRecorder, isSaoTruc, isTremolo, midiToName, TECHNIQUE_LABEL } from '../lib/harp';
 import { MicPitch, PitchReading } from '../audio/pitch';
@@ -80,7 +81,7 @@ export default function Tuner() {
               {i > 0 && <span className="tr-or">hoặc</span>}
               <TokenText token={m.token} strings={isFretted(type) ? holeCount(type) : undefined} />
             </span>
-          )) : <span className="tr-none">{on ? (r ? 'ngoài tầm kèn' : 'đang nghe…') : '–'}</span>}
+          )) : <span className="tr-none">{on ? (r ? `ngoài tầm ${BRAND.noun}` : 'đang nghe…') : '–'}</span>}
         </div>
         <div className="tr-note">
           {r ? <>{midiToName(r.nearest, settings.noteNames)} <span className="muted">{r.hz.toFixed(1)} Hz</span></> : ' '}
