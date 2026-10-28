@@ -11,7 +11,7 @@ const GUITAR = process.env.VITE_APP === 'guitar';
 const PIANICA = process.env.VITE_APP === 'pianica';
 const TRANH = process.env.VITE_APP === 'tranh';
 const BRAND = TRANH
-  ? { name: 'Sổ Tab Đàn Tranh', short: 'Đàn Tranh Tab', desc: 'Sổ bài đàn tranh 16 / 17 dây: tab số dây kèm nhấn, hình dây đàn dưới mỗi nốt, phát nhạc đệm, karaoke, dò nốt để lên dây, học chơi. Chạy offline.', icons: 'tranh/' }
+  ? { name: 'Sổ Tab Đàn Tranh – Đàn Bầu', short: 'Tranh Bầu Tab', desc: 'Sổ bài đàn tranh 16 / 17 dây và đàn bầu: tab số dây kèm nhấn, điểm bồi kèm nắn cần, hình dây đàn dưới mỗi nốt, phát nhạc đệm, karaoke, dò nốt, học chơi. Chạy offline.', icons: 'tranh/' }
   : PIANICA
   ? { name: 'Sổ Tab Pianica', short: 'Pianica Tab', desc: 'Sổ bài kèn pianica (melodica) 32 phím: tab tên nốt kèm hình bàn phím, phát nhạc đệm, karaoke, dò nốt, học thổi. Chạy offline.', icons: 'pianica/' }
   : GUITAR

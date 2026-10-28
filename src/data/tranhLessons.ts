@@ -2,8 +2,9 @@
 import type { Lesson } from './lessons';
 
 const T = { harpKey: 'C' as const, harpType: 'tranh17' as const };
+const B = { harpKey: 'C' as const, harpType: 'danbau' as const };
 
-export const TRANH_LESSON_GROUPS = ['Bắt đầu', 'Kỹ thuật', 'Bảo quản và mẹo'];
+export const TRANH_LESSON_GROUPS = ['Bắt đầu', 'Kỹ thuật', 'Đàn bầu', 'Bảo quản và mẹo'];
 
 export const TRANH_LESSONS: Lesson[] = [
   {
@@ -84,6 +85,40 @@ export const TRANH_LESSONS: Lesson[] = [
         'Bài ở tông khác: chọn **tông đàn** trong bài (tông Rê: cả bộ dây cao lên một cung, dây 1 thành La).',
       ] },
       { t: 'warn', text: 'Đàn tranh dây kim loại, vặn từng chút — lên quá căng dễ đứt dây. Để đàn nơi khô ráo, tránh nắng.' },
+    ],
+  },
+  {
+    id: 'danbau-lam-quen',
+    group: 'Đàn bầu',
+    title: 'Làm quen đàn bầu',
+    summary: 'Một dây, âm bồi, các điểm 1/2 – 1/8 trên dây.',
+    minutes: 6,
+    blocks: [
+      { t: 'list', items: [
+        'Đàn bầu chỉ có **một dây**. Đàn đặt nằm ngang, **cần đàn** (que tre cắm vào bầu) bên trái, **ngựa đàn** bên phải.',
+        'Tay phải cầm que gảy (kẹp giữa ngón cái và trỏ), **cạnh bàn tay chạm nhẹ vào một điểm trên dây** rồi gảy ngay — đó là **âm bồi**, tiếng trong và vang đặc trưng của đàn bầu.',
+        'Các điểm chạm (cung phím) là **1/2, 1/3, 1/4, 1/5, 1/6… độ dài dây**, tính từ ngựa đàn. Dây Đô: ½ ra Đô, ⅓ Sol, ¼ Đô cao, ⅕ Mi, ⅙ Sol cao, ⅛ Đô cao hơn nữa.',
+        'App ghi: `b2` = điểm 1/2, `b3` = 1/3… và hiện bằng ký hiệu ½ ⅓ ¼. Hình nhỏ dưới mỗi nốt là dây đàn, chấm tô màu là chỗ cần chạm.',
+      ] },
+      { t: 'diagram', ...B },
+      { t: 'tab', caption: 'Các điểm bồi trên dây Đô', body: 'b2 b3 b4 b5 b6:2\nb6 b5 b4 b3 b2:2\n', bpm: 66, style: 'metronome', ...B },
+    ],
+  },
+  {
+    id: 'danbau-nan-can',
+    group: 'Đàn bầu',
+    title: 'Nắn cần: tạo các nốt còn thiếu',
+    summary: 'Đẩy cần cho nốt cao lên, kéo cần cho nốt thấp xuống.',
+    minutes: 6,
+    blocks: [
+      { t: 'list', items: [
+        'Điểm bồi chỉ có Đô, Mi, Sol (và Sib). Các nốt khác có được nhờ **tay trái nắn cần**: **đẩy cần** về phía dây cho dây căng → nốt **cao lên**; **kéo cần** ra cho dây chùng → nốt **thấp xuống**.',
+        'Ký hiệu: `b4+2` = bồi ¼ rồi nắn lên **2 nửa cung** (Đô → Rê); `b6+2` = Sol → La; `b5+1` = Mi → Fa; `b8-1` = Đô → Si.',
+        'Thứ tự: chạm điểm bồi, gảy, **rồi mới nắn** — nghe nốt trượt lên đúng cao độ. Dùng **Dò nốt** để tập nắn vừa đủ.',
+        'Nắn liên tục lên xuống là **rung** — làm tiếng đàn ngân như giọng hát.',
+      ] },
+      { t: 'tab', caption: 'Thang âm Đô trưởng (nắn cần cho Rê, Fa, La, Si)', body: 'b4 b4+2 b5 b5+1 b6 b6+2 b8-1 b8:2\n', bpm: 60, style: 'metronome', ...B },
+      { t: 'warn', text: 'Nắn nhẹ tay và từ từ; nắn mạnh quá dễ làm tuột dây hoặc lệch cần. Cao độ nắn trong app là gần đúng — luôn kiểm tra bằng tai và Dò nốt.' },
     ],
   },
 ];

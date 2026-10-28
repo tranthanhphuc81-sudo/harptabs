@@ -18,7 +18,7 @@ export const IS_HARMONICA_APP = APP === 'harmonica';
 export const BRAND = IS_RECORDER_APP
   ? { name: 'Sổ Tab Sáo', line1: 'Sổ Tab', line2: 'Sáo', url: 'https://sotabsao.pages.dev/', host: 'sotabsao.pages.dev', instrument: 'sáo dọc', noun: 'sáo', verb: 'thổi' }
   : IS_TRANH_APP
-  ? { name: 'Sổ Tab Đàn Tranh', line1: 'Sổ Tab', line2: 'Đàn Tranh', url: 'https://sotabdantranh.pages.dev/', host: 'sotabdantranh.pages.dev', instrument: 'đàn tranh', noun: 'đàn', verb: 'chơi' }
+  ? { name: 'Sổ Tab Đàn Tranh – Đàn Bầu', line1: 'Sổ Tab', line2: 'Tranh – Bầu', url: 'https://sotabdantranh.pages.dev/', host: 'sotabdantranh.pages.dev', instrument: 'đàn tranh, đàn bầu', noun: 'đàn', verb: 'chơi' }
   : IS_PIANICA_APP
   ? { name: 'Sổ Tab Pianica', line1: 'Sổ Tab', line2: 'Pianica', url: 'https://sotabpianica.pages.dev/', host: 'sotabpianica.pages.dev', instrument: 'kèn pianica', noun: 'pianica', verb: 'thổi' }
   : IS_GUITAR_APP
@@ -31,7 +31,7 @@ export const BRAND = IS_RECORDER_APP
 export const SHOWN_HARP_TYPES: readonly HarpType[] = IS_RECORDER_APP
   ? ['recorderAlto', 'recorderSoprano', 'recorderTenor', 'recorderBass', 'saoTruc6', 'ocarina12']
   : IS_TRANH_APP
-  ? ['tranh17', 'tranh16']
+  ? ['tranh17', 'tranh16', 'danbau']
   : IS_PIANICA_APP
   ? ['pianica32', 'pianica37']
   : IS_GUITAR_APP

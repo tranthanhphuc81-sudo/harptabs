@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import { fingeringKey, HarpKey, HarpType, harpLayout, holeCount, isChromatic, isFingered, isFretted, isPianica, isTranh, isTremolo, midiToName, NoteNameStyle, tremoloDir } from '../lib/harp';
+import { fingeringKey, HarpKey, HarpType, harpLayout, holeCount, isChromatic, isDanBau, isFingered, isFretted, isPianica, isTranh, isTremolo, midiToName, NoteNameStyle, tremoloDir } from '../lib/harp';
 import { FretboardChart } from './Fretboard';
 import { PianoChart } from './Keyboard';
 import { TranhChart } from './Tranh';
+import { BauChart } from './DanBau';
 import { TokenText } from './TabView';
 import { joinToken, splitToken } from '../lib/tabEdit';
 import type { FlatEvent } from '../lib/tabText';
@@ -91,7 +92,7 @@ export function NoteEditor({ note, harpType, harpKey = 'C', nameStyle, playing, 
       {note && (
         <>
           <div className={`keypad ne-keys${rec ? ' recorder' : ''}`} role="toolbar" aria-label={rec ? 'Chọn nốt' : 'Chọn lỗ'}>
-            {isTranh(harpType) ? <TranhChart harpType={harpType} harpKey={harpKey} nameStyle={nameStyle} selected={pend ?? note.token} onPick={pick} /> : isPianica(harpType) ? <PianoChart harpType={harpType} nameStyle={nameStyle} selected={pend ?? note.token} onPick={pick} /> : fret ? <FretboardChart harpType={harpType} nameStyle={nameStyle} selected={pend ?? note.token} onPick={pick} maxFret={12} /> : rec ? recNotes.map((n) => (
+            {isDanBau(harpType) ? <BauChart harpKey={harpKey} nameStyle={nameStyle} selected={pend ?? note.token} onPick={pick} /> : isTranh(harpType) ? <TranhChart harpType={harpType} harpKey={harpKey} nameStyle={nameStyle} selected={pend ?? note.token} onPick={pick} /> : isPianica(harpType) ? <PianoChart harpType={harpType} nameStyle={nameStyle} selected={pend ?? note.token} onPick={pick} /> : fret ? <FretboardChart harpType={harpType} nameStyle={nameStyle} selected={pend ?? note.token} onPick={pick} maxFret={12} /> : rec ? recNotes.map((n) => (
               <button type="button" key={n.token} className={`blow${(pend ?? note.token) === n.token ? ' on' : ''}`} onClick={() => pick(n.token)} aria-label={`Nốt ${n.token}`}><TokenText token={n.token} nameStyle={nameStyle} /></button>
             )) : trem ? holes.map((h) => {
               const d = tremoloDir(h) === 'draw';
@@ -119,6 +120,15 @@ export function NoteEditor({ note, harpType, harpKey = 'C', nameStyle, playing, 
                 <button type="button" className={`chip${shown.bend === 2 ? ' on' : ''}`} disabled={shown.hole == null} onClick={() => withMod({ bend: 2, over: false })}>Bend ″</button>
                 <button type="button" className={`chip${shown.over ? ' on' : ''}`} disabled={shown.hole == null} onClick={() => withMod({ bend: 0, over: true })}>Overblow</button>
               </>)}
+            {isDanBau(harpType) && (() => {
+              // nắn cần: giữ điểm bồi, đổi mức nắn (−2 … +3 nửa cung)
+              const cur = /^b(\d)(?:([+-])(\d))?$/.exec(pend ?? note.token ?? '');
+              const bend = cur?.[2] ? (cur[2] === '+' ? 1 : -1) * Number(cur[3]) : 0;
+              const setBend = (k: number) => { if (!cur) return; const t = `b${cur[1]}${k > 0 ? `+${k}` : k < 0 ? `-${-k}` : ''}`; if (pend) pick(t); else onToken(t); };
+              return [-2, -1, 0, 1, 2, 3].map((k) => (
+                <button key={k} type="button" className={`chip${cur && bend === k ? ' on' : ''}`} disabled={!cur} onClick={() => setBend(k)}>{k === 0 ? 'Không nắn' : k > 0 ? `Nắn ↑${k}` : `Nắn ↓${-k}`}</button>
+              ));
+            })()}
             {isTranh(harpType) && (() => {
               // nhấn: đổi nốt đang chọn (hoặc nốt mới chọn) sang gảy thường / nhấn nửa cung / nhấn một cung
               const base = /^(\d+)/.exec(pend ?? note.token ?? '')?.[1];

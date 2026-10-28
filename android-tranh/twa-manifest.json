@@ -1,8 +1,8 @@
 {
   "packageId": "dev.pages.sotabdantranh.twa",
   "host": "sotabdantranh.pages.dev",
-  "name": "Sổ Tab Đàn Tranh",
-  "launcherName": "Đàn Tranh Tab",
+  "name": "Sổ Tab Đàn Tranh – Đàn Bầu",
+  "launcherName": "Tranh Bầu Tab",
   "display": "standalone",
   "orientation": "default",
   "themeColor": "#1f2a33",

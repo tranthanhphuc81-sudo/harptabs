@@ -2,6 +2,7 @@ import { memo, useCallback, useEffect, useMemo, useRef } from 'react';
 import { HarpKey, HarpType, holeCount, isFretted, midiToName, nameToMidi, NoteNameStyle } from '../lib/harp';
 import { FingeringIcon, fingeringOf } from './Fingering';
 import { FretTokenText } from './Fretboard';
+import { BAU_GLYPH } from './DanBau';
 import { FlatEvent, ParsedTab, TabLine } from '../lib/tabText';
 import type { ChordSegment } from '../audio/harmony';
 
@@ -26,6 +27,9 @@ interface Props {
 }
 
 export function TokenText({ token, nameStyle, strings }: { token: string; nameStyle?: NoteNameStyle; strings?: number }) {
+  // đàn bầu: điểm bồi (½ ⅓ ¼…), nắn cần lên / xuống mấy nửa cung
+  const bau = /^b([1-8])(?:([+-])([1-3]))?$/.exec(token);
+  if (bau) return <>{BAU_GLYPH[Number(bau[1])]}{bau[2] && <sup className="tok-press">{bau[2] === '+' ? '↑' : '↓'}{bau[3]}</sup>}</>;
   // đàn tranh: số dây, ^ = nhấn nửa cung, ^^ = nhấn một cung
   const tr = /^(\d+)(\^{1,2})$/.exec(token);
   if (tr) return <>{tr[1]}<sup className="tok-press">{tr[2].length === 2 ? '↑1' : '↑½'}</sup></>;

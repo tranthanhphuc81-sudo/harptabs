@@ -1,4 +1,4 @@
-import { HarpType, isFretted, isOcarina, isPianica, isTranh, isKalimba, isRecorder, isSaoTruc, isTremolo } from '../lib/harp';
+import { HarpType, isFretted, isOcarina, isDanBau, isPianica, isTranh, isKalimba, isRecorder, isSaoTruc, isTremolo } from '../lib/harp';
 /**
  * Tự chọn kiểu nhịp hợp với bài (chạy offline): dựa vào nhịp, từ khoá trong tên/thẻ/ghi chú,
  * tiết tấu giai điệu (chùm ba, chấm dôi, lệch nhịp), giọng trưởng/thứ, tốc độ và ngôn ngữ lời.
@@ -214,6 +214,7 @@ export function suggestInstrument(song: SongLike, notes: NoteLike[], style: Beat
   if (isRecorder(song.harpType)) return { instrument: 'recorder', reason: 'Bài cho sáo dọc' };
   if (isSaoTruc(song.harpType)) return { instrument: 'flute', reason: 'Bài cho sáo trúc' };
   if (isKalimba(song.harpType)) return { instrument: 'kalimba', reason: 'Bài cho kalimba' };
+  if (isDanBau(song.harpType)) return { instrument: 'danbau', reason: 'Bài cho đàn bầu' };
   if (isTranh(song.harpType)) return { instrument: 'dantranh', reason: 'Bài cho đàn tranh' };
   if (isOcarina(song.harpType)) return { instrument: 'ocarina', reason: 'Bài cho ocarina' };
   if (isPianica(song.harpType)) return { instrument: 'accordion', reason: 'Bài cho kèn pianica' };

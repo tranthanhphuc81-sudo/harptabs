@@ -1,6 +1,6 @@
 import { BRAND } from '../appConfig';
 import { useEffect, useRef, useState } from 'react';
-import { HarpKey, HarpType, harpLayout, holeCount, isChromatic, isFingered, isFretted, isKalimba, isOcarina, isPianica, isTranh, isRecorder, isSaoTruc, isTremolo, midiToName, TECHNIQUE_LABEL } from '../lib/harp';
+import { HarpKey, HarpType, harpLayout, holeCount, isChromatic, isFingered, isFretted, isKalimba, isDanBau, isOcarina, isPianica, isTranh, isRecorder, isSaoTruc, isTremolo, midiToName, TECHNIQUE_LABEL } from '../lib/harp';
 import { MicPitch, PitchReading } from '../audio/pitch';
 import { HarpDiagram } from '../components/HarpDiagram';
 import { HarpTypeSelect, KeySelect } from '../components/KeySelect';
@@ -97,7 +97,9 @@ export default function Tuner() {
       </div>
 
       <HarpDiagram harpKey={key} harpType={type} highlight={matches.map((m) => m.token)} nameStyle={settings.noteNames} />
-      {isTranh(type)
+      {isDanBau(type)
+        ? <p className="muted small">Mẹo đàn bầu: lên dây buông đúng nốt chủ (dây Đô: Đô3), rồi gảy bồi 1/2 để kiểm tra — phải ra đúng Đô cao hơn một quãng tám. Tập nắn cần: gảy bồi rồi đẩy / kéo cần tới khi kim chỉ đúng nốt cần ra.</p>
+        : isTranh(type)
         ? <p className="muted small">Mẹo lên dây đàn tranh: gảy từng dây buông, kim lệch trái là thấp → vặn trục cho căng hoặc đẩy nhạn ra xa; lệch phải là cao → nới dây. Dây Bắc từ dây 1: Sol La Đô Rê Mi lặp lại (dây Đảo: Sol La Đô Rê Fa). Tập nhấn: nhấn dây phía trái nhạn tới khi kim chỉ đúng nốt cần ra.</p>
         : isOcarina(type)
         ? <p className="muted small">Mẹo: ocarina rất nhạy với hơi thổi — thổi mạnh thì nốt cao lên, yếu thì thấp xuống. Nhìn kim cent để tìm độ mạnh đúng cho từng nốt (nốt trầm nhẹ, nốt cao mạnh dần); lỗ bịt chưa kín làm nốt rè.</p>

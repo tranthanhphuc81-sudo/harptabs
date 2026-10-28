@@ -1,11 +1,12 @@
 import { FretboardChart } from '../components/Fretboard';
 import { PianoChart } from '../components/Keyboard';
 import { TranhChart } from '../components/Tranh';
+import { BauChart } from '../components/DanBau';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { fixGarbled, VN_ENCODINGS } from '../lib/vnEncoding';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { blankSong, db, deleteSongs } from '../lib/db';
-import { HarpKey, HarpType, harpTypeOf, holeCount, harpLayout, fingeringKey, isChromatic, isFingered, isFixedKey, isFretted, isKalimba, isPianica, isTranh, isSaoTruc, isTremolo, midiToName, normalizeKey, parseToken, recorderKey, songTonality, tremoloDir } from '../lib/harp';
+import { HarpKey, HarpType, harpTypeOf, holeCount, harpLayout, fingeringKey, isChromatic, isDanBau, isFingered, isFixedKey, isFretted, isKalimba, isPianica, isTranh, isSaoTruc, isTremolo, midiToName, normalizeKey, parseToken, recorderKey, songTonality, tremoloDir } from '../lib/harp';
 import { flatten, parseTab } from '../lib/tabText';
 import { beatsPerBar, Song } from '../lib/types';
 import { STYLE_OPTIONS, BeatStyle } from '../audio/patterns';
@@ -137,7 +138,14 @@ function Editor({ initial, isNew, draft }: { initial: Song; isNew: boolean; draf
   /** bend ′ / nút gạt: đổi nốt đang chọn khi nghe trước, không thì chèn ngay */
   const pickMod = (mod: string) => {
     if (!hearFirst || !pend) return insert(mod);
-    if (mod === '^') {
+    if ((mod === '+' || mod === '-') && /^b\d/.test(pend.token)) {
+      // đàn bầu: nắn thêm / bớt nửa cung (−2 … +3)
+      const m = /^(b\d)(?:([+-])(\d))?$/.exec(pend.token);
+      if (!m) return;
+      const cur = m[2] ? (m[2] === '+' ? 1 : -1) * Number(m[3]) : 0;
+      const k = Math.max(-2, Math.min(3, cur + (mod === '+' ? 1 : -1)));
+      stage(m[1] + (k > 0 ? `+${k}` : k < 0 ? `-${-k}` : ''));
+    } else if (mod === '^') {
       // đàn tranh: bấm lần lượt nhấn nửa cung → một cung → bỏ nhấn
       const m = /^(.*?)(\^*)$/.exec(pend.token)!;
       stage(m[1] + '^'.repeat((m[2].length + 1) % 3));
@@ -321,15 +329,17 @@ function Editor({ initial, isNew, draft }: { initial: Song; isNew: boolean; draf
             <details className="syntax-help">
               <summary>Cách ghi</summary>
               <ul>
+                {isDanBau(harpType) && <li>Ghi <strong>điểm bồi</strong>: <code>b2</code> = 1/2 dây, <code>b3</code> = 1/3… <code>b8</code>; <code>b1</code> là dây buông. Nắn cần: <code>b4+2</code> lên 2 nửa cung, <code>b5-1</code> xuống nửa cung. Chạm sơ đồ bên dưới để nghe và thêm nốt, nút <strong>nắn ↑ / ↓</strong> để nắn.</li>}
                 {isTranh(harpType) && <li>Ghi <strong>số dây</strong>: <code>1</code> là dây trầm nhất. Nốt không có trên dây thì nhấn: <code>7^</code> nhấn nửa cung, <code>7^^</code> nhấn một cung. Chạm sơ đồ đàn bên dưới để nghe và thêm nốt, nút <strong>nhấn ↑</strong> để thêm nhấn.</li>}
                 {isPianica(harpType) && <li>Ghi <strong>tên nốt có quãng tám</strong>: <code>C4</code> (Đô giữa) <code>F#4</code> <code>Bb4</code> <code>C5</code>; pianica 32 phím từ <code>F3</code> tới <code>C6</code>. Chạm bàn phím bên dưới để nghe và thêm nốt.</li>}
                 {isFretted(harpType) && <li>Ghi <strong>dây.phím</strong>: <code>1.0</code> dây 1 (dây mảnh nhất) buông, <code>2.3</code> dây 2 phím 3{harpType === 'guitar6' ? <>, <code>6.3</code> dây 6 (dây Mi trầm) phím 3</> : <>; ukulele dây 4 là dây Sol</>}. Chạm cần đàn bên dưới để nghe và thêm nốt.</li>}
                 {isKalimba(harpType) && <li>Ghi <strong>số 1–7</strong> (Đô–Si theo tông kalimba), thêm <code>'</code> hoặc <code>°</code> để lên quãng tám: <code>1 2 3 5'</code>. <code>0</code> hoặc <code>r</code> là nghỉ.</li>}
-                {rec && !isKalimba(harpType) && !isFretted(harpType) && !isPianica(harpType) && !isTranh(harpType) && <li>Ghi <strong>tên nốt có quãng tám</strong>: <code>F4</code> <code>Bb4</code> <code>C#5</code> ({isSaoTruc(harpType) ? 'sáo trúc Đô từ G4: bịt hết lỗ ra Sol' : 'sáo alto từ F4 tới G6; soprano ghi từ C4'}). Dưới mỗi nốt app vẽ thế bấm.</li>}
+                {rec && !isKalimba(harpType) && !isFretted(harpType) && !isPianica(harpType) && !isTranh(harpType) && !isDanBau(harpType) && <li>Ghi <strong>tên nốt có quãng tám</strong>: <code>F4</code> <code>Bb4</code> <code>C#5</code> ({isSaoTruc(harpType) ? 'sáo trúc Đô từ G4: bịt hết lỗ ra Sol' : 'sáo alto từ F4 tới G6; soprano ghi từ C4'}). Dưới mỗi nốt app vẽ thế bấm.</li>}
                 {rec ? null : trem
                   ? <li>Kèn tremolo: lỗ lẻ là thổi, lỗ chẵn là hút. Gõ <code>3</code> hay <code>4</code> là đủ — app tự ghi lỗ hút thành <code>-4</code>. Kèn này không bend.</li>
                   : <li><code>4</code> thổi lỗ 4, <code>-4</code> hút lỗ 4</li>}
-                {isTranh(harpType) && <button type="button" onClick={() => pickMod('^')} aria-label="Nhấn (nửa cung, một cung, bỏ nhấn)">nhấn ↑</button>}
+                {isDanBau(harpType) && <><button type="button" onClick={() => pickMod('+')} aria-label="Nắn cần lên nửa cung">nắn ↑</button><button type="button" onClick={() => pickMod('-')} aria-label="Nắn cần xuống nửa cung">nắn ↓</button></>}
+            {isTranh(harpType) && <button type="button" onClick={() => pickMod('^')} aria-label="Nhấn (nửa cung, một cung, bỏ nhấn)">nhấn ↑</button>}
             {trem || rec ? null : chrom
                   ? <li><code>4&lt;</code> thổi lỗ 4 bấm nút gạt, <code>-4&lt;</code> hút bấm nút gạt (cao lên nửa cung)</li>
                   : <li><code>-3'</code> bend nửa cung, <code>-3''</code> bend 1 cung, <code>6o</code> overblow</li>}
@@ -340,7 +350,7 @@ function Editor({ initial, isNew, draft }: { initial: Song; isNew: boolean; draf
             </details>
           </div>
           <div className={`keypad${trem ? ' tremolo' : ''}${rec ? ' recorder' : ''}`} role="toolbar" aria-label="Bàn phím tab">
-            {isTranh(harpType) ? <TranhChart harpType={harpType} harpKey={s.harpKey} nameStyle={settings.noteNames} onPick={pickHole} /> : isPianica(harpType) ? <PianoChart harpType={harpType} nameStyle={settings.noteNames} onPick={pickHole} /> : isFretted(harpType) ? <FretboardChart harpType={harpType} nameStyle={settings.noteNames} onPick={pickHole} maxFret={12} /> : rec ? recNotes.map((n) => (
+            {isDanBau(harpType) ? <BauChart harpKey={s.harpKey} nameStyle={settings.noteNames} onPick={pickHole} /> : isTranh(harpType) ? <TranhChart harpType={harpType} harpKey={s.harpKey} nameStyle={settings.noteNames} onPick={pickHole} /> : isPianica(harpType) ? <PianoChart harpType={harpType} nameStyle={settings.noteNames} onPick={pickHole} /> : isFretted(harpType) ? <FretboardChart harpType={harpType} nameStyle={settings.noteNames} onPick={pickHole} maxFret={12} /> : rec ? recNotes.map((n) => (
               <button type="button" key={n.token} className="blow" onClick={() => pickHole(n.token)} aria-label={`Nốt ${n.token}`}><TokenText token={n.token} nameStyle={settings.noteNames} /></button>
             )) : trem ? holes.map((h) => {
               const d = tremoloDir(h) === 'draw';

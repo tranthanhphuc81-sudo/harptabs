@@ -6,7 +6,7 @@ Bản đang chạy: https://harptabs.pages.dev
 
 Trang giới thiệu chung cả sáu app (mở app, tải APK mới nhất, hướng dẫn cài): https://sotab.pages.dev — mã trong `landing/`, tự deploy cùng các app.
 
-Cùng mã nguồn này còn build ra năm app khác cho [sáo](#sổ-tab-sáo), [kalimba](#sổ-tab-kalimba), [guitar / ukulele](#sổ-tab-guitar), [pianica](#sổ-tab-pianica) và [đàn tranh](#sổ-tab-đàn-tranh):
+Cùng mã nguồn này còn build ra năm app khác cho [sáo](#sổ-tab-sáo), [kalimba](#sổ-tab-kalimba), [guitar / ukulele](#sổ-tab-guitar), [pianica](#sổ-tab-pianica) và [đàn tranh – đàn bầu](#sổ-tab-đàn-tranh--đàn-bầu):
 
 | App | Nhạc cụ | Bản web | APK Android |
 |---|---|---|---|
@@ -15,7 +15,7 @@ Cùng mã nguồn này còn build ra năm app khác cho [sáo](#sổ-tab-sáo), 
 | Sổ Tab Kalimba | Kalimba 17, 10, 8 phím | https://sotabkalimba.pages.dev | [Releases `kalimba-apk-v…`](https://github.com/tranthanhphuc81-sudo/harptabs/releases?q=kalimba-apk&expanded=true) |
 | Sổ Tab Guitar | Guitar 6 dây, ukulele 4 dây | https://sotabguitar.pages.dev | [Releases `guitar-apk-v…`](https://github.com/tranthanhphuc81-sudo/harptabs/releases?q=guitar-apk&expanded=true) |
 | Sổ Tab Pianica | Kèn pianica (melodica) 32 / 37 phím | https://sotabpianica.pages.dev | [Releases `pianica-apk-v…`](https://github.com/tranthanhphuc81-sudo/harptabs/releases?q=pianica-apk&expanded=true) |
-| Sổ Tab Đàn Tranh | Đàn tranh 16 / 17 dây | https://sotabdantranh.pages.dev | [Releases `tranh-apk-v…`](https://github.com/tranthanhphuc81-sudo/harptabs/releases?q=tranh-apk&expanded=true) |
+| Sổ Tab Đàn Tranh – Đàn Bầu | Đàn tranh 16 / 17 dây, đàn bầu | https://sotabdantranh.pages.dev | [Releases `tranh-apk-v…`](https://github.com/tranthanhphuc81-sudo/harptabs/releases?q=tranh-apk&expanded=true) |
 
 Cả sáu app có chung thư viện bài, phát nhạc đệm, karaoke, chia sẻ bài, nhập MIDI / MusicXML, quét khuông nhạc, dò nốt, tập ngẫu hứng, chạy offline. Phần riêng của từng app nằm ở các mục bên dưới.
 
@@ -92,7 +92,7 @@ Bản web: https://sotabpianica.pages.dev · APK: gói `dev.pages.sotabpianica.t
 | Bài và học | Bài mẫu ghi lại cho pianica (giữ giọng gốc, giữ hợp âm chuẩn), 5 bài học: làm quen, đọc tab, đặt ngón và thang âm Đô, hơi thổi và đánh lưỡi, bảo quản |
 | Tập ngẫu hứng | Blues / jazz với lick xếp thành tên nốt trên bàn phím |
 
-## Sổ Tab Đàn Tranh
+## Sổ Tab Đàn Tranh – Đàn Bầu
 
 Bản web: https://sotabdantranh.pages.dev · APK: gói `dev.pages.sotabdantranh.twa`, tag `tranh-apk-v…` trên GitHub Releases.
 
@@ -100,7 +100,8 @@ Bản web: https://sotabdantranh.pages.dev · APK: gói `dev.pages.sotabdantranh
 |---|---|
 | Đàn | Đàn tranh 16 / 17 dây, lên dây Bắc (Sol La Đô Rê Mi) hoặc Đảo (Sol La Đô Rê Fa) — chọn trong Cài đặt; tông đàn chọn được |
 | Tab | Số dây (1 = dây trầm nhất), `7^` nhấn nửa cung, `7^^` nhấn một cung; bộ chọn ưu tiên dây buông, chỉ nhấn khi nốt không có trên dây. Hình các dây dưới mỗi nốt, sơ đồ đàn chạm để nghe |
-| Bài và học | Bài mẫu xếp lại cho đàn tranh (giữ hợp âm chuẩn), 5 bài học: làm quen, đọc tab, nhấn, rung – vỗ – vuốt, lên dây |
+| Đàn bầu | Tab ghi điểm bồi (`b2` = ½ dây, `b3` = ⅓… `b8`; `b1` dây buông), nắn cần `b4+2` lên 2 nửa cung, `b5-1` xuống nửa cung; hiện bằng ½ ⅓ ¼ kèm ↑ / ↓. Hình dây đàn với điểm cần chạm dưới mỗi nốt, sơ đồ các điểm bồi chạm để nghe. Dây Đô: ½ Đô4, ⅓ Sol4, ¼ Đô5, ⅕ Mi5, ⅙ Sol5, ⅐ Sib5, ⅛ Đô6 |
+| Bài và học | Bài mẫu xếp lại cho đàn tranh và 8 bài cho đàn bầu (giữ hợp âm chuẩn), 7 bài học: làm quen, đọc tab, nhấn, rung – vỗ – vuốt, lên dây, làm quen đàn bầu, nắn cần |
 
 ## Chạy thử
 
