@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sổ Tab — tab nhạc cụ</title>
+<meta name="description" content="Bộ 5 app tập nhạc cụ miễn phí, chạy offline: harmonica, sáo, kalimba, guitar / ukulele, kèn pianica. Tab dễ đọc, phát nhạc đệm, karaoke, dò nốt, bài học.">
+<meta property="og:title" content="Sổ Tab — tab nhạc cụ">
+<meta property="og:description" content="5 app tập nhạc cụ miễn phí, chạy offline: harmonica, sáo, kalimba, guitar / ukulele, kèn pianica.">
+<meta property="og:image" content="https://sotab.pages.dev/icons/harmonica.png">
+<link rel="icon" href="icons/harmonica.png">
+<style>
+  :root {
+    --bg: #eef1f2; --surface: #ffffff; --ink: #17212a; --ink-2: #5a6773; --line: #e1e6ea;
+    --accent: #e5a23a; --accent-ink: #1d1206; --hero: #1f2a33; --hero-ink: #f3f6f8;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #11181e; --surface: #1a232b; --ink: #e8edf1; --ink-2: #9aa7b3; --line: #2a3640;
+      --hero: #0b1116; color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] { --bg: #11181e; --surface: #1a232b; --ink: #e8edf1; --ink-2: #9aa7b3; --line: #2a3640; --hero: #0b1116; color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  a { color: inherit; }
+  .wrap { max-width: 1040px; margin: 0 auto; padding: 0 16px; }
+  header.hero { background: var(--hero); color: var(--hero-ink); padding: 44px 0 52px; }
+  .hero h1 { margin: 0 0 8px; font-size: clamp(1.9rem, 5vw, 2.8rem); line-height: 1.15; letter-spacing: -0.01em; }
+  .hero p { margin: 0; max-width: 40em; color: #c5ced6; font-size: 1.05rem; }
+  .hero .icons { display: flex; gap: 10px; margin-bottom: 18px; }
+  .hero .icons img { width: 44px; height: 44px; border-radius: 11px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+  .chips span { padding: 4px 12px; border-radius: 999px; background: rgba(255,255,255,0.09); font-size: 0.88rem; }
+  main { padding: 28px 0 40px; }
+  h2 { font-size: 1.35rem; margin: 30px 0 12px; }
+  .apps { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 14px; }
+  .app { display: flex; flex-direction: column; gap: 10px; padding: 16px; border-radius: 16px; background: var(--surface); border: 1px solid var(--line); }
+  .app .top { display: flex; gap: 12px; align-items: center; }
+  .app img { width: 56px; height: 56px; border-radius: 14px; flex: none; }
+  .app h3 { margin: 0; font-size: 1.12rem; }
+  .app .inst { margin: 0; color: var(--ink-2); font-size: 0.9rem; }
+  .app ul { margin: 0; padding-left: 1.1em; font-size: 0.93rem; }
+  .app li { margin: 2px 0; }
+  .btns { display: flex; flex-wrap: wrap; gap: 8px; margin-top: auto; padding-top: 4px; }
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 42px; padding: 0 16px; border-radius: 999px; font-weight: 700; text-decoration: none; font-size: 0.95rem; }
+  .btn.primary { background: var(--accent); color: var(--accent-ink); }
+  .btn.ghost { border: 1.5px solid var(--line); }
+  .btn small { font-weight: 500; opacity: 0.75; }
+  .steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }
+  .card { padding: 16px; border-radius: 16px; background: var(--surface); border: 1px solid var(--line); }
+  .card h3 { margin: 0 0 6px; font-size: 1.02rem; }
+  .card ol, .card p { margin: 0; padding-left: 1.2em; font-size: 0.95rem; }
+  .card p { padding-left: 0; }
+  details { padding: 12px 16px; border-radius: 12px; background: var(--surface); border: 1px solid var(--line); margin-bottom: 8px; }
+  summary { cursor: pointer; font-weight: 700; }
+  details p { margin: 8px 0 0; color: var(--ink-2); }
+  footer { padding: 22px 0 36px; color: var(--ink-2); font-size: 0.88rem; border-top: 1px solid var(--line); }
+  @media (max-width: 420px) { .btn { flex: 1 1 auto; } }
+</style>
+</head>
+<body>
+<header class="hero">
+  <div class="wrap">
+    <div class="icons" aria-hidden="true">
+      <img src="icons/harmonica.png" alt=""><img src="icons/sao.png" alt=""><img src="icons/kalimba.png" alt=""><img src="icons/guitar.png" alt=""><img src="icons/pianica.png" alt="">
+    </div>
+    <h1>Sổ Tab — tập nhạc cụ dễ như đọc chữ</h1>
+    <p>Năm app miễn phí cho harmonica, sáo, kalimba, guitar / ukulele và kèn pianica. Tab dễ đọc kèm hình cách bấm, phát nhạc đệm để tập theo, karaoke, dò nốt bằng micro và bài học từ đầu. Chạy được không cần mạng.</p>
+    <div class="chips"><span>Miễn phí, không quảng cáo</span><span>Chạy offline</span><span>Android · iPhone · máy tính</span><span>Nhập bài từ MIDI, ảnh bản nhạc, mp3</span></div>
+  </div>
+</header>
+
+<main class="wrap">
+  <h2>Chọn nhạc cụ của bạn</h2>
+  <div class="apps" id="apps"></div>
+
+  <h2>Cách cài lên điện thoại</h2>
+  <div class="steps">
+    <div class="card">
+      <h3>Android — cài APK</h3>
+      <ol>
+        <li>Bấm <strong>Tải APK</strong> của app bạn muốn.</li>
+        <li>Mở file vừa tải. Lần đầu điện thoại hỏi cho phép cài từ trình duyệt: chọn <strong>Cho phép</strong>.</li>
+        <li>Bấm <strong>Cài đặt</strong>. App tự cập nhật nội dung mỗi khi có bản mới.</li>
+      </ol>
+    </div>
+    <div class="card">
+      <h3>iPhone, iPad — thêm vào màn hình chính</h3>
+      <ol>
+        <li>Mở <strong>Mở app</strong> bằng Safari.</li>
+        <li>Bấm nút <strong>Chia sẻ</strong> (hình vuông có mũi tên).</li>
+        <li>Chọn <strong>Thêm vào MH chính</strong>. App mở như app thường và chạy offline.</li>
+      </ol>
+    </div>
+    <div class="card">
+      <h3>Máy tính</h3>
+      <p>Bấm <strong>Mở app</strong> là dùng ngay trên trình duyệt. Chrome / Edge có nút <strong>Cài đặt</strong> ở thanh địa chỉ để cài thành app riêng.</p>
+    </div>
+  </div>
+
+  <h2>Câu hỏi thường gặp</h2>
+  <details><summary>Có mất phí không?</summary><p>Không. Cả năm app miễn phí, không quảng cáo, không cần tài khoản.</p></details>
+  <details><summary>Không có mạng thì dùng được không?</summary><p>Được. Mở app một lần khi có mạng, sau đó tập bài, phát nhạc đệm, karaoke, dò nốt đều chạy offline. Chỉ phần nhập bài bằng AI cần mạng.</p></details>
+  <details><summary>Bài của tôi lưu ở đâu?</summary><p>Ngay trên máy của bạn. Vào Cài đặt → Sao lưu để xuất file, chuyển sang máy khác hoặc gửi cho bạn bè.</p></details>
+  <details><summary>Tôi có bài nhạc giấy, đưa vào app thế nào?</summary><p>Vào Nhập bài: chụp ảnh khuông nhạc (app tự đọc nốt), mở file MIDI / MusicXML, thu âm mình hát hoặc chọn file mp3, hoặc dán tab copy từ mạng. App guitar còn nhận bài lời + hợp âm.</p></details>
+  <details><summary>Dùng nhiều nhạc cụ thì sao?</summary><p>Cài nhiều app cùng lúc được. Bài của app này mở được ở app khác: app tự xếp lại nốt cho nhạc cụ đó.</p></details>
+</main>
+
+<footer>
+  <div class="wrap">Sổ Tab · mã nguồn chung cho cả năm app · <a href="https://github.com/tranthanhphuc81-sudo/harptabs/releases">Tất cả bản APK</a></div>
+</footer>
+
+<script>
+  // năm app: tên, nhạc cụ, điểm chính, link web, tiền tố tag APK trên GitHub Releases
+  const APPS = [
+    { id: 'harmonica', name: 'Sổ Tab Harmonica', inst: 'Kèn harmonica diatonic 10 lỗ, chromatic, tremolo 16 / 21 / 24 lỗ', url: 'https://harptabs.pages.dev/', tag: 'apk',
+      points: ['Tab số lỗ thổi / hút, bend, nút gạt', 'Tự chọn kèn hợp nhất cho từng bài', 'Học bend, overblow, blues 12 ô nhịp'] },
+    { id: 'sao', name: 'Sổ Tab Sáo', inst: 'Sáo dọc soprano / alto / tenor / bass, sáo trúc 6 lỗ', url: 'https://sotabsao.pages.dev/', tag: 'sao-apk',
+      points: ['Tên nốt kèm hình thế bấm dưới mỗi nốt', 'Bấm kiểu Baroque hoặc German', 'Sáo trúc chọn tông, bịt hết ra nốt nào'] },
+    { id: 'kalimba', name: 'Sổ Tab Kalimba', inst: 'Kalimba 17, 10, 8 phím', url: 'https://sotabkalimba.pages.dev/', tag: 'kalimba-apk',
+      points: ['Tab số 1–7 có chấm như số khắc trên đàn', 'Hình phím cần gảy dưới mỗi nốt', 'Dò nốt để chỉnh dây từng phím'] },
+    { id: 'guitar', name: 'Sổ Tab Guitar', inst: 'Guitar 6 dây, ukulele 4 dây', url: 'https://sotabguitar.pages.dev/', tag: 'guitar-apk',
+      points: ['Tab dây.phím, sơ đồ hợp âm, capo', 'Dán bài lời + hợp âm để tập đệm hát', 'Điệu quạt chạy theo nhạc đệm'] },
+    { id: 'pianica', name: 'Sổ Tab Pianica', inst: 'Kèn pianica (melodica) 32 / 37 phím', url: 'https://sotabpianica.pages.dev/', tag: 'pianica-apk',
+      points: ['Tên nốt kèm hình bàn phím tô phím cần bấm', 'Chạm bàn phím để nghe, soạn bài', 'Bài học cho học sinh mới tập'] },
+  ];
+  const RELEASES = 'https://github.com/tranthanhphuc81-sudo/harptabs/releases';
+  const esc = (s) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+
+  document.getElementById('apps').innerHTML = APPS.map((a) => `
+    <article class="app">
+      <div class="top"><img src="icons/${a.id}.png" alt=""><div><h3>${esc(a.name)}</h3><p class="inst">${esc(a.inst)}</p></div></div>
+      <ul>${a.points.map((p) => `<li>${esc(p)}</li>`).join('')}</ul>
+      <div class="btns">
+        <a class="btn primary" href="${a.url}">Mở app</a>
+        <a class="btn ghost" id="apk-${a.id}" href="${RELEASES}?q=${a.tag}-v&amp;expanded=true">Tải APK <small>Android</small></a>
+      </div>
+    </article>`).join('');
+
+  // nút Tải APK trỏ thẳng tới file .apk mới nhất của từng app; không lấy được thì giữ link trang Releases
+  fetch('https://api.github.com/repos/tranthanhphuc81-sudo/harptabs/releases?per_page=60')
+    .then((r) => (r.ok ? r.json() : []))
+    .then((list) => {
+      for (const a of APPS) {
+        const rel = list.find((r) => r.tag_name.startsWith(`${a.tag}-v`));
+        const apk = rel && rel.assets.find((x) => x.name.endsWith('.apk'));
+        if (!apk) continue;
+        const el = document.getElementById(`apk-${a.id}`);
+        el.href = apk.browser_download_url;
+        el.innerHTML = `Tải APK <small>${esc(rel.tag_name.replace(`${a.tag}-v`, 'bản '))} · ${(apk.size / 1048576).toFixed(1)} MB</small>`;
+      }
+    })
+    .catch(() => {});
+</script>
+</body>
+</html>

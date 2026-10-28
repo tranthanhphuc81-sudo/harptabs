@@ -75,3 +75,10 @@ jobs:
         run: |
           npx --yes wrangler@4 pages project create sotabpianica --production-branch main >/dev/null 2>&1 || true
           npx --yes wrangler@4 pages deploy dist-pianica --project-name sotabpianica --branch main --commit-hash "$GITHUB_SHA" --commit-message "$(printf '%s' "$COMMIT_MSG" | head -n 1)"
+      # trang giới thiệu chung cho cả năm app (trang tĩnh trong landing/)
+      - name: Deploy trang giới thiệu Sổ Tab
+        env:
+          COMMIT_MSG: ${{ github.event.head_commit.message || 'manual deploy' }}
+        run: |
+          npx --yes wrangler@4 pages project create sotab --production-branch main >/dev/null 2>&1 || true
+          npx --yes wrangler@4 pages deploy landing --project-name sotab --branch main --commit-hash "$GITHUB_SHA" --commit-message "$(printf '%s' "$COMMIT_MSG" | head -n 1)"

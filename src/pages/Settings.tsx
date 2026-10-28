@@ -314,6 +314,7 @@ export default function SettingsPage() {
 
       <p className="muted small about">
         {BRAND.name} 1.0. Bài mẫu chỉ gồm nhạc thuộc phạm vi công cộng.<br />
+        Cùng bộ còn app cho harmonica, sáo, kalimba, guitar / ukulele, kèn pianica: <a href="https://sotab.pages.dev/" target="_blank" rel="noopener">sotab.pages.dev</a><br />
         © {new Date().getFullYear()} Trần Thanh Phúc. Liên hệ: <a href="tel:+84913656539">0913.65.65.39</a>
       </p>
     </div>

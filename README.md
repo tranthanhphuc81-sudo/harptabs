@@ -4,6 +4,8 @@ App lưu và tập harptab cho kèn **diatonic 10 lỗ**, **chromatic 12 / 16 l�
 
 Bản đang chạy: https://harptabs.pages.dev
 
+Trang giới thiệu chung cả năm app (mở app, tải APK mới nhất, hướng dẫn cài): https://sotab.pages.dev — mã trong `landing/`, tự deploy cùng các app.
+
 Cùng mã nguồn này còn build ra bốn app khác cho [sáo](#sổ-tab-sáo), [kalimba](#sổ-tab-kalimba), [guitar / ukulele](#sổ-tab-guitar) và [pianica](#sổ-tab-pianica):
 
 | App | Nhạc cụ | Bản web | APK Android |
