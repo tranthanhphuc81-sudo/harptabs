@@ -31,6 +31,10 @@ export default function Learn() {
           <p className="muted">Kỹ thuật, thủ thuật và mẹo, kèm bài tập nghe được. Tất cả dùng offline.{IS_RECORDER_APP || IS_KALIMBA_APP || IS_GUITAR_APP || IS_PIANICA_APP || IS_TRANH_APP ? '' : ' Chơi kèn chromatic: xem nhóm bài cuối.'}</p>
         </div>
       </header>
+      <Link to="/nghe-dap" className="jam-card">
+        <strong>Tập nghe – đáp</strong>
+        <span>Máy chơi một câu ngắn, bạn nghe rồi chơi lại; app nghe micro chấm từng nốt, sai thì chỉ chỗ bấm. Luyện tai và thuộc vị trí nốt, 7 cấp từ 1 nốt tới câu 4 nốt.</span>
+      </Link>
       {!IS_KALIMBA_APP && !IS_TRANH_APP && <Link to="/jam" className="jam-card">
         <strong>{IS_RECORDER_APP ? 'Tập ngẫu hứng jazz' : 'Tập ngẫu hứng blues & jazz'}</strong>
         <span>{IS_GUITAR_APP ? 'Nền nhạc 12 ô nhịp và các vòng jazz, thang âm blues trên cần đàn, máy hỏi – bạn đáp và lick mẫu xếp theo dây.phím.' : IS_RECORDER_APP ? 'Nền nhạc swing các vòng ii–V–I, thế bấm các nốt của hợp âm đang vang, máy hỏi – bạn đáp và lick mẫu.' : 'Nền nhạc 12 ô nhịp, thang âm blues trên kèn của bạn, máy hỏi – bạn đáp và lick mẫu; có cả chế độ jazz.'}</span>

@@ -1285,3 +1285,10 @@ button, a, select { -webkit-tap-highlight-color: transparent; }
 .pp-nums strong { font-size: 1.6rem; font-variant-numeric: tabular-nums; }
 .pp-results { margin: 0 0 12px; padding-left: 1.2em; }
 .pp-results li.ok { color: #2d8a57; font-weight: 600; }
+
+.ep-stage { min-height: 7em; }
+.ep-answer { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 6px; }
+.ep-where { display: inline-flex; align-items: center; gap: 6px; padding: 4px 8px; border-radius: var(--r-s); background: var(--surface-2); }
+.ep-tok { font-weight: 700; }
+.ep-dots { display: flex; gap: 6px; margin-top: 10px; }
+.ep-score { margin: 10px 0; }
