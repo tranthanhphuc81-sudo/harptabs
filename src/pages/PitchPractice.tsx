@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { logMetric, usePracticeTimer } from '../lib/practiceLog';
 import { Link, useSearchParams } from 'react-router-dom';
 import { MicPitch } from '../audio/pitch';
+import { droneHz, startDrone } from '../audio/practiceBacking';
 import { previewNote } from '../audio/engine';
 import { SHOWN_HARP_TYPES } from '../appConfig';
 import { BendMeter } from '../components/BendMeter';
@@ -124,8 +125,13 @@ export default function PitchPractice() {
   const frameRef = useRef(onFrame);
   frameRef.current = onFrame;
 
-  // tầm dò theo nốt thấp nhất của nhạc cụ (như Dò nốt)
-  const lowHz = Math.round(Math.min(150, midiToHz(Math.min(...layout.map((n) => n.midi))) * 0.85));
+  // tầm dò theo nốt thấp nhất của nhạc cụ (bài tập không xuống thấp hơn nốt thấp nhất, nên không cần dò rộng như Dò nốt)
+  const lowHz = Math.round(midiToHz(Math.min(...layout.map((n) => n.midi))) * 0.85);
+  const tonic = 60 + keyOffset(key);
+  // tiếng bass nền: chỉ bật khi nằm hẳn dưới tầm dò của micro
+  const droneOk = droneHz(tonic) * 1.2 < lowHz;
+  const [drone, setDrone] = useState(true);
+  useEffect(() => (on && drone && droneOk ? startDrone(tonic) : undefined), [on, drone, droneOk, tonic]);
   const start = async () => {
     setErr(null);
     const m = new MicPitch({ minHz: lowHz });
@@ -202,6 +208,7 @@ export default function PitchPractice() {
             </section>
           );
         })()}
+        {droneOk && <label className="check"><input type="checkbox" checked={drone} onChange={(e) => setDrone(e.target.checked)} /> Tiếng bass nền (nốt chủ ngân trầm)</label>}
         <p className="small muted">{tranh
           ? 'Nhấn cách nhạn khoảng một gang tay, ngón trỏ + giữa ấn đều. Nhấn một cung cần lực mạnh hơn nhiều so với nửa cung.'
           : 'Bend bằng hình dạng khoang miệng, không phải bằng sức hút. Đau họng hay kèn kêu tịt là đang hút quá mạnh — nghỉ một chút.'}</p>
@@ -234,6 +241,7 @@ export default function PitchPractice() {
             {holds.map((r, i) => { const g = holdGrade(r); return <li key={i} className={g.ok ? 'ok' : ''}>{g.ok ? '✓ ' : ''}{g.text}</li>; })}
           </ul>
         )}
+        {droneOk && <label className="check"><input type="checkbox" checked={drone} onChange={(e) => setDrone(e.target.checked)} /> Tiếng bass nền (nốt chủ ngân trầm)</label>}
         <p className="small muted">Kỷ lục chỉ tính lần giữ vững (chao dưới ±15 cent). Giữ nốt dài đều là bài khởi động tốt nhất mỗi buổi tập: 5 nốt, mỗi nốt 3 lần.</p>
       </>}
     </div>

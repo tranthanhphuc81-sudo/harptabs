@@ -37,7 +37,7 @@ export const GUITAR_LESSONS: Lesson[] = [
         'Tay phải: gảy giai điệu bằng **ngón cái** hoặc **phím gảy (pick)**, gảy xuống dứt khoát từng dây.',
         'Mới tập đau đầu ngón là bình thường; tập 15 phút mỗi ngày, vài tuần sẽ chai tay và hết đau.',
       ] },
-      { t: 'tab', caption: 'Gảy các dây buông từ dây 6 lên dây 1', body: '6.0 5.0 4.0 3.0 2.0 1.0:2\n1.0 2.0 3.0 4.0 5.0 6.0:2\n', bpm: 70, style: 'metronome', ...G },
+      { t: 'tab', caption: 'Gảy các dây buông từ dây 6 lên dây 1', body: '6.0 5.0 4.0 3.0 2.0 1.0:2\n1.0 2.0 3.0 4.0 5.0 6.0:2\n', bpm: 70, style: 'ballad', ...G },
     ],
   },
   {
@@ -48,7 +48,7 @@ export const GUITAR_LESSONS: Lesson[] = [
     minutes: 6,
     blocks: [
       { t: 'p', text: 'Thế bấm đầu cần đàn dùng **ngón 1 cho phím 1, ngón 2 cho phím 2, ngón 3 cho phím 3**. Giữ bàn tay yên một chỗ, chỉ các ngón di chuyển.' },
-      { t: 'tab', caption: 'Thang âm Đô trưởng', body: '5.3 4.0 4.2 4.3 3.0 3.2 2.0 2.1:2\n2.1 2.0 3.2 3.0 4.3 4.2 4.0 5.3:2\n', bpm: 72, style: 'metronome', ...G },
+      { t: 'tab', caption: 'Thang âm Đô trưởng', body: '5.3 4.0 4.2 4.3 3.0 3.2 2.0 2.1:2\n2.1 2.0 3.2 3.0 4.3 4.2 4.0 5.3:2\n', bpm: 72, style: 'ballad', ...G },
       { t: 'tab', caption: 'Twinkle Twinkle Little Star', body: '5.3 5.3 3.0 3.0 3.2 3.2 3.0:2\n4.3 4.3 4.2 4.2 4.0 4.0 5.3:2\n', bpm: 90, style: 'ballad', ...G },
       { t: 'tip', text: 'Nhập bài từ MIDI, ảnh bản nhạc hay mp3: app tự xếp nốt lên cần đàn, ưu tiên dây buông và các phím đầu cần cho dễ bấm.' },
     ],
@@ -96,7 +96,7 @@ export const GUITAR_LESSONS: Lesson[] = [
         'Bốn hợp âm dễ nhất: **C** (0003), **Am** (2000), **F** (2010), **G** (0232).',
       ] },
       { t: 'diagram', ...U },
-      { t: 'tab', caption: 'Thang âm Đô trưởng trên ukulele', body: '3.0 3.2 2.0 2.1 2.3 1.0 1.2 1.3:2\n1.3 1.2 1.0 2.3 2.1 2.0 3.2 3.0:2\n', bpm: 72, style: 'metronome', ...U },
+      { t: 'tab', caption: 'Thang âm Đô trưởng trên ukulele', body: '3.0 3.2 2.0 2.1 2.3 1.0 1.2 1.3:2\n1.3 1.2 1.0 2.3 2.1 2.0 3.2 3.0:2\n', bpm: 72, style: 'ballad', ...U },
     ],
   },
   {

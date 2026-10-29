@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { harpLayout, HarpType } from './harp';
-import { EAR_LEVELS, earPool, easiestNote, makeQuestion, NoteSegmenter, sameNote } from './earPractice';
+import { EAR_LEVELS, earPool, easiestNote, makeQuestion, NoteSegmenter, sameNote, songPhrases } from './earPractice';
 
 describe('ra đề nghe – đáp', () => {
   it('mọi nhạc cụ đều ra được đề ở mọi cấp (trừ đàn bầu chỉ có vài nốt bồi)', () => {
@@ -64,5 +64,30 @@ describe('tách nốt từ micro', () => {
 
   it('đàn gảy: gảy lại cùng nốt khi dây còn ngân (âm lượng vọt lên) cũng tính nốt mới', () => {
     expect(run(new NoteSegmenter(), [[20, 60, 0.08], [20, 60, 0.03], [20, 60, 0.1]])).toEqual([60, 60]);
+  });
+});
+
+describe('câu hỏi từ giai điệu bài quen', () => {
+  it('cắt được nhiều câu 3 nốt Đô → Sol từ bài mẫu; mọi nốt nằm trong dãy đề, không lặp nốt liền nhau, có tên bài', async () => {
+    const { SAMPLE_SONGS } = await import('../data/samples');
+    const p = earPool(harpLayout('C', 'diatonic'), 0, EAR_LEVELS[4])!;
+    const ph = songPhrases(SAMPLE_SONGS, 3, p.tonic, p.pool);
+    expect(ph.length).toBeGreaterThan(5);
+    for (const x of ph) {
+      expect(x.notes).toHaveLength(3);
+      expect(x.notes.every((m) => p.pool.includes(m))).toBe(true);
+      expect(x.notes[1]).not.toBe(x.notes[0]);
+      expect(x.title).toBeTruthy();
+    }
+    // "Đô Rê Mi" có trong nhiều bài (Frère Jacques…)
+    expect(ph.some((x) => x.notes.join() === '72,74,76')).toBe(true);
+  });
+
+  it('tông G: câu dời theo nốt chủ Sol', async () => {
+    const { SAMPLE_SONGS } = await import('../data/samples');
+    const p = earPool(harpLayout('G', 'diatonic'), 7, EAR_LEVELS[3])!;
+    const ph = songPhrases(SAMPLE_SONGS, 2, p.tonic, p.pool);
+    expect(ph.length).toBeGreaterThan(0);
+    expect(ph.every((x) => x.notes.every((m) => p.pool.includes(m)))).toBe(true);
   });
 });

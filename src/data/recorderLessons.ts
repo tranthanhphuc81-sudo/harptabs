@@ -59,7 +59,7 @@ export const RECORDER_LESSONS: Lesson[] = [
     minutes: 8,
     blocks: [
       { t: 'p', text: 'Thêm lần lượt ngón tay phải: La4, Sol4, Fa4. **Fa4** bịt kín cả 8 lỗ — nốt khó nhất cho người mới: thổi thật nhẹ, bịt thật kín.' },
-      { t: 'tab', caption: 'Thang âm Fa trưởng', body: 'F4 G4 A4 Bb4 C5 D5 E5 F5:2\nF5 E5 D5 C5 Bb4 A4 G4 F4:2\n', bpm: 66, style: 'metronome', ...ALTO },
+      { t: 'tab', caption: 'Thang âm Fa trưởng', body: 'F4 G4 A4 Bb4 C5 D5 E5 F5:2\nF5 E5 D5 C5 Bb4 A4 G4 F4:2\n', bpm: 66, style: 'ballad', ...ALTO },
       { t: 'diagram', ...ALTO },
     ],
   },
@@ -74,7 +74,7 @@ export const RECORDER_LESSONS: Lesson[] = [
         '**Thế chéo** (cross fingering): mở một lỗ giữa nhưng vẫn bịt các lỗ dưới. Ví dụ **Sib4** trên alto. Trong bảng thế bấm, ô thế chéo có nền đậm hơn.',
         '**Bịt nửa lỗ đôi**: hai lỗ dưới cùng là lỗ đôi; bịt một nửa (một lỗ nhỏ) để ra nốt thăng, như **Fa#4**, **Sol#4**.',
       ] },
-      { t: 'tab', caption: 'Luyện Sib: đi qua lại La – Sib – Đô', body: 'A4 Bb4 C5 Bb4 A4:2\nA4 Bb4 C5 D5 C5 Bb4 A4:2\n', bpm: 72, style: 'metronome', ...ALTO },
+      { t: 'tab', caption: 'Luyện Sib: đi qua lại La – Sib – Đô', body: 'A4 Bb4 C5 Bb4 A4:2\nA4 Bb4 C5 D5 C5 Bb4 A4:2\n', bpm: 72, style: 'ballad', ...ALTO },
     ],
   },
   {
@@ -85,7 +85,7 @@ export const RECORDER_LESSONS: Lesson[] = [
     minutes: 8,
     blocks: [
       { t: 'p', text: 'Gập nhẹ ngón cái để lộ một khe nhỏ ở lỗ sau (hình nửa tròn trong thế bấm). Thổi nhanh hơi hơn một chút nhưng **không mạnh hơn**.' },
-      { t: 'tab', caption: 'Lên quãng cao', body: 'C6 D6 E6 F6 G6:2\nG6 F6 E6 D6 C6:2\n', bpm: 66, style: 'metronome', ...ALTO },
+      { t: 'tab', caption: 'Lên quãng cao', body: 'C6 D6 E6 F6 G6:2\nG6 F6 E6 D6 C6:2\n', bpm: 66, style: 'ballad', ...ALTO },
       { t: 'tip', text: 'Khe hở ngón cái quá to: nốt bị "vỡ"; quá nhỏ: nốt tụt về quãng dưới. Dùng trang Dò nốt để tìm đúng chỗ.' },
     ],
   },
@@ -130,7 +130,7 @@ export const RECORDER_LESSONS: Lesson[] = [
     minutes: 8,
     blocks: [
       { t: 'diagram', ...SAO_DO },
-      { t: 'tab', caption: 'Thang âm trên sáo Đô (bịt hết lỗ = Sol)', body: 'G4 A4 B4 C5 D5 E5 F5 G5:2\nG5 F5 E5 D5 C5 B4 A4 G4:2\n', bpm: 66, style: 'metronome', ...SAO_DO },
+      { t: 'tab', caption: 'Thang âm trên sáo Đô (bịt hết lỗ = Sol)', body: 'G4 A4 B4 C5 D5 E5 F5 G5:2\nG5 F5 E5 D5 C5 B4 A4 G4:2\n', bpm: 66, style: 'ballad', ...SAO_DO },
       { t: 'p', text: 'Nốt thăng / giáng (Đô#, Rê#, Sib…): **bịt nửa lỗ** ngay dưới lỗ đang mở — trong hình thế bấm là ô nửa tròn. Fa# khó, dùng thế chéo ở quãng 2.' },
       { t: 'warn', text: 'Mỗi nơi dạy sáo trúc có thể gọi tên tông / nốt hơi khác. Bài này vẽ theo cách gọi "sáo Đô bịt hết ra Sol"; nếu sáo của bạn khác, đổi trong **Cài đặt → Sáo trúc: bịt hết lỗ ra nốt**.' },
     ],
@@ -165,7 +165,7 @@ export const RECORDER_LESSONS: Lesson[] = [
         'Thổi **nhẹ hơn sáo dọc**: nốt trầm thổi rất nhẹ, nốt cao thổi mạnh dần. Thổi quá mạnh nốt bị phô (cao lên).',
       ] },
       { t: 'diagram', ...OCA },
-      { t: 'tab', caption: 'Thang âm Đô trưởng trên ocarina', body: 'C5 D5 E5 F5 G5 A5 B5 C6:2\nC6 B5 A5 G5 F5 E5 D5 C5:2\n', bpm: 72, style: 'metronome', ...OCA },
+      { t: 'tab', caption: 'Thang âm Đô trưởng trên ocarina', body: 'C5 D5 E5 F5 G5 A5 B5 C6:2\nC6 B5 A5 G5 F5 E5 D5 C5:2\n', bpm: 72, style: 'ballad', ...OCA },
       { t: 'warn', text: 'Thế bấm nốt thăng giáng trong app theo bảng chung của ocarina 12 lỗ kiểu châu Á; mỗi hãng có thể khác chút — nếu nốt nghe lệch, xem bảng thế bấm đi kèm cây ocarina của bạn.' },
       { t: 'link', to: '/tap-cao-do?mode=hold', label: 'Tập giữ hơi nốt dài', text: 'Ocarina rất nhạy với hơi: tập giữ từng nốt cho đúng cao độ.' },
     ],

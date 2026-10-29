@@ -64,7 +64,7 @@ export const KALIMBA_LESSONS: Lesson[] = [
     summary: 'Luyện đi thang âm xen kẽ trái phải, rồi gảy hai nốt cùng lúc.',
     minutes: 6,
     blocks: [
-      { t: 'tab', caption: 'Thang âm Đô trưởng: tay trái – tay phải luân phiên', body: '1 2 3 4 5 6 7 1°:2\n1° 7 6 5 4 3 2 1:2\n', bpm: 72, style: 'metronome', ...K },
+      { t: 'tab', caption: 'Thang âm Đô trưởng: tay trái – tay phải luân phiên', body: '1 2 3 4 5 6 7 1°:2\n1° 7 6 5 4 3 2 1:2\n', bpm: 72, style: 'ballad', ...K },
       { t: 'p', text: 'Hai phím **cạnh nhau** (ví dụ 1 và 3, ở hai bên phím giữa) gảy cùng lúc bằng một ngón cái là ra **quãng 3** — hợp âm nhỏ rất hay. Thử gảy 1+3, rồi 3+5.' },
       { t: 'tip', text: 'Tiếng rè: phím chạm nhau hoặc vật lạ dưới cầu đàn. Tiếng tắt nhanh: ngón tay chạm vào phím vừa gảy.' },
     ],
@@ -81,7 +81,7 @@ export const KALIMBA_LESSONS: Lesson[] = [
         'Ô số ngắn = nửa phách (gảy nhanh hai nốt trong một tiếng gõ); ô dài = ngân 2 phách trở lên — **đừng chặn phím**, để nó tự vang.',
         'Dấu – là **nghỉ**: không gảy, nhưng vẫn đếm.',
       ] },
-      { t: 'tab', caption: 'Một phách, hai phách, nửa phách', body: '1 1 1 1\n3:2 3:2\n5:0.5 5:0.5 5:0.5 5:0.5 5 r\n1°:4\n', bpm: 72, style: 'metronome', ...K },
+      { t: 'tab', caption: 'Một phách, hai phách, nửa phách', body: '1 1 1 1\n3:2 3:2\n5:0.5 5:0.5 5:0.5 5:0.5 5 r\n1°:4\n', bpm: 72, style: 'ballad', ...K },
       { t: 'tab', caption: 'Ode to Joy (đoạn đầu)', body: '3 3 4 5 5 4 3 2\n1 1 2 3 3:1.5 2:0.5 2:2\n', bpm: 84, style: 'ballad', ...K },
       { t: 'tip', text: 'Bật **Chờ nốt** ở trang bài: app chỉ đi tiếp khi bạn gảy đúng nốt — tập chậm cho chắc rồi mới chơi theo nhạc.' },
     ],
@@ -118,7 +118,7 @@ export const KALIMBA_LESSONS: Lesson[] = [
         '**Láy**: hai ngón cái gảy xen kẽ thật nhanh hai phím kề nhau (ví dụ 3 và 2), như tiếng chuông ngân.',
         'Kalimba tấm phẳng không có lỗ: đưa đàn lại gần / ra xa người để tiếng to nhỏ dần.',
       ] },
-      { t: 'tab', caption: 'Láy 3 – 2 rồi ngân', body: '3:0.25 2:0.25 3:0.25 2:0.25 3:3\n5:0.25 3:0.25 5:0.25 3:0.25 5:3\n', bpm: 72, style: 'metronome', ...K },
+      { t: 'tab', caption: 'Láy 3 – 2 rồi ngân', body: '3:0.25 2:0.25 3:0.25 2:0.25 3:3\n5:0.25 3:0.25 5:0.25 3:0.25 5:3\n', bpm: 72, style: 'ballad', ...K },
     ],
   },
   {

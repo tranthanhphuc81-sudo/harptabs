@@ -2,13 +2,15 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { logMetric, usePracticeTimer } from '../lib/practiceLog';
 import { MicPitch } from '../audio/pitch';
 import { audio, playTone } from '../audio/engine';
+import { accompanyPhrase, playCadence, playTonicRoll } from '../audio/practiceBacking';
+import { SAMPLE_SONGS } from '../data/samples';
 import { SHOWN_HARP_TYPES } from '../appConfig';
 import { FingeringIcon } from '../components/Fingering';
 import { HarpTypeSelect, KeySelect } from '../components/KeySelect';
 import { Icon } from '../components/Icon';
 import { TokenText } from '../components/TabView';
 import { useWakeLock } from '../components/useWakeLock';
-import { EAR_LEVELS, earPool, easiestNote, makeQuestion, NoteSegmenter, sameNote } from '../lib/earPractice';
+import { EAR_LEVELS, earPool, easiestNote, makeQuestion, NoteSegmenter, sameNote, songPhrases } from '../lib/earPractice';
 import { HarpKey, HarpType, harpLayout, holeCount, isFretted, keyOffset, midiToHz, midiToName } from '../lib/harp';
 import { useAppState } from '../state';
 
@@ -32,6 +34,8 @@ export default function EarPractice() {
   const [levelIdx, setLevelIdx] = useState(0);
   const [anyOctave, setAnyOctave] = useState(true);
   const [withTonic, setWithTonic] = useState(true);
+  const [withPiano, setWithPiano] = useState(true);
+  const [source, setSource] = useState<string | null>(null);
   const [autoUp, setAutoUp] = useState(true);
   const [on, setOn] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -51,24 +55,33 @@ export default function EarPractice() {
   const layout = harpLayout(key, type);
   const lv = EAR_LEVELS[levelIdx];
   const pool = useMemo(() => earPool(layout, keyOffset(key), lv), [layout, key, lv]);
+  // câu nhiều nốt: phần lớn lấy từ giai điệu các bài quen (nghe hay hơn, nhận ra bài là vui)
+  const phrases = useMemo(() => (pool && lv.len >= 2 ? songPhrases(SAMPLE_SONGS, lv.len, pool.tonic, pool.pool) : []), [pool, lv]);
 
-  const ask = (q: number[]) => {
+  const ask = (q: number[], title: string | null = null) => {
     if (!pool) return;
     clearTimeout(timer.current);
     setQuestion(q);
+    setSource(title);
     setHeard([]);
     setPhase('playing');
     seg.current.reset();
     const c = audio();
     let t = c.currentTime + 0.1;
-    if (withTonic) { playTone(pool.tonic, t, 0.9, 0.8); t += 1.3; }
+    // mốc: rải hợp âm chủ (piano) rồi ngân nốt chủ — nghe ra tông của câu
+    if (withTonic) { if (withPiano) playTonicRoll(pool.tonic, t); playTone(pool.tonic, t + (withPiano ? 0.35 : 0), 0.8, 0.7); t += 1.5; }
+    if (withPiano) accompanyPhrase(pool.tonic, q, t, STEP);
     q.forEach((m, i) => playTone(m, t + i * STEP, STEP * 0.9));
     const total = t - c.currentTime + q.length * STEP;
     // không nghe micro khi loa đang phát (tránh tự chấm tiếng của chính máy)
     listenFrom.current = performance.now() / 1000 + total + 0.3;
     timer.current = window.setTimeout(() => setPhase((p) => (p === 'playing' ? 'listen' : p)), (total + 0.3) * 1000);
   };
-  const next = () => pool && ask(makeQuestion(pool.pool, lv.len, Math.random, pool.tonic));
+  const next = () => {
+    if (!pool) return;
+    if (phrases.length && Math.random() < 0.7) { const ph = phrases[Math.floor(Math.random() * phrases.length)]; ask(ph.notes, ph.title); return; }
+    ask(makeQuestion(pool.pool, lv.len, Math.random, pool.tonic));
+  };
   const nextRef = useRef(next);
   nextRef.current = next;
   useEffect(() => () => { clearTimeout(timer.current); mic.current?.stop(); }, []);
@@ -99,6 +112,7 @@ export default function EarPractice() {
     if (got.length < question.length) return;
     setPhase('right');
     record(true);
+    if (withPiano && pool) playCadence(pool.tonic, audio().currentTime + 0.05);
     const s = streak + 1;
     setStreak(s);
     if (autoUp && s >= 5 && levelIdx < EAR_LEVELS.length - 1) {
@@ -174,9 +188,10 @@ export default function EarPractice() {
         {phase === 'right' && <strong className="bp-kind">Đúng rồi!</strong>}
         {phase === 'wrong' && <>
           <strong className="bp-kind">Chưa đúng</strong>
-          <p>Nốt thứ {heard.length}: bạn chơi <strong>{name(heard[heard.length - 1])}</strong>, đúng là:</p>
+          <p>{heard.length ? <>Nốt thứ {heard.length}: bạn chơi <strong>{name(heard[heard.length - 1])}</strong>, đúng là:</> : 'Đáp án:'}</p>
           <div className="ep-answer">{question.map(where)}</div>
         </>}
+        {(phase === 'right' || phase === 'wrong') && source && <p className="small">Câu này trong bài <strong>{source}</strong>.</p>}
         {question.length > 0 && (
           <div className="ep-dots" aria-label="Tiến độ câu">
             {question.map((_, i) => <span key={i} className={`bp-dot${i < heard.length ? (sameNote(heard[i], question[i], anyOctave) ? ' k-ok' : ' k-muted') : ''}`} />)}
@@ -186,7 +201,7 @@ export default function EarPractice() {
 
       {on && (
         <div className="row gap wrap">
-          <button type="button" className="btn btn-ghost" onClick={() => ask(question)} disabled={!question.length || phase === 'playing'}>Nghe lại</button>
+          <button type="button" className="btn btn-ghost" onClick={() => ask(question, source)} disabled={!question.length || phase === 'playing'}>Nghe lại</button>
           <button type="button" className="btn btn-ghost" onClick={next} disabled={phase === 'playing'}>Câu mới</button>
           {phase === 'listen' && question.length > 0 && <button type="button" className="btn btn-ghost" onClick={() => { setPhase('wrong'); setStreak(0); record(false); }}>Xem đáp án</button>}
         </div>
@@ -197,7 +212,8 @@ export default function EarPractice() {
         <span>Cấp này: <strong>{st?.ok ?? 0}/{st?.tries ?? 0}</strong></span>
       </div>
       <div className="row gap wrap">
-        <label className="check"><input type="checkbox" checked={withTonic} onChange={(e) => setWithTonic(e.target.checked)} /> Phát nốt chủ làm mốc</label>
+        <label className="check"><input type="checkbox" checked={withTonic} onChange={(e) => setWithTonic(e.target.checked)} /> Phát hợp âm chủ làm mốc</label>
+        <label className="check"><input type="checkbox" checked={withPiano} onChange={(e) => setWithPiano(e.target.checked)} /> Đệm piano</label>
         <label className="check"><input type="checkbox" checked={anyOctave} onChange={(e) => setAnyOctave(e.target.checked)} /> Chấp nhận khác quãng tám</label>
         <label className="check"><input type="checkbox" checked={autoUp} onChange={(e) => setAutoUp(e.target.checked)} /> Đúng 5 câu liền thì lên cấp</label>
       </div>

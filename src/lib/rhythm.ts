@@ -161,3 +161,22 @@ export function loopbackLatency(clicks: number[], onsets: Onset[]): { latency: n
 export function dropClicks(onsets: Onset[], clicks: number[], loop: { latency: number; level: number }): Onset[] {
   return onsets.filter((o) => !clicks.some((c) => Math.abs(o.t - (c + loop.latency)) <= 0.03) || o.peak > loop.level * 3);
 }
+
+/**
+ * Độ trễ tự dò khi không đo được (đeo tai nghe, kể cả tai nghe Bluetooth trễ tới 0,3 giây): thử dời toàn bộ tiếng gõ
+ * từ `lo` tới `hi` giây, chọn độ dời khớp được nhiều vị trí cần gõ nhất (lệch ≤ 40 ms), bằng nhau thì tổng lệch nhỏ hơn.
+ * Vì tự canh theo chính người chơi nên chỉ chấm được độ đều, không chấm được vội / kéo.
+ */
+export function bestShift(wants: number[], onsets: number[], lo = 0, hi = 0.45): number {
+  let best = lo, bestN = -1, bestErr = Infinity;
+  for (let s = lo; s <= hi + 1e-9; s += 0.005) {
+    let n = 0, err = 0;
+    for (const w of wants) {
+      let d = Infinity;
+      for (const o of onsets) d = Math.min(d, Math.abs(o - s - w));
+      if (d <= 0.04) { n++; err += d; }
+    }
+    if (n > bestN || (n === bestN && err < bestErr)) { best = s; bestN = n; bestErr = err; }
+  }
+  return best;
+}

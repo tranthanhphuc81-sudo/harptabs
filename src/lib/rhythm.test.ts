@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { dropClicks, loopbackLatency, matchHits, OnsetDetector, rhythmAdvice, rhythmStats } from './rhythm';
+import { bestShift, dropClicks, loopbackLatency, matchHits, OnsetDetector, rhythmAdvice, rhythmStats } from './rhythm';
 
 /** năng lượng từng khối 128 mẫu (48 kHz): nền nhỏ, mỗi tiếng gõ vọt lên rồi tắt dần */
 function energies(hits: { t: number; amp: number }[], dur: number) {
@@ -78,5 +78,18 @@ describe('độ trễ máy và tiếng máy lọt vào micro', () => {
     const loop = { latency: 0.12, level: 0.001 };
     const kept = dropClicks([{ t: 0.121, peak: 0.0012 }, { t: 0.62, peak: 0.02 }, { t: 0.87, peak: 0.0009 }], clicks, loop);
     expect(kept.map((o) => o.t)).toEqual([0.62, 0.87]);
+  });
+});
+
+describe('tự dò độ trễ khi đeo tai nghe', () => {
+  it('tai nghe Bluetooth trễ 230 ms: dò ra độ trễ, giữ được độ lệch tương đối giữa các tiếng', () => {
+    const wants = [1, 2, 3, 4, 5, 6, 7, 8];
+    const offs = [-0.02, 0.01, -0.03, 0.005, 0, -0.015, 0.02, -0.01];
+    const on = wants.map((w, i) => w + 0.23 + offs[i]);
+    const s = bestShift(wants, on, 0, 0.45);
+    expect(s).toBeGreaterThan(0.21);
+    expect(s).toBeLessThan(0.25);
+    const r = matchHits(wants, on.map((t) => t - s));
+    expect(r.hits.every((h) => h.ms !== null)).toBe(true);
   });
 });

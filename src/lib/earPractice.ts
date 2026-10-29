@@ -2,7 +2,8 @@
  * Tập nghe – đáp: máy chơi vài nốt, người tập nghe rồi chơi lại trên nhạc cụ của mình; app nghe micro và chấm từng nốt.
  * Luyện tai và thuộc vị trí nốt trên đàn. Dùng cho mọi nhạc cụ (chấm theo cao độ, chấp nhận khác quãng tám).
  */
-import { HarpNote } from './harp';
+import { HarpKey, HarpNote, HarpType } from './harp';
+import { flatten, parseTab } from './tabText';
 
 export interface EarLevel {
   id: string;
@@ -105,4 +106,55 @@ export class NoteSegmenter {
 /** nốt dễ nhất trên nhạc cụ cho một cao độ (để chỉ chỗ bấm khi người tập trả lời sai) */
 export function easiestNote(layout: HarpNote[], midi: number): HarpNote | undefined {
   return layout.filter((n) => n.midi === midi).sort((a, b) => (EASY.has(b.technique) ? 1 : 0) - (EASY.has(a.technique) ? 1 : 0) || (a.fingerCost ?? 0) - (b.fingerCost ?? 0))[0];
+}
+
+/* ---------- câu hỏi lấy từ giai điệu bài quen ---------- */
+
+export interface SongPhrase { notes: number[]; title: string }
+
+const PC: Record<string, number> = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
+/** nốt chủ của tông bài ("G", "Bb", "F#"); tông thứ ("Am") thì null — đề luyện theo gam trưởng */
+function majorTonicPc(songKey?: string): number | null {
+  const m = /^([A-G])([#b]?)(m(?!aj))?/.exec(songKey ?? '');
+  if (!m || m[3]) return null;
+  return (PC[m[1]] + (m[2] === '#' ? 1 : m[2] === 'b' ? -1 : 0) + 12) % 12;
+}
+
+/**
+ * Cắt giai điệu các bài thành câu ngắn `len` nốt (liền nhau trong một dòng, không nốt lặp liền nhau), đổi sang tông của đề
+ * và chỉ giữ câu có mọi nốt nằm trong `pool` (nốt đề chơi được ở cấp này). Mỗi câu giữ tên bài để hiện sau khi trả lời.
+ */
+export function songPhrases(
+  songs: { title: string; body: string; harpKey: HarpKey; harpType?: HarpType; songKey?: string }[],
+  len: number, tonic: number, pool: number[],
+): SongPhrase[] {
+  const inPool = new Set(pool);
+  const seen = new Set<string>();
+  const out: SongPhrase[] = [];
+  for (const s of songs) {
+    const pc = majorTonicPc(s.songKey);
+    if (pc === null) continue;
+    let flat;
+    try { flat = flatten(parseTab(s.body, s.harpKey, s.harpType ?? 'diatonic')); } catch { continue; }
+    for (let i = 0; i + len <= flat.length; i++) {
+      const w = flat.slice(i, i + len);
+      if (w.some((e) => e.midi === null || e.sectionIndex !== w[0].sectionIndex || e.lineIndex !== w[0].lineIndex)) continue;
+      const ms = w.map((e) => e.midi!);
+      if (ms.some((m, j) => j > 0 && m === ms[j - 1])) continue;
+      // dời cả câu theo quãng tám để vừa với dãy nốt đề
+      const lo = Math.min(...ms);
+      const base = lo - ((((lo - pc) % 12) + 12) % 12);
+      let fit: number[] | null = null;
+      for (const shift of [0, -12, 12]) {
+        const cand = ms.map((m) => tonic + m - base + shift);
+        if (cand.every((m) => inPool.has(m))) { fit = cand; break; }
+      }
+      if (!fit) continue;
+      const k = fit.join(',');
+      if (seen.has(k)) continue;
+      seen.add(k);
+      out.push({ notes: fit, title: s.title });
+    }
+  }
+  return out;
 }

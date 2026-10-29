@@ -52,7 +52,7 @@ export const PIANICA_LESSONS: Lesson[] = [
         'Thang âm Đô đủ tám nốt: 1-2-3 (Đô Rê Mi), **luồn ngón cái** xuống dưới bấm Fa, rồi 2-3-4-5 (Sol La Si Đô).',
         'Cổ tay thả lỏng, ngón hơi cong như đang cầm quả cam; bấm bằng đầu ngón.',
       ] },
-      { t: 'tab', caption: 'Thang âm Đô trưởng', body: 'C4 D4 E4 F4 G4 A4 B4 C5:2\nC5 B4 A4 G4 F4 E4 D4 C4:2\n', bpm: 72, style: 'metronome', ...P },
+      { t: 'tab', caption: 'Thang âm Đô trưởng', body: 'C4 D4 E4 F4 G4 A4 B4 C5:2\nC5 B4 A4 G4 F4 E4 D4 C4:2\n', bpm: 72, style: 'ballad', ...P },
     ],
   },
   {
