@@ -1,7 +1,7 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { IS_GUITAR_APP, IS_KALIMBA_APP, IS_TRANH_APP } from '../appConfig';
+import { IS_GUITAR_APP, IS_KALIMBA_APP, IS_ORGAN_APP, IS_TRANH_APP } from '../appConfig';
 import { db } from '../lib/db';
 import { isDanBau } from '../lib/harp';
 import {
@@ -42,8 +42,9 @@ export default function PracticeLog() {
   else if (IS_TRANH_APP) plan.push(isDanBau(settings.defaultHarpType)
     ? { to: '/tap-boi-am', label: 'Khởi động: bồi âm, nắn cần', act: 'boi-am', min: 3, why: 'Mỗi điểm bồi vài lần, rồi nắn cần vài nốt.' }
     : { to: '/tap-cao-do?mode=bend', label: 'Khởi động: tập nhấn', act: 'cao-do', min: 3, why: 'Nhấn Fa, Si cho tới khi vào vùng xanh.' });
+  else if (IS_ORGAN_APP) plan.push({ to: '/', label: 'Khởi động: thang âm Đô hai tay', act: 'bai-hat', min: 3, why: 'Mở bài "Thang âm Đô trưởng", chơi chậm, luồn ngón đều.' });
   else if (!IS_KALIMBA_APP) plan.push({ to: '/tap-cao-do?mode=hold', label: 'Khởi động: giữ nốt dài', act: 'cao-do', min: 3, why: '5 nốt, mỗi nốt giữ 4 giây cho thật đều.' });
-  if (IS_KALIMBA_APP) plan.push({ to: '/tap-nhip', label: 'Khởi động: tập nhịp', act: 'nhip', min: 3, why: 'Nốt đen rồi móc đơn, tốc độ vừa phải.' });
+  if (IS_KALIMBA_APP || IS_ORGAN_APP) plan.push({ to: '/tap-nhip', label: 'Khởi động: tập nhịp', act: 'nhip', min: 3, why: 'Nốt đen rồi móc đơn, tốc độ vừa phải.' });
   plan.push({ to: '/nghe-dap', label: 'Nghe – đáp', act: 'nghe-dap', min: 3, why: 'Luyện tai và thuộc vị trí nốt.' });
   plan.push(recent?.lastPracticedAt
     ? { to: `/song/${recent.id}`, label: `Bài đang tập: ${recent.title}`, act: 'bai-hat', min: IS_KALIMBA_APP ? 7 : 5, why: 'Chơi theo, chậm lại ở đoạn khó.' }

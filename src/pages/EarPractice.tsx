@@ -159,7 +159,7 @@ export default function EarPractice() {
       <header className="page-head">
         <div>
           <h1>Tập nghe – đáp</h1>
-          <p className="muted">Máy chơi nốt chủ làm mốc rồi một câu ngắn. Bạn nghe và chơi lại trên {type.startsWith('guitar') || type.startsWith('ukulele') || type.startsWith('kalimba') || type.startsWith('tranh') ? 'đàn' : 'kèn / sáo'} của mình — app nghe và chấm từng nốt. Luyện tai và thuộc vị trí nốt.</p>
+          <p className="muted">Máy chơi nốt chủ làm mốc rồi một câu ngắn. Bạn nghe và chơi lại trên {/^(guitar|ukulele|kalimba|tranh|danbau|organ|piano)/.test(type) ? 'đàn' : 'kèn / sáo'} của mình — app nghe và chấm từng nốt. Luyện tai và thuộc vị trí nốt.</p>
         </div>
       </header>
 

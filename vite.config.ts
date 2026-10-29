@@ -2,15 +2,18 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 
-// cùng mã nguồn ra năm app: VITE_APP=recorder → Sổ Tab Sáo, VITE_APP=kalimba → Sổ Tab Kalimba, VITE_APP=guitar → Sổ Tab Guitar,
-// VITE_APP=pianica → Sổ Tab Pianica, VITE_APP=tranh → Sổ Tab Đàn Tranh
+// cùng mã nguồn ra bảy app: VITE_APP=recorder → Sổ Tab Sáo, VITE_APP=kalimba → Sổ Tab Kalimba, VITE_APP=guitar → Sổ Tab Guitar,
+// VITE_APP=pianica → Sổ Tab Pianica, VITE_APP=tranh → Sổ Tab Đàn Tranh, VITE_APP=organ → Sổ Tab Organ
 // (tên, biểu tượng, mô tả riêng)
 const RECORDER = process.env.VITE_APP === 'recorder';
 const KALIMBA = process.env.VITE_APP === 'kalimba';
 const GUITAR = process.env.VITE_APP === 'guitar';
 const PIANICA = process.env.VITE_APP === 'pianica';
 const TRANH = process.env.VITE_APP === 'tranh';
-const BRAND = TRANH
+const ORGAN = process.env.VITE_APP === 'organ';
+const BRAND = ORGAN
+  ? { name: 'Sổ Tab Organ', short: 'Organ Tab', desc: 'Sổ bài đàn organ 61 phím và piano: tab tên nốt kèm hình bàn phím, hợp âm tay trái, phát nhạc đệm, karaoke, dò nốt, học chơi từ đầu. Chạy offline.', icons: 'organ/' }
+  : TRANH
   ? { name: 'Sổ Tab Đàn Tranh – Đàn Bầu', short: 'Tranh Bầu Tab', desc: 'Sổ bài đàn tranh 16 / 17 dây và đàn bầu: tab số dây kèm nhấn, điểm bồi kèm nắn cần, hình dây đàn dưới mỗi nốt, phát nhạc đệm, karaoke, dò nốt, học chơi. Chạy offline.', icons: 'tranh/' }
   : PIANICA
   ? { name: 'Sổ Tab Pianica', short: 'Pianica Tab', desc: 'Sổ bài kèn pianica (melodica) 32 phím: tab tên nốt kèm hình bàn phím, phát nhạc đệm, karaoke, dò nốt, học thổi. Chạy offline.', icons: 'pianica/' }

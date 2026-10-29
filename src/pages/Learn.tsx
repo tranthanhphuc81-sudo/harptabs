@@ -1,4 +1,4 @@
-import { BRAND, IS_GUITAR_APP, IS_KALIMBA_APP, IS_RECORDER_APP, IS_PIANICA_APP, IS_TRANH_APP } from '../appConfig';
+import { BRAND, IS_GUITAR_APP, IS_KALIMBA_APP, IS_RECORDER_APP, IS_PIANICA_APP, IS_TRANH_APP, IS_ORGAN_APP } from '../appConfig';
 import { useEffect, useState } from 'react';
 import { dayKey, DEFAULT_GOAL_MIN, loadLog, onLogChange, streak } from '../lib/practiceLog';
 import { Fragment, ReactNode, useMemo } from 'react';
@@ -45,7 +45,7 @@ export default function Learn() {
       <header className="page-head">
         <div>
           <h1>Học {BRAND.verb} {BRAND.instrument}</h1>
-          <p className="muted">Kỹ thuật, thủ thuật và mẹo, kèm bài tập nghe được. Tất cả dùng offline.{IS_RECORDER_APP || IS_KALIMBA_APP || IS_GUITAR_APP || IS_PIANICA_APP || IS_TRANH_APP ? '' : ' Chơi kèn chromatic: xem nhóm bài cuối.'}</p>
+          <p className="muted">Kỹ thuật, thủ thuật và mẹo, kèm bài tập nghe được. Tất cả dùng offline.{IS_RECORDER_APP || IS_KALIMBA_APP || IS_GUITAR_APP || IS_PIANICA_APP || IS_TRANH_APP || IS_ORGAN_APP ? '' : ' Chơi kèn chromatic: xem nhóm bài cuối.'}</p>
         </div>
       </header>
       <LogCard />
@@ -69,7 +69,7 @@ export default function Learn() {
         <strong>Tập nhấn đàn tranh</strong>
         <span>Gảy dây rồi nhấn: thước cao độ báo nhấn thiếu, đủ hay quá cho các nốt Fa, Si… (nửa cung, một cung).</span>
       </Link>}
-      {!IS_TRANH_APP && !IS_GUITAR_APP && !IS_KALIMBA_APP && <Link to="/tap-cao-do" className="jam-card">
+      {!IS_TRANH_APP && !IS_GUITAR_APP && !IS_KALIMBA_APP && !IS_ORGAN_APP && <Link to="/tap-cao-do" className="jam-card">
         <strong>{IS_RECORDER_APP || IS_PIANICA_APP ? 'Tập giữ hơi nốt dài' : 'Tập bend và giữ hơi'}</strong>
         <span>{IS_RECORDER_APP || IS_PIANICA_APP
           ? 'Thổi một nốt thật đều và lâu: app đo giữ được bao lâu, cao độ có chao, có non / già không. Bài khởi động tốt nhất mỗi buổi tập.'

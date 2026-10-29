@@ -58,9 +58,9 @@ export type Technique = 'blow' | 'draw' | 'drawBend' | 'blowBend' | 'overblow' |
 
 /** Loại kèn. Bài cũ không ghi loại là diatonic. */
 export type HarpType = 'diatonic' | 'chromatic' | 'chromatic16' | 'tremolo24' | 'tremolo21' | 'tremolo16' | 'tremolo24m' | 'tremolo21m' | 'tremolo16m'
-  | 'recorderAlto' | 'recorderSoprano' | 'recorderTenor' | 'recorderBass' | 'saoTruc6' | 'kalimba17' | 'kalimba10' | 'kalimba8' | 'guitar6' | 'ukulele4' | 'pianica32' | 'pianica37' | 'ocarina12' | 'tranh16' | 'tranh17' | 'tranh19' | 'tranh21' | 'tranh22' | 'danbau';
+  | 'recorderAlto' | 'recorderSoprano' | 'recorderTenor' | 'recorderBass' | 'saoTruc6' | 'kalimba17' | 'kalimba10' | 'kalimba8' | 'guitar6' | 'ukulele4' | 'pianica32' | 'pianica37' | 'organ61' | 'piano88' | 'ocarina12' | 'tranh16' | 'tranh17' | 'tranh19' | 'tranh21' | 'tranh22' | 'danbau';
 /** mọi loại hợp lệ (để đọc bài đã lưu); ô chọn chỉ hiện SHOWN_HARP_TYPES của bản build (src/appConfig.ts) */
-export const HARP_TYPES: readonly HarpType[] = ['diatonic', 'chromatic', 'chromatic16', 'tremolo24', 'tremolo21', 'tremolo16', 'tremolo24m', 'tremolo21m', 'tremolo16m', 'recorderAlto', 'recorderSoprano', 'recorderTenor', 'recorderBass', 'saoTruc6', 'kalimba17', 'kalimba10', 'kalimba8', 'guitar6', 'ukulele4', 'pianica32', 'pianica37', 'ocarina12', 'tranh16', 'tranh17', 'tranh19', 'tranh21', 'tranh22', 'danbau'];
+export const HARP_TYPES: readonly HarpType[] = ['diatonic', 'chromatic', 'chromatic16', 'tremolo24', 'tremolo21', 'tremolo16', 'tremolo24m', 'tremolo21m', 'tremolo16m', 'recorderAlto', 'recorderSoprano', 'recorderTenor', 'recorderBass', 'saoTruc6', 'kalimba17', 'kalimba10', 'kalimba8', 'guitar6', 'ukulele4', 'pianica32', 'pianica37', 'organ61', 'piano88', 'ocarina12', 'tranh16', 'tranh17', 'tranh19', 'tranh21', 'tranh22', 'danbau'];
 
 export const HARP_TYPE_LABEL: Record<HarpType, string> = {
   diatonic: 'Diatonic 10 lỗ',
@@ -84,6 +84,8 @@ export const HARP_TYPE_LABEL: Record<HarpType, string> = {
   ukulele4: 'Ukulele 4 dây',
   pianica32: 'Pianica 32 phím',
   pianica37: 'Pianica 37 phím',
+  organ61: 'Organ 61 phím',
+  piano88: 'Piano 88 phím',
   ocarina12: 'Ocarina 12 lỗ (alto Đô)',
   tranh16: 'Đàn tranh 16 dây',
   tranh17: 'Đàn tranh 17 dây',
@@ -128,6 +130,17 @@ export function isPianica(t: HarpType | undefined): boolean {
 }
 export const PIANICA_RANGE: Record<'pianica32' | 'pianica37', [number, number]> = { pianica32: [53, 84], pianica37: [53, 89] };
 
+/** đàn organ (keyboard) 61 phím Đô2–Đô7, piano 88 phím La0–Đô8: tab tên nốt như pianica, tay phải chơi giai điệu */
+export function isOrgan(t: HarpType | undefined): boolean {
+  return t === 'organ61' || t === 'piano88';
+}
+/** nhạc cụ bàn phím (pianica, organ, piano): tab tên nốt, hình bàn phím dưới mỗi nốt */
+export function isKeyboard(t: HarpType | undefined): boolean {
+  return isPianica(t) || isOrgan(t);
+}
+export const KEYBOARD_RANGE: Record<'pianica32' | 'pianica37' | 'organ61' | 'piano88', [number, number]> = { ...PIANICA_RANGE, organ61: [36, 96], piano88: [21, 108] };
+export const keyboardRange = (t: HarpType): [number, number] => KEYBOARD_RANGE[t as keyof typeof KEYBOARD_RANGE] ?? PIANICA_RANGE.pianica32;
+
 /** guitar, ukulele: tab ghi "dây.phím" (3.2 = dây 3 phím 2), dây 1 là dây cao nhất */
 export function isFretted(t: HarpType | undefined): boolean {
   return t === 'guitar6' || t === 'ukulele4';
@@ -135,7 +148,7 @@ export function isFretted(t: HarpType | undefined): boolean {
 
 /** nhạc cụ không có tông để chọn (sáo dọc, guitar, ukulele): bảng nốt cố định */
 export function isFixedKey(t: HarpType | undefined): boolean {
-  return isRecorder(t) || isFretted(t) || isPianica(t) || isOcarina(t);
+  return isRecorder(t) || isFretted(t) || isKeyboard(t) || isOcarina(t);
 }
 
 export function isKalimba(t: HarpType | undefined): boolean {
@@ -152,7 +165,7 @@ export function isSaoTruc(t: HarpType | undefined): boolean {
  * Sáo ghi tên nốt (F4, Bb4); kalimba ghi số 1–7 có chấm quãng tám.
  */
 export function isFingered(t: HarpType | undefined): boolean {
-  return isRecorder(t) || isSaoTruc(t) || isKalimba(t) || isFretted(t) || isPianica(t) || isOcarina(t) || isTranh(t) || isDanBau(t);
+  return isRecorder(t) || isSaoTruc(t) || isKalimba(t) || isFretted(t) || isKeyboard(t) || isOcarina(t) || isTranh(t) || isDanBau(t);
 }
 
 /** tông dùng để tra bảng nốt: sáo dọc có tông cố định, sáo trúc theo tông đã chọn */
@@ -203,6 +216,8 @@ export function holeCount(t: HarpType = 'diatonic'): number {
     case 'ukulele4': return 4;
     case 'pianica32': return 32;
     case 'pianica37': return 37;
+    case 'organ61': return 61;
+    case 'piano88': return 88;
     case 'ocarina12': return 12;
     case 'tranh16': return 16;
     case 'tranh17': return 17;
@@ -228,6 +243,7 @@ export function harpName(key: string, t: HarpType = 'diatonic'): string {
   if (t === 'guitar6') return 'Guitar';
   if (t === 'ukulele4') return 'Ukulele';
   if (isPianica(t)) return `Kèn pianica ${holeCount(t)} phím`;
+  if (isOrgan(t)) return t === 'piano88' ? 'Piano 88 phím' : 'Đàn organ 61 phím';
   if (isOcarina(t)) return 'Ocarina 12 lỗ (Đô)';
   if (isDanBau(t)) return `Đàn bầu (dây ${pitchClassName(KEY_OFFSET[normalizeKey(key) ?? 'C'], 'solfege')})`;
   if (isTranh(t)) return `Đàn tranh ${holeCount(t)} dây (${key}, dây ${tranhTuning === 'dao' ? 'Đảo' : 'Bắc'})`;
@@ -350,14 +366,15 @@ export function harpLayout(key: HarpKey, type: HarpType = 'diatonic'): HarpNote[
     return notes;
   }
 
-  if (isPianica(type)) {
-    // pianica: mỗi phím một nốt; thế tay giữa bàn phím (Đô4–Mi5) dễ nhất, phím đen khó hơn chút
-    const [lo, hi] = PIANICA_RANGE[type as 'pianica32' | 'pianica37'];
+  if (isKeyboard(type)) {
+    // bàn phím: mỗi phím một nốt; thế tay giữa bàn phím dễ nhất (pianica Đô4–Mi5; organ / piano tay phải Đô4–Đô6), phím đen khó hơn chút
+    const [lo, hi] = keyboardRange(type);
+    const [easyLo, easyHi] = isOrgan(type) ? [60, 84] : [60, 76];
     for (let m = lo; m <= hi; m++) {
       const black = [1, 3, 6, 8, 10].includes(m % 12);
       notes.push({
         hole: m - lo + 1, dir: 'blow', bend: 0, over: false, slide: false, midi: m,
-        technique: 'fingered', token: midiToName(m), fingers: `p${m}`, fingerCost: (black ? 0.1 : 0) + (m < 60 || m > 76 ? 0.3 : 0),
+        technique: 'fingered', token: midiToName(m), fingers: `${isOrgan(type) ? 'o' : 'p'}${m}`, fingerCost: (black ? 0.1 : 0) + (m < easyLo || m > easyHi ? 0.3 : 0),
       });
     }
     layoutCache.set(ck, notes);

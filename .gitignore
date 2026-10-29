@@ -4,6 +4,7 @@ dist-recorder
 dist-kalimba
 dist-guitar
 dist-pianica
+dist-organ
 dist-tranh
 dev-dist
 worker/node_modules

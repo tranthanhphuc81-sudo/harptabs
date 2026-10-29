@@ -4,9 +4,9 @@ App lưu và tập harptab cho kèn **diatonic 10 lỗ**, **chromatic 12 / 16 l�
 
 Bản đang chạy: https://harptabs.pages.dev
 
-Trang giới thiệu chung cả sáu app (mở app, tải APK mới nhất, hướng dẫn cài): https://sotab.pages.dev — mã trong `landing/`, tự deploy cùng các app.
+Trang giới thiệu chung cả bảy app (mở app, tải APK mới nhất, hướng dẫn cài): https://sotab.pages.dev — mã trong `landing/`, tự deploy cùng các app.
 
-Cùng mã nguồn này còn build ra năm app khác cho [sáo](#sổ-tab-sáo), [kalimba](#sổ-tab-kalimba), [guitar / ukulele](#sổ-tab-guitar), [pianica](#sổ-tab-pianica) và [đàn tranh – đàn bầu](#sổ-tab-đàn-tranh--đàn-bầu):
+Cùng mã nguồn này còn build ra sáu app khác cho [sáo](#sổ-tab-sáo), [kalimba](#sổ-tab-kalimba), [guitar / ukulele](#sổ-tab-guitar), [pianica](#sổ-tab-pianica), [đàn tranh – đàn bầu](#sổ-tab-đàn-tranh--đàn-bầu) và [organ / piano](#sổ-tab-organ):
 
 | App | Nhạc cụ | Bản web | APK Android |
 |---|---|---|---|
@@ -15,9 +15,10 @@ Cùng mã nguồn này còn build ra năm app khác cho [sáo](#sổ-tab-sáo), 
 | Sổ Tab Kalimba | Kalimba 17, 10, 8 phím | https://sotabkalimba.pages.dev | [Releases `kalimba-apk-v…`](https://github.com/tranthanhphuc81-sudo/harptabs/releases?q=kalimba-apk&expanded=true) |
 | Sổ Tab Guitar | Guitar 6 dây, ukulele 4 dây | https://sotabguitar.pages.dev | [Releases `guitar-apk-v…`](https://github.com/tranthanhphuc81-sudo/harptabs/releases?q=guitar-apk&expanded=true) |
 | Sổ Tab Pianica | Kèn pianica (melodica) 32 / 37 phím | https://sotabpianica.pages.dev | [Releases `pianica-apk-v…`](https://github.com/tranthanhphuc81-sudo/harptabs/releases?q=pianica-apk&expanded=true) |
+| Sổ Tab Organ | Đàn organ 61 phím, piano 88 phím | https://sotaborgan.pages.dev | [Releases `organ-apk-v…`](https://github.com/tranthanhphuc81-sudo/harptabs/releases?q=organ-apk&expanded=true) |
 | Sổ Tab Đàn Tranh – Đàn Bầu | Đàn tranh 16 / 17 / 19 / 21 / 22 dây, đàn bầu | https://sotabdantranh.pages.dev | [Releases `tranh-apk-v…`](https://github.com/tranthanhphuc81-sudo/harptabs/releases?q=tranh-apk&expanded=true) |
 
-Cả sáu app có chung thư viện bài, phát nhạc đệm, karaoke, chia sẻ bài, nhập MIDI / MusicXML, quét khuông nhạc, dò nốt, tập ngẫu hứng, chạy offline. Phần riêng của từng app nằm ở các mục bên dưới.
+Cả bảy app có chung thư viện bài, phát nhạc đệm, karaoke, chia sẻ bài, nhập MIDI / MusicXML, quét khuông nhạc, dò nốt, tập ngẫu hứng, chạy offline. Phần riêng của từng app nằm ở các mục bên dưới.
 
 ## Tính năng
 
@@ -92,6 +93,17 @@ Bản web: https://sotabpianica.pages.dev · APK: gói `dev.pages.sotabpianica.t
 | Bài và học | Bài mẫu ghi lại cho pianica (giữ giọng gốc, giữ hợp âm chuẩn), 5 bài học: làm quen, đọc tab, đặt ngón và thang âm Đô, hơi thổi và đánh lưỡi, bảo quản |
 | Tập ngẫu hứng | Blues / jazz với lick xếp thành tên nốt trên bàn phím |
 
+## Sổ Tab Organ
+
+Bản web: https://sotaborgan.pages.dev · APK: gói `dev.pages.sotaborgan.twa`, tag `organ-apk-v…` trên GitHub Releases.
+
+| Phần | Nội dung |
+|---|---|
+| Đàn | Organ (keyboard) 61 phím Đô2 → Đô7 và piano 88 phím La0 → Đô8; tay phải chơi giai điệu |
+| Tab | Tên nốt có quãng tám như pianica; dưới mỗi nốt là hình 3 quãng tám quanh nốt (Đô3–Đô6, dời theo quãng tám), phím cần bấm tô màu. Sơ đồ bàn phím kéo ngang được, tự cuộn tới phím đang chơi |
+| Tay trái | Dải hợp âm của bài: chạm tên hợp âm để nghe và xem thế bấm tay trái gần Đô3 (C = Đô Mi Sol, F = Đô Fa La, G = Si Rê Sol) tô trên bàn phím kèm số ngón 5-3-1 |
+| Bài và học | Bài mẫu ghi lại cho tay phải (giữ giọng gốc, giữ hợp âm), bài luyện năm ngón và thang âm; 7 bài học: làm quen, đọc tab, thế năm ngón, luồn ngón, tay trái bấm hợp âm, đệm tự động trên đàn organ, ghép hai tay |
+
 ## Sổ Tab Đàn Tranh – Đàn Bầu
 
 Bản web: https://sotabdantranh.pages.dev · APK: gói `dev.pages.sotabdantranh.twa`, tag `tranh-apk-v…` trên GitHub Releases.
@@ -133,9 +145,10 @@ VITE_APP=kalimba npx vite build --outDir dist-kalimba     # Sổ Tab Kalimba
 VITE_APP=guitar npx vite build --outDir dist-guitar       # Sổ Tab Guitar
 VITE_APP=pianica npx vite build --outDir dist-pianica     # Sổ Tab Pianica
 VITE_APP=tranh npx vite build --outDir dist-tranh         # Sổ Tab Đàn Tranh
+VITE_APP=organ npx vite build --outDir dist-organ         # Sổ Tab Organ
 ```
 
-Mỗi lần push lên `main`, GitHub Actions chạy lint + test + build rồi deploy cả sáu app lên Cloudflare Pages (`.github/workflows/deploy-pages.yml`): `dist/` → dự án `harptabs`, `dist-recorder/` → `sotabsao`, `dist-kalimba/` → `sotabkalimba`, `dist-guitar/` → `sotabguitar`, `dist-pianica/` → `sotabpianica`, `dist-tranh/` → `sotabdantranh`. Mở link của app bằng trình duyệt điện thoại → "Thêm vào màn hình chính" là app chạy offline.
+Mỗi lần push lên `main`, GitHub Actions chạy lint + test + build rồi deploy cả bảy app lên Cloudflare Pages (`.github/workflows/deploy-pages.yml`): `dist/` → dự án `harptabs`, `dist-recorder/` → `sotabsao`, `dist-kalimba/` → `sotabkalimba`, `dist-guitar/` → `sotabguitar`, `dist-pianica/` → `sotabpianica`, `dist-tranh/` → `sotabdantranh`, `dist-organ/` → `sotaborgan`. Mở link của app bằng trình duyệt điện thoại → "Thêm vào màn hình chính" là app chạy offline.
 
 Các phần nặng (quét nhạc, đọc file, PDF, OCR) chỉ tải khi dùng. Bộ đọc PDF và OCR được lưu lại sau lần dùng đầu, nên muốn dùng offline thì mở thử một lần khi có mạng.
 
@@ -251,6 +264,7 @@ Bản Android là **TWA** (Trusted Web Activity) do Bubblewrap tạo: mở trang
 | Sổ Tab Guitar | `android-guitar/twa-manifest.json` | `dev.pages.sotabguitar.twa` | `guitar-apk-v…` |
 | Sổ Tab Pianica | `android-pianica/twa-manifest.json` | `dev.pages.sotabpianica.twa` | `pianica-apk-v…` |
 | Sổ Tab Đàn Tranh | `android-tranh/twa-manifest.json` | `dev.pages.sotabdantranh.twa` | `tranh-apk-v…` |
+| Sổ Tab Organ | `android-organ/twa-manifest.json` | `dev.pages.sotaborgan.twa` | `organ-apk-v…` |
 
 - Workflow `build-apk.yml` build cả bốn app (mỗi app một dòng trong matrix), chỉ chạy khi một trong các file cấu hình trên đổi (hoặc bấm chạy tay), rồi đăng APK lên [GitHub Releases](https://github.com/tranthanhphuc81-sudo/harptabs/releases).
 - Cần secret `ANDROID_KEYSTORE_BASE64` và `ANDROID_KEYSTORE_PASSWORD` (cả bốn app dùng chung khoá). Vân tay SHA-256 của khoá ký phải khớp với `public/.well-known/assetlinks.json` (có mục cho từng gói), nếu không app sẽ hiện thanh địa chỉ trình duyệt.

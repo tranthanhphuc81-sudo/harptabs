@@ -86,7 +86,18 @@ jobs:
         run: |
           npx --yes wrangler@4 pages project create sotabdantranh --production-branch main >/dev/null 2>&1 || true
           npx --yes wrangler@4 pages deploy dist-tranh --project-name sotabdantranh --branch main --commit-hash "$GITHUB_SHA" --commit-message "$(printf '%s' "$COMMIT_MSG" | head -n 1)"
-      # trang giới thiệu chung cho cả sáu app (trang tĩnh trong landing/)
+      # bản Sổ Tab Organ (đàn organ, piano) ra dự án Pages riêng
+      - name: Build Sổ Tab Organ
+        env:
+          VITE_APP: organ
+        run: npx vite build --outDir dist-organ --emptyOutDir
+      - name: Deploy Sổ Tab Organ lên Pages
+        env:
+          COMMIT_MSG: ${{ github.event.head_commit.message || 'manual deploy' }}
+        run: |
+          npx --yes wrangler@4 pages project create sotaborgan --production-branch main >/dev/null 2>&1 || true
+          npx --yes wrangler@4 pages deploy dist-organ --project-name sotaborgan --branch main --commit-hash "$GITHUB_SHA" --commit-message "$(printf '%s' "$COMMIT_MSG" | head -n 1)"
+      # trang giới thiệu chung cho cả bảy app (trang tĩnh trong landing/)
       - name: Deploy trang giới thiệu Sổ Tab
         env:
           COMMIT_MSG: ${{ github.event.head_commit.message || 'manual deploy' }}

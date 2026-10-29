@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { fingeringKey, HarpKey, HarpType, harpLayout, holeCount, isChromatic, isDanBau, isFingered, isFretted, isPianica, isTranh, isTremolo, midiToName, NoteNameStyle, tremoloDir } from '../lib/harp';
+import { fingeringKey, HarpKey, HarpType, harpLayout, holeCount, isChromatic, isDanBau, isFingered, isFretted, isKeyboard, isTranh, isTremolo, midiToName, NoteNameStyle, tremoloDir } from '../lib/harp';
 import { FretboardChart } from './Fretboard';
 import { PianoChart } from './Keyboard';
 import { TranhChart } from './Tranh';
@@ -92,7 +92,7 @@ export function NoteEditor({ note, harpType, harpKey = 'C', nameStyle, playing, 
       {note && (
         <>
           <div className={`keypad ne-keys${rec ? ' recorder' : ''}`} role="toolbar" aria-label={rec ? 'Chọn nốt' : 'Chọn lỗ'}>
-            {isDanBau(harpType) ? <BauChart harpKey={harpKey} nameStyle={nameStyle} selected={pend ?? note.token} onPick={pick} /> : isTranh(harpType) ? <TranhChart harpType={harpType} harpKey={harpKey} nameStyle={nameStyle} selected={pend ?? note.token} onPick={pick} /> : isPianica(harpType) ? <PianoChart harpType={harpType} nameStyle={nameStyle} selected={pend ?? note.token} onPick={pick} /> : fret ? <FretboardChart harpType={harpType} nameStyle={nameStyle} selected={pend ?? note.token} onPick={pick} maxFret={12} /> : rec ? recNotes.map((n) => (
+            {isDanBau(harpType) ? <BauChart harpKey={harpKey} nameStyle={nameStyle} selected={pend ?? note.token} onPick={pick} /> : isTranh(harpType) ? <TranhChart harpType={harpType} harpKey={harpKey} nameStyle={nameStyle} selected={pend ?? note.token} onPick={pick} /> : isKeyboard(harpType) ? <PianoChart harpType={harpType} nameStyle={nameStyle} selected={pend ?? note.token} onPick={pick} /> : fret ? <FretboardChart harpType={harpType} nameStyle={nameStyle} selected={pend ?? note.token} onPick={pick} maxFret={12} /> : rec ? recNotes.map((n) => (
               <button type="button" key={n.token} className={`blow${(pend ?? note.token) === n.token ? ' on' : ''}`} onClick={() => pick(n.token)} aria-label={`Nốt ${n.token}`}><TokenText token={n.token} nameStyle={nameStyle} /></button>
             )) : trem ? holes.map((h) => {
               const d = tremoloDir(h) === 'draw';

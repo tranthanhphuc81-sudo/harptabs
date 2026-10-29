@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { BRAND } from '../appConfig';
 import { useEffect, useRef, useState } from 'react';
-import { HarpKey, HarpType, harpLayout, holeCount, isChromatic, isFingered, isFretted, isKalimba, isDanBau, isOcarina, isPianica, isTranh, isRecorder, isSaoTruc, isTremolo, midiToHz, midiToName, TECHNIQUE_LABEL } from '../lib/harp';
+import { HarpKey, HarpType, harpLayout, holeCount, isChromatic, isFingered, isFretted, isKalimba, isDanBau, isOcarina, isPianica, isOrgan, isTranh, isRecorder, isSaoTruc, isTremolo, midiToHz, midiToName, TECHNIQUE_LABEL } from '../lib/harp';
 import { MicPitch, PitchReading } from '../audio/pitch';
 import { canHoldNote } from '../lib/pitchPractice';
 import { HarpDiagram } from '../components/HarpDiagram';
@@ -73,7 +73,7 @@ export default function Tuner() {
       <header className="page-head">
         <div>
           <h1>Dò nốt</h1>
-          <p className="muted">{isPianica(type) ? 'Thổi kèn pianica, app cho biết nốt gì, phím nào và có chuẩn không.' : isFretted(type) ? 'Gảy dây đàn, app cho biết nốt gì, nằm ở dây nào phím nào và có chuẩn không — dùng để lên dây.' : isKalimba(type) ? 'Gảy phím kalimba, app cho biết nốt gì, phím nào và có chuẩn không — dùng để chỉnh dây (gõ phím lên / xuống).' : isFingered(type) ? 'Thổi sáo, app cho biết bạn đang ra nốt gì, thế bấm nào và có chuẩn không.' : <>Thổi vào kèn, app cho biết bạn đang ra nốt gì, lỗ nào{trem ? ' và có chuẩn không.' : chrom ? ', có bấm nút gạt hay không, và có chuẩn không.' : ', và bend đã đủ sâu chưa.'}</>}</p>
+          <p className="muted">{isPianica(type) ? 'Thổi kèn pianica, app cho biết nốt gì, phím nào và có chuẩn không.' : isOrgan(type) ? 'Hát hoặc chơi một nốt (đàn khác, bài đang nghe), app cho biết nốt gì và nằm ở phím nào trên đàn — dùng để dò nốt một bài theo tai.' : isFretted(type) ? 'Gảy dây đàn, app cho biết nốt gì, nằm ở dây nào phím nào và có chuẩn không — dùng để lên dây.' : isKalimba(type) ? 'Gảy phím kalimba, app cho biết nốt gì, phím nào và có chuẩn không — dùng để chỉnh dây (gõ phím lên / xuống).' : isFingered(type) ? 'Thổi sáo, app cho biết bạn đang ra nốt gì, thế bấm nào và có chuẩn không.' : <>Thổi vào kèn, app cho biết bạn đang ra nốt gì, lỗ nào{trem ? ' và có chuẩn không.' : chrom ? ', có bấm nút gạt hay không, và có chuẩn không.' : ', và bend đã đủ sâu chưa.'}</>}</p>
         </div>
       </header>
 
@@ -120,6 +120,8 @@ export default function Tuner() {
         ? <p className="muted small">Mẹo lên dây đàn tranh: gảy từng dây buông, kim lệch trái là thấp → vặn trục cho căng hoặc đẩy nhạn ra xa; lệch phải là cao → nới dây. Dây Bắc từ dây 1: Sol La Đô Rê Mi lặp lại (dây Đảo: Sol La Đô Rê Fa). Tập nhấn: nhấn dây phía trái nhạn tới khi kim chỉ đúng nốt cần ra.</p>
         : isOcarina(type)
         ? <p className="muted small">Mẹo: ocarina rất nhạy với hơi thổi — thổi mạnh thì nốt cao lên, yếu thì thấp xuống. Nhìn kim cent để tìm độ mạnh đúng cho từng nốt (nốt trầm nhẹ, nốt cao mạnh dần); lỗ bịt chưa kín làm nốt rè.</p>
+        : isOrgan(type)
+        ? <p className="muted small">Đàn organ / piano điện luôn đúng tông nên không cần chỉnh. Dùng trang này để dò nốt theo tai: hát từng nốt của câu nhạc, app chỉ phím trên sơ đồ bàn phím. Piano cơ lâu ngày lệch tông thì cần thợ lên dây.</p>
         : isPianica(type)
         ? <p className="muted small">Mẹo: pianica thổi mạnh quá thì nốt hơi cao và rè, yếu quá thì tiếng nhỏ, hơi thấp. Nhìn kim cent để tập giữ hơi đều; nốt lệch hẳn dù thổi đều là lưỡi gà cần chỉnh ở tiệm nhạc.</p>
         : isFretted(type)

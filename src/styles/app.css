@@ -1331,3 +1331,13 @@ button, a, select { -webkit-tap-highlight-color: transparent; }
 .rp-chip.ok { background: #c99a2e; }
 .rp-chip.off { background: #d9534f; }
 .rp-chip.miss { background: var(--line-strong); color: var(--ink); }
+
+.kb-chords { margin: 12px 0; padding: 12px; border-radius: var(--r-m); border: 1px solid var(--line); background: var(--surface); }
+.kb-chord-names { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+.chord-keys { margin: 0; overflow-x: auto; }
+.chord-keys .pk-white { fill: #fbfbfa; stroke: color-mix(in srgb, var(--ink-2) 55%, transparent); stroke-width: 0.8; }
+.chord-keys .pk-black { fill: #2a2f35; }
+.chord-keys .pk-on { fill: var(--accent); stroke: color-mix(in srgb, var(--ink-2) 55%, transparent); stroke-width: 0.8; }
+.ck-dot { fill: #fff; stroke: var(--accent-ink); stroke-width: 1; }
+.ck-finger { font-size: 11px; font-weight: 800; fill: #1d1406; }
+.ck-c { font-size: 10px; fill: var(--ink-2); }

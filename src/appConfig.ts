@@ -1,17 +1,19 @@
 /**
- * Cấu hình theo bản build: cùng mã nguồn ra năm app — Sổ Tab Harmonica (mặc định), Sổ Tab Sáo (VITE_APP=recorder),
- * Sổ Tab Kalimba (VITE_APP=kalimba) và Sổ Tab Guitar (VITE_APP=guitar: guitar và ukulele), Sổ Tab Pianica (VITE_APP=pianica).
+ * Cấu hình theo bản build: cùng mã nguồn ra bảy app — Sổ Tab Harmonica (mặc định), Sổ Tab Sáo (VITE_APP=recorder),
+ * Sổ Tab Kalimba (VITE_APP=kalimba) và Sổ Tab Guitar (VITE_APP=guitar: guitar và ukulele), Sổ Tab Pianica (VITE_APP=pianica),
+ * Sổ Tab Đàn Tranh – Đàn Bầu (VITE_APP=tranh), Sổ Tab Organ (VITE_APP=organ: organ, piano).
  */
 import type { HarpType } from './lib/harp';
 
-export type AppKind = 'harmonica' | 'recorder' | 'kalimba' | 'guitar' | 'pianica' | 'tranh';
+export type AppKind = 'harmonica' | 'recorder' | 'kalimba' | 'guitar' | 'pianica' | 'tranh' | 'organ';
 const ENV = import.meta.env.VITE_APP;
-export const APP: AppKind = ENV === 'recorder' || ENV === 'kalimba' || ENV === 'guitar' || ENV === 'pianica' || ENV === 'tranh' ? ENV : 'harmonica';
+export const APP: AppKind = ENV === 'recorder' || ENV === 'kalimba' || ENV === 'guitar' || ENV === 'pianica' || ENV === 'tranh' || ENV === 'organ' ? ENV : 'harmonica';
 export const IS_RECORDER_APP = APP === 'recorder';
 export const IS_KALIMBA_APP = APP === 'kalimba';
 export const IS_GUITAR_APP = APP === 'guitar';
 export const IS_PIANICA_APP = APP === 'pianica';
 export const IS_TRANH_APP = APP === 'tranh';
+export const IS_ORGAN_APP = APP === 'organ';
 export const IS_HARMONICA_APP = APP === 'harmonica';
 
 /** tên app, link, danh từ nhạc cụ, động từ chơi — dùng trong chữ hiển thị */
@@ -19,6 +21,8 @@ export const BRAND = IS_RECORDER_APP
   ? { name: 'Sổ Tab Sáo', line1: 'Sổ Tab', line2: 'Sáo', url: 'https://sotabsao.pages.dev/', host: 'sotabsao.pages.dev', instrument: 'sáo dọc', noun: 'sáo', verb: 'thổi' }
   : IS_TRANH_APP
   ? { name: 'Sổ Tab Đàn Tranh – Đàn Bầu', line1: 'Sổ Tab', line2: 'Tranh – Bầu', url: 'https://sotabdantranh.pages.dev/', host: 'sotabdantranh.pages.dev', instrument: 'đàn tranh, đàn bầu', noun: 'đàn', verb: 'chơi' }
+  : IS_ORGAN_APP
+  ? { name: 'Sổ Tab Organ', line1: 'Sổ Tab', line2: 'Organ', url: 'https://sotaborgan.pages.dev/', host: 'sotaborgan.pages.dev', instrument: 'đàn organ, piano', noun: 'đàn', verb: 'chơi' }
   : IS_PIANICA_APP
   ? { name: 'Sổ Tab Pianica', line1: 'Sổ Tab', line2: 'Pianica', url: 'https://sotabpianica.pages.dev/', host: 'sotabpianica.pages.dev', instrument: 'kèn pianica', noun: 'pianica', verb: 'thổi' }
   : IS_GUITAR_APP
@@ -32,6 +36,8 @@ export const SHOWN_HARP_TYPES: readonly HarpType[] = IS_RECORDER_APP
   ? ['recorderAlto', 'recorderSoprano', 'recorderTenor', 'recorderBass', 'saoTruc6', 'ocarina12']
   : IS_TRANH_APP
   ? ['tranh17', 'tranh16', 'tranh19', 'tranh21', 'tranh22', 'danbau']
+  : IS_ORGAN_APP
+  ? ['organ61', 'piano88']
   : IS_PIANICA_APP
   ? ['pianica32', 'pianica37']
   : IS_GUITAR_APP

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { usePracticeTimer } from '../lib/practiceLog';
 import { JazzJam } from './JazzJam';
-import { BRAND, IS_GUITAR_APP, IS_KALIMBA_APP, IS_RECORDER_APP, IS_PIANICA_APP } from '../appConfig';
+import { BRAND, IS_GUITAR_APP, IS_KALIMBA_APP, IS_RECORDER_APP, IS_PIANICA_APP, IS_ORGAN_APP } from '../appConfig';
 import { lickForRecorder } from '../lib/jazz';
 import { Link } from 'react-router-dom';
 import { HarpKey, harpName, HarpType, isFixedKey, isKalimba, keyOffset, pitchClassName, recorderKey } from '../lib/harp';
@@ -49,10 +49,10 @@ function BluesJam() {
   const [tab, setTab] = useState<'jam' | 'licks'>('jam');
   const [harpKey0, setHarpKey] = useState<HarpKey>(settings.defaultHarpKey);
   // app sáo: chọn loại sáo và giọng blues; lick (viết theo lỗ kèn) đổi sang tên nốt
-  const rec = IS_RECORDER_APP || IS_GUITAR_APP || IS_PIANICA_APP;
+  const rec = IS_RECORDER_APP || IS_GUITAR_APP || IS_PIANICA_APP || IS_ORGAN_APP;
   // kalimba: blues giọng trưởng ở vị trí 1 (kalimba C chơi blues Đô), chỉ tô thang ngũ cung
   const kal = IS_KALIMBA_APP;
-  const [harpType, setHarpType] = useState<HarpType>(kal ? (isKalimba(settings.defaultHarpType) ? settings.defaultHarpType : 'kalimba17') : isFixedKey(settings.defaultHarpType) ? settings.defaultHarpType : IS_GUITAR_APP ? 'guitar6' : IS_PIANICA_APP ? 'pianica32' : rec ? 'recorderAlto' : 'diatonic');
+  const [harpType, setHarpType] = useState<HarpType>(kal ? (isKalimba(settings.defaultHarpType) ? settings.defaultHarpType : 'kalimba17') : isFixedKey(settings.defaultHarpType) ? settings.defaultHarpType : IS_GUITAR_APP ? 'guitar6' : IS_PIANICA_APP ? 'pianica32' : IS_ORGAN_APP ? 'organ61' : rec ? 'recorderAlto' : 'diatonic');
   const harpKey = rec ? recorderKey(harpType) : harpKey0;
   const [recTonic, setRecTonic] = useState(() => (((keyOffset(recorderKey(harpType)) % 12) + 12) % 12));
   const conv = (body: string) => (rec ? lickForRecorder(body, recTonic, harpType) : body);

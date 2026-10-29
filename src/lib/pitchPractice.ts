@@ -3,10 +3,10 @@
  *  - Bend / nhấn / nắn: từ nốt gốc kéo cao độ lên hoặc xuống tới nốt đích (bend kèn harmonica, nhấn dây đàn tranh, nắn cần đàn bầu)
  *  - Giữ nốt dài: thổi / kéo một nốt thật đều — đo giữ được bao lâu và cao độ chao bao nhiêu (sáo, kèn, pianica)
  */
-import { HarpNote, HarpType, isDanBau, isFretted, isKalimba, isTranh } from './harp';
+import { HarpNote, HarpType, isDanBau, isFretted, isKalimba, isOrgan, isTranh } from './harp';
 
 /** nhạc cụ có bài giữ nốt dài: nhạc cụ hơi (kèn, sáo, pianica) — đàn dây gảy và kalimba nốt tắt dần nên không tập kiểu này */
-export const canHoldNote = (t: HarpType) => !isFretted(t) && !isKalimba(t) && !isTranh(t) && !isDanBau(t);
+export const canHoldNote = (t: HarpType) => !isFretted(t) && !isKalimba(t) && !isTranh(t) && !isDanBau(t) && !isOrgan(t);
 
 /* ---------- bend / nhấn ---------- */
 

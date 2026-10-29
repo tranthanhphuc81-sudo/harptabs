@@ -1,4 +1,5 @@
 import { ChordStrip } from '../components/Fretboard';
+import { KeyboardChordStrip } from '../components/Keyboard';
 import { usePracticeTimer } from '../lib/practiceLog';
 import { ChordSheet, strumHint } from '../components/ChordSheet';
 import { StrumStrip } from '../components/StrumStrip';
@@ -13,7 +14,7 @@ import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { db, deleteSongs, downloadJson, exportOne, newId, slugify } from '../lib/db';
 import { BRAND, IS_HARMONICA_APP, SHOWN_HARP_TYPES } from '../appConfig';
-import { HARP_KEYS, HARP_TYPE_LABEL, HarpKey, harpKeyLabel, HarpType, harpName, harpTypeOf, isChromatic, isFingered, isFixedKey, isFretted, isKalimba, isDanBau, isOcarina, isPianica, isTranh, isRecorder, isSaoTruc, isTremolo, midiToName, parseToken, recorderKey, songTonality } from '../lib/harp';
+import { HARP_KEYS, HARP_TYPE_LABEL, HarpKey, harpKeyLabel, HarpType, harpName, harpTypeOf, isChromatic, isFingered, isFixedKey, isFretted, isKalimba, isDanBau, isOcarina, isPianica, isOrgan, isTranh, isRecorder, isSaoTruc, isTremolo, midiToName, parseToken, recorderKey, songTonality } from '../lib/harp';
 import { countTechniques, flatten, parseTab } from '../lib/tabText';
 import { rekeyBody } from '../lib/converter';
 import { beatsPerBar, Song } from '../lib/types';
@@ -140,7 +141,7 @@ function SongPlayerView({ song, original, fit, view, choice, onChoice }: {
   const toggleArp = () => { const v = !arpOn; setArpOn(v); remember(ARP_KEY, v); if (v && sheet) { setSheet(false); remember(SHEET_KEY, false); } };
   const setCapo = (n: number) => { void db.songs.update(song.id, { capo: n || undefined, updatedAt: Date.now() }); };
   // đệm hát: luôn hiện hợp âm trên lời để hát theo
-  const showChords = beatPrefs.showChords || !!p.opts.sing || (fretted && sheet) || !!sheetData;
+  const showChords = beatPrefs.showChords || !!p.opts.sing || (fretted && sheet) || !!sheetData || isOrgan(harpType);
   const chordSegs = useMemo(
     () => (showChords || arp ? harmonizeSegments(melodyFlat, bpb, song.pickupBeats, tonality, chordOverrides) : null),
     [showChords, arp, melodyFlat, bpb, song.pickupBeats, tonality, chordOverrides],
@@ -465,7 +466,7 @@ function SongPlayerView({ song, original, fit, view, choice, onChoice }: {
       )}
 
       <p className="legend">
-        {sheetData ? <>Bài lời + hợp âm: bấm Phát để nghe nhạc đệm theo hợp âm, chạm chữ để phát từ đó. Mỗi hợp âm giữ {(song.sheetBeats ?? bpb) === bpb ? 'một ô nhịp' : `${song.sheetBeats} phách`} (đổi trong Sửa bài).</> : isDanBau(harpType) ? <>Ký hiệu là <strong>điểm bồi</strong> trên dây: ½ = giữa dây, ⅓, ¼… gần ngựa đàn dần; ○ = dây buông. <strong>↑2</strong> / <strong>↓1</strong>: nắn cần cho nốt cao / thấp đi mấy nửa cung. Hình nhỏ dưới mỗi nốt: dây đàn với điểm cần chạm.</> : isTranh(harpType) ? <>Số là <strong>dây cần gảy</strong> (dây 1 trầm nhất). <strong>↑½</strong> / <strong>↑1</strong>: tay trái nhấn dây cho cao lên nửa cung / một cung. Hình nhỏ dưới số: các dây của đàn, dây tô màu là dây cần gảy.</> : isOcarina(harpType) ? <>Tên nốt kèm thế bấm ocarina: hàng trên tay trái, hàng dưới tay phải, chấm nhỏ là lỗ phụ, ô vuông ở đáy là hai lỗ ngón cái phía sau. <strong>●</strong> bịt, <strong>○</strong> mở.</> : isPianica(harpType) ? <>Tên nốt có quãng tám (<strong>C4</strong> = Đô giữa, # thăng, b giáng). Hình nhỏ dưới mỗi nốt: bàn phím cả cây kèn, <strong>phím tô màu</strong> là phím cần bấm.</> : isFretted(harpType) ? <>Tab guitar: mỗi nốt là một cột, <strong>dòng trên cùng là dây 1</strong> (dây mảnh nhất), số là <strong>phím cần bấm</strong> (0 = buông). Bật Hợp âm để xem thế bấm hợp âm.</> : isKalimba(harpType) ? <>Số 1–7 là Đô–Si theo tông kalimba, chấm trên = lên quãng tám. Hình nhỏ dưới số: phím cần gảy (phím giữa dài nhất là nốt thấp nhất).</> : rec ? <>Tên nốt kèm thế bấm: <strong>●</strong> bịt kín, <strong>○</strong> mở, <strong>◐</strong> bịt nửa {isRecorder(harpType) ? ' (lỗ trên cùng lệch trái là ngón cái)' : ' (lỗ 1 gần miệng thổi ở trên cùng)'}</> : <>
+        {sheetData ? <>Bài lời + hợp âm: bấm Phát để nghe nhạc đệm theo hợp âm, chạm chữ để phát từ đó. Mỗi hợp âm giữ {(song.sheetBeats ?? bpb) === bpb ? 'một ô nhịp' : `${song.sheetBeats} phách`} (đổi trong Sửa bài).</> : isDanBau(harpType) ? <>Ký hiệu là <strong>điểm bồi</strong> trên dây: ½ = giữa dây, ⅓, ¼… gần ngựa đàn dần; ○ = dây buông. <strong>↑2</strong> / <strong>↓1</strong>: nắn cần cho nốt cao / thấp đi mấy nửa cung. Hình nhỏ dưới mỗi nốt: dây đàn với điểm cần chạm.</> : isTranh(harpType) ? <>Số là <strong>dây cần gảy</strong> (dây 1 trầm nhất). <strong>↑½</strong> / <strong>↑1</strong>: tay trái nhấn dây cho cao lên nửa cung / một cung. Hình nhỏ dưới số: các dây của đàn, dây tô màu là dây cần gảy.</> : isOcarina(harpType) ? <>Tên nốt kèm thế bấm ocarina: hàng trên tay trái, hàng dưới tay phải, chấm nhỏ là lỗ phụ, ô vuông ở đáy là hai lỗ ngón cái phía sau. <strong>●</strong> bịt, <strong>○</strong> mở.</> : isPianica(harpType) ? <>Tên nốt có quãng tám (<strong>C4</strong> = Đô giữa, # thăng, b giáng). Hình nhỏ dưới mỗi nốt: bàn phím cả cây kèn, <strong>phím tô màu</strong> là phím cần bấm.</> : isOrgan(harpType) ? <>Tên nốt có quãng tám (<strong>C4</strong> = Đô giữa, # thăng, b giáng), chơi bằng <strong>tay phải</strong>. Hình nhỏ dưới mỗi nốt: 3 quãng tám quanh nốt đó, <strong>phím tô màu</strong> là phím cần bấm. Tay trái bấm hợp âm ghi trên dòng hợp âm.</> : isFretted(harpType) ? <>Tab guitar: mỗi nốt là một cột, <strong>dòng trên cùng là dây 1</strong> (dây mảnh nhất), số là <strong>phím cần bấm</strong> (0 = buông). Bật Hợp âm để xem thế bấm hợp âm.</> : isKalimba(harpType) ? <>Số 1–7 là Đô–Si theo tông kalimba, chấm trên = lên quãng tám. Hình nhỏ dưới số: phím cần gảy (phím giữa dài nhất là nốt thấp nhất).</> : rec ? <>Tên nốt kèm thế bấm: <strong>●</strong> bịt kín, <strong>○</strong> mở, <strong>◐</strong> bịt nửa {isRecorder(harpType) ? ' (lỗ trên cùng lệch trái là ngón cái)' : ' (lỗ 1 gần miệng thổi ở trên cùng)'}</> : <>
         <span className="lg blow">4</span> thổi
         <span className="lg draw">−4</span> hút
         {trem ? null : chrom ? <><span className="lg bend">&lt;</span> bấm nút gạt</> : <><span className="lg bend">′</span> bend nửa cung</>}
@@ -566,6 +567,8 @@ function SongPlayerView({ song, original, fit, view, choice, onChoice }: {
         {capo > 0 && <p className="small muted">Capo phím {capo}: bấm các thế dưới đây, nghe ra đúng giọng bài.</p>}
         <ChordStrip names={sheetData ? sheetChords(sheetData.lines).map((c) => shapeName(c, capo)) : shownSegs.filter((c) => c.chord.root >= 0).map((c) => c.chord.name)} inst={inst} />
       </>}
+
+      {isOrgan(harpType) && shownSegs && <KeyboardChordStrip names={sheetData ? sheetChords(sheetData.lines) : shownSegs.filter((c) => c.chord.root >= 0).map((c) => c.chord.name)} nameStyle={settings.noteNames} />}
 
       <div className="below-tab">
         <button type="button" className="btn btn-ghost" onClick={() => setShowDiagram((v) => !v)} aria-expanded={showDiagram}>

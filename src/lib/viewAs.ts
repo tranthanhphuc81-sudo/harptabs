@@ -4,7 +4,7 @@
  */
 import { transposeChords } from '../audio/harmony';
 import { fitToHarp, midisOf, rekeyBody, TabFit } from './converter';
-import { HARP_KEYS, HARP_TYPES, HarpKey, HarpType, harpTypeOf, isDanBau, isFixedKey, isFretted, isKalimba, isOcarina, isPianica, isRecorder, isSaoTruc, isTranh, recorderKey, songTonality } from './harp';
+import { HARP_KEYS, HARP_TYPES, HarpKey, HarpType, harpTypeOf, isDanBau, isFixedKey, isFretted, isKalimba, isOcarina, isPianica, isOrgan, isRecorder, isSaoTruc, isTranh, recorderKey, songTonality } from './harp';
 import { parseTab } from './tabText';
 import type { Song } from './types';
 
@@ -102,6 +102,7 @@ export function bestHarp(song: Song): BestHarp {
     : isTranh(origType) ? ['tranh17', 'tranh16', 'tranh19', 'tranh21', 'tranh22']
     : isDanBau(origType) ? ['danbau']
     : isPianica(origType) ? ['pianica32', 'pianica37']
+    : isOrgan(origType) ? ['organ61', 'piano88']
     : isKalimba(origType) ? ['kalimba17', 'kalimba10', 'kalimba8']
     : TYPE_ORDER;
   const types = [origType, ...order.filter((t) => t !== origType)];

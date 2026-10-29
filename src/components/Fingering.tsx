@@ -18,6 +18,7 @@ export function FingeringIcon({ fingers, size = 'm' }: { fingers: string; size?:
   const k = parseKalimbaFingers(fingers);
   if (k) return <KalimbaIcon pos={k.pos} keys={k.keys} size={size} />;
   if (/^p\d+$/.test(fingers)) return <PianoIcon midi={Number(fingers.slice(1))} size={size} />;
+  if (/^o\d+$/.test(fingers)) return <PianoIcon midi={Number(fingers.slice(1))} size={size} wide />;
   if (fingers.length === 12) return <OcarinaIcon fingers={fingers} size={size} />;
   const bau = parseBauFingers(fingers);
   if (bau) return <BauIcon n={bau.n} bend={bau.bend} size={size} />;

@@ -1,4 +1,4 @@
-import { HarpType, isFretted, isOcarina, isDanBau, isPianica, isTranh, isKalimba, isRecorder, isSaoTruc, isTremolo } from '../lib/harp';
+import { HarpType, isFretted, isOcarina, isDanBau, isPianica, isOrgan, isTranh, isKalimba, isRecorder, isSaoTruc, isTremolo } from '../lib/harp';
 /**
  * Tự chọn kiểu nhịp hợp với bài (chạy offline): dựa vào nhịp, từ khoá trong tên/thẻ/ghi chú,
  * tiết tấu giai điệu (chùm ba, chấm dôi, lệch nhịp), giọng trưởng/thứ, tốc độ và ngôn ngữ lời.
@@ -218,6 +218,7 @@ export function suggestInstrument(song: SongLike, notes: NoteLike[], style: Beat
   if (isTranh(song.harpType)) return { instrument: 'dantranh', reason: 'Bài cho đàn tranh' };
   if (isOcarina(song.harpType)) return { instrument: 'ocarina', reason: 'Bài cho ocarina' };
   if (isPianica(song.harpType)) return { instrument: 'accordion', reason: 'Bài cho kèn pianica' };
+  if (isOrgan(song.harpType)) return { instrument: 'piano', reason: 'Bài cho đàn organ / piano' };
   if (isFretted(song.harpType)) return song.harpType === 'ukulele4' ? { instrument: 'ukulele', reason: 'Bài cho ukulele' } : { instrument: 'guitar', reason: 'Bài cho guitar' };
   const text = fold([song.title, song.artist, song.notes, ...(song.tags ?? [])].filter(Boolean).join(' '));
   for (const [re, instrument] of NAMED_INSTRUMENTS) if (re.test(text)) return { instrument, reason: 'Bài ghi rõ nhạc cụ' };
