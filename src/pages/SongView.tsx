@@ -1,5 +1,6 @@
 import { ChordStrip } from '../components/Fretboard';
 import { KeyboardChordStrip } from '../components/Keyboard';
+import { rightHandFingering } from '../lib/pianoFingering';
 import { usePracticeTimer } from '../lib/practiceLog';
 import { ChordSheet, strumHint } from '../components/ChordSheet';
 import { StrumStrip } from '../components/StrumStrip';
@@ -14,7 +15,7 @@ import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { db, deleteSongs, downloadJson, exportOne, newId, slugify } from '../lib/db';
 import { BRAND, IS_HARMONICA_APP, SHOWN_HARP_TYPES } from '../appConfig';
-import { HARP_KEYS, HARP_TYPE_LABEL, HarpKey, harpKeyLabel, HarpType, harpName, harpTypeOf, isChromatic, isFingered, isFixedKey, isFretted, isKalimba, isDanBau, isOcarina, isPianica, isOrgan, isTranh, isRecorder, isSaoTruc, isTremolo, midiToName, parseToken, recorderKey, songTonality } from '../lib/harp';
+import { HARP_KEYS, HARP_TYPE_LABEL, HarpKey, harpKeyLabel, HarpType, harpName, harpTypeOf, isChromatic, isFingered, isFixedKey, isFretted, isKalimba, isDanBau, isOcarina, isPianica, isOrgan, isKeyboard, isTranh, isRecorder, isSaoTruc, isTremolo, midiToName, parseToken, recorderKey, songTonality } from '../lib/harp';
 import { countTechniques, flatten, parseTab } from '../lib/tabText';
 import { rekeyBody } from '../lib/converter';
 import { beatsPerBar, Song } from '../lib/types';
@@ -289,7 +290,32 @@ function SongPlayerView({ song, original, fit, view, choice, onChoice }: {
     window.scrollBy({ top: back ? -page : page, behavior: reduce ? 'auto' : 'smooth' });
   };
 
+  // bàn phím: số ngón tay phải cho cả bài; ngón chọn tay (lưu theo bài) giữ nguyên, các nốt khác tính theo
+  const [fingerEdit, setFingerEdit] = useState(false);
+  const showFingers = isKeyboard(harpType) && settings.showFingerNums !== false && !arp && !sheetData;
+  const posKey = (e: { sectionIndex: number; lineIndex: number; eventIndex: number }) => `${e.sectionIndex}.${e.lineIndex}.${e.eventIndex}`;
+  const manualFingers = useMemo(() => {
+    const set = new Set<number>();
+    if (original.fingers) flat.forEach((e, i) => { if (original.fingers![posKey(e)] && e.midi !== null) set.add(i); });
+    return set;
+  }, [flat, original.fingers]);
+  const fingerNums = useMemo(() => {
+    if (!showFingers) return null;
+    const fixed = new Map<number, number>();
+    manualFingers.forEach((i) => fixed.set(i, original.fingers![posKey(flat[i])]));
+    return rightHandFingering(flat.map((e) => ({ midi: e.midi, beats: e.beats })), fixed);
+  }, [showFingers, flat, manualFingers, original.fingers]);
+  const cycleFinger = (fi: number) => {
+    const e = flat[fi];
+    if (!fingerNums || !e || e.midi === null) return;
+    const next = ((fingerNums[fi] ?? 0) % 5) + 1;
+    void db.songs.update(original.id, { fingers: { ...(original.fingers ?? {}), [posKey(e)]: next }, updatedAt: Date.now() });
+    previewNote(e.midi, 0.4);
+  };
+  const clearFingers = () => { void db.songs.update(original.id, { fingers: undefined, updatedAt: Date.now() }); };
+
   const onNoteClick = (fi: number) => {
+    if (fingerEdit && fingerNums) { cycleFinger(fi); return; }
     if (editMode && !waitMode) {
       setFocus(fi);
       if (flat[fi]?.midi != null) previewNote(flat[fi].midi!, 0.5); // chạm là nghe luôn, kể cả đang phát
@@ -487,6 +513,12 @@ function SongPlayerView({ song, original, fit, view, choice, onChoice }: {
             </span>
           );
         })()}
+        {isKeyboard(harpType) && !arp && !sheetData && <>
+          <button type="button" className={`chip${showFingers ? ' on' : ''}`} aria-pressed={showFingers}
+            onClick={() => { update({ showFingerNums: !showFingers }); setFingerEdit(false); }}>Số ngón</button>
+          {showFingers && <button type="button" className={`chip${fingerEdit ? ' on' : ''}`} aria-pressed={fingerEdit} onClick={() => setFingerEdit((v) => !v)}>Sửa ngón</button>}
+          {showFingers && manualFingers.size > 0 && <button type="button" className="chip" onClick={clearFingers}>Bỏ {manualFingers.size} ngón chọn tay</button>}
+        </>}
         <button type="button" className={`chip legend-chords${beatPrefs.showChords ? ' on' : ''}`} aria-pressed={beatPrefs.showChords}
           onClick={() => setBeatPrefs({ showChords: !beatPrefs.showChords })}>
           Hợp âm{manualCount > 0 ? (original.source === 'sample' ? ' (chuẩn)' : ` (${manualCount} chọn tay)`) : ''}
@@ -547,7 +579,9 @@ function SongPlayerView({ song, original, fit, view, choice, onChoice }: {
         ? <SheetView lines={sheetData.lines} slots={sheetData.slots} capo={capo} active={p.active ?? null} onSeek={(i) => p.play(i)} />
         : fretted && sheet && shownSegs
         ? <ChordSheet parsed={parsed} flat={flat} segs={shownSegs} active={activeIdx} onSeek={onNoteClick} />
-        : <TabView
+        : <div className={fingerEdit ? 'fingers-edit' : undefined}><TabView
+        fingerNums={fingerNums}
+        manualFingers={manualFingers}
         harpType={harpType}
         harpKey={song.harpKey}
         parsed={arp?.parsed ?? parsed}
@@ -560,8 +594,10 @@ function SongPlayerView({ song, original, fit, view, choice, onChoice }: {
         size={settings.tabSize}
         chords={shownSegs}
         onChordClick={setChordEdit}
-      />}
+      /></div>}
       </div>
+      {fingerEdit && fingerNums && <p className="small muted no-print">Chạm vào nốt để đổi ngón (1 → 2 → … → 5). Ngón bạn chọn ghi đậm và giữ nguyên; app tính lại ngón các nốt quanh đó cho thuận tay.</p>}
+      {showFingers && !fingerEdit && <p className="small muted no-print">Số trên mỗi nốt là ngón tay phải: 1 = ngón cái, 2 trỏ, 3 giữa, 4 áp út, 5 út.</p>}
 
       {fretted && shownSegs && <>
         {capo > 0 && <p className="small muted">Capo phím {capo}: bấm các thế dưới đây, nghe ra đúng giọng bài.</p>}

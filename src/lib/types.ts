@@ -39,6 +39,8 @@ export interface Song {
   createdAt: number;
   updatedAt: number;
   lastPracticedAt?: number;
+  /** bàn phím: số ngón tay phải chọn tay, theo vị trí nốt "đoạn.dòng.nốt" (các nốt khác app tự tính) */
+  fingers?: Record<string, number>;
 }
 
 export interface Settings {
@@ -64,6 +66,8 @@ export interface Settings {
   chordHorizontal?: boolean;
   /** cỡ hình nhỏ dưới mỗi nốt (bàn phím pianica, thế bấm sáo, phím kalimba): 1 = mặc định */
   fingerScale?: number;
+  /** bàn phím (organ, piano, pianica): hiện số ngón tay phải trên mỗi nốt */
+  showFingerNums?: boolean;
   /** đàn tranh: lên dây Bắc (Sol La Đô Rê Mi) hay Đảo (Sol La Đô Rê Fa) */
   tranhTuning?: 'bac' | 'dao';
   /** bù trễ đèn nốt (ms): dương = đèn sáng muộn hơn; dùng khi loa / tai nghe Bluetooth trễ hơn máy báo */

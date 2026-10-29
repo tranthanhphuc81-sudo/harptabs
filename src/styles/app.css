@@ -1341,3 +1341,7 @@ button, a, select { -webkit-tap-highlight-color: transparent; }
 .ck-dot { fill: #fff; stroke: var(--accent-ink); stroke-width: 1; }
 .ck-finger { font-size: 11px; font-weight: 800; fill: #1d1406; }
 .ck-c { font-size: 10px; fill: var(--ink-2); }
+
+.nt-fnum { display: block; align-self: center; text-align: center; font-size: 0.85rem; font-weight: 800; line-height: 1.05; min-height: 0.9rem; color: var(--ink); }
+.nt-fnum.manual { color: var(--accent); text-decoration: underline; }
+.fingers-edit .nt:not(.rest) .nt-fnum { outline: 1px dashed var(--accent); outline-offset: 1px; border-radius: 3px; }

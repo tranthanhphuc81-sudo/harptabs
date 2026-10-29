@@ -101,6 +101,7 @@ Bản web: https://sotaborgan.pages.dev · APK: gói `dev.pages.sotaborgan.twa`,
 |---|---|
 | Đàn | Organ (keyboard) 61 phím Đô2 → Đô7 và piano 88 phím La0 → Đô8; tay phải chơi giai điệu |
 | Tab | Tên nốt có quãng tám như pianica; dưới mỗi nốt là hình 3 quãng tám quanh nốt (Đô3–Đô6, dời theo quãng tám), phím cần bấm tô màu. Sơ đồ bàn phím kéo ngang được, tự cuộn tới phím đang chơi |
+| Số ngón tay phải | App tự tính ngón 1–5 cho từng nốt của cả bài (quy hoạch động theo bảng khoảng cách thoải mái giữa các cặp ngón: thế năm ngón, luồn ngón cái khi đi lên, vắt ngón khi đi xuống, tránh ngón cái trên phím đen), ghi trên mỗi nốt; nút Sửa ngón: chạm nốt để đổi, ngón chọn tay lưu theo bài và các nốt quanh đó tính lại. Có cả trong app Pianica |
 | Tay trái | Dải hợp âm của bài: chạm tên hợp âm để nghe và xem thế bấm tay trái gần Đô3 (C = Đô Mi Sol, F = Đô Fa La, G = Si Rê Sol) tô trên bàn phím kèm số ngón 5-3-1 |
 | Bài và học | Bài mẫu ghi lại cho tay phải (giữ giọng gốc, giữ hợp âm), bài luyện năm ngón và thang âm; 7 bài học: làm quen, đọc tab, thế năm ngón, luồn ngón, tay trái bấm hợp âm, đệm tự động trên đàn organ, ghép hai tay |
 

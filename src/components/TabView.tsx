@@ -24,6 +24,10 @@ interface Props {
   harpType?: HarpType;
   /** tông (sáo trúc: tông sáo, để tra thế bấm) */
   harpKey?: HarpKey;
+  /** bàn phím: số ngón tay phải theo vị trí nốt trong `flat` (null = không ghi) */
+  fingerNums?: (number | null)[] | null;
+  /** các nốt có ngón chọn tay (vẽ đậm) */
+  manualFingers?: Set<number>;
 }
 
 export function TokenText({ token, nameStyle, strings }: { token: string; nameStyle?: NoteNameStyle; strings?: number }) {
@@ -73,9 +77,11 @@ interface LineProps {
   onChord: (seg: ChordSegment) => void;
   harpType?: HarpType;
   harpKey?: HarpKey;
+  fingerNums?: (number | null)[] | null;
+  manualFingers?: Set<number>;
 }
 
-const Line = memo(function Line({ events, si, li, index, active, selected, clickable, onNote, showNames, nameStyle, chordsAt, onChord, harpType, harpKey }: LineProps) {
+const Line = memo(function Line({ events, si, li, index, active, selected, clickable, onNote, showNames, nameStyle, chordsAt, onChord, harpType, harpKey, fingerNums, manualFingers }: LineProps) {
   return (
     <div className="tabline">
       {events.map((ev, ei) => {
@@ -97,6 +103,7 @@ const Line = memo(function Line({ events, si, li, index, active, selected, click
             tabIndex={clickable ? 0 : -1}
             aria-label={label}
           >
+            {fingerNums && <span className={`nt-fnum${manualFingers?.has(fi) ? ' manual' : ''}`} aria-label={fingerNums[fi] ? `ngón ${fingerNums[fi]}` : undefined}>{fingerNums[fi] ?? ' '}</span>}
             {showNames && <span className="nt-name">{ev.midi !== null ? midiToName(ev.midi, nameStyle, false) : ''}</span>}
             <span className="nt-hole">{isRest ? '–' : <TokenText token={ev.token!} nameStyle={nameStyle} strings={harpType && isFretted(harpType) ? holeCount(harpType) : undefined} />}</span>
             {harpType && !isRest && !isFretted(harpType) && (() => { const f = fingeringOf(ev.token, harpType, harpKey); return f ? <span className="nt-finger"><FingeringIcon fingers={f} size="s" /></span> : null; })()}
@@ -136,7 +143,7 @@ export function visibleBand(): [number, number] {
   return [0, bottom];
 }
 
-function TabViewInner({ parsed, flat, active, selected, onNoteClick, showNames, nameStyle = 'letter', size = 'm', compact, chords, onChordClick, harpType, harpKey }: Props) {
+function TabViewInner({ parsed, flat, active, selected, onNoteClick, showNames, nameStyle = 'letter', size = 'm', compact, chords, onChordClick, harpType, harpKey, fingerNums, manualFingers }: Props) {
   const ref = useRef<HTMLDivElement>(null);
   const lastLine = useRef<string>('');
   // hàm bấm nốt / hợp âm giữ cố định giữa các lần vẽ (trang cha tạo hàm mới mỗi lần) để các dòng không phải vẽ lại
@@ -217,7 +224,7 @@ function TabViewInner({ parsed, flat, active, selected, onNoteClick, showNames, 
                 active={act && act.sectionIndex === si && act.lineIndex === li ? active! : -1}
                 selected={sel && sel.sectionIndex === si && sel.lineIndex === li ? selected! : -1}
                 clickable={!!onNoteClick} onNote={onNote} showNames={showNames} nameStyle={nameStyle}
-                chordsAt={chordsAt} onChord={onChord} harpType={harpType} harpKey={harpKey} />
+                chordsAt={chordsAt} onChord={onChord} harpType={harpType} harpKey={harpKey} fingerNums={fingerNums} manualFingers={manualFingers} />
             ),
           )}
         </section>

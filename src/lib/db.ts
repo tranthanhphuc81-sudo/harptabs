@@ -187,7 +187,14 @@ export function sanitizeSong(raw: Record<string, unknown>): Song | null {
     createdAt,
     updatedAt: time(raw.updatedAt, createdAt)!,
     lastPracticedAt: time(raw.lastPracticedAt),
+    fingers: sanitizeFingers(raw.fingers),
   };
+}
+
+function sanitizeFingers(v: unknown): Record<string, number> | undefined {
+  if (!v || typeof v !== 'object') return undefined;
+  const out = Object.fromEntries(Object.entries(v).slice(0, 5000).filter(([k, f]) => /^\d{1,4}\.\d{1,4}\.\d{1,4}$/.test(k) && Number.isInteger(f) && f >= 1 && f <= 5));
+  return Object.keys(out).length ? out : undefined;
 }
 
 function sanitizeChords(v: unknown): Record<string, string> | undefined {
