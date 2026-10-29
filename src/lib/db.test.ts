@@ -17,7 +17,7 @@ describe('nhập file sao lưu', () => {
         difficulty: 7, position: 9, source: 'hack', tags: ['a', 5], updatedAt: 'x', evil: '<script>', favorite: 1,
       }],
     });
-    expect(r).toEqual({ added: 1, updated: 0, skipped: 0 });
+    expect(r).toEqual({ added: 1, updated: 0, skipped: 0, practice: false });
     const s = (await db.songs.get('abc-1'))!;
     expect(s).not.toHaveProperty('evil');
     expect(s.harpKey).toBe('C');
@@ -44,7 +44,7 @@ describe('nhập file sao lưu', () => {
         null,
       ],
     });
-    expect(r).toEqual({ added: 0, updated: 1, skipped: 3 });
+    expect(r).toEqual({ added: 0, updated: 1, skipped: 3, practice: false });
     expect((await db.songs.get('x'))!.title).toBe('Mới');
   });
 

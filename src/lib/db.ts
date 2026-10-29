@@ -1,5 +1,6 @@
 /** Lưu trữ offline bằng IndexedDB (Dexie). Mọi dữ liệu nằm trên thiết bị. */
 import { BRAND } from '../appConfig';
+import { exportPractice, importPractice } from './practiceBackup';
 import Dexie, { Table } from 'dexie';
 import { FIRST_SAMPLE_IDS, SAMPLE_SONGS } from '../data/samples';
 import { HARP_TYPES, normalizeKey } from './harp';
@@ -136,10 +137,12 @@ export interface BackupFile {
   version: 1;
   exportedAt: string;
   songs: Song[];
+  /** nhật ký luyện tập và kết quả các trang tập (localStorage) — chỉ có trong file sao lưu toàn bộ */
+  practice?: Record<string, unknown>;
 }
 
 export async function exportAll(): Promise<BackupFile> {
-  return { app: 'harptabs', version: 1, exportedAt: new Date().toISOString(), songs: await db.songs.toArray() };
+  return { app: 'harptabs', version: 1, exportedAt: new Date().toISOString(), songs: await db.songs.toArray(), practice: exportPractice() };
 }
 
 export function exportOne(song: Song): BackupFile {
@@ -193,8 +196,8 @@ function sanitizeChords(v: unknown): Record<string, string> | undefined {
   return Object.keys(out).length ? out : undefined;
 }
 
-/** Nhập file sao lưu. Bài trùng id: giữ bản mới hơn. Trả về số bài đã thêm/cập nhật. */
-export async function importBackup(json: unknown): Promise<{ added: number; updated: number; skipped: number }> {
+/** Nhập file sao lưu. Bài trùng id: giữ bản mới hơn; nhật ký luyện tập trộn với dữ liệu đang có. Trả về số bài đã thêm/cập nhật. */
+export async function importBackup(json: unknown): Promise<{ added: number; updated: number; skipped: number; practice: boolean }> {
   const obj = json as Partial<BackupFile>;
   if (!obj || obj.app !== 'harptabs' || !Array.isArray(obj.songs)) {
     throw new Error(`File không đúng định dạng sao lưu của ${BRAND.name}`);
@@ -210,7 +213,8 @@ export async function importBackup(json: unknown): Promise<{ added: number; upda
       else skipped++;
     }
   });
-  return { added, updated, skipped };
+  const practice = importPractice(obj.practice) > 0;
+  return { added, updated, skipped, practice };
 }
 
 export function downloadJson(data: unknown, filename: string) {

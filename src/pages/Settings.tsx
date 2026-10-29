@@ -115,7 +115,7 @@ export default function SettingsPage() {
     if (!f) return;
     try {
       const r = await importBackup(JSON.parse(await f.text()));
-      toast(`Đã nhập ${r.added} bài mới, cập nhật ${r.updated}, bỏ qua ${r.skipped}`);
+      toast(`Đã nhập ${r.added} bài mới, cập nhật ${r.updated}, bỏ qua ${r.skipped}${r.practice ? '; đã khôi phục nhật ký luyện tập' : ''}`);
     } catch (e) {
       toast((e as Error).message || 'File không hợp lệ');
     } finally {
