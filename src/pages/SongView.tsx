@@ -1,4 +1,5 @@
 import { ChordStrip } from '../components/Fretboard';
+import { usePracticeTimer } from '../lib/practiceLog';
 import { ChordSheet, strumHint } from '../components/ChordSheet';
 import { StrumStrip } from '../components/StrumStrip';
 import { STYLE_OPTIONS } from '../audio/patterns';
@@ -366,6 +367,7 @@ function SongPlayerView({ song, original, fit, view, choice, onChoice }: {
   useEffect(() => () => micRef.current?.stop(), []);
 
   useWakeLock(p.playing || waitMode);
+  usePracticeTimer('bai-hat', p.playing || waitMode);
 
   // đổi kèn đang xem: tab mới, vị trí nốt cũ không còn đúng → dừng phát / chờ nốt (không chấm điểm lượt dở)
   const viewKey = `${song.harpType ?? ''}|${song.harpKey}|${song.body.length}|${fit?.shift ?? ''}`;

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { logMetric, usePracticeTimer } from '../lib/practiceLog';
 import { MicPitch } from '../audio/pitch';
 import { audio, playTone } from '../audio/engine';
 import { SHOWN_HARP_TYPES } from '../appConfig';
@@ -45,6 +46,7 @@ export default function EarPractice() {
   const level = useRef(0);
   const timer = useRef<number>();
   useWakeLock(on);
+  usePracticeTimer('nghe-dap', on);
 
   const layout = harpLayout(key, type);
   const lv = EAR_LEVELS[levelIdx];
@@ -78,6 +80,7 @@ export default function EarPractice() {
   }, [type, key, levelIdx]);
 
   const record = (ok: boolean) => {
+    logMetric('nghe-dap', ok ? 1 : 0);
     setStats((prev) => {
       const cur = prev[lv.id] ?? { tries: 0, ok: 0 };
       const nx = { ...prev, [lv.id]: { tries: cur.tries + 1, ok: cur.ok + (ok ? 1 : 0) } };

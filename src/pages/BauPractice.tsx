@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { logMetric, usePracticeTimer } from '../lib/practiceLog';
 import { Link, useSearchParams } from 'react-router-dom';
 import { MicPitch } from '../audio/pitch';
 import { previewNote } from '../audio/engine';
@@ -50,12 +51,14 @@ export default function BauPractice() {
   const det = useRef(new PluckDetector(node, keyOffset(key)));
   const level = useRef(0);
   useWakeLock(on);
+  usePracticeTimer('boi-am', on);
 
   const offset = keyOffset(key);
   const target = nodeMidi(node, offset);
   useEffect(() => { det.current.setTarget(node, offset); }, [node, offset]);
 
   const record = (r: PluckResult) => {
+    logMetric('boi-am', r.kind === 'ok' ? 1 : 0);
     setResults((prev) => [r, ...prev].slice(0, 30));
     setStats((prev) => {
       const cur = prev[node] ?? { tries: 0, ok: 0 };
@@ -87,6 +90,7 @@ export default function BauPractice() {
     setBendMidi(midi);
     if (hold.current.feed(time, bendStatus(midi, bendTarget, d.bend).status)) {
       const id = bendId(d);
+      logMetric('nan-can', 1);
       setBendDone((prev) => {
         const next = { ...prev, [id]: (prev[id] ?? 0) + 1 };
         try { localStorage.setItem(BEND_KEY, JSON.stringify(next)); } catch { /* không lưu được thì thôi */ }

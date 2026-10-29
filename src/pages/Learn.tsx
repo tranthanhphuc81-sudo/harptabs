@@ -1,4 +1,6 @@
 import { BRAND, IS_GUITAR_APP, IS_KALIMBA_APP, IS_RECORDER_APP, IS_PIANICA_APP, IS_TRANH_APP } from '../appConfig';
+import { useEffect, useState } from 'react';
+import { dayKey, DEFAULT_GOAL_MIN, loadLog, onLogChange, streak } from '../lib/practiceLog';
 import { Fragment, ReactNode, useMemo } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { Block, LESSON_GROUPS, LESSONS } from '../data/lessons';
@@ -22,6 +24,21 @@ function rich(text: string): ReactNode {
   });
 }
 
+/** thẻ nhật ký: hôm nay tập bao nhiêu, chuỗi ngày tập liền */
+function LogCard() {
+  const [log, setLog] = useState(loadLog);
+  useEffect(() => onLogChange(() => setLog(loadLog())), []);
+  const today = new Date();
+  const mins = Math.round((log.days[dayKey(today)]?.secs ?? 0) / 60);
+  const st = streak(log, today);
+  return (
+    <Link to="/nhat-ky" className="jam-card log-card">
+      <strong>Nhật ký luyện tập</strong>
+      <span>Hôm nay {mins} / {log.goalMin ?? DEFAULT_GOAL_MIN} phút{st ? ` · ${st} ngày tập liền` : ''}. Xem bài tập gợi ý cho hôm nay và tiến bộ từng tuần.</span>
+    </Link>
+  );
+}
+
 export default function Learn() {
   return (
     <div className="page page-learn">
@@ -31,6 +48,7 @@ export default function Learn() {
           <p className="muted">Kỹ thuật, thủ thuật và mẹo, kèm bài tập nghe được. Tất cả dùng offline.{IS_RECORDER_APP || IS_KALIMBA_APP || IS_GUITAR_APP || IS_PIANICA_APP || IS_TRANH_APP ? '' : ' Chơi kèn chromatic: xem nhóm bài cuối.'}</p>
         </div>
       </header>
+      <LogCard />
       <Link to="/nghe-dap" className="jam-card">
         <strong>Tập nghe – đáp</strong>
         <span>Máy chơi một câu ngắn, bạn nghe rồi chơi lại; app nghe micro chấm từng nốt, sai thì chỉ chỗ bấm. Luyện tai và thuộc vị trí nốt, 7 cấp từ 1 nốt tới câu 4 nốt.</span>

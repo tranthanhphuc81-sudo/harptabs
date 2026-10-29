@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { logMetric, usePracticeTimer } from '../lib/practiceLog';
 import { Link, useSearchParams } from 'react-router-dom';
 import { MicPitch } from '../audio/pitch';
 import { previewNote } from '../audio/engine';
@@ -88,6 +89,7 @@ export default function PitchPractice() {
   const bendHold = useRef(new BendHold());
   const noteHold = useRef(new NoteHold(0));
   useWakeLock(on);
+  usePracticeTimer('cao-do', on);
   useEffect(() => () => mic.current?.stop(), []);
 
   const target = curMode === 'bend' ? d?.target : holdNote?.midi;
@@ -99,6 +101,7 @@ export default function PitchPractice() {
     if (curMode === 'bend') {
       if (d && bendHold.current.feed(time, bendStatus(m, d.target, d.bend).status)) {
         setDone((p) => ({ ...p, [d.token]: (p[d.token] ?? 0) + 1 }));
+        logMetric('bend', 1);
         setFlash(true);
         setTimeout(() => setFlash(false), 900);
       }
@@ -108,6 +111,7 @@ export default function PitchPractice() {
     setLive(r.live);
     if (r.done) {
       const res = r.done;
+      logMetric('giu-not', res.secs);
       setHolds((p) => [res, ...p].slice(0, 8));
       setBest((p) => {
         if ((p[bestKey] ?? 0) >= res.secs || res.spread > 15) return p;

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { usePracticeTimer } from '../lib/practiceLog';
 import { HarpKey, HarpType, isTremolo, keyOffset, pitchClassName } from '../lib/harp';
 import { BAR_BEATS, jamEvents, lickEvents } from '../lib/blues';
 import { chordAtBeat, chordTones, lickToTab, PlacedChord, progressionBars, progressionChords, progressionOverrides, PROGRESSIONS } from '../lib/jazz';
@@ -105,6 +106,7 @@ export function JazzJam() {
   useEffect(() => { stop(); }, [tab, lickId, harpKey, harpType, tonic, progId, stop]);
   useEffect(() => { if (tab === 'jam') setOpts({ melody: true }); }, [tab, setOpts]);
   useWakeLock(p.playing);
+  usePracticeTimer('ngau-hung', p.playing);
 
   const cur = p.active != null ? flat[p.active] : null;
   const now = cur ? chordAtBeat(shown, cur.start) : null;

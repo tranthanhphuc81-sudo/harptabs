@@ -1,4 +1,5 @@
 import { BRAND, IS_HARMONICA_APP } from '../appConfig';
+import { usePracticeTimer } from '../lib/practiceLog';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { db } from '../lib/db';
 import { fixGarbled } from '../lib/vnEncoding';
@@ -135,6 +136,7 @@ export default function KaraokeView({ song, original, flat, p, chordSegs, onClos
   const midi = src === 'midi' && !!arr;
   /** bộ phát đang dùng: nhạc nền MP3 hoặc tiếng tổng hợp — chữ chạy, chấm điểm, thu âm đều theo nó */
   const tp = mp3 ? bk : p;
+  usePracticeTimer('bai-hat', tp.playing);
   // trang bài tạo lại đối tượng bộ phát mỗi lần vẽ: giữ bản mới nhất trong ref để vòng chữ chạy không khởi động lại
   const pRef = useRef(tp);
   pRef.current = tp;

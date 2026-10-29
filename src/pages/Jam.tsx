@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { usePracticeTimer } from '../lib/practiceLog';
 import { JazzJam } from './JazzJam';
 import { BRAND, IS_GUITAR_APP, IS_KALIMBA_APP, IS_RECORDER_APP, IS_PIANICA_APP } from '../appConfig';
 import { lickForRecorder } from '../lib/jazz';
@@ -97,6 +98,7 @@ function BluesJam() {
   // máy "hỏi" cần giai điệu: về Jam thì bật lại (thư viện lick có thể đã tắt để tự thổi)
   useEffect(() => { if (tab === 'jam') setOpts({ melody: true }); }, [tab, setOpts]);
   useWakeLock(p.playing);
+  usePracticeTimer('ngau-hung', p.playing);
 
   const togglePin = (id: string) => {
     const next = pins.includes(id) ? pins.filter((x) => x !== id) : [...pins, id];

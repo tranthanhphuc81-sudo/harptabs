@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { logMetric, usePracticeTimer } from '../lib/practiceLog';
 import { Link, useSearchParams } from 'react-router-dom';
 import { MicSpectrum } from '../audio/spectrum';
 import { previewChord } from '../audio/engine';
@@ -36,6 +37,7 @@ export default function ChordPractice() {
   const mic = useRef<MicSpectrum | null>(null);
   const det = useRef(new StrumDetector());
   useWakeLock(on);
+  usePracticeTimer('hop-am', on);
   useEffect(() => () => mic.current?.stop(), []);
   useEffect(() => { if (!chordShape(chord, inst)) setChord(chords[0] ?? 'C'); setResults([]); }, [inst]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -43,6 +45,7 @@ export default function ChordPractice() {
   const onStrum = (v: ChordVerdict) => {
     setResults((prev) => [v, ...prev].slice(0, 30));
     if (v.kind === 'quiet') return;
+    logMetric('hop-am', v.kind === 'ok' ? 1 : 0);
     setStats((prev) => {
       const cur = prev[statKey] ?? { tries: 0, ok: 0 };
       const next = { ...prev, [statKey]: { tries: cur.tries + 1, ok: cur.ok + (v.kind === 'ok' ? 1 : 0) } };
