@@ -69,6 +69,7 @@ export const PIANICA_LESSONS: Lesson[] = [
         'Có thể bấm **hai ba phím cùng lúc** để ra hợp âm (Đô + Mi + Sol = hợp âm C).',
       ] },
       { t: 'tab', caption: 'Mary Had a Little Lamb', body: 'E4 D4 C4 D4 E4 E4 E4:2\nD4 D4 D4:2 E4 G4 G4:2\n', bpm: 96, style: 'ballad', ...P },
+      { t: 'link', to: '/tap-cao-do?mode=hold', label: 'Tập giữ hơi nốt dài', text: 'Thổi một nốt thật đều: app đo giữ được bao lâu và cao độ có chao không.' },
     ],
   },
   {

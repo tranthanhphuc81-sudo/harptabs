@@ -3,6 +3,7 @@ import { BRAND } from '../appConfig';
 import { useEffect, useRef, useState } from 'react';
 import { HarpKey, HarpType, harpLayout, holeCount, isChromatic, isFingered, isFretted, isKalimba, isDanBau, isOcarina, isPianica, isTranh, isRecorder, isSaoTruc, isTremolo, midiToHz, midiToName, TECHNIQUE_LABEL } from '../lib/harp';
 import { MicPitch, PitchReading } from '../audio/pitch';
+import { canHoldNote } from '../lib/pitchPractice';
 import { HarpDiagram } from '../components/HarpDiagram';
 import { HarpTypeSelect, KeySelect } from '../components/KeySelect';
 import { Icon } from '../components/Icon';
@@ -109,6 +110,9 @@ export default function Tuner() {
 
       <HarpDiagram harpKey={key} harpType={type} highlight={matches.map((m) => m.token)} nameStyle={settings.noteNames} />
       {isDanBau(type) && <p className="row gap wrap"><Link to="/tap-boi-am" className="btn btn-ghost">Tập bồi âm: chấm từng lần gảy</Link><Link to="/tap-boi-am?mode=nan" className="btn btn-ghost">Tập nắn cần</Link></p>}
+      {isTranh(type) && <p><Link to="/tap-cao-do?mode=bend" className="btn btn-ghost">Tập nhấn: thước cao độ thiếu / đủ / quá</Link></p>}
+      {type === 'diatonic' && <p><Link to="/tap-cao-do?mode=bend" className="btn btn-ghost">Tập bend từng lỗ</Link></p>}
+      {canHoldNote(type) && <p><Link to="/tap-cao-do?mode=hold" className="btn btn-ghost">Tập giữ nốt dài</Link></p>}
       {isFretted(type) && <p><Link to={`/tap-hop-am?inst=${type === 'ukulele4' ? 'ukulele' : 'guitar'}`} className="btn btn-ghost">Tập hợp âm: app nghe từng lần quạt</Link></p>}
       {isDanBau(type)
         ? <p className="muted small">Mẹo đàn bầu: lên dây buông đúng nốt chủ (dây Đô: Đô3), rồi gảy bồi 1/2 để kiểm tra — phải ra đúng Đô cao hơn một quãng tám. Tập nắn cần: gảy bồi rồi đẩy / kéo cần tới khi kim chỉ đúng nốt cần ra.</p>

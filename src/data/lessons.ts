@@ -130,6 +130,7 @@ const HARMONICA_LESSONS: Lesson[] = [
       { t: 'tip', text: 'Người mới nên học chu môi trước vì dễ bend hơn; sau vài tháng hãy tập thêm chặn lưỡi. Nhiều tay chơi giỏi dùng cả hai.' },
       { t: 'tab', caption: 'Đi từng lỗ, mỗi nốt phải sạch', body: '4 -4 4 -4 5 -5 5 -5\n6 -6 6 -6 5 -5 4:2\n', bpm: 72, style: 'metronome' },
       { t: 'tab', caption: 'Nhảy lỗ: giữ môi, trượt kèn', body: '4 6 4 6 5 7 5 7\n-4 -6 -4 -6 4:4\n', bpm: 66, style: 'metronome' },
+      { t: 'link', to: '/tap-cao-do?mode=hold', label: 'Tập giữ nốt dài', text: 'Giữ một đơn âm thật đều: app đo giữ được bao lâu và cao độ có chao không.' },
     ],
   },
   {
@@ -235,6 +236,7 @@ const HARMONICA_LESSONS: Lesson[] = [
       { t: 'tab', caption: 'Lỗ 3: ba bậc', body: "-3:2 -3':2 -3'':2 -3''':2 -3'':2 -3':2 -3:4\n", bpm: 56, style: 'metronome' },
       { t: 'warn', text: 'Đau họng, chóng mặt, hoặc kèn kêu "tịt" là đang hút quá mạnh. Nghỉ một chút và làm nhẹ hơn.' },
       { t: 'tip', text: 'Nhiều người thấy kèn A dễ tập bend hơn kèn C vì cao độ thấp hơn một chút. Nếu tập mãi chưa ra trên kèn C, thử với kèn A.' },
+      { t: 'link', to: '/tap-cao-do?mode=bend', label: 'Tập bend với micro', text: 'Chọn lỗ cần bend, thước cao độ cho biết đang bend thiếu, đúng hay quá; giữ đúng nửa giây là đạt.' },
     ],
   },
   {
@@ -252,6 +254,7 @@ const HARMONICA_LESSONS: Lesson[] = [
       ] },
       { t: 'tab', caption: "Bend thổi lỗ 8 và 9", body: "8:2 8':2 8:4\n9:2 9':2 9:4\n", bpm: 60, style: 'metronome' },
       { t: 'tip', text: "Lỗ 10 bend được 1 cung (10''), nhưng hơi mạnh dễ làm lưỡi gà kêu rít. Nhẹ thôi." },
+      { t: 'link', to: '/tap-cao-do?mode=bend', label: 'Tập bend thổi với micro' },
     ],
   },
   {

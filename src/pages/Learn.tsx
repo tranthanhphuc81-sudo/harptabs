@@ -39,6 +39,16 @@ export default function Learn() {
         <strong>Tập bồi âm, nắn cần đàn bầu</strong>
         <span>Bật micro, gảy từng điểm bồi: app nghe và cho biết ra đúng tiếng bồi chưa, sai do chạm lệch, ấn mạnh hay nhầm điểm. Chế độ nắn cần: thước cao độ báo đang thiếu, đủ hay quá.</span>
       </Link>}
+      {IS_TRANH_APP && <Link to="/tap-cao-do?mode=bend" className="jam-card">
+        <strong>Tập nhấn đàn tranh</strong>
+        <span>Gảy dây rồi nhấn: thước cao độ báo nhấn thiếu, đủ hay quá cho các nốt Fa, Si… (nửa cung, một cung).</span>
+      </Link>}
+      {!IS_TRANH_APP && !IS_GUITAR_APP && !IS_KALIMBA_APP && <Link to="/tap-cao-do" className="jam-card">
+        <strong>{IS_RECORDER_APP || IS_PIANICA_APP ? 'Tập giữ hơi nốt dài' : 'Tập bend và giữ hơi'}</strong>
+        <span>{IS_RECORDER_APP || IS_PIANICA_APP
+          ? 'Thổi một nốt thật đều và lâu: app đo giữ được bao lâu, cao độ có chao, có non / già không. Bài khởi động tốt nhất mỗi buổi tập.'
+          : 'Bend từng lỗ với thước cao độ báo thiếu – đúng – quá; và giữ nốt dài: app đo giữ được bao lâu, cao độ có chao không.'}</span>
+      </Link>}
       {IS_GUITAR_APP && <Link to="/tap-hop-am" className="jam-card">
         <strong>Tập hợp âm với micro</strong>
         <span>Bấm theo sơ đồ, quạt một lần: app nghe và chỉ ra dây nào câm, dây × nào bị quạt trúng, ngón nào bấm lệch phím; đếm tỉ lệ sạch từng hợp âm.</span>

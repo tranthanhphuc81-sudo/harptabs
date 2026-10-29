@@ -54,6 +54,7 @@ export const TRANH_LESSONS: Lesson[] = [
         'Nhấn một cung cần lực mạnh hơn nhiều so với nửa cung — tập chậm, nghe kỹ.',
       ] },
       { t: 'tab', caption: 'Twinkle Twinkle Little Star (Fa = Mi nhấn nửa cung)', body: '3 3 6 6 7 7 6:2\n5^ 5^ 5 5 4 4 3:2\n', bpm: 80, style: 'ballad', ...T },
+      { t: 'link', to: '/tap-cao-do?mode=bend', label: 'Tập nhấn với micro', text: 'Gảy rồi nhấn: thước cao độ báo nhấn thiếu, đủ hay quá.' },
     ],
   },
   {

@@ -104,6 +104,7 @@ Bản web: https://sotabdantranh.pages.dev · APK: gói `dev.pages.sotabdantranh
 | Tập bồi âm | Trang riêng cho đàn bầu: chọn điểm bồi, bật micro, gảy — app chấm từng lần gảy (đúng tiếng bồi / ra dây buông / nhầm điểm / tắt tiếng / lệch cao độ) kèm lời khuyên, đếm tỉ lệ đúng từng điểm, đúng 5 lần liền thì sang điểm kế |
 | Tập nắn cần | Chế độ thứ hai của trang Tập bồi âm: chọn nốt cần nắn (¼↑2 = Rê, ⅕↑1 = Fa, ⅛↓1 = Si…), gảy bồi rồi nắn cần — thước cao độ báo thiếu / đúng / quá theo cent, giữ đúng nửa giây là một lần đạt |
 | Tập hợp âm | Trang cho guitar / ukulele (`/tap-hop-am`): bấm theo sơ đồ, quạt — app phân tích phổ tần số tiếng đàn, báo dây câm, dây × bị quạt trúng, nốt lạ do bấm lệch phím; đếm tỉ lệ quạt sạch từng hợp âm. Mở từ Học, Dò nốt hoặc dải hợp âm trong bài (tập đúng các hợp âm của bài) |
+| Tập cao độ | Trang `/tap-cao-do` dùng chung: **bend** kèn diatonic (12 nốt bend, thước cao độ thiếu / đúng / quá kèm lời khuyên khẩu hình), **nhấn** đàn tranh (Fa, Si… nửa cung / một cung), **giữ nốt dài** cho kèn, sáo, ocarina, pianica (đo giữ được bao lâu, độ chao, non / già; kỷ lục từng nốt). Mở từ Học, Dò nốt và các bài bend, hơi thở, nhấn |
 | Bài và học | Bài mẫu xếp lại cho đàn tranh và 8 bài cho đàn bầu (giữ hợp âm chuẩn), 7 bài học: làm quen, đọc tab, nhấn, rung – vỗ – vuốt, lên dây, làm quen đàn bầu, nắn cần |
 
 ## Chạy thử

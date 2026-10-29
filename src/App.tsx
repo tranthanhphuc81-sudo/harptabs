@@ -21,6 +21,7 @@ const Tuner = lazy(() => import('./pages/Tuner'));
 const Jam = lazy(() => import('./pages/Jam'));
 const BauPractice = lazy(() => import('./pages/BauPractice'));
 const ChordPractice = lazy(() => import('./pages/ChordPractice'));
+const PitchPractice = lazy(() => import('./pages/PitchPractice'));
 const SettingsPage = lazy(() => import('./pages/Settings'));
 const SharedSong = lazy(() => import('./pages/SharedSong'));
 
@@ -87,6 +88,7 @@ function Shell() {
             <Route path="/jam" element={<Jam />} />
             <Route path="/tap-boi-am" element={<BauPractice />} />
             <Route path="/tap-hop-am" element={<ChordPractice />} />
+            <Route path="/tap-cao-do" element={<PitchPractice />} />
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/shared" element={<SharedSong />} />
             <Route path="*" element={<Library />} />

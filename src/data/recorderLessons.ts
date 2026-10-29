@@ -36,6 +36,7 @@ export const RECORDER_LESSONS: Lesson[] = [
       { t: 'p', text: 'Mỗi nốt bắt đầu bằng **đánh lưỡi**: đầu lưỡi chạm sau răng trên rồi rời ra như nói "tu" (hoặc "du" cho mềm). Đừng "phù" hơi bằng cổ họng.' },
       { t: 'tab', caption: 'Nốt Đô (tay trái: ngón cái + 3 ngón) giữ đều, mỗi nốt một chữ "tu"', body: 'C5:2 C5:2 C5 C5 C5:2\ntu tu tu tu tu\n', bpm: 72, ...ALTO },
       { t: 'tip', text: 'Nghe kim ở trang **Dò nốt**: giữ hơi đều thì kim đứng yên giữa.' },
+      { t: 'link', to: '/tap-cao-do?mode=hold', label: 'Tập giữ hơi nốt dài', text: 'Thổi một nốt thật đều: app đo giữ được bao lâu, cao độ có chao, có non / già không.' },
     ],
   },
   {
@@ -118,6 +119,7 @@ export const RECORDER_LESSONS: Lesson[] = [
         'Môi mím nhẹ, thổi **chếch** vào mép lỗ thổi (như thổi miệng chai). Xoay sáo ra / vào một chút đến khi tiếng tròn nhất.',
       ] },
       { t: 'tip', text: 'Quãng 2: giữ nguyên thế bấm, mím môi hẹp hơn và thổi nhanh hơi hơn (không phải mạnh hơn).' },
+      { t: 'link', to: '/tap-cao-do?mode=hold', label: 'Tập giữ hơi nốt dài' },
     ],
   },
   {
@@ -165,6 +167,7 @@ export const RECORDER_LESSONS: Lesson[] = [
       { t: 'diagram', ...OCA },
       { t: 'tab', caption: 'Thang âm Đô trưởng trên ocarina', body: 'C5 D5 E5 F5 G5 A5 B5 C6:2\nC6 B5 A5 G5 F5 E5 D5 C5:2\n', bpm: 72, style: 'metronome', ...OCA },
       { t: 'warn', text: 'Thế bấm nốt thăng giáng trong app theo bảng chung của ocarina 12 lỗ kiểu châu Á; mỗi hãng có thể khác chút — nếu nốt nghe lệch, xem bảng thế bấm đi kèm cây ocarina của bạn.' },
+      { t: 'link', to: '/tap-cao-do?mode=hold', label: 'Tập giữ hơi nốt dài', text: 'Ocarina rất nhạy với hơi: tập giữ từng nốt cho đúng cao độ.' },
     ],
   },
 ];

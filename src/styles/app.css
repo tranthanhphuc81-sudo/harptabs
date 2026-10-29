@@ -1275,3 +1275,13 @@ button, a, select { -webkit-tap-highlight-color: transparent; }
 .cp-lv.weak .cp-bar { background: #d9534f; }
 .cp-lv.off .cp-bar { background: transparent; }
 .cp-lv small { font-size: 0.7rem; line-height: 1.2; }
+
+.pp-drills { overflow-x: auto; flex-wrap: nowrap; }
+.pp-hold { margin: 14px 0; padding: 14px; border-radius: var(--r-m); border: 1px solid var(--line); background: var(--surface); }
+.pp-bar { height: 14px; border-radius: 7px; background: var(--line); overflow: hidden; }
+.pp-bar span { display: block; height: 100%; background: var(--accent); transition: width 100ms linear; }
+.pp-bar span.full { background: #3aa76d; }
+.pp-nums { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; margin-top: 8px; }
+.pp-nums strong { font-size: 1.6rem; font-variant-numeric: tabular-nums; }
+.pp-results { margin: 0 0 12px; padding-left: 1.2em; }
+.pp-results li.ok { color: #2d8a57; font-weight: 600; }
