@@ -53,6 +53,10 @@ export default function Learn() {
         <strong>Tập nghe – đáp</strong>
         <span>Máy chơi một câu ngắn, bạn nghe rồi chơi lại; app nghe micro chấm từng nốt, sai thì chỉ chỗ bấm. Luyện tai và thuộc vị trí nốt, 7 cấp từ 1 nốt tới câu 4 nốt.</span>
       </Link>
+      <Link to="/tap-nhip" className="jam-card">
+        <strong>Tập nhịp</strong>
+        <span>Máy đếm nhịp chạy, bạn chơi theo mẫu (nốt đen, móc đơn, đảo phách, swing…); app nghe và báo mỗi tiếng sớm / muộn bao nhiêu mili giây, có hay vội hay kéo không.</span>
+      </Link>
       {!IS_KALIMBA_APP && !IS_TRANH_APP && <Link to="/jam" className="jam-card">
         <strong>{IS_RECORDER_APP ? 'Tập ngẫu hứng jazz' : 'Tập ngẫu hứng blues & jazz'}</strong>
         <span>{IS_GUITAR_APP ? 'Nền nhạc 12 ô nhịp và các vòng jazz, thang âm blues trên cần đàn, máy hỏi – bạn đáp và lick mẫu xếp theo dây.phím.' : IS_RECORDER_APP ? 'Nền nhạc swing các vòng ii–V–I, thế bấm các nốt của hợp âm đang vang, máy hỏi – bạn đáp và lick mẫu.' : 'Nền nhạc 12 ô nhịp, thang âm blues trên kèn của bạn, máy hỏi – bạn đáp và lick mẫu; có cả chế độ jazz.'}</span>

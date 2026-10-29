@@ -4,12 +4,13 @@
  */
 import { useEffect } from 'react';
 
-export type Activity = 'bai-hat' | 'ngau-hung' | 'nghe-dap' | 'cao-do' | 'hop-am' | 'boi-am';
+export type Activity = 'bai-hat' | 'ngau-hung' | 'nghe-dap' | 'nhip' | 'cao-do' | 'hop-am' | 'boi-am';
 
 export const ACTIVITY_LABEL: Record<Activity, string> = {
   'bai-hat': 'Chơi theo bài',
   'ngau-hung': 'Ngẫu hứng',
   'nghe-dap': 'Nghe – đáp',
+  'nhip': 'Tập nhịp',
   'cao-do': 'Tập cao độ',
   'hop-am': 'Tập hợp âm',
   'boi-am': 'Bồi âm, nắn cần',
@@ -18,6 +19,7 @@ export const ACTIVITY_LABEL: Record<Activity, string> = {
 /** kết quả bài tập: rate = tỉ lệ đúng (ghi 1 / 0), avg = trung bình (giây…), count = đếm số lần đạt */
 export const METRICS = {
   'nghe-dap': { label: 'Nghe – đáp đúng', kind: 'rate' },
+  'nhip': { label: 'Gõ đúng nhịp', kind: 'rate' },
   'hop-am': { label: 'Quạt hợp âm sạch', kind: 'rate' },
   'boi-am': { label: 'Bồi âm đúng', kind: 'rate' },
   'giu-not': { label: 'Giữ nốt dài', kind: 'avg', unit: 'giây' },
