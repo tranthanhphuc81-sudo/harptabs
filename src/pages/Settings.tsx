@@ -144,7 +144,7 @@ export default function SettingsPage() {
           <label className="field">
             <span className="field-label">Cỡ chữ tab</span>
             <select value={s.tabSize} onChange={(e) => update({ tabSize: e.target.value as typeof s.tabSize })}>
-              <option value="s">Nhỏ</option><option value="m">Vừa</option><option value="l">Lớn (để xa khi thổi)</option>
+              <option value="s">Nhỏ</option><option value="m">Vừa</option><option value="l">Lớn (để xa khi {BRAND.verb})</option>
             </select>
           </label>
           {!IS_HARMONICA_APP && !IS_GUITAR_APP && (
@@ -197,7 +197,7 @@ export default function SettingsPage() {
               <span className="small muted">Sách và trang hợp âm đều vẽ dựng đứng. Chọn nằm ngang nếu bạn chỉ dùng app này và muốn nhìn giống tab.</span>
             </label>
           )}
-          <KeySelect value={s.defaultHarpKey} onChange={(k) => update({ defaultHarpKey: k as HarpKey })} label="Kèn mặc định" harpType={s.defaultHarpType} />
+          <KeySelect value={s.defaultHarpKey} onChange={(k) => update({ defaultHarpKey: k as HarpKey })} label={IS_HARMONICA_APP ? 'Kèn mặc định' : 'Tông mặc định'} harpType={s.defaultHarpType} />
           <label className="check wide">
             <input type="checkbox" checked={s.showNoteNames} onChange={(e) => update({ showNoteNames: e.target.checked })} />
             Hiện tên nốt phía trên tab
@@ -323,7 +323,7 @@ export default function SettingsPage() {
 
       <p className="muted small about">
         {BRAND.name} 1.0. Bài mẫu chỉ gồm nhạc thuộc phạm vi công cộng.<br />
-        Cùng bộ còn app cho harmonica, sáo, kalimba, guitar / ukulele, kèn pianica: <a href="https://sotab.pages.dev/" target="_blank" rel="noopener">sotab.pages.dev</a><br />
+        Cùng bộ còn app cho harmonica, sáo / ocarina, kalimba, guitar / ukulele, kèn pianica, đàn tranh – đàn bầu, organ / piano: <a href="https://sotab.pages.dev/" target="_blank" rel="noopener">sotab.pages.dev</a><br />
         © {new Date().getFullYear()} Trần Thanh Phúc. Liên hệ: <a href="tel:+84913656539">0913.65.65.39</a>
       </p>
     </div>

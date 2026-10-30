@@ -37,7 +37,7 @@ export const PALETTES: Palette[] = [
   {
     id: 'steel',
     name: 'Thép',
-    hint: 'Xám thép, nút đồng thau — như thân kèn',
+    hint: 'Xám thép, nút đồng thau',
     light: t(`#f3f5f7 #ffffff #edf0f3 #e1e6ea #cbd3da #17212a #5a6773 #dfe4e8 #aeb8c0 #7d8892
       #95600c #f9ebcd #e3bd72 #22589b #dfe9f7 #94b5df #b3264a #2e7d4f #2f6db5 #d08a1e #1d1406 #fbefd8 rgba(255,255,255,0.82)`),
     dark: t(`#0e1317 #161d23 #1f272e #29333b #3a4650 #e6ebef #97a5b0 #3a4650 #56636e #8a97a1

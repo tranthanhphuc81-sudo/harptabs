@@ -4,32 +4,74 @@
     {
       "name": "harptabs-dev",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev"],
+      "runtimeArgs": [
+        "run",
+        "dev"
+      ],
       "port": 5173
     },
     {
       "name": "harptabs-preview",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "preview"],
+      "runtimeArgs": [
+        "run",
+        "preview"
+      ],
       "port": 4173
     },
     {
       "name": "recorder-dev",
       "runtimeExecutable": "cmd",
-      "runtimeArgs": ["/c", "set VITE_APP=recorder&& npx vite --port 5174 --strictPort"],
+      "runtimeArgs": [
+        "/c",
+        "set VITE_APP=recorder&& npx vite --port 5174 --strictPort"
+      ],
       "port": 5174
     },
     {
       "name": "kalimba-dev",
       "runtimeExecutable": "cmd",
-      "runtimeArgs": ["/c", "set VITE_APP=kalimba&& npx vite --port 5175 --strictPort"],
+      "runtimeArgs": [
+        "/c",
+        "set VITE_APP=kalimba&& npx vite --port 5175 --strictPort"
+      ],
       "port": 5175
     },
     {
       "name": "guitar-dev",
       "runtimeExecutable": "cmd",
-      "runtimeArgs": ["/c", "set VITE_APP=guitar&& npx vite --port 5176 --strictPort"],
+      "runtimeArgs": [
+        "/c",
+        "set VITE_APP=guitar&& npx vite --port 5176 --strictPort"
+      ],
       "port": 5176
+    },
+    {
+      "name": "pianica-dev",
+      "runtimeExecutable": "cmd",
+      "runtimeArgs": [
+        "/c",
+        "set VITE_APP=pianica&& npx vite --port 5177 --strictPort"
+      ],
+      "port": 5177
+    },
+    {
+      "name": "tranh-dev",
+      "runtimeExecutable": "cmd",
+      "runtimeArgs": [
+        "/c",
+        "set VITE_APP=tranh&& npx vite --port 5178 --strictPort"
+      ],
+      "port": 5178
+    },
+    {
+      "name": "organ-dev",
+      "runtimeExecutable": "cmd",
+      "runtimeArgs": [
+        "/c",
+        "set VITE_APP=organ&& npx vite --port 5179 --strictPort"
+      ],
+      "port": 5179
     }
   ]
 }

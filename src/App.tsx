@@ -1,8 +1,8 @@
 import { useAppState } from './state';
 import { useWakeLock } from './components/useWakeLock';
-import { BRAND } from './appConfig';
+import { BRAND, IS_GUITAR_APP, IS_KALIMBA_APP, IS_ORGAN_APP, IS_TRANH_APP } from './appConfig';
 import { lazy, Suspense, useEffect, useState } from 'react';
-import { HashRouter, NavLink, Route, Routes, useLocation } from 'react-router-dom';
+import { HashRouter, Navigate, NavLink, Route, Routes, useLocation } from 'react-router-dom';
 import { AppStateProvider, useOnline } from './state';
 import { ensureSeeded } from './lib/db';
 import { Icon } from './components/Icon';
@@ -88,10 +88,11 @@ function Shell() {
             <Route path="/learn" element={<Learn />} />
             <Route path="/learn/:lessonId" element={<LessonPage />} />
             <Route path="/tuner" element={<Tuner />} />
-            <Route path="/jam" element={<Jam />} />
-            <Route path="/tap-boi-am" element={<BauPractice />} />
-            <Route path="/tap-hop-am" element={<ChordPractice />} />
-            <Route path="/tap-cao-do" element={<PitchPractice />} />
+            {/* trang tập của nhạc cụ khác app (gõ thẳng đường dẫn, link cũ) → về trang Học */}
+            <Route path="/jam" element={IS_TRANH_APP ? <Navigate to="/learn" replace /> : <Jam />} />
+            <Route path="/tap-boi-am" element={IS_TRANH_APP ? <BauPractice /> : <Navigate to="/learn" replace />} />
+            <Route path="/tap-hop-am" element={IS_GUITAR_APP ? <ChordPractice /> : <Navigate to="/learn" replace />} />
+            <Route path="/tap-cao-do" element={IS_GUITAR_APP || IS_KALIMBA_APP || IS_ORGAN_APP ? <Navigate to="/learn" replace /> : <PitchPractice />} />
             <Route path="/nghe-dap" element={<EarPractice />} />
             <Route path="/nhat-ky" element={<PracticeLog />} />
             <Route path="/tap-nhip" element={<RhythmPractice />} />
