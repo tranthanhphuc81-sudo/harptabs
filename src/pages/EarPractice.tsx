@@ -4,7 +4,7 @@ import { MicPitch } from '../audio/pitch';
 import { audio, playTone } from '../audio/engine';
 import { accompanyPhrase, playCadence, playTonicRoll } from '../audio/practiceBacking';
 import { SAMPLE_SONGS } from '../data/samples';
-import { SHOWN_HARP_TYPES } from '../appConfig';
+import { BRAND, SHOWN_HARP_TYPES } from '../appConfig';
 import { FingeringIcon } from '../components/Fingering';
 import { HarpTypeSelect, KeySelect } from '../components/KeySelect';
 import { Icon } from '../components/Icon';
@@ -159,7 +159,7 @@ export default function EarPractice() {
       <header className="page-head">
         <div>
           <h1>Tập nghe – đáp</h1>
-          <p className="muted">Máy chơi nốt chủ làm mốc rồi một câu ngắn. Bạn nghe và chơi lại trên {/^(guitar|ukulele|kalimba|tranh|danbau|organ|piano)/.test(type) ? 'đàn' : 'kèn / sáo'} của mình — app nghe và chấm từng nốt. Luyện tai và thuộc vị trí nốt.</p>
+          <p className="muted">Máy chơi nốt chủ làm mốc rồi một câu ngắn. Bạn nghe và chơi lại trên {/^(guitar|ukulele|kalimba|tranh|danbau|organ|piano)/.test(type) ? 'đàn' : /^(recorder|saoTruc)/.test(type) ? 'sáo' : /^ocarina/.test(type) ? 'ocarina' : 'kèn'} của mình — app nghe và chấm từng nốt. Luyện tai và thuộc vị trí nốt.</p>
         </div>
       </header>
 
@@ -223,7 +223,7 @@ export default function EarPractice() {
         <ul>
           <li>Trước khi chơi, <strong>hát thầm</strong> lại câu vừa nghe — hát được thì chơi sẽ dễ.</li>
           <li>So với nốt chủ: nốt vừa nghe cao hơn hay thấp hơn, gần hay xa? Đoán rồi thử, sai thì nghe lại.</li>
-          <li>Chơi từng nốt rõ ràng, ngắt nhẹ giữa các nốt (đánh lưỡi "tu" với kèn, sáo).</li>
+          <li>Chơi từng nốt rõ ràng, ngắt nhẹ giữa các nốt{BRAND.verb === 'thổi' ? ' (đánh lưỡi "tu" khi thổi)' : ''}.</li>
           <li>Mỗi ngày 10 phút. Cấp nào đúng trên 80% thì lên cấp kế.</li>
         </ul>
       </details>

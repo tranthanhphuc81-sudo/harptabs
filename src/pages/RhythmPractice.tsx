@@ -1,3 +1,4 @@
+import { BRAND } from '../appConfig';
 import { useEffect, useRef, useState } from 'react';
 import { audio, click } from '../audio/engine';
 import { grooveBar, grooveChords, playCadence } from '../audio/practiceBacking';
@@ -199,7 +200,7 @@ export default function RhythmPractice() {
         <ul>
           <li>Bắt đầu chậm (60–70 nhịp/phút). Đúng đều 80% trở lên mới tăng tốc.</li>
           <li><strong>Đếm thành tiếng</strong> theo dòng đếm dưới mẫu ("1 & 2 &"). Đếm được thì chơi được.</li>
-          <li>Chơi tiếng ngắn, dứt khoát (đánh lưỡi "tu" với kèn, sáo; gảy gọn với đàn) — app bắt tiếng gõ đầu nốt.</li>
+          <li>Chơi tiếng ngắn, dứt khoát ({BRAND.verb === 'thổi' ? 'đánh lưỡi "tu" cho mỗi nốt' : 'gảy / bấm gọn'}) — app bắt tiếng gõ đầu nốt.</li>
           <li>Để loa vừa phải, điện thoại cách nhạc cụ khoảng nửa mét. Ô đếm vào dùng để đo độ trễ của máy: đừng chơi trong lúc đếm vào.</li>
           <li>Đeo tai nghe cũng được: app dùng độ trễ đo được lần trước (hoặc ước lượng).</li>
         </ul>
