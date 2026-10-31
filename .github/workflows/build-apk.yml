@@ -135,17 +135,21 @@ jobs:
             exit 1
           }
           mv app-release-signed.apk "${{ matrix.file }}-$VERSION_NAME.apk"
+          # bản Android App Bundle (đã ký bằng khoá tải lên) để đăng lên Google Play
+          mv app-release-bundle.aab "${{ matrix.file }}-$VERSION_NAME.aab"
 
       - uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.file }}-apk
-          path: ${{ matrix.dir }}/${{ matrix.file }}-*.apk
+          path: |
+            ${{ matrix.dir }}/${{ matrix.file }}-*.apk
+            ${{ matrix.dir }}/${{ matrix.file }}-*.aab
 
       - name: Đăng lên GitHub Releases
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "${{ matrix.tag }}-v$VERSION_NAME" "${{ matrix.dir }}/${{ matrix.file }}-$VERSION_NAME.apk" \
+          gh release create "${{ matrix.tag }}-v$VERSION_NAME" "${{ matrix.dir }}/${{ matrix.file }}-$VERSION_NAME.apk" "${{ matrix.dir }}/${{ matrix.file }}-$VERSION_NAME.aab" \
             --title "${{ matrix.title }} $VERSION_NAME (Android)" \
-            --notes "Tải file .apk về điện thoại Android rồi mở để cài. Nội dung app tự cập nhật theo ${{ matrix.host }}." \
+            --notes "Tải file .apk về điện thoại Android rồi mở để cài. File .aab dùng để tải lên Google Play Console. Nội dung app tự cập nhật theo ${{ matrix.host }}." \
             --latest=${{ matrix.latest }}

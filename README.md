@@ -271,8 +271,9 @@ Bản Android là **TWA** (Trusted Web Activity) do Bubblewrap tạo: mở trang
 | Sổ Tab Đàn Tranh | `android-tranh/twa-manifest.json` | `dev.pages.sotabdantranh.twa` | `tranh-apk-v…` |
 | Sổ Tab Organ | `android-organ/twa-manifest.json` | `dev.pages.sotaborgan.twa` | `organ-apk-v…` |
 
-- Workflow `build-apk.yml` build cả bốn app (mỗi app một dòng trong matrix), chỉ chạy khi một trong các file cấu hình trên đổi (hoặc bấm chạy tay), rồi đăng APK lên [GitHub Releases](https://github.com/tranthanhphuc81-sudo/harptabs/releases).
-- Cần secret `ANDROID_KEYSTORE_BASE64` và `ANDROID_KEYSTORE_PASSWORD` (cả bốn app dùng chung khoá). Vân tay SHA-256 của khoá ký phải khớp với `public/.well-known/assetlinks.json` (có mục cho từng gói), nếu không app sẽ hiện thanh địa chỉ trình duyệt.
+- Workflow `build-apk.yml` build cả bảy app (mỗi app một dòng trong matrix), chỉ chạy khi một trong các file cấu hình trên đổi (hoặc bấm chạy tay), rồi đăng APK và file AAB (cho Google Play) lên [GitHub Releases](https://github.com/tranthanhphuc81-sudo/harptabs/releases).
+- Cần secret `ANDROID_KEYSTORE_BASE64` và `ANDROID_KEYSTORE_PASSWORD` (cả bảy app dùng chung khoá). Vân tay SHA-256 của khoá ký phải khớp với `public/.well-known/assetlinks.json` (có mục cho từng gói), nếu không app sẽ hiện thanh địa chỉ trình duyệt.
+- Đăng lên Google Play: nội dung cửa hàng, ảnh chụp, ảnh bìa và hướng dẫn từng bước ở [`store/`](store/README.md).
 
 ## Bản quyền
 
