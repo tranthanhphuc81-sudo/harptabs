@@ -12,7 +12,7 @@ Thư mục này có sẵn mọi thứ cần điền trên Play Console cho từn
 | Sổ Tab Đàn Tranh – Đàn Bầu | `dev.pages.sotabdantranh.twa` | [tranh/listing.md](tranh/listing.md) | `sotabdantranh-1.0.x.aab` |
 | Sổ Tab Organ | `dev.pages.sotaborgan.twa` | [organ/listing.md](organ/listing.md) | `sotaborgan-1.0.x.aab` |
 
-Mỗi thư mục app có: `listing.md` (tên, mô tả ngắn, mô tả đầy đủ — đã kiểm giới hạn ký tự của Play), `feature.png` (ảnh bìa 1024×500), `screenshots/` (5 ảnh điện thoại 1080×1920). Biểu tượng 512×512 nằm ở `public/…/icon-512.png` (đường dẫn ghi trong từng `listing.md`).
+Mỗi thư mục app có: `listing.md` (tên, mô tả ngắn, mô tả đầy đủ — đã kiểm giới hạn ký tự của Play), `listing.en.md` (bản tiếng Anh, thêm làm bản dịch en-US; mô tả ghi rõ giao diện app là tiếng Việt), `feature.png` (ảnh bìa 1024×500), `screenshots/` (5 ảnh điện thoại 1080×1920). Biểu tượng 512×512 nằm ở `public/…/icon-512.png` (đường dẫn ghi trong từng `listing.md`).
 
 ## 1. Lấy file AAB
 

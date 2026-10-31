@@ -282,12 +282,11 @@ function SongPlayerView({ song, original, fit, view, choice, onChoice }: {
       return !v;
     });
   };
-  // ----- tự cuộn theo nhịp khi tự chơi (không phát nhạc): tốc độ theo % tempo bài -----
-  const tabShown = !sheetData && !(fretted && sheet && shownSegs);
+  // ----- tự cuộn theo nhịp khi tự chơi (không phát nhạc): tốc độ theo % tempo bài; dùng cho cả tab và dạng lời + hợp âm -----
   const [autoOn, setAutoOn] = useState(() => { try { return localStorage.getItem(AUTO_SCROLL_KEY) === '1'; } catch { return false; } });
   const [autoPct, setAutoPct] = useState(() => { try { return clampScrollPct(Number(localStorage.getItem(AUTO_SCROLL_PCT_KEY)) || 100); } catch { return 100; } });
   const auto = useAutoScroll('.tab-pager', flat, (song.bpm * autoPct) / 100, '.autoscroll-bar');
-  const autoShown = autoOn && tabShown && !p.playing && !waitMode && !editMode;
+  const autoShown = autoOn && !p.playing && !waitMode && !editMode;
   const toggleAuto = () => {
     setAutoOn((v) => {
       try { localStorage.setItem(AUTO_SCROLL_KEY, v ? '0' : '1'); } catch { /* không lưu được thì thôi */ }
@@ -528,7 +527,7 @@ function SongPlayerView({ song, original, fit, view, choice, onChoice }: {
         <span className="lg-dur print-only">Ô dài = giữ lâu hơn (ô thường 1 phách) · <strong>–</strong> nghỉ</span>
         {!sheetData && <span className="muted no-print">Chạm vào nốt để nghe, hoặc chọn chỗ bắt đầu phát.</span>}
         <button type="button" className={`chip no-print${pageTurn ? ' on' : ''}`} aria-pressed={pageTurn} onClick={togglePageTurn}>Chạm lật trang</button>
-        {tabShown && <button type="button" className={`chip no-print${autoOn ? ' on' : ''}`} aria-pressed={autoOn} onClick={toggleAuto}>Tự cuộn</button>}
+        <button type="button" className={`chip no-print${autoOn ? ' on' : ''}`} aria-pressed={autoOn} onClick={toggleAuto}>Tự cuộn</button>
         {rec && !isFretted(harpType) && !sheetData && (() => {
           // cỡ hình dưới nốt: 60% – 250%, mỗi bước 20%
           const fs = settings.fingerScale ?? 1;

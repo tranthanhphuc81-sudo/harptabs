@@ -6,14 +6,17 @@ import { visibleBand } from './TabView';
 /** vạch đọc: dòng đang chơi giữ ở khoảng 1/3 phía trên vùng nhìn thấy */
 const READ_LINE = 0.35;
 
-/** toạ độ trang của các nốt đang hiện trong `root` (nốt có data-i = vị trí trong `flat`) */
+/**
+ * toạ độ trang của các mốc đang hiện trong `root`: nốt của tab (data-i = vị trí trong `flat`) hoặc cụm chữ + hợp âm
+ * của dạng lời + hợp âm (data-beat = phách bắt đầu)
+ */
 function measure(root: Element | null, flat: FlatEvent[]): ScrollPoint[] {
   if (!root) return [];
   const raw: ScrollPoint[] = [];
-  root.querySelectorAll<HTMLElement>('[data-i]').forEach((el) => {
-    const f = flat[Number(el.dataset.i)];
+  root.querySelectorAll<HTMLElement>('[data-i], [data-beat]').forEach((el) => {
+    const beat = el.dataset.beat !== undefined ? Number(el.dataset.beat) : flat[Number(el.dataset.i)]?.start;
     const r = el.getBoundingClientRect();
-    if (f && r.height > 0) raw.push({ beat: f.start, y: r.top + r.height / 2 + window.scrollY });
+    if (beat !== undefined && Number.isFinite(beat) && r.height > 0) raw.push({ beat, y: r.top + r.height / 2 + window.scrollY });
   });
   return scrollPoints(raw);
 }

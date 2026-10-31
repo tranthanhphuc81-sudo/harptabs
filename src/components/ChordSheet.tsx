@@ -88,7 +88,7 @@ export const ChordSheet = memo(function ChordSheet({ parsed, flat, segs, active,
               <p key={li} className="cs-line">
                 {items.map((it, k) => (
                   <span key={it.fi} className={`cs-syl${active != null && active >= it.fi && active < end(k) ? ' on' : ''}${it.text ? '' : ' bare'}`}
-                    onClick={() => onSeek(it.fi)}>
+                    data-beat={flat[it.fi]?.start} onClick={() => onSeek(it.fi)}>
                     <b className="cs-chord">{it.chord ?? ' '}</b>
                     <span className="cs-text">{it.text || ' '}</span>
                   </span>

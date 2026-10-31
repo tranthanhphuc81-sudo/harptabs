@@ -14,7 +14,7 @@ Sổ Tab Đàn Tranh – Đàn Bầu
 Tab đàn tranh 16–22 dây và đàn bầu; tập nhấn, bồi âm, nắn cần với micro.
 ```
 
-## Mô tả đầy đủ (1835/4000)
+## Mô tả đầy đủ (1910/4000)
 
 ```text
 Sổ Tab Đàn Tranh – Đàn Bầu là sổ bài và người bạn tập cho đàn tranh 16 / 17 dây (và đàn cải tiến 19 / 21 / 22 dây) và đàn bầu.
@@ -29,6 +29,7 @@ DÀNH RIÊNG CHO ĐÀN TRANH, ĐÀN BẦU
 
 CHƠI CÙNG BÀI HÁT
 • Phát bài với nhạc đệm: nhiều kiểu nhịp (ballad, bolero, valse, rock, bossa…), đệm hợp âm, đếm vào, chỉnh tốc độ, lặp đoạn khó.
+• Tự cuộn: trang tab tự trôi theo tốc độ chơi của bạn, không cần dùng tay.
 • Karaoke: lời chạy theo nhạc, chấm điểm giọng hát qua micro, thu âm và nghe lại.
 • Chờ nốt: app chỉ đi tiếp khi bạn chơi đúng nốt, chấm điểm sau mỗi lượt tập.
 • Dò nốt bằng micro: biết ngay mình đang ra nốt gì, cao hay thấp bao nhiêu.

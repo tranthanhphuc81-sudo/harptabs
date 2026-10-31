@@ -31,6 +31,7 @@ export const SheetView = memo(function SheetView({ lines, slots, capo, active, o
               const chordOnly = !p.text.trim();
               return (
                 <span key={pi} className={`cs-syl${active != null && owner === active ? ' on' : ''}${chordOnly ? ' bare' : ''}`}
+                  data-beat={si !== undefined ? slots[si].start : undefined}
                   onClick={owner >= 0 ? () => onSeek(owner) : undefined}>
                   <b className="cs-chord">{p.chord ? shapeName(p.chord, capo) : ' '}</b>
                   <span className="cs-text">{p.text.replace(/\s{2,}/g, ' ') || ' '}</span>
