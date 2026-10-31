@@ -43,11 +43,16 @@ import { NoteEditor } from '../components/NoteEditor';
 import { LyricEditor } from '../components/LyricEditor';
 import { editNote, NoteEdit } from '../lib/tabEdit';
 import { suggestInstrument, suggestStyle } from '../audio/suggest';
+import { useAutoScroll } from '../components/useAutoScroll';
+import { AUTO_SCROLL_MAX, AUTO_SCROLL_MIN, clampScrollPct } from '../lib/autoScroll';
 
 // màn hình karaoke: tải khi mở
 const KaraokeView = lazy(() => import('../components/KaraokeView'));
 
 const PAGE_TURN_KEY = 'harptabs.pageTurn';
+/** tự cuộn: có hiện thanh tự cuộn không, và tốc độ (% tempo bài) — theo người chơi, dùng chung mọi bài */
+const AUTO_SCROLL_KEY = 'harptabs.autoScroll';
+const AUTO_SCROLL_PCT_KEY = 'harptabs.autoScrollPct';
 
 const SHEET_KEY = 'harptabs.chordSheet';
 const ARP_KEY = 'harptabs.arpeggio';
@@ -277,8 +282,31 @@ function SongPlayerView({ song, original, fit, view, choice, onChoice }: {
       return !v;
     });
   };
+  // ----- tự cuộn theo nhịp khi tự chơi (không phát nhạc): tốc độ theo % tempo bài -----
+  const tabShown = !sheetData && !(fretted && sheet && shownSegs);
+  const [autoOn, setAutoOn] = useState(() => { try { return localStorage.getItem(AUTO_SCROLL_KEY) === '1'; } catch { return false; } });
+  const [autoPct, setAutoPct] = useState(() => { try { return clampScrollPct(Number(localStorage.getItem(AUTO_SCROLL_PCT_KEY)) || 100); } catch { return 100; } });
+  const auto = useAutoScroll('.tab-pager', flat, (song.bpm * autoPct) / 100, '.autoscroll-bar');
+  const autoShown = autoOn && tabShown && !p.playing && !waitMode && !editMode;
+  const toggleAuto = () => {
+    setAutoOn((v) => {
+      try { localStorage.setItem(AUTO_SCROLL_KEY, v ? '0' : '1'); } catch { /* không lưu được thì thôi */ }
+      return !v;
+    });
+  };
+  const stepAuto = (d: number) => {
+    setAutoPct((cur) => {
+      const v = clampScrollPct(cur + d);
+      try { localStorage.setItem(AUTO_SCROLL_PCT_KEY, String(v)); } catch { /* không lưu được thì thôi */ }
+      return v;
+    });
+  };
+  // phát nhạc / chờ nốt / sửa bài / tắt thanh: dừng tự cuộn (khi phát, trang đã tự theo nốt đang vang)
+  const { stop: stopAuto } = auto;
+  useEffect(() => { if (!autoShown) stopAuto(); }, [autoShown, stopAuto]);
+
   const onPagerClick = (e: React.MouseEvent) => {
-    if (!pageTurn || p.playing || waitMode || editMode) return;
+    if (!pageTurn || p.playing || waitMode || editMode || autoShown) return;
     // chạm tên hợp âm vẫn mở bảng chọn hợp âm
     if ((e.target as HTMLElement).closest('.nt-chord')) return;
     e.stopPropagation();
@@ -393,7 +421,7 @@ function SongPlayerView({ song, original, fit, view, choice, onChoice }: {
   };
   useEffect(() => () => micRef.current?.stop(), []);
 
-  useWakeLock(p.playing || waitMode);
+  useWakeLock(p.playing || waitMode || auto.running);
   usePracticeTimer('bai-hat', p.playing || waitMode);
 
   // đổi kèn đang xem: tab mới, vị trí nốt cũ không còn đúng → dừng phát / chờ nốt (không chấm điểm lượt dở)
@@ -500,6 +528,7 @@ function SongPlayerView({ song, original, fit, view, choice, onChoice }: {
         <span className="lg-dur print-only">Ô dài = giữ lâu hơn (ô thường 1 phách) · <strong>–</strong> nghỉ</span>
         {!sheetData && <span className="muted no-print">Chạm vào nốt để nghe, hoặc chọn chỗ bắt đầu phát.</span>}
         <button type="button" className={`chip no-print${pageTurn ? ' on' : ''}`} aria-pressed={pageTurn} onClick={togglePageTurn}>Chạm lật trang</button>
+        {tabShown && <button type="button" className={`chip no-print${autoOn ? ' on' : ''}`} aria-pressed={autoOn} onClick={toggleAuto}>Tự cuộn</button>}
         {rec && !isFretted(harpType) && !sheetData && (() => {
           // cỡ hình dưới nốt: 60% – 250%, mỗi bước 20%
           const fs = settings.fingerScale ?? 1;
@@ -573,7 +602,17 @@ function SongPlayerView({ song, original, fit, view, choice, onChoice }: {
         </div>
       )}
 
-      {pageTurn && !p.playing && !waitMode && !editMode && <p className="small muted no-print page-turn-hint">Chạm phần dưới màn hình để sang trang, phần trên để lùi trang.</p>}
+      {autoShown && (
+        <div className="autoscroll-bar no-print" role="group" aria-label="Tự cuộn">
+          <button type="button" className="icon-btn as-play" onClick={auto.running ? auto.stop : auto.start}
+            aria-label={auto.running ? 'Dừng tự cuộn' : 'Bắt đầu tự cuộn'}>{auto.running ? '❚❚' : '▶'}</button>
+          <button type="button" className="icon-btn" onClick={() => stepAuto(-5)} disabled={autoPct <= AUTO_SCROLL_MIN} aria-label="Cuộn chậm hơn">−</button>
+          <output className="as-speed" aria-live="polite">{autoPct}%<small>{Math.round((song.bpm * autoPct) / 100)} bpm</small></output>
+          <button type="button" className="icon-btn" onClick={() => stepAuto(5)} disabled={autoPct >= AUTO_SCROLL_MAX} aria-label="Cuộn nhanh hơn">+</button>
+        </div>
+      )}
+      {autoShown && !auto.running && <p className="small muted no-print page-turn-hint">Tự cuộn: bấm ▶, trang trôi theo nhịp bài (chỉnh nhanh / chậm bằng − +). Chạm hay kéo màn hình là dừng; bấm ▶ lại để chạy tiếp từ dòng đang xem.</p>}
+      {pageTurn && !autoShown && !p.playing && !waitMode && !editMode && <p className="small muted no-print page-turn-hint">Chạm phần dưới màn hình để sang trang, phần trên để lùi trang.</p>}
       <div className="tab-pager" onClickCapture={onPagerClick}>
       {sheetData
         ? <SheetView lines={sheetData.lines} slots={sheetData.slots} capo={capo} active={p.active ?? null} onSeek={(i) => p.play(i)} />
