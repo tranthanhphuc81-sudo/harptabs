@@ -49,6 +49,8 @@ export interface OmrStaff {
   clef?: 'F';
   /** dấu nhắc lại (vạch nhịp kèm hai chấm): "start" = chấm bên phải ‖:, "end" = chấm bên trái :‖ */
   repeats?: { x: number; kind: 'start' | 'end' }[];
+  /** ngoặc lần 1 (khoảng x, kết thúc ở dấu :‖): các nốt bên dưới chỉ chơi ở lượt đầu, lượt nhắc lại nhảy sang lần 2 */
+  firstEndings?: [number, number][];
   /** ngoặc liên ba "⌐3¬" (khoảng x) — trường độ các nốt bên dưới được sửa ở fillRests */
   tuplets?: [number, number][];
 }
@@ -855,6 +857,38 @@ function findRepeats(img: Bits, top: number, bottom: number, s: number, xFrom: n
   return out.sort((p, q) => p.x - q.x);
 }
 
+/**
+ * Ngoặc lần 1: đường kẻ ngang mảnh phía trên khuông, đầu trái có móc thả xuống, kết thúc ở dấu :‖ (thường có
+ * móc phải ngay trên vạch). Không cần đọc số "1.": ngoặc kết thúc ở dấu :‖ là ngoặc lần 1; ngoặc lần 2 nằm sau
+ * dấu :‖ nên lượt nhắc lại tự nối vào. Trả khoảng x [mép trái ngoặc, dấu :‖].
+ */
+function findFirstEndings(img: Bits, top: number, s: number, ends: number[], yMin: number): [number, number][] {
+  const out: [number, number][] = [];
+  for (const e of ends) {
+    const probe = Math.round(e - 0.8 * s);
+    let found: [number, number] | null = null;
+    // ngoặc có thể nằm rất cao (trên nốt cao, ký hiệu kéo vĩ, tên hợp âm): dò tới sát khuông phía trên
+    for (let y = Math.round(top - 0.6 * s); y >= Math.max(1, Math.round(yMin), Math.round(top - 12 * s)) && !found; y--) {
+      if (!img.get(probe, y)) continue;
+      // đường kẻ ngang chạy sang trái từ chỗ dò, mảnh (trên và dưới đường là nền trắng ở giữa đoạn)
+      let l = probe;
+      while (img.get(l - 1, y) || img.get(l - 1, y - 1) || img.get(l - 1, y + 1)) l--;
+      if (probe - l < 2.5 * s) continue;
+      const mid = Math.round((l + probe) / 2);
+      if (img.get(mid, y - Math.round(0.35 * s)) || img.get(mid, y + Math.round(0.35 * s))) continue;
+      // móc trái thả xuống
+      let hook = 0;
+      for (let x = l; x <= l + 2 && !hook; x++) {
+        const r = verticalRun(img, x, y + 1);
+        if (r && r[1] - y >= 0.7 * s) hook = r[1] - y;
+      }
+      if (hook) found = [l, e];
+    }
+    if (found) out.push(found);
+  }
+  return out;
+}
+
 /** kind 2: thăng hoặc bình (ảnh mờ không phân biệt được) — quyết theo ngữ cảnh: nốt đang bị hoá thì là bình */
 interface Accidental { box: Box; kind: -1 | 0 | 1 | 2 }
 
@@ -1513,9 +1547,12 @@ export function readPage(input: Gray, page = 0): OmrPage | null {
     }
     // dấu nhắc lại: tìm cả trước nốt đầu (‖: ngay sau khoá / hoá biểu)
     const repeats = findRepeats(thin, top, bottom, s, contentFrom - Math.round(2 * s), xRight + 2);
+    const above = frames.slice(0, si).reverse().find((f) => f);
+    const firstEndings = findFirstEndings(lineInk, top, s, repeats.filter((r) => r.kind === 'end').map((r) => r.x), above ? above.bottom + s : 0);
     outStaves.push({
       page, top, bottom, space: s, bars, xRight,
       ...(clef === 'F' ? { clef } : {}), ...(tuplets.length ? { tuplets } : {}), ...(repeats.length ? { repeats } : {}),
+      ...(firstEndings.length ? { firstEndings } : {}),
     });
     notes.push(...staffNotes);
   });
@@ -1792,21 +1829,24 @@ export function keyName(keySig: number) {
 
 /**
  * Thứ tự chơi: trang → khuông → trái sang phải, mở dấu nhắc lại (đoạn giữa ‖: và :‖ — hoặc từ đầu bài nếu
- * không có ‖: — chơi thêm một lần ngay sau :‖). `again` = nốt chơi lại; `line` = dòng tab của nốt.
+ * không có ‖: — chơi thêm một lần ngay sau :‖; nốt dưới ngoặc lần 1 bỏ ở lượt nhắc lại, lượt đó nối sang ngoặc
+ * lần 2 nằm ngay sau :‖). `again` = nốt chơi lại; `line` = dòng tab của nốt.
  */
 export function playOrder(pages: Pick<OmrPage, 'notes' | 'staves'>[]): { n: OmrNote; again: boolean; line: string }[] {
   const out: { n: OmrNote; again: boolean; line: string }[] = [];
   let from = 0, pass = 0;
+  const firstEnding = new Set<OmrNote>();
   pages.forEach((p, pi) => p.staves.forEach((st, si) => {
     const marks = st.repeats ?? [];
     const notes = p.notes.filter((m) => m.staff === si).sort((a, b) => a.x - b.x);
+    for (const n of notes) if ((st.firstEndings ?? []).some(([a, b]) => a - 0.5 * st.space <= n.x && n.x < b)) firstEnding.add(n);
     let mi = 0;
     const flush = (x: number) => {
       for (; mi < marks.length && marks[mi].x < x; mi++) {
         if (marks[mi].kind === 'start') { from = out.length; continue; }
         // chép lại các nốt gốc từ đầu đoạn tới đây, mỗi khuông vẫn là một dòng
         pass++;
-        const seg = out.slice(from).filter((e) => !e.again);
+        const seg = out.slice(from).filter((e) => !e.again && !firstEnding.has(e.n));
         for (const e of seg) out.push({ n: e.n, again: true, line: `${e.line}~${pass}` });
         from = out.length;
       }

@@ -163,11 +163,11 @@ Các phần nặng (quét nhạc, đọc file, PDF, OCR) chỉ tải khi dùng. 
 4. Cao độ = vị trí đầu nốt so với dòng dưới cùng (khoá Sol: dòng dưới = Mi 4), cộng hoá biểu đầu khuông.
 5. Trường độ: đầu rỗng/đặc, số móc ở đầu thân, chấm dôi. Vạch nhịp chia ô; ô thiếu phách được chèn dấu lặng.
 
-Đọc thêm: dấu hoá giữa bài, liên ba có ngoặc, dấu nối, lời in dưới khuông và tên hợp âm in trên khuông (OCR, `src/lib/lyricOcr.ts`, `src/lib/chordOcr.ts`), khoá Fa (dòng dưới = Sol2), dấu nhắc lại ‖: :‖ (đoạn nhắc lại được chơi hai lần khi chuyển tab, lời lần hai để trống).
+Đọc thêm: dấu hoá giữa bài, liên ba có ngoặc, dấu nối, lời in dưới khuông và tên hợp âm in trên khuông (OCR, `src/lib/lyricOcr.ts`, `src/lib/chordOcr.ts`), khoá Fa (dòng dưới = Sol2), dấu nhắc lại ‖: :‖ (đoạn nhắc lại được chơi hai lần khi chuyển tab, lời lần hai để trống) kèm ngoặc lần 1 / lần 2 (lượt nhắc lại bỏ đoạn lần 1, nối sang lần 2). Tên hợp âm: máy tự tách hàng chữ phía trên khuông (bỏ nốt, đường kẻ của ngoặc) rồi mới đọc.
 
 Bản piano / hợp xướng (nhiều khuông nối nhau bằng nét dọc ở đầu hệ): chỉ đọc khuông trên cùng của mỗi hệ (giai điệu).
 
-Chưa đọc: khoá Đô, ngoặc lần 1 / lần 2 (volta), D.C. / D.S. / Coda, liên ba chỉ có số "3" không ngoặc, chữ viết tay. Hai bè chung một khuông (nốt chồng nhau, nhất là hai nốt trắng sát nhau) hay đọc sai trường độ hoặc sót nốt. Ảnh nghiêng nhiều cũng chưa xử lý.
+Chưa đọc: khoá Đô, ngoặc lần 3 trở lên, D.C. / D.S. / Coda, liên ba chỉ có số "3" không ngoặc, chữ viết tay. Hai bè chung một khuông (nốt chồng nhau, nhất là hai nốt trắng sát nhau) hay đọc sai trường độ hoặc sót nốt. Ảnh nghiêng nhiều cũng chưa xử lý.
 
 Test `src/lib/omrReal.test.ts` chạy bộ đọc trên ảnh cắt từ bản nhạc thật (Mutopia Project, phạm vi công cộng — `src/test/fixtures/sheets.ts`).
 Kết quả hiện trên ảnh để người dùng sửa từng nốt trước khi lưu.

@@ -8,7 +8,7 @@ import { HarpKey, HarpType, harpName } from '../lib/harp';
 import { Gray, OmrNote, OmrPage, findHeaderBoxes, keyName, midiToStep, notePitch, playOrder, readSheet, toGray, toTranscription } from '../lib/omr';
 import { MIN_CONFIDENCE, cleanArtist, cleanTitle, cropToCanvas, hasDiacritics, looksLikeTitle, readLine, readWords, titleFromFilename } from '../lib/titleOcr';
 import { assignSyllables, looksLikeLyrics, lyricBands, lyricSlots, relyric, staffLyrics, toSyllables } from '../lib/lyricOcr';
-import { assignChords, chordBand, chordOverrides, chordWords } from '../lib/chordOcr';
+import { assignChords, chordOverrides, chordRows, chordWords, withoutChordLines } from '../lib/chordOcr';
 import { transposeChords } from '../audio/harmony';
 import { loadScanPages, saveScan, SongScan } from '../lib/scanStore';
 import { scanDraftId } from '../lib/drafts';
@@ -217,7 +217,8 @@ export default function ScanImport({ editSongId, initialFiles }: { editSongId?: 
         const words = await readWords(cropToCanvas(p.image, band, 2), 2);
         if (run !== lyricRun.current) return;
         if (!words) { setLyricProgress(null); setLyricMsg('Chưa tải được bộ đọc chữ (cần mạng lần đầu) — thử lại sau, hoặc gõ lời vào ô bên dưới.'); return; }
-        const syls = toSyllables(words.map((w) => ({ ...w, x0: w.x0 + band.x0, x1: w.x1 + band.x0 })));
+        // dải lời có thể chạm tên hợp âm của khuông kế tiếp: bỏ các dòng hợp âm
+        const syls = toSyllables(withoutChordLines(words.map((w) => ({ ...w, x0: w.x0 + band.x0, x1: w.x1 + band.x0 }))));
         if (!looksLikeLyrics(syls)) continue;
         const lyrics = assignSyllables(lyricSlots(p.notes, si), syls);
         // khuông này: nốt không nhận âm tiết nào thì xoá lời cũ
@@ -241,12 +242,16 @@ export default function ScanImport({ editSongId, initialFiles }: { editSongId?: 
     const found = new Map<string, string>();
     const touched = new Set<string>();
     for (const p of ps) for (let si = 0; si < p.staves.length; si++) {
-      const band = chordBand(p, si);
-      if (!band) continue;
-      const words = await readWords(cropToCanvas(p.image, band, 2), 2);
-      if (run !== chordRun.current) return;
-      if (!words) return; // chưa tải được bộ đọc chữ: phần lời đã báo
-      const cs = chordWords(words.map((w) => ({ ...w, x0: w.x0 + band.x0, x1: w.x1 + band.x0 })));
+      // từng hàng chữ phía trên khuông (ảnh đã lọc chỉ còn nét chữ), lấy hàng nhận được nhiều tên hợp âm nhất
+      let cs: ReturnType<typeof chordWords> = [];
+      for (const row of chordRows(p, si)) {
+        const box = { x0: 0, y0: 0, x1: row.image.width, y1: row.image.height };
+        const words = await readWords(cropToCanvas(row.image, box, 2), 2);
+        if (run !== chordRun.current) return;
+        if (!words) return; // chưa tải được bộ đọc chữ: phần lời đã báo
+        const found = chordWords(words.map((w) => ({ ...w, x0: w.x0 + row.x0, x1: w.x1 + row.x0 })));
+        if (found.length > cs.length) cs = found;
+      }
       if (!cs.length) continue;
       assignChords(p.notes, si, cs, p.staves[si].space).forEach((c, id) => found.set(id, c));
       for (const n of p.notes) if (n.staff === si) touched.add(n.id);

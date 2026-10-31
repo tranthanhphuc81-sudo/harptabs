@@ -5,8 +5,8 @@
  */
 import type { OmrNote, OmrPage, TitleBox } from './omr';
 
-/** một chữ máy đọc được, toạ độ ngang trên ảnh trang (đã chuẩn hoá) */
-export interface OcrWord { text: string; x0: number; x1: number; confidence: number }
+/** một chữ máy đọc được, toạ độ ngang trên ảnh trang (đã chuẩn hoá); y0 / y1: toạ độ dọc trong dải chữ (để tách dòng) */
+export interface OcrWord { text: string; x0: number; x1: number; confidence: number; y0?: number; y1?: number }
 
 const isInk = (v: number) => v < 140;
 
@@ -76,11 +76,15 @@ export function toSyllables(words: OcrWord[]): OcrWord[] {
   return out;
 }
 
-/** Dòng đọc được có giống lời bài hát không: vài chữ có chữ cái, máy đọc khá chắc */
+/**
+ * Dòng đọc được có giống lời bài hát không: vài chữ có chữ cái, máy đọc khá chắc, và phần lớn âm tiết có từ hai
+ * chữ cái (ký hiệu kéo vĩ "V ⊓", tên hợp âm "D G", số ngoặc đọc thành chữ cái đứng một mình thì không phải lời)
+ */
 export function looksLikeLyrics(syls: OcrWord[]): boolean {
   if (syls.length < 2) return false;
   const conf = syls.reduce((t, s) => t + s.confidence, 0) / syls.length;
-  return conf >= 45;
+  const words = syls.filter((s) => (s.text.match(/\p{L}/gu) ?? []).length >= 2).length;
+  return conf >= 45 && words >= 0.6 * syls.length;
 }
 
 /** nốt có thể mang lời của một khuông: bỏ dấu lặng và nốt nối (ngân tiếp nốt trước) — trái sang phải */

@@ -96,12 +96,12 @@ function getWorker(): Promise<TessWorker> {
  * Đọc một dòng chữ kèm vị trí từng chữ (lời dưới khuông). Ảnh nên phóng to trước khi đọc;
  * `scale` = hệ số đã phóng, toạ độ trả về chia lại theo đó. null nếu không tải được bộ đọc.
  */
-export async function readWords(canvas: HTMLCanvasElement, scale = 1): Promise<{ text: string; x0: number; x1: number; confidence: number }[] | null> {
+export async function readWords(canvas: HTMLCanvasElement, scale = 1): Promise<{ text: string; x0: number; x1: number; y0: number; y1: number; confidence: number }[] | null> {
   try {
     const w = await getWorker();
     const { data } = await w.recognize(canvas, {}, { blocks: true });
     const words = (data.blocks ?? []).flatMap((b) => b.paragraphs.flatMap((p) => p.lines.flatMap((l) => l.words)));
-    return words.map((wd) => ({ text: wd.text, x0: wd.bbox.x0 / scale, x1: wd.bbox.x1 / scale, confidence: wd.confidence }));
+    return words.map((wd) => ({ text: wd.text, x0: wd.bbox.x0 / scale, x1: wd.bbox.x1 / scale, y0: wd.bbox.y0 / scale, y1: wd.bbox.y1 / scale, confidence: wd.confidence }));
   } catch {
     return null;
   }

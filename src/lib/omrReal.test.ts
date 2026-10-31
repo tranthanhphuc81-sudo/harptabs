@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { notePitch, readSheet, type Gray } from './omr';
+import { notePitch, readSheet, toTranscription, type Gray } from './omr';
+import { chordRows } from './chordOcr';
 import { SHEETS } from '../test/fixtures/sheets';
 
 /** giải nén ảnh xám mẫu (gzip, base64) */
@@ -28,6 +29,35 @@ describe('đọc bản nhạc thật (ảnh in từ Mutopia)', () => {
       'G4:1', 'E4:1', 'E4:1', 'F#4:0.5', 'G4:0.5',
     ]);
     expect(r.pages[0].notes.filter((n) => n.guess).length).toBeLessThanOrEqual(1);
+  });
+
+  it("Soldier's Joy: ngoặc lần 1 chỉ chơi ở lượt đầu, lượt nhắc lại nối sang lần 2", async () => {
+    const r = readSheet([await sheet('soldiersJoy')]);
+    const st = r.pages[0].staves;
+    expect(st[1].firstEndings?.length).toBe(1);
+    expect(st[3].firstEndings?.length).toBe(1);
+    const t = toTranscription(r.pages, { title: '', keySig: r.keySig, timeSig: r.timeSig, tempo: 90 });
+    const lines = t.sections[0].lines.map((l) => l.notes.map((n) => n.pitch).filter((p) => p !== 'R').join(' '));
+    // phần A: lượt đầu kết bằng lần 1 (Rê Rê Rê Rê, Fa# Sol dẫn về), lượt nhắc lại bỏ lần 1, nối sang lần 2
+    expect(lines[1].endsWith('D5 D5 D5 D5 F#4 G4')).toBe(true);
+    expect(lines[3].endsWith('F#5 E5')).toBe(true);
+    expect(lines[4]).toBe('D5 F#5 F#5 D5 E5');
+  });
+
+  it('tên hợp âm trên ngoặc lần 1 không bị dính vào đường kẻ của ngoặc', async () => {
+    const r = readSheet([await sheet('soldiersJoy')]);
+    // khuông 2: D (đầu ô 5), A (ô 7), D (trên ngoặc lần 1) — cả ba nằm trong cùng một hàng chữ
+    const rows = chordRows(r.pages[0], 1);
+    const clusters = (img: Gray) => {
+      const xs: number[] = [];
+      for (let x = 0; x < img.width; x++) {
+        let ink = false;
+        for (let y = 0; y < img.height && !ink; y++) ink = img.data[y * img.width + x] < 140;
+        if (ink && (!xs.length || x - xs[xs.length - 1] > 40)) xs.push(x);
+      }
+      return xs;
+    };
+    expect(rows.some((row) => clusters(row.image).length >= 3)).toBe(true);
   });
 
   it('Red Apple Rag: thân nốt có vạch nối đứng trước nốt sau không bị đọc thành dấu giáng', async () => {

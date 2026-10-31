@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { assignChords, chordOverrides, chordWords } from './chordOcr';
+import { assignChords, chordOverrides, chordWords, withoutChordLines } from './chordOcr';
 import type { OmrNote } from './omr';
 
 const note = (id: string, x: number, beats = 1, chord?: string): OmrNote =>
@@ -14,6 +14,16 @@ describe('tên hợp âm in trên khuông', () => {
   it('dải chữ phần lớn là lời bài hát thì bỏ (dù có chữ "Em")', () => {
     expect(chordWords([w('Em', 10), w('ơi', 40), w('Hà', 70), w('Nội', 100), w('phố', 130)])).toEqual([]);
   });
+  it('tách theo dòng: dòng hợp âm và dòng lời trong cùng một dải; bỏ dấu máy đọc thêm vào', () => {
+    const at = (text: string, x0: number, y0: number, conf = 90) => ({ text, x0, x1: x0 + 20, y0, y1: y0 + 20, confidence: conf });
+    const words = [
+      at('Ạ', 10, 0), at('Ð', 200, 2), at('G`', 400, 1), at('1.', 600, 30),
+      at('Em', 10, 60), at('ơi', 60, 60), at('Hà', 110, 61), at('Nội', 160, 60),
+    ];
+    expect(chordWords(words).map((c) => c.chord)).toEqual(['A', 'D', 'G']);
+    expect(withoutChordLines(words).map((w) => w.text)).toEqual(['1.', 'Em', 'ơi', 'Hà', 'Nội']);
+  });
+
   it('gắn hợp âm vào nốt ngay dưới', () => {
     const notes = [note('a', 20), note('b', 60), note('c', 100), note('d', 140)];
     const m = assignChords(notes, 0, [{ x0: 12, x1: 30, chord: 'C' }, { x0: 92, x1: 110, chord: 'G' }], 13.5);

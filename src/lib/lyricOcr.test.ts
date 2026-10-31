@@ -37,6 +37,8 @@ describe('đọc lời dưới khuông', () => {
     expect(s[1].x0).toBeCloseTo(44); // chia theo số ký tự: 2 + 3
     expect(looksLikeLyrics(s)).toBe(true);
     expect(looksLikeLyrics(toSyllables([w('~~', 0, 10, 20), w('ii', 20, 30, 20)]))).toBe(false);
+    // ký hiệu kéo vĩ, tên hợp âm: toàn chữ cái đứng một mình → không phải lời
+    expect(looksLikeLyrics(toSyllables([w('D', 0, 10, 90), w('V', 20, 30, 90), w('G', 40, 50, 90), w('V', 60, 70, 90)]))).toBe(false);
   });
 
   it('gắn âm tiết vào nốt gần nhất theo thứ tự; chữ luyến bỏ trống nốt giữa; bỏ dấu lặng, nốt nối', () => {
