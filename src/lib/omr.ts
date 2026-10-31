@@ -471,16 +471,34 @@ export function staffSpacing(g: Gray): number | null {
 
 interface Stem { x: number; a: number; b: number; up: boolean }
 
-/** Thân nốt: đoạn dọc ≥ 2.6 khe chạm đầu nốt, sát mép trái/phải */
+/**
+ * Thân nốt: đoạn dọc ≥ 2.6 khe chạm đầu nốt, sát mép trái/phải. Nốt đầu nhóm có vạch nối dốc thì thân ngắn
+ * (≈ 2 khe): nhận khi đầu thân chạm vạch nối — nét ngang dày chạy sang bên.
+ */
 function findStem(img: Bits, o: Box, s: number, strict: Bits = img): Stem | null {
   let best: [number, number, number] | null = null;
   const xs: number[] = [];
   for (let x = Math.max(o.x0 - 2, 0); x < o.x0 + 3; x++) xs.push(x);
   for (let x = o.x1 - 3; x < Math.min(o.x1 + 2, img.w); x++) xs.push(x);
+  /** ở đầu thân (xa đầu nốt) có vạch nối: hàng mực ngang dài ≥ 1.2 khe */
+  const beamAt = (x: number, a: number, b: number) => {
+    const end = o.y0 - a > b - o.y1 ? a : b;
+    for (let dy = 0; dy <= 0.4 * s; dy++) {
+      const y = end + (end === a ? dy : -dy);
+      let l = x, r = x;
+      if (!img.get(x, y)) continue;
+      while (img.get(l - 1, y)) l--;
+      while (img.get(r + 1, y)) r++;
+      if (r - l + 1 >= 1.2 * s) return true;
+    }
+    return false;
+  };
   for (const x of xs) {
     for (let y = o.y0; y < o.y1; y++) {
       const r = verticalRun(img, x, y);
-      if (r && r[1] - r[0] + 1 >= 2.6 * s && (!best || r[1] - r[0] > best[2] - best[1])) best = [x, r[0], r[1]];
+      if (!r || (best && r[1] - r[0] <= best[2] - best[1])) continue;
+      const len = r[1] - r[0] + 1;
+      if (len >= 2.6 * s || (len >= 1.9 * s && beamAt(x, r[0], r[1]))) best = [x, r[0], r[1]];
     }
   }
   if (!best) return null;
@@ -897,12 +915,14 @@ function findAccidentals(img: Bits, heads: Box[], s: number, xFrom: number): Acc
 /**
  * Dấu hoá dính vào đầu nốt (ảnh nhỏ: không tách được thành khối riêng): xét các cột ngay bên trái
  * đầu nốt, mỗi cột lấy đoạn mực dọc đi qua ngang tầm đầu nốt; dấu hoá là các nét dọc dài 1.8–3.4 khe
- * (thân nốt bên cạnh dài hơn, vạch nhịp phủ cả khuông). Giáng nhô hẳn lên trên, thăng / bình cân hai phía.
+ * (vạch nhịp phủ cả khuông). Giáng nhô hẳn lên trên, thăng / bình cân hai phía.
+ * `stems`: cột thân các nốt đã nhận — bỏ qua (thân ngắn của nốt có vạch nối đứng ngay trước nốt sau trông như ♭).
  */
-function accidentalBefore(img: Bits, hx: number, hy: number, s: number, xFrom: number): -1 | 2 | null {
+function accidentalBefore(img: Bits, hx: number, hy: number, s: number, xFrom: number, stems: number[] = []): -1 | 2 | null {
   const right = Math.round(hx - 0.62 * s), left = Math.max(xFrom, Math.round(hx - 2.0 * s));
   const tops: number[] = [], bots: number[] = [];
   for (let x = left; x < right; x++) {
+    if (stems.some((sx) => Math.abs(sx - x) <= 2)) continue;
     let best: [number, number] | null = null;
     for (let y = Math.round(hy - 0.5 * s); y <= Math.round(hy + 0.5 * s); y++) {
       const r = verticalRun(img, x, y);
@@ -1269,19 +1289,36 @@ export function readPage(input: Gray, page = 0): OmrPage | null {
     const { end: ce, clef } = clefInfo(thin, top, bottom, s, xLeft);
     return { s, top, bottom, xLeft, xRight, ce, clef, ks: keySignatureByPosition(thin, top, bottom, s, ce + 1, clef) };
   });
-  // hoá biểu in lại ở mọi khuông, chỉ đổi khi chuyển giọng (từ đó về sau): khuông lệch hẳn với hai khuông
-  // kề bên (hoặc hai khuông kế tiếp ở đầu/cuối bài) là đọc nhầm
-  const keys = frames.map((f) => f?.ks.key ?? 0);
-  const fixedKeys = keys.map((k, i) => {
-    const p = keys[i - 1], n = keys[i + 1];
-    if (p !== undefined && n !== undefined) return p === n && p !== k ? p : k;
-    const [a, b] = p === undefined ? [keys[i + 1], keys[i + 2]] : [keys[i - 1], keys[i - 2]];
-    return a !== undefined && a === b && a !== k ? a : k;
+  // hệ nhiều khuông (piano, hợp xướng — các khuông nối nhau bằng nét dọc / ngoặc ở đầu hệ): chỉ đọc khuông
+  // trên cùng (giai điệu), không ghép khuông bè trầm vào sau
+  const lowerInSystem = frames.map((f, i) => {
+    const p = frames[i - 1];
+    if (!f || !p) return false;
+    const y = Math.round((p.bottom + f.top) / 2), x0 = Math.min(p.xLeft, f.xLeft);
+    for (let x = Math.max(0, Math.round(x0 - f.s)); x <= x0 + 1.5 * f.s; x++) {
+      const r = verticalRun(ink, x, y);
+      if (r && r[0] <= p.bottom + 0.5 * p.s && r[1] >= f.top - 0.5 * f.s) return true;
+    }
+    return false;
   });
 
+  // hoá biểu in lại ở mọi khuông, chỉ đổi khi chuyển giọng (từ đó về sau): khuông lệch hẳn với hai khuông
+  // kề bên (hoặc hai khuông kế tiếp ở đầu/cuối bài) là đọc nhầm — chỉ so giữa các khuông giai điệu
+  const melodic = frames.map((_, i) => i).filter((i) => !lowerInSystem[i]);
+  const keys = melodic.map((i) => frames[i]?.ks.key ?? 0);
+  const fixedKeys: number[] = frames.map((f) => f?.ks.key ?? 0);
+  keys.forEach((k, j) => {
+    const p = keys[j - 1], n = keys[j + 1];
+    if (p !== undefined && n !== undefined) { fixedKeys[melodic[j]] = p === n && p !== k ? p : k; return; }
+    const [a, b] = p === undefined ? [keys[j + 1], keys[j + 2]] : [keys[j - 1], keys[j - 2]];
+    fixedKeys[melodic[j]] = a !== undefined && a === b && a !== k ? a : k;
+  });
+
+  // dấu hoá ghi rõ gần nhất của từng chữ nốt (Đô…Si), qua các ô nhịp và khuông: phân biệt dấu thăng với dấu bình nhắc lại
+  const lastAlter = new Map<number, -1 | 0 | 1>();
   staves.forEach((_, si) => {
     const fr = frames[si];
-    if (!fr) return;
+    if (!fr || lowerInSystem[si]) return;
     const { s, top, bottom, xRight, ce, clef } = fr;
     // bậc theo khoá Sol (0 = E4): khuông khoá Fa dời xuống
     const shift = clef === 'F' ? F_CLEF_SHIFT : 0;
@@ -1375,6 +1412,7 @@ export function readPage(input: Gray, page = 0): OmrPage | null {
     }));
 
     const staffNotes: OmrNote[] = [];
+    const stemXs = valid.filter((v, i) => !drop.has(i) && v.stem).map((v) => v.stem!.x);
     const occupied: Box[] = [...accs.map((a) => a.box), ...cand.map((p) => ({ x0: p.o.x0 - 1, x1: p.o.x1 + 1, y0: p.o.y0 - 1, y1: p.o.y1 + 1 }))];
     for (const [i, { o, hollow, stem, beats }] of valid.entries()) {
       if (drop.has(i)) continue;
@@ -1384,7 +1422,7 @@ export function readPage(input: Gray, page = 0): OmrPage | null {
       occupied.push({ x0: o.x0 - 1, x1: o.x1 + 1, y0: o.y0 - 1, y1: o.y1 + 1 });
       const dot = hasDot(roi, o, s) || hasDot(dotRoi, o, s);
       const acc = accs.find((a) => o.x0 - 1.8 * s <= a.box.x1 && a.box.x1 <= o.x0 + 0.4 * s && Math.abs(cy(a.box) - cy(o)) <= 1.3 * s)
-        ?? (() => { const k = accidentalBefore(thinRoi, cx(o), cy(o), s, contentFrom); return k === null ? undefined : { box: o, kind: k }; })();
+        ?? (() => { const k = accidentalBefore(thinRoi, cx(o), cy(o), s, contentFrom, stemXs); return k === null ? undefined : { box: o, kind: k }; })();
       const y = cy(o) + y0;
       staffNotes.push({
         id: `n${++noteSeq}`, page, staff: outStaves.length, x, y,
@@ -1414,7 +1452,7 @@ export function readPage(input: Gray, page = 0): OmrPage | null {
       usedStems.push(st.x);
       occupied.push({ x0: st.x - 2, x1: st.x + Math.ceil(1.4 * s), y0: st.a - 1, y1: st.b + 2 }, { x0: o.x0 - 1, x1: o.x1 + 1, y0: o.y0 - 1, y1: o.y1 + 1 });
       const acc = accs.find((a) => o.x0 - 1.8 * s <= a.box.x1 && a.box.x1 <= o.x0 + 0.4 * s && Math.abs(cy(a.box) - cy(o)) <= 1.3 * s)
-        ?? (() => { const k = accidentalBefore(thinRoi, cx(o), cy(o), s, contentFrom); return k === null ? undefined : { box: o, kind: k }; })();
+        ?? (() => { const k = accidentalBefore(thinRoi, cx(o), cy(o), s, contentFrom, stemXs); return k === null ? undefined : { box: o, kind: k }; })();
       const y = cy(o) + y0;
       staffNotes.push({
         id: `n${++noteSeq}`, page, staff: outStaves.length, x: cx(o), y,
@@ -1439,10 +1477,17 @@ export function readPage(input: Gray, page = 0): OmrPage | null {
     for (const n of staffNotes) {
       while (bi < bars.length && bars[bi] < n.x) { bi++; held = new Map(); }
       if (n.rest) continue;
+      const letter = ((n.step % 7) + 7) % 7;
       if ((n.accidental as number) === 2) {
         const cur = held.has(n.step) ? held.get(n.step)! : alterOf(n.step, ks);
-        n.accidental = cur !== 0 ? 0 : 1;
+        // nốt đang tự nhiên: thăng, trừ khi chữ nốt này vừa bị giáng ở ô trước (dấu bình nhắc lại sau B♭…)
+        n.accidental = cur !== 0 ? 0 : lastAlter.get(letter) === -1 ? 0 : 1;
       }
+      // Mi♯ / Si♯, Fa♭ / Đô♭ gần như chỉ có ở giọng rất nhiều dấu: dấu đọc ra như vậy là dấu bình (bậc 0 = Mi)
+      if (n.accidental === 1 && (letter === 0 || letter === 4) && ks < 6) n.accidental = 0;
+      if (n.accidental === -1 && (letter === 1 || letter === 5) && ks > -6) n.accidental = 0;
+      if (n.accidental !== null && !held.has(n.step)) lastAlter.set(letter, n.accidental);
+      else if (n.accidental !== null && held.get(n.step) !== n.accidental) lastAlter.set(letter, n.accidental);
       if (n.accidental !== null) held.set(n.step, n.accidental);
       else if (held.has(n.step)) n.accidental = held.get(n.step)!;
     }
