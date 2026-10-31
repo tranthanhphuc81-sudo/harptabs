@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chính sách quyền riêng tư — Sổ Tab</title>
+<style>
+  :root { color-scheme: light dark; --fg: #1d232b; --muted: #5b6672; --bg: #fbfaf7; --line: #dcd8cf; --accent: #2f5d8a; }
+  @media (prefers-color-scheme: dark) { :root { --fg: #e8e6e1; --muted: #a3acb6; --bg: #15191e; --line: #343b44; --accent: #8fb6dc; } }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 16px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 760px; margin: 0 auto; padding: 32px 16px 64px; }
+  h1 { font-size: 1.7rem; line-height: 1.25; margin: 0 0 4px; }
+  h2 { font-size: 1.2rem; margin: 32px 0 8px; }
+  p, li { text-align: justify; }
+  .muted { color: var(--muted); }
+  a { color: var(--accent); }
+  table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: .95rem; }
+  th, td { border: 1px solid var(--line); padding: 8px 10px; text-align: left; vertical-align: top; }
+  th { background: color-mix(in srgb, var(--line) 35%, transparent); }
+  .wrap { overflow-x: auto; }
+  hr { border: 0; border-top: 1px solid var(--line); margin: 40px 0; }
+</style>
+</head>
+<body>
+<main>
+<h1>Chính sách quyền riêng tư</h1>
+<p class="muted">Áp dụng cho bộ ứng dụng Sổ Tab: Sổ Tab Harmonica, Sổ Tab Sáo, Sổ Tab Kalimba, Sổ Tab Guitar, Sổ Tab Pianica, Sổ Tab Organ, Sổ Tab Đàn Tranh – Đàn Bầu (bản web và bản Android trên Google Play).<br>Có hiệu lực từ ngày 31/10/2026.</p>
+
+<p>Sổ Tab do Trần Thanh Phúc phát triển (gọi là “chúng tôi”). App không có tài khoản, không có quảng cáo, không bán hay cho thuê dữ liệu của bạn. Phần lớn chức năng chạy hoàn toàn trên thiết bị; dữ liệu chỉ rời máy trong ba trường hợp nêu dưới đây.</p>
+
+<h2>1. Dữ liệu ở lại trên thiết bị của bạn</h2>
+<ul>
+  <li>Thư viện bài, ghi chú tập, nhật ký luyện tập, cài đặt: lưu trong bộ nhớ của app (IndexedDB) trên máy bạn.</li>
+  <li>Micro: dùng để dò nốt, chấm điểm, ghi âm karaoke và chuyển âm thanh thành tab. Âm thanh được xử lý ngay trên máy; bản thu lưu trên máy, không gửi đi đâu.</li>
+  <li>Camera và ảnh: ảnh bản nhạc được đọc bằng công cụ nhận dạng chạy trên máy. Ảnh chỉ được gửi ra ngoài khi bạn chủ động chọn tính năng AI (mục 2.2).</li>
+  <li>File bạn mở hoặc xuất (MIDI, MusicXML, PDF, file sao lưu .json) chỉ được đọc và ghi trên máy.</li>
+  <li>Chia sẻ bài: nội dung bài được nén vào phần sau dấu # của đường link. Trình duyệt không gửi phần này lên máy chủ, nên chúng tôi không nhận được bài bạn chia sẻ.</li>
+</ul>
+
+<h2>2. Dữ liệu được gửi ra ngoài</h2>
+<div class="wrap">
+<table>
+  <tr><th>Trường hợp</th><th>Dữ liệu</th><th>Mục đích</th><th>Thời gian lưu</th></tr>
+  <tr><td>2.1 Thống kê ẩn danh (bật mặc định, tắt được)</td><td>Một mã ngẫu nhiên do app tự tạo cho máy, loại app (web, đã cài, Android), số lần mở app, phiên bản app</td><td>Đếm số lượt cài và lượt dùng</td><td>Lưu dạng tổng hợp theo ngày, tới khi không còn cần cho thống kê</td></tr>
+  <tr><td>2.2 Tính năng AI (chỉ khi bạn bấm dùng)</td><td>Ảnh bản nhạc bạn chọn hoặc chụp; tên bài, tên ca sĩ, lời bài hát bạn nhập</td><td>Chuyển ảnh hoặc tên bài thành tab nhạc</td><td>Máy chủ của chúng tôi không lưu; được chuyển tiếp tới Google Gemini API để xử lý</td></tr>
+  <tr><td>2.3 Giới hạn lượt dùng AI</td><td>Địa chỉ IP của bạn</td><td>Chống lạm dụng: giới hạn số lượt AI mỗi ngày</td><td>Tự xoá sau khoảng 26 giờ</td></tr>
+</table>
+</div>
+<p>Mã thống kê không gắn với tên, email, số điện thoại hay mã quảng cáo của bạn. Chúng tôi không gửi tên bài, nội dung bài hay bản thu trong thống kê.</p>
+
+<h2>3. Bên thứ ba xử lý dữ liệu</h2>
+<ul>
+  <li><strong>Cloudflare</strong> (Workers, D1, KV, Pages): lưu trữ trang web, máy chủ AI trung gian và dữ liệu thống kê. <a href="https://www.cloudflare.com/privacypolicy/" target="_blank" rel="noopener">Chính sách của Cloudflare</a>.</li>
+  <li><strong>Google Gemini API</strong>: xử lý ảnh và văn bản khi bạn dùng AI. Google có thể lưu tạm nội dung để chống lạm dụng theo <a href="https://ai.google.dev/gemini-api/terms" target="_blank" rel="noopener">điều khoản Gemini API</a>.</li>
+  <li>Nếu bạn tự nhập Gemini API key của mình trong Cài đặt, app gửi yêu cầu thẳng tới Google bằng key đó, không qua máy chủ của chúng tôi; việc xử lý khi đó theo thoả thuận giữa bạn và Google. Key được lưu trên máy bạn.</li>
+</ul>
+
+<h2>4. Bảo mật</h2>
+<p>Mọi kết nối tới máy chủ đều được mã hoá bằng HTTPS. Máy chủ AI có giới hạn tần suất để tránh bị lợi dụng.</p>
+
+<h2>5. Lựa chọn của bạn và xoá dữ liệu</h2>
+<ul>
+  <li>Tắt thống kê: vào <em>Cài đặt → Dữ liệu → Gửi thống kê ẩn danh</em>.</li>
+  <li>Không dùng tính năng AI thì không có ảnh hay văn bản nào được gửi đi.</li>
+  <li>Xoá dữ liệu trên máy: gỡ app hoặc xoá dữ liệu app trong cài đặt Android. Hãy xuất file sao lưu trước nếu muốn giữ bài.</li>
+  <li>Muốn xoá dữ liệu thống kê đã gửi: email cho chúng tôi kèm yêu cầu; chúng tôi sẽ hướng dẫn cách lấy mã máy và xoá trong vòng 30 ngày.</li>
+</ul>
+
+<h2>6. Trẻ em</h2>
+<p>App dành cho người từ 13 tuổi trở lên và không cố ý thu thập dữ liệu của trẻ dưới 13 tuổi. Nếu bạn biết trẻ dưới 13 tuổi đã gửi dữ liệu qua tính năng AI, hãy liên hệ để chúng tôi hỗ trợ.</p>
+
+<h2>7. Thay đổi chính sách</h2>
+<p>Khi chính sách thay đổi, chúng tôi cập nhật trang này và ngày hiệu lực ở đầu trang.</p>
+
+<h2>8. Liên hệ</h2>
+<p>Trần Thanh Phúc — Email: <a href="mailto:tranthanhphuc81@gmail.com">tranthanhphuc81@gmail.com</a> — Website: <a href="https://sotab.pages.dev">sotab.pages.dev</a></p>
+
+<hr>
+
+<h1 lang="en">Privacy Policy (English summary)</h1>
+<div lang="en">
+<p>Applies to the Sổ Tab apps (Harmonica, Recorder/Flute, Kalimba, Guitar, Pianica, Organ, Đàn Tranh – Đàn Bầu), web and Android. Effective 31 October 2026. Developer: Trần Thanh Phúc, <a href="mailto:tranthanhphuc81@gmail.com">tranthanhphuc81@gmail.com</a>.</p>
+<ul>
+  <li>No accounts, no ads, no sale of data. Songs, settings, recordings and microphone audio are processed and stored on your device only.</li>
+  <li><strong>Anonymous usage statistics</strong> (on by default, can be turned off in Settings): a random app-generated ID, platform, app-open count and app version, used to count installs and active users.</li>
+  <li><strong>AI transcription</strong> (only when you use it): the sheet-music photos and the song title, artist and lyrics you enter are sent over HTTPS through our Cloudflare Worker to the Google Gemini API to produce tabs. Our server does not store them.</li>
+  <li><strong>IP address</strong> is used for rate limiting the AI feature and is deleted after about 26 hours.</li>
+  <li>Processors: Cloudflare and Google (Gemini API). If you enter your own Gemini API key, requests go directly from your device to Google.</li>
+  <li>Shared song links carry the song after the “#”, which is never sent to any server.</li>
+  <li>The apps are intended for users aged 13 and over. To request deletion of statistics data, email us; we respond within 30 days.</li>
+</ul>
+</div>
+</main>
+</body>
+</html>
