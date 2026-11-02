@@ -57,15 +57,16 @@ export type Technique = 'blow' | 'draw' | 'drawBend' | 'blowBend' | 'overblow' |
   | 'harmonic' | 'rodBend';
 
 /** Loại kèn. Bài cũ không ghi loại là diatonic. */
-export type HarpType = 'diatonic' | 'chromatic' | 'chromatic16' | 'tremolo24' | 'tremolo21' | 'tremolo16' | 'tremolo24m' | 'tremolo21m' | 'tremolo16m'
+export type HarpType = 'diatonic' | 'chromatic' | 'chromatic16' | 'trochilusSolo' | 'tremolo24' | 'tremolo21' | 'tremolo16' | 'tremolo24m' | 'tremolo21m' | 'tremolo16m'
   | 'recorderAlto' | 'recorderSoprano' | 'recorderTenor' | 'recorderBass' | 'saoTruc6' | 'kalimba17' | 'kalimba10' | 'kalimba8' | 'guitar6' | 'ukulele4' | 'pianica32' | 'pianica37' | 'organ61' | 'piano88' | 'ocarina12' | 'tranh16' | 'tranh17' | 'tranh19' | 'tranh21' | 'tranh22' | 'danbau';
 /** mọi loại hợp lệ (để đọc bài đã lưu); ô chọn chỉ hiện SHOWN_HARP_TYPES của bản build (src/appConfig.ts) */
-export const HARP_TYPES: readonly HarpType[] = ['diatonic', 'chromatic', 'chromatic16', 'tremolo24', 'tremolo21', 'tremolo16', 'tremolo24m', 'tremolo21m', 'tremolo16m', 'recorderAlto', 'recorderSoprano', 'recorderTenor', 'recorderBass', 'saoTruc6', 'kalimba17', 'kalimba10', 'kalimba8', 'guitar6', 'ukulele4', 'pianica32', 'pianica37', 'organ61', 'piano88', 'ocarina12', 'tranh16', 'tranh17', 'tranh19', 'tranh21', 'tranh22', 'danbau'];
+export const HARP_TYPES: readonly HarpType[] = ['diatonic', 'chromatic', 'chromatic16', 'trochilusSolo', 'tremolo24', 'tremolo21', 'tremolo16', 'tremolo24m', 'tremolo21m', 'tremolo16m', 'recorderAlto', 'recorderSoprano', 'recorderTenor', 'recorderBass', 'saoTruc6', 'kalimba17', 'kalimba10', 'kalimba8', 'guitar6', 'ukulele4', 'pianica32', 'pianica37', 'organ61', 'piano88', 'ocarina12', 'tranh16', 'tranh17', 'tranh19', 'tranh21', 'tranh22', 'danbau'];
 
 export const HARP_TYPE_LABEL: Record<HarpType, string> = {
   diatonic: 'Diatonic 10 lỗ',
   chromatic: 'Chromatic 12 lỗ',
   chromatic16: 'Chromatic 16 lỗ',
+  trochilusSolo: 'Trochilus vàng 10 lỗ (solo tuning)',
   tremolo24: 'Tremolo 24 lỗ',
   tremolo21: 'Tremolo 21 lỗ',
   tremolo16: 'Tremolo 16 lỗ',
@@ -182,8 +183,12 @@ export function recorderKey(t: HarpType): HarpKey {
   return t === 'recorderAlto' || t === 'recorderBass' ? 'F' : 'C';
 }
 
+/**
+ * kèn xếp nốt kiểu chromatic (solo tuning) có nút gạt: chromatic 12 / 16 lỗ, và Trochilus màu vàng — 10 lỗ, mỗi lỗ
+ * hai cặp lưỡi (đẩy nút gạt cao nửa cung), không van; nốt như 10 lỗ đầu của chromatic 12 lỗ (lỗ 1 = Đô4)
+ */
 export function isChromatic(t: HarpType | undefined): boolean {
-  return t === 'chromatic' || t === 'chromatic16';
+  return t === 'chromatic' || t === 'chromatic16' || t === 'trochilusSolo';
 }
 
 export function isTremolo(t: HarpType | undefined): boolean {
@@ -204,6 +209,7 @@ export function holeCount(t: HarpType = 'diatonic'): number {
   switch (t) {
     case 'chromatic16': return 16;
     case 'chromatic': return 12;
+    case 'trochilusSolo': return 10;
     case 'tremolo24': case 'tremolo24m': return 24;
     case 'tremolo21': case 'tremolo21m': return 21;
     case 'tremolo16': case 'tremolo16m': return 16;
@@ -249,7 +255,7 @@ export function harpName(key: string, t: HarpType = 'diatonic'): string {
   if (isTranh(t)) return `Đàn tranh ${holeCount(t)} dây (${key}, dây ${tranhTuning === 'dao' ? 'Đảo' : 'Bắc'})`;
   if (isSaoTruc(t)) return `Sáo trúc ${pitchClassName(KEY_OFFSET[normalizeKey(key) ?? 'C'], 'solfege')} (${key}, bịt hết ra ${pitchClassName(KEY_OFFSET[normalizeKey(key) ?? 'C'] + [0, 2, 4, 5, 7, 9, 11][saoTrucClosed - 1], 'solfege')})`;
   if (isRecorder(t)) return t === 'recorderAlto' ? 'Sáo alto (Fa)' : t === 'recorderTenor' ? 'Sáo tenor (Đô)' : t === 'recorderBass' ? 'Sáo bass (Fa)' : 'Sáo soprano (Đô)';
-  return t === 'diatonic' ? `Kèn ${key}` : t === 'chromatic16' ? `Kèn ${key} chromatic 16 lỗ` : `Kèn ${key} chromatic`;
+  return t === 'diatonic' ? `Kèn ${key}` : t === 'chromatic16' ? `Kèn ${key} chromatic 16 lỗ` : t === 'trochilusSolo' ? `Kèn ${key} Trochilus vàng` : `Kèn ${key} chromatic`;
 }
 
 export interface HarpNote {
@@ -447,7 +453,7 @@ export function harpLayout(key: HarpKey, type: HarpType = 'diatonic'): HarpNote[
   }
 
   if (isChromatic(type)) {
-    // 12 lỗ: lỗ 1 = Đô4; 16 lỗ thêm một quãng tám trầm, lỗ 1 = Đô3
+    // 12 lỗ (và Trochilus vàng 10 lỗ): lỗ 1 = Đô4; 16 lỗ thêm một quãng tám trầm, lỗ 1 = Đô3
     const base = type === 'chromatic16' ? 48 : 60;
     for (let i = 0; i < holeCount(type); i++) {
       const hole = i + 1;
@@ -456,7 +462,9 @@ export function harpLayout(key: HarpKey, type: HarpType = 'diatonic'): HarpNote[
       const draw = oct + CHROM_DRAW[i % 4];
       push(hole, 'blow', 0, false, blow, 'blow');
       push(hole, 'draw', 0, false, draw, 'draw');
-      push(hole, 'blow', 0, false, blow + 1, 'blowSlide', true);
+      // Trochilus vàng: lỗ 10 thổi gạt là Sol (không phải Fa — Fa đã có ở lỗ 10 hút), thêm một nốt ở đầu cao
+      const slideBlow = type === 'trochilusSolo' && hole === 10 ? blow + 3 : blow + 1;
+      push(hole, 'blow', 0, false, slideBlow, 'blowSlide', true);
       push(hole, 'draw', 0, false, draw + 1, 'drawSlide', true);
     }
     layoutCache.set(ck, notes);

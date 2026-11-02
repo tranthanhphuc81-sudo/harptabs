@@ -58,3 +58,35 @@ describe('kèn chromatic', () => {
     expect(r.body).toBe('6 -5< 6 -5< 6 -4 -5 5 -3');
   });
 });
+
+describe('kèn Trochilus màu vàng (solo tuning, 10 lỗ, nút gạt)', () => {
+  it('nốt như 10 lỗ đầu của chromatic 12 lỗ: Đô4 đến Fa6, nút gạt nâng nửa cung', () => {
+    const blow = Array.from({ length: 10 }, (_, i) => parseToken(String(i + 1), 'C', 'trochilusSolo')!.midi);
+    const draw = Array.from({ length: 10 }, (_, i) => parseToken(String(-(i + 1)), 'C', 'trochilusSolo')!.midi);
+    // C4 E4 G4 C5 | C5 E5 G5 C6 | C6 E6
+    expect(blow).toEqual([60, 64, 67, 72, 72, 76, 79, 84, 84, 88]);
+    // D4 F4 A4 B4 | D5 F5 A5 B5 | D6 F6
+    expect(draw).toEqual([62, 65, 69, 71, 74, 77, 81, 83, 86, 89]);
+    expect(parseToken('1<', 'C', 'trochilusSolo')!.midi).toBe(61);
+    expect(parseToken('-10<', 'C', 'trochilusSolo')!.midi).toBe(90);
+    // riêng lỗ 10 thổi gạt: Sol6 (theo sơ đồ của hãng), các lỗ khác gạt nâng nửa cung
+    expect(parseToken('10<', 'C', 'trochilusSolo')!.midi).toBe(91);
+    expect(parseToken('9<', 'C', 'trochilusSolo')!.midi).toBe(85);
+    expect(parseToken('10<', 'C', 'chromatic')!.midi).toBe(89);
+    expect(parseToken('11', 'C', 'trochilusSolo')).toBeNull();
+    expect(harpLayout('C', 'trochilusSolo')).toHaveLength(40);
+    // kèn tông khác dịch theo như chromatic 12 lỗ cùng tông (kèn G: lỗ 1 = Sol3)
+    for (const k of ['G', 'A', 'Bb', 'D'] as const) {
+      expect(parseToken('1', k, 'trochilusSolo')!.midi).toBe(parseToken('1', k, 'chromatic')!.midi);
+    }
+    expect(parseToken('1', 'G', 'trochilusSolo')!.midi).toBe(55);
+  });
+
+  it('chuyển bài sang Trochilus: đủ 12 nốt nửa cung trong tầm, không cần bend', () => {
+    const r = rekeyBody('4 -4 5 -5 6 -6 7 -7 8\nDo Re Mi Fa Sol La Si Do Re\n', 'C', 'C', 'octave', 'diatonic', 'trochilusSolo');
+    expect(r.fit.stats.unplayable).toBe(0);
+    expect(r.fit.stats.bends).toBe(0);
+    const chrom = bestTabs([60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72], 'C', 0, 'trochilusSolo');
+    expect(chrom.stats.unplayable).toBe(0);
+  });
+});
