@@ -90,3 +90,36 @@ describe('kèn Trochilus màu vàng (solo tuning, 10 lỗ, nút gạt)', () => {
     expect(chrom.stats.unplayable).toBe(0);
   });
 });
+
+describe('kèn Tombo S-50 (chromatic không gạt, 2 hàng × 22 lỗ)', () => {
+  it('hàng dưới Đô4…Đô7, mỗi lỗ một hướng; hàng trên (<) cao nửa cung', () => {
+    const lower = Array.from({ length: 8 }, (_, i) => parseToken(String(i + 1), 'C', 'tomboS50')!);
+    // thổi Đô, hút Rê, thổi Mi, hút Fa, thổi Sol, hút La, hút Si, thổi Đô
+    expect(lower.map((n) => n.midi)).toEqual([60, 62, 64, 65, 67, 69, 71, 72]);
+    expect(lower.map((n) => n.token)).toEqual(['1', '-2', '3', '-4', '5', '-6', '-7', '8']);
+    expect(parseToken('-2', 'C', 'tomboS50')!.midi).toBe(62);
+    expect(parseToken('-1', 'C', 'tomboS50')).toBeNull();
+    expect(parseToken('1<', 'C', 'tomboS50')!.midi).toBe(61);
+    expect(parseToken('-7<', 'C', 'tomboS50')!.midi).toBe(72);
+    expect(parseToken('22', 'C', 'tomboS50')!.midi).toBe(96);
+    expect(parseToken('22<', 'C', 'tomboS50')!.midi).toBe(97);
+    expect(parseToken('23', 'C', 'tomboS50')).toBeNull();
+    expect(harpLayout('C', 'tomboS50')).toHaveLength(44);
+    // đủ mọi nốt nửa cung Đô4…Đô#7 (Mi< trùng Fa, Si< trùng Đô)
+    const midis = [...new Set(harpLayout('C', 'tomboS50').map((n) => n.midi))].sort((a, b) => a - b);
+    expect(midis).toEqual(Array.from({ length: 38 }, (_, i) => 60 + i));
+    // kèn tông khác dịch theo như chromatic 12 lỗ cùng tông (kèn G: lỗ 1 = Sol3)
+    expect(parseToken('1', 'G', 'tomboS50')!.midi).toBe(parseToken('1', 'G', 'chromatic')!.midi);
+  });
+
+  it('chuyển bài sang S-50 đủ nốt; nhập tab tự thêm dấu hút', () => {
+    const chrom = bestTabs([60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72], 'C', 0, 'tomboS50');
+    expect(chrom.stats.unplayable).toBe(0);
+    expect(chrom.tokens.join(' ')).toBe('1 1< -2 -2< 3 -4 -4< 5 5< -6 -6< -7 8');
+    expect(normalizeToken('2', undefined, 'tomboS50')).toBe('-2');
+    expect(normalizeToken('<1', undefined, 'tomboS50')).toBe('1<');
+    expect(normalizeToken('-1', undefined, 'tomboS50')).toBeNull();
+    const r = rekeyBody('4 -4 5 -5 6 -6 7 -7 8\n', 'C', 'C', 'octave', 'diatonic', 'tomboS50');
+    expect(r.fit.stats.unplayable).toBe(0);
+  });
+});

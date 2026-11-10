@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { BRAND } from '../appConfig';
 import { useEffect, useRef, useState } from 'react';
-import { HarpKey, HarpType, harpLayout, holeCount, isChromatic, isFingered, isFretted, isKalimba, isDanBau, isOcarina, isPianica, isOrgan, isTranh, isRecorder, isSaoTruc, isTremolo, midiToHz, midiToName, TECHNIQUE_LABEL } from '../lib/harp';
+import { HarpKey, HarpType, harpLayout, holeCount, isChromatic, isFingered, isFretted, isKalimba, isDanBau, isOcarina, isPianica, isOrgan, isTranh, isRecorder, isSaoTruc, isTremolo, isTwoRowChromatic, midiToHz, midiToName, TECHNIQUE_LABEL } from '../lib/harp';
 import { MicPitch, PitchReading } from '../audio/pitch';
 import { canHoldNote } from '../lib/pitchPractice';
 import { HarpDiagram } from '../components/HarpDiagram';
@@ -73,7 +73,7 @@ export default function Tuner() {
       <header className="page-head">
         <div>
           <h1>Dò nốt</h1>
-          <p className="muted">{isPianica(type) ? 'Thổi kèn pianica, app cho biết nốt gì, phím nào và có chuẩn không.' : isOrgan(type) ? 'Hát hoặc chơi một nốt (đàn khác, bài đang nghe), app cho biết nốt gì và nằm ở phím nào trên đàn — dùng để dò nốt một bài theo tai.' : isFretted(type) ? 'Gảy dây đàn, app cho biết nốt gì, nằm ở dây nào phím nào và có chuẩn không — dùng để lên dây.' : isKalimba(type) ? 'Gảy phím kalimba, app cho biết nốt gì, phím nào và có chuẩn không — dùng để chỉnh dây (gõ phím lên / xuống).' : isTranh(type) || isDanBau(type) ? 'Gảy dây đàn, app cho biết nốt gì, dây nào và có chuẩn không — dùng để lên dây.' : isFingered(type) ? 'Thổi sáo, app cho biết bạn đang ra nốt gì, thế bấm nào và có chuẩn không.' : <>Thổi vào kèn, app cho biết bạn đang ra nốt gì, lỗ nào{trem ? ' và có chuẩn không.' : chrom ? ', có bấm nút gạt hay không, và có chuẩn không.' : ', và bend đã đủ sâu chưa.'}</>}</p>
+          <p className="muted">{isPianica(type) ? 'Thổi kèn pianica, app cho biết nốt gì, phím nào và có chuẩn không.' : isOrgan(type) ? 'Hát hoặc chơi một nốt (đàn khác, bài đang nghe), app cho biết nốt gì và nằm ở phím nào trên đàn — dùng để dò nốt một bài theo tai.' : isFretted(type) ? 'Gảy dây đàn, app cho biết nốt gì, nằm ở dây nào phím nào và có chuẩn không — dùng để lên dây.' : isKalimba(type) ? 'Gảy phím kalimba, app cho biết nốt gì, phím nào và có chuẩn không — dùng để chỉnh dây (gõ phím lên / xuống).' : isTranh(type) || isDanBau(type) ? 'Gảy dây đàn, app cho biết nốt gì, dây nào và có chuẩn không — dùng để lên dây.' : isFingered(type) ? 'Thổi sáo, app cho biết bạn đang ra nốt gì, thế bấm nào và có chuẩn không.' : <>Thổi vào kèn, app cho biết bạn đang ra nốt gì, lỗ nào{trem ? ' và có chuẩn không.' : isTwoRowChromatic(type) ? ', hàng trên hay hàng dưới, và có chuẩn không.' : chrom ? ', có bấm nút gạt hay không, và có chuẩn không.' : ', và bend đã đủ sâu chưa.'}</>}</p>
         </div>
       </header>
 
@@ -98,7 +98,7 @@ export default function Tuner() {
         <div className="tr-note">
           {r ? <>{midiToName(r.nearest, settings.noteNames)} <span className="muted">{r.hz.toFixed(1)} Hz</span></> : ' '}
         </div>
-        <div className="tr-tech">{matches.map((m) => TECHNIQUE_LABEL[m.technique]).join(' / ') || ' '}</div>
+        <div className="tr-tech">{matches.map((m) => (isTwoRowChromatic(type) ? (m.slide ? 'Hàng trên' : 'Hàng dưới') + (m.dir === 'blow' ? ', thổi' : ', hút') : TECHNIQUE_LABEL[m.technique])).join(' / ') || ' '}</div>
         <div className="cents-meter" role="meter" aria-valuemin={-50} aria-valuemax={50} aria-valuenow={cents} aria-label="Độ lệch cao độ (cent)">
           <div className="cm-scale"><span>−50</span><span>0</span><span>+50</span></div>
           <div className="cm-track"><div className="cm-center" /><div className="cm-needle" style={{ left: `${50 + Math.max(-50, Math.min(50, cents))}%`, opacity: r ? 1 : 0 }} /></div>
@@ -134,6 +134,8 @@ export default function Tuner() {
         ? <p className="muted small">Mẹo: sáo dọc thổi mạnh quá thì nốt cao lên (và dễ vọt quãng tám), yếu quá thì thấp xuống. Nhìn kim cent để tập giữ hơi đều; ngón bịt chưa kín cũng làm nốt lệch hoặc rè.</p>
         : trem
         ? <p className="muted small">Mẹo: mỗi nốt tremolo có hai lưỡi gà chỉnh lệch nhau một chút để tạo tiếng rung, nên kim lệch cent hơi dao động là bình thường. Nốt lạc hẳn sang lỗ bên thường do môi chưa khép gọn một lỗ.</p>
+        : isTwoRowChromatic(type)
+        ? <p className="muted small">Mẹo: Tombo S-50 mỗi lỗ chỉ một lưỡi, lỗ rất hẹp — nốt lạc sang lỗ bên hoặc sang hàng kia thường do môi chưa khép gọn một lỗ.</p>
         : chrom
         ? <p className="muted small">Mẹo: kèn chromatic có nhiều cách ra cùng một nốt (ví dụ Đô ở lỗ 4 thổi, lỗ 5 thổi, hoặc <strong>−4&lt;</strong>). Nốt kêu rè hoặc lệch cent thường do bấm gạt chưa hết hoặc hơi lọt sang lỗ bên.</p>
         : <p className="muted small">Mẹo: khi tập bend, nhìn kim lệch cent. Bend nửa cung ở lỗ 4 chuẩn khi app hiện <strong>−4′</strong> và kim ở giữa.</p>}

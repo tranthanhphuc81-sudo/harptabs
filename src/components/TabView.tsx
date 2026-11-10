@@ -1,5 +1,5 @@
 import { memo, useCallback, useEffect, useMemo, useRef } from 'react';
-import { HarpKey, HarpType, holeCount, isFretted, midiToName, nameToMidi, NoteNameStyle } from '../lib/harp';
+import { HarpKey, HarpType, holeCount, isFretted, isTwoRowChromatic, midiToName, nameToMidi, NoteNameStyle } from '../lib/harp';
 import { FingeringIcon, fingeringOf } from './Fingering';
 import { FretTokenText } from './Fretboard';
 import { BAU_GLYPH } from './DanBau';
@@ -91,7 +91,7 @@ const Line = memo(function Line({ events, si, li, index, active, selected, click
         const bad = !isRest && ev.midi === null;
         const cls = ['nt', isRest ? 'rest' : draw ? 'draw' : 'blow', bad ? 'bad' : '', fi === active ? 'is-active' : '', fi === selected ? 'is-selected' : '']
           .filter(Boolean).join(' ');
-        const label = isRest ? `nghỉ ${ev.beats} phách` : `${draw ? 'hút' : 'thổi'} lỗ ${ev.token!.replace('-', '').replace('<', ' bấm gạt')}${ev.lyric ? `, ${ev.lyric}` : ''}`;
+        const label = isRest ? `nghỉ ${ev.beats} phách` : `${draw ? 'hút' : 'thổi'} lỗ ${ev.token!.replace('-', '').replace('<', harpType && isTwoRowChromatic(harpType) ? ' hàng trên' : ' bấm gạt')}${ev.lyric ? `, ${ev.lyric}` : ''}`;
         const note = (
           <button
             type="button"

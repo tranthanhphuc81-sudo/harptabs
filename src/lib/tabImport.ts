@@ -3,7 +3,7 @@
  * và chuyển về định dạng tab của app. Tab trên mạng thường không ghi trường độ → mỗi nốt 1 phách.
  * Kèn chromatic: nút gạt ghi bằng < (4<, <4), * hoặc ' — app đổi hết về 4<.
  */
-import { HarpKey, HarpType, isTremolo, normalizeKey, tremoloDir } from './harp';
+import { fixedDir, HarpKey, HarpType, isTremolo, isTwoRowChromatic, normalizeKey, tremoloDir } from './harp';
 import { looksLikeTabLine, splitLyrics } from './tabText';
 
 export interface ImportResult {
@@ -28,11 +28,12 @@ interface Conventions {
 const DIA_HOLE = '(10|[1-9])';
 const CHROM_HOLE = '(1[0-6]|[1-9])';
 const TREM_HOLE = '(2[0-4]|1[0-9]|[1-9])';
+const S50_HOLE = '(2[0-2]|1[0-9]|[1-9])';
 
 /** Chuẩn hoá một ký hiệu; trả null nếu không phải nốt kèn */
 export function normalizeToken(raw: string, conv: Conventions = { letters: false, parens: false }, type: HarpType = 'diatonic'): string | null {
   const chrom = type !== 'diatonic';
-  const HOLE = isTremolo(type) ? TREM_HOLE : chrom ? CHROM_HOLE : DIA_HOLE;
+  const HOLE = isTremolo(type) ? TREM_HOLE : isTwoRowChromatic(type) ? S50_HOLE : chrom ? CHROM_HOLE : DIA_HOLE;
   let t = raw.trim()
     .replace(/[’‘`´]/g, "'").replace(/[″”"]/g, "''").replace(/[−–—]/g, '-')
     .replace(/^[.,;]+|[.,;]+$/g, '');
@@ -74,6 +75,14 @@ export function normalizeToken(raw: string, conv: Conventions = { letters: false
     if (rest.replace(/~/g, '')) return null;
     if (draw && tremoloDir(Number(hole)) === 'blow') return null;
     return `${tremoloDir(Number(hole)) === 'draw' ? '-' : ''}${hole}${dur}`;
+  }
+  if (isTwoRowChromatic(type)) {
+    // Tombo S-50: hướng do số lỗ quyết định, "<" (hay * ') là hàng trên
+    rest = rest.replace(/~/g, '');
+    if (!/^[<*'#]?$/.test(rest)) return null;
+    const d = fixedDir(type, Number(hole));
+    if (draw && d === 'blow') return null;
+    return `${d === 'draw' ? '-' : ''}${hole}${slide || rest ? '<' : ''}${dur}`;
   }
   if (chrom) {
     rest = rest.replace(/~/g, '');

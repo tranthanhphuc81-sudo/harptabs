@@ -1,5 +1,5 @@
 import { BRAND, SHOWN_HARP_TYPES } from '../appConfig';
-import { HARP_KEYS, HARP_TYPE_LABEL, HarpKey, harpKeyLabel, HarpType, harpName, holeCount, isChromatic, isDanBau, isFixedKey, isFretted, isKalimba, isPianica, isOrgan, isTranh, isSaoTruc, isTremolo } from '../lib/harp';
+import { HARP_KEYS, HARP_TYPE_LABEL, HarpKey, harpKeyLabel, HarpType, harpName, holeCount, isChromatic, isDanBau, isFixedKey, isFretted, isKalimba, isPianica, isOrgan, isTranh, isSaoTruc, isTremolo, isTwoRowChromatic } from '../lib/harp';
 
 interface Props {
   value: HarpKey | 'auto';
@@ -39,13 +39,13 @@ export function HarpTypeSelect({ value, onChange, id, label = `Loại ${BRAND.no
 export function KeyPlate({ k, type = 'diatonic', size = 'm' }: { k: string; type?: HarpType; size?: 's' | 'm' | 'l' }) {
   const holes = holeCount(type);
   // tremolo: hai hàng lỗ (trên / dưới) — dáng đặc trưng của kèn
-  const trem = isTremolo(type);
+  const trem = isTremolo(type) || isTwoRowChromatic(type);
   const cols = trem ? Math.ceil(holes / 2) : holes;
   return (
     <span className={`keyplate size-${size}${isFretted(type) || isPianica(type) || isOrgan(type) || isTranh(type) || isDanBau(type) ? ' fretted' : ''}${isChromatic(type) ? ' chromatic' : ''}${trem ? ' tremolo' : ''}`} aria-label={harpName(k, type)}>
       <span className="kp-letter">{isDanBau(type) ? 'Bầu' : isTranh(type) ? 'Tr' : isPianica(type) ? 'Pia' : isOrgan(type) ? (type === 'piano88' ? 'Pno' : 'Org') : isFretted(type) ? (type === 'ukulele4' ? 'Uke' : 'Gtr') : harpKeyLabel(k, type)}</span>
       <span className="kp-holes" aria-hidden="true" style={{ gridTemplateColumns: `repeat(${cols}, 1fr)` }}>{Array.from({ length: trem ? cols * 2 : holes }, (_, i) => <i key={i} />)}</span>
-      {isChromatic(type) && <span className="kp-slide" aria-hidden="true" />}
+      {isChromatic(type) && !isTwoRowChromatic(type) && <span className="kp-slide" aria-hidden="true" />}
     </span>
   );
 }

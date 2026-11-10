@@ -15,7 +15,7 @@ import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { db, deleteSongs, downloadJson, exportOne, newId, slugify } from '../lib/db';
 import { BRAND, IS_HARMONICA_APP, SHOWN_HARP_TYPES } from '../appConfig';
-import { HARP_KEYS, HARP_TYPE_LABEL, HarpKey, harpKeyLabel, HarpType, harpName, harpTypeOf, isChromatic, isFingered, isFixedKey, isFretted, isKalimba, isDanBau, isOcarina, isPianica, isOrgan, isKeyboard, isTranh, isRecorder, isSaoTruc, isTremolo, midiToName, parseToken, recorderKey, songTonality } from '../lib/harp';
+import { HARP_KEYS, HARP_TYPE_LABEL, HarpKey, harpKeyLabel, HarpType, harpName, harpTypeOf, isChromatic, isFingered, isFixedKey, isFretted, isKalimba, isDanBau, isOcarina, isPianica, isOrgan, isKeyboard, isTranh, isRecorder, isSaoTruc, isTremolo, isTwoRowChromatic, midiToName, parseToken, recorderKey, songTonality } from '../lib/harp';
 import { countTechniques, flatten, parseTab } from '../lib/tabText';
 import { rekeyBody } from '../lib/converter';
 import { beatsPerBar, Song } from '../lib/types';
@@ -491,7 +491,7 @@ function SongPlayerView({ song, original, fit, view, choice, onChoice }: {
             <span>{song.timeSig}</span>
             <span>{sheetData ? `${sheetData.slots.length} hợp âm` : `${stats.notes} nốt`}</span>
             {stats.bends > 0 && <span className="bend-count">{stats.bends} bend</span>}
-            {stats.slides > 0 && <span className="bend-count">{stats.slides} nốt gạt</span>}
+            {stats.slides > 0 && <span className="bend-count">{stats.slides} {isTwoRowChromatic(harpType) ? 'nốt hàng trên' : 'nốt gạt'}</span>}
             <span className="print-only">{song.bpm} bpm</span>
           </p>
         </div>
@@ -522,7 +522,7 @@ function SongPlayerView({ song, original, fit, view, choice, onChoice }: {
         {sheetData ? <span className="lg-text">Bài lời + hợp âm: bấm Phát để nghe nhạc đệm theo hợp âm, chạm chữ để phát từ đó. Mỗi hợp âm giữ {(song.sheetBeats ?? bpb) === bpb ? 'một ô nhịp' : `${song.sheetBeats} phách`} (đổi trong Sửa bài).</span> : isDanBau(harpType) ? <span className="lg-text">Ký hiệu là <strong>điểm bồi</strong> trên dây: ½ = giữa dây, ⅓, ¼… gần ngựa đàn dần; ○ = dây buông. <strong>↑2</strong> / <strong>↓1</strong>: nắn cần cho nốt cao / thấp đi mấy nửa cung. Hình nhỏ dưới mỗi nốt: dây đàn với điểm cần chạm.</span> : isTranh(harpType) ? <span className="lg-text">Số là <strong>dây cần gảy</strong> (dây 1 trầm nhất). <strong>↑½</strong> / <strong>↑1</strong>: tay trái nhấn dây cho cao lên nửa cung / một cung. Hình nhỏ dưới số: các dây của đàn, dây tô màu là dây cần gảy.</span> : isOcarina(harpType) ? <span className="lg-text">Tên nốt kèm thế bấm ocarina: hàng trên tay trái, hàng dưới tay phải, chấm nhỏ là lỗ phụ, ô vuông ở đáy là hai lỗ ngón cái phía sau. <strong>●</strong> bịt, <strong>○</strong> mở.</span> : isPianica(harpType) ? <span className="lg-text">Tên nốt có quãng tám (<strong>C4</strong> = Đô giữa, # thăng, b giáng). Hình nhỏ dưới mỗi nốt: bàn phím cả cây kèn, <strong>phím tô màu</strong> là phím cần bấm.</span> : isOrgan(harpType) ? <span className="lg-text">Tên nốt có quãng tám (<strong>C4</strong> = Đô giữa, # thăng, b giáng), chơi bằng <strong>tay phải</strong>. Hình nhỏ dưới mỗi nốt: 3 quãng tám quanh nốt đó, <strong>phím tô màu</strong> là phím cần bấm. Tay trái bấm hợp âm ghi trên dòng hợp âm.</span> : isFretted(harpType) ? <span className="lg-text">Tab guitar: mỗi nốt là một cột, <strong>dòng trên cùng là dây 1</strong> (dây mảnh nhất), số là <strong>phím cần bấm</strong> (0 = buông). Bật Hợp âm để xem thế bấm hợp âm.</span> : isKalimba(harpType) ? <span className="lg-text">Số 1–7 là Đô–Si theo tông kalimba, chấm trên = lên quãng tám. Hình nhỏ dưới số: phím cần gảy (phím giữa dài nhất là nốt thấp nhất).</span> : rec ? <span className="lg-text">Tên nốt kèm thế bấm: <strong>●</strong> bịt kín, <strong>○</strong> mở, <strong>◐</strong> bịt nửa {isRecorder(harpType) ? ' (lỗ trên cùng lệch trái là ngón cái)' : ' (lỗ 1 gần miệng thổi ở trên cùng)'}</span> : <>
         <span className="lg blow">4</span> thổi
         <span className="lg draw">−4</span> hút
-        {trem ? null : chrom ? <><span className="lg bend">&lt;</span> bấm nút gạt</> : <><span className="lg bend">′</span> bend nửa cung</>}
+        {trem ? null : isTwoRowChromatic(harpType) ? <><span className="lg bend">&lt;</span> hàng trên (cao nửa cung)</> : chrom ? <><span className="lg bend">&lt;</span> bấm nút gạt</> : <><span className="lg bend">′</span> bend nửa cung</>}
         </>}
         <span className="lg-dur print-only">Ô dài = giữ lâu hơn (ô thường 1 phách) · <strong>–</strong> nghỉ</span>
         {!sheetData && <span className="muted no-print">Chạm vào nốt để nghe, hoặc chọn chỗ bắt đầu phát.</span>}
@@ -807,13 +807,13 @@ function RekeyDialog({ song, onClose, onDone }: { song: Song; onClose: () => voi
       <fieldset className="radio-group">
         <legend className="field-label">Cách chuyển</legend>
         <label><input type="radio" checked={mode === 'any'} onChange={() => setMode('any')} /> Dịch giọng cho dễ thổi nhất <span className="muted">(giai điệu giữ nguyên, cao độ thay đổi)</span></label>
-        <label><input type="radio" checked={mode === 'octave'} onChange={() => setMode('octave')} /> Giữ đúng giọng gốc <span className="muted">(để chơi cùng bản thu{isRecorder(toType) ? ', nốt ngoài tầm sáo sẽ thiếu' : isTremolo(toType) ? ', nốt thăng giáng không có trên kèn tremolo' : isChromatic(toType) ? ', có thể phải bấm gạt nhiều hơn' : ', có thể phải bend'})</span></label>
+        <label><input type="radio" checked={mode === 'octave'} onChange={() => setMode('octave')} /> Giữ đúng giọng gốc <span className="muted">(để chơi cùng bản thu{isRecorder(toType) ? ', nốt ngoài tầm sáo sẽ thiếu' : isTremolo(toType) ? ', nốt thăng giáng không có trên kèn tremolo' : isTwoRowChromatic(toType) ? ', có thể phải đổi sang hàng trên nhiều hơn' : isChromatic(toType) ? ', có thể phải bấm gạt nhiều hơn' : ', có thể phải bend'})</span></label>
       </fieldset>
       <p className="rekey-stats">
         {isTremolo(toType) || isFingered(toType)
           ? <><strong>{s.natural}</strong> nốt chơi được</>
           : isChromatic(toType)
-          ? <><strong>{s.natural}</strong> nốt thường, <strong>{s.slides}</strong> nốt bấm gạt</>
+          ? <><strong>{s.natural}</strong> nốt thường, <strong>{s.slides}</strong> nốt {isTwoRowChromatic(toType) ? 'hàng trên' : 'bấm gạt'}</>
           : <><strong>{s.natural}</strong> nốt thường, <strong>{s.bends}</strong> nốt bend, <strong>{s.overblows}</strong> overblow</>}
         {s.unplayable > 0 && <>, <strong className="danger">{s.unplayable}</strong> nốt không chơi được (sẽ thành dấu nghỉ)</>}
       </p>
@@ -900,13 +900,13 @@ function ViewAsBar({ original, viewed, view, fit, choice, onChoice, onSaved }: {
   const missing = fit?.stats.unplayable ?? 0;
   const nameOf = (s: Song) => harpName(s.harpKey, harpTypeOf(s)).replace(/^Kèn/, 'kèn');
   // kỹ thuật khó mà kèn đang xem đòi hỏi
-  const techBits = (st: TabFit['stats']) => [
+  const techBits = (st: TabFit['stats'], t: HarpType = type) => [
     st.overblows && `${st.overblows} nốt overblow`,
     st.bends && `${st.bends} nốt bend`,
-    st.slides && `${st.slides} nốt bấm gạt`,
+    st.slides && `${st.slides} ${isTwoRowChromatic(t) ? 'nốt hàng trên' : 'nốt bấm gạt'}`,
   ].filter(Boolean).join(', ');
   const hardBits = fit ? techBits(fit.stats) : '';
-  const origBits = choice === 'auto' && active ? techBits(bestHarp(original).originalFit.stats) : '';
+  const origBits = choice === 'auto' && active ? techBits(bestHarp(original).originalFit.stats, origType) : '';
 
   const saveCopy = async () => {
     const now = Date.now();

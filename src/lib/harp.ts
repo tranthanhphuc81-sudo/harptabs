@@ -12,6 +12,10 @@
  *   4     thổi lỗ 4;  -4  hút lỗ 4
  *   4<    thổi lỗ 4, bấm nút gạt (cao lên nửa cung);  -4<  hút có bấm nút gạt
  *
+ * Tombo S-50 (chromatic không nút gạt): 2 hàng × 22 lỗ, mỗi lỗ MỘT lưỡi — hàng dưới thang Đô, hàng trên thang Đô#.
+ *   Mỗi quãng tám 7 lỗ: thổi Đô, hút Rê, thổi Mi, hút Fa, thổi Sol, hút La, hút Si (lỗ 22 thổi Đô7).
+ *   Ghi như chromatic: 4 thổi, -4 hút (hướng do số lỗ quyết định, gõ 4 cũng được), 4< = lỗ 4 hàng trên (cao nửa cung).
+ *
  * Kèn tremolo kiểu châu Á (16 / 21 / 24 lỗ, cùng cách xếp nốt, kèn ít lỗ thì bớt ở dải cao): mỗi số lỗ chỉ có MỘT nốt — lỗ lẻ thổi, lỗ chẵn hút.
  * App ghi lỗ hút có dấu trừ cho dễ nhìn (-4), nhưng nhận cả cách ghi chỉ có số (4) như sách tremolo.
  * Kèn này không có nốt thăng giáng, không bend.
@@ -57,16 +61,17 @@ export type Technique = 'blow' | 'draw' | 'drawBend' | 'blowBend' | 'overblow' |
   | 'harmonic' | 'rodBend';
 
 /** Loại kèn. Bài cũ không ghi loại là diatonic. */
-export type HarpType = 'diatonic' | 'chromatic' | 'chromatic16' | 'trochilusSolo' | 'tremolo24' | 'tremolo21' | 'tremolo16' | 'tremolo24m' | 'tremolo21m' | 'tremolo16m'
+export type HarpType = 'diatonic' | 'chromatic' | 'chromatic16' | 'trochilusSolo' | 'tomboS50' | 'tremolo24' | 'tremolo21' | 'tremolo16' | 'tremolo24m' | 'tremolo21m' | 'tremolo16m'
   | 'recorderAlto' | 'recorderSoprano' | 'recorderTenor' | 'recorderBass' | 'saoTruc6' | 'kalimba17' | 'kalimba10' | 'kalimba8' | 'guitar6' | 'ukulele4' | 'pianica32' | 'pianica37' | 'organ61' | 'piano88' | 'ocarina12' | 'tranh16' | 'tranh17' | 'tranh19' | 'tranh21' | 'tranh22' | 'danbau';
 /** mọi loại hợp lệ (để đọc bài đã lưu); ô chọn chỉ hiện SHOWN_HARP_TYPES của bản build (src/appConfig.ts) */
-export const HARP_TYPES: readonly HarpType[] = ['diatonic', 'chromatic', 'chromatic16', 'trochilusSolo', 'tremolo24', 'tremolo21', 'tremolo16', 'tremolo24m', 'tremolo21m', 'tremolo16m', 'recorderAlto', 'recorderSoprano', 'recorderTenor', 'recorderBass', 'saoTruc6', 'kalimba17', 'kalimba10', 'kalimba8', 'guitar6', 'ukulele4', 'pianica32', 'pianica37', 'organ61', 'piano88', 'ocarina12', 'tranh16', 'tranh17', 'tranh19', 'tranh21', 'tranh22', 'danbau'];
+export const HARP_TYPES: readonly HarpType[] = ['diatonic', 'chromatic', 'chromatic16', 'trochilusSolo', 'tomboS50', 'tremolo24', 'tremolo21', 'tremolo16', 'tremolo24m', 'tremolo21m', 'tremolo16m', 'recorderAlto', 'recorderSoprano', 'recorderTenor', 'recorderBass', 'saoTruc6', 'kalimba17', 'kalimba10', 'kalimba8', 'guitar6', 'ukulele4', 'pianica32', 'pianica37', 'organ61', 'piano88', 'ocarina12', 'tranh16', 'tranh17', 'tranh19', 'tranh21', 'tranh22', 'danbau'];
 
 export const HARP_TYPE_LABEL: Record<HarpType, string> = {
   diatonic: 'Diatonic 10 lỗ',
   chromatic: 'Chromatic 12 lỗ',
   chromatic16: 'Chromatic 16 lỗ',
   trochilusSolo: 'Trochilus vàng 10 lỗ (solo tuning)',
+  tomboS50: 'Tombo S-50 chromatic (2 hàng, không gạt)',
   tremolo24: 'Tremolo 24 lỗ',
   tremolo21: 'Tremolo 21 lỗ',
   tremolo16: 'Tremolo 16 lỗ',
@@ -185,10 +190,27 @@ export function recorderKey(t: HarpType): HarpKey {
 
 /**
  * kèn xếp nốt kiểu chromatic (solo tuning) có nút gạt: chromatic 12 / 16 lỗ, và Trochilus màu vàng — 10 lỗ, mỗi lỗ
- * hai cặp lưỡi (đẩy nút gạt cao nửa cung), không van; nốt như 10 lỗ đầu của chromatic 12 lỗ (lỗ 1 = Đô4)
+ * hai cặp lưỡi (đẩy nút gạt cao nửa cung), không van; nốt như 10 lỗ đầu của chromatic 12 lỗ (lỗ 1 = Đô4).
+ * Tombo S-50 cũng tính vào đây (đủ 12 nốt nửa cung, ghi "<" như nút gạt) nhưng "<" là thổi / hút lỗ đó ở hàng trên.
  */
 export function isChromatic(t: HarpType | undefined): boolean {
-  return t === 'chromatic' || t === 'chromatic16' || t === 'trochilusSolo';
+  return t === 'chromatic' || t === 'chromatic16' || t === 'trochilusSolo' || t === 'tomboS50';
+}
+
+/** Tombo S-50: chromatic không nút gạt, hai hàng lỗ (dưới thang Đô, trên thang Đô#), mỗi lỗ chỉ thổi hoặc chỉ hút */
+export function isTwoRowChromatic(t: HarpType | undefined): boolean {
+  return t === 'tomboS50';
+}
+
+/** Tombo S-50: hướng của mỗi lỗ, lặp theo quãng tám 7 lỗ — thổi Đô, hút Rê, thổi Mi, hút Fa, thổi Sol, hút La, hút Si */
+const S50_DIR: Direction[] = ['blow', 'draw', 'blow', 'draw', 'blow', 'draw', 'draw'];
+const S50_STEP = [0, 2, 4, 5, 7, 9, 11];
+
+/** kèn mỗi lỗ chỉ có một hướng (tremolo, Tombo S-50): lỗ đó thổi hay hút; kèn khác trả null */
+export function fixedDir(t: HarpType | undefined, hole: number): Direction | null {
+  if (isTremolo(t)) return tremoloDir(hole);
+  if (isTwoRowChromatic(t)) return S50_DIR[(hole - 1) % 7];
+  return null;
 }
 
 export function isTremolo(t: HarpType | undefined): boolean {
@@ -210,6 +232,7 @@ export function holeCount(t: HarpType = 'diatonic'): number {
     case 'chromatic16': return 16;
     case 'chromatic': return 12;
     case 'trochilusSolo': return 10;
+    case 'tomboS50': return 22;
     case 'tremolo24': case 'tremolo24m': return 24;
     case 'tremolo21': case 'tremolo21m': return 21;
     case 'tremolo16': case 'tremolo16m': return 16;
@@ -255,7 +278,7 @@ export function harpName(key: string, t: HarpType = 'diatonic'): string {
   if (isTranh(t)) return `Đàn tranh ${holeCount(t)} dây (${key}, dây ${tranhTuning === 'dao' ? 'Đảo' : 'Bắc'})`;
   if (isSaoTruc(t)) return `Sáo trúc ${pitchClassName(KEY_OFFSET[normalizeKey(key) ?? 'C'], 'solfege')} (${key}, bịt hết ra ${pitchClassName(KEY_OFFSET[normalizeKey(key) ?? 'C'] + [0, 2, 4, 5, 7, 9, 11][saoTrucClosed - 1], 'solfege')})`;
   if (isRecorder(t)) return t === 'recorderAlto' ? 'Sáo alto (Fa)' : t === 'recorderTenor' ? 'Sáo tenor (Đô)' : t === 'recorderBass' ? 'Sáo bass (Fa)' : 'Sáo soprano (Đô)';
-  return t === 'diatonic' ? `Kèn ${key}` : t === 'chromatic16' ? `Kèn ${key} chromatic 16 lỗ` : t === 'trochilusSolo' ? `Kèn ${key} Trochilus vàng` : `Kèn ${key} chromatic`;
+  return t === 'diatonic' ? `Kèn ${key}` : t === 'chromatic16' ? `Kèn ${key} chromatic 16 lỗ` : t === 'trochilusSolo' ? `Kèn ${key} Trochilus vàng` : t === 'tomboS50' ? `Kèn ${key} Tombo S-50` : `Kèn ${key} chromatic`;
 }
 
 export interface HarpNote {
@@ -452,6 +475,19 @@ export function harpLayout(key: HarpKey, type: HarpType = 'diatonic'): HarpNote[
     return notes;
   }
 
+  if (isTwoRowChromatic(type)) {
+    // Tombo S-50: hàng dưới Đô4…Đô7 (lỗ 1…22), hàng trên cao nửa cung (Đô#4…Đô#7), ghi như nốt bấm gạt
+    for (let hole = 1; hole <= holeCount(type); hole++) {
+      const i = hole - 1;
+      const midi = 60 + 12 * Math.floor(i / 7) + S50_STEP[i % 7];
+      const dir = S50_DIR[i % 7];
+      push(hole, dir, 0, false, midi, dir);
+      push(hole, dir, 0, false, midi + 1, dir === 'blow' ? 'blowSlide' : 'drawSlide', true);
+    }
+    layoutCache.set(ck, notes);
+    return notes;
+  }
+
   if (isChromatic(type)) {
     // 12 lỗ (và Trochilus vàng 10 lỗ): lỗ 1 = Đô4; 16 lỗ thêm một quãng tám trầm, lỗ 1 = Đô3
     const base = type === 'chromatic16' ? 48 : 60;
@@ -491,6 +527,7 @@ export function harpLayout(key: HarpKey, type: HarpType = 'diatonic'): HarpNote[
 
 export const TOKEN_RE = /^([+-])?(10|[1-9])('{1,3}|o)?$/;
 export const CHROM_TOKEN_RE = /^([+-])?(1[0-6]|[1-9])(<)?$/;
+export const S50_TOKEN_RE = /^([+-])?(2[0-2]|1[0-9]|[1-9])(<)?$/;
 export const TREM_TOKEN_RE = /^([+-])?(2[0-4]|1[0-9]|[1-9])()$/;
 /** sáo dọc: tên nốt viết hoa có quãng tám (F4, Bb4, C#5) — không lẫn với chữ trong lời */
 export const RECORDER_TOKEN_RE = /^([A-G])([#b]?)(\d)$/;
@@ -499,7 +536,7 @@ export const KALIMBA_TOKEN_RE = /^([1-7])([°'*˚º·]{0,2})$/;
 export { FRET_TOKEN_RE };
 
 function tokenRe(type: HarpType): RegExp {
-  return isDanBau(type) ? BAU_TOKEN_RE : isTranh(type) ? TRANH_TOKEN_RE : isFretted(type) ? FRET_TOKEN_RE : isKalimba(type) ? KALIMBA_TOKEN_RE : isFingered(type) ? RECORDER_TOKEN_RE : isTremolo(type) ? TREM_TOKEN_RE : isChromatic(type) ? CHROM_TOKEN_RE : TOKEN_RE;
+  return isDanBau(type) ? BAU_TOKEN_RE : isTranh(type) ? TRANH_TOKEN_RE : isFretted(type) ? FRET_TOKEN_RE : isKalimba(type) ? KALIMBA_TOKEN_RE : isFingered(type) ? RECORDER_TOKEN_RE : isTremolo(type) ? TREM_TOKEN_RE : isTwoRowChromatic(type) ? S50_TOKEN_RE : isChromatic(type) ? CHROM_TOKEN_RE : TOKEN_RE;
 }
 
 /** Chuẩn hoá các dấu nháy hay gặp khi copy từ web: ’ ′ ` ″ */
@@ -544,6 +581,12 @@ export function parseToken(raw: string, key: HarpKey, type: HarpType = 'diatonic
     // hướng do số lỗ quyết định; ghi "-" ở lỗ thổi (lẻ) là sai
     if (m[1] === '-' && tremoloDir(hole) === 'blow') return null;
     return harpLayout(key, type).find((n) => n.hole === hole) ?? null;
+  }
+  if (isTwoRowChromatic(type)) {
+    // như tremolo: hướng do số lỗ quyết định, ghi "-" ở lỗ thổi là sai; "<" là hàng trên
+    const d = fixedDir(type, hole)!;
+    if (m[1] === '-' && d === 'blow') return null;
+    return harpLayout(key, type).find((n) => n.hole === hole && n.slide === (m[3] === '<')) ?? null;
   }
   const dir: Direction = m[1] === '-' ? 'draw' : 'blow';
   const mod = m[3] ?? '';

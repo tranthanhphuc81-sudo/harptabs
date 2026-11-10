@@ -1,4 +1,4 @@
-import { HarpKey, HarpNote, HarpType, harpLayout, harpName, holeCount, isChromatic, isDanBau, isFingered, isFretted, isKeyboard, isTranh, isKalimba, isTremolo, midiToName, NoteNameStyle } from '../lib/harp';
+import { HarpKey, HarpNote, HarpType, harpLayout, harpName, holeCount, isChromatic, isDanBau, isFingered, isFretted, isKeyboard, isTranh, isKalimba, isTremolo, isTwoRowChromatic, midiToName, NoteNameStyle } from '../lib/harp';
 import { KalimbaChart, RecorderChart } from './Fingering';
 import { FretboardChart } from './Fretboard';
 import { PianoChart } from './Keyboard';
@@ -70,6 +70,39 @@ function TremoloDiagram({ harpKey, harpType, highlight, nameStyle, interactive }
   );
 }
 
+/** Tombo S-50: hàng trên (Đô#…) và hàng dưới (Đô…), mỗi ô là một lỗ — thổi hay hút tô màu theo hướng */
+function TwoRowDiagram({ harpKey, harpType, highlight, nameStyle, interactive }: Required<Omit<Props, 'showAdvanced'>>) {
+  const layout = harpLayout(harpKey, harpType);
+  const holes = holeCount(harpType);
+  const cell = (hole: number, upper: boolean) => {
+    const n = layout.find((x) => x.hole === hole && x.slide === upper);
+    if (!n) return <div key={hole} className="hd-empty" />;
+    const what = `Lỗ ${hole}${upper ? ' hàng trên' : ''} ${n.dir === 'blow' ? 'thổi' : 'hút'}`;
+    return (
+      <button key={hole} type="button" className={`hd-cell ${n.dir}${highlight.includes(n.token) ? ' on' : ''}`}
+        onClick={interactive ? () => previewNote(n.midi) : undefined}
+        title={`${n.token} = ${midiToName(n.midi, nameStyle)}`}
+        aria-label={`${what}, nốt ${midiToName(n.midi, nameStyle)}`}>
+        {midiToName(n.midi, nameStyle, false)}
+      </button>
+    );
+  };
+  const cols = Array.from({ length: holes }, (_, i) => i + 1);
+  return (
+    <div className="harp-diagram chromatic two-row" role="group" aria-label={`Sơ đồ nốt ${harpName(harpKey, harpType).replace(/^Kèn/, 'kèn')}`}
+      style={{ ['--holes' as string]: holes }}>
+      <div className="hd-grid" style={{ gridTemplateColumns: `minmax(0, auto) repeat(${holes}, minmax(0, 1fr))` }}>
+        <div className="hd-label">Hàng trên &lt;</div>
+        {cols.map((h) => cell(h, true))}
+        <div className="hd-label">Lỗ</div>
+        {cols.map((h) => <div key={h} className="hd-hole">{h}</div>)}
+        <div className="hd-label">Hàng dưới</div>
+        {cols.map((h) => cell(h, false))}
+      </div>
+    </div>
+  );
+}
+
 export function HarpDiagram({ harpKey, harpType = 'diatonic', highlight = [], nameStyle = 'letter', showAdvanced = true, interactive = true }: Props) {
   if (isDanBau(harpType)) return <BauChart harpKey={harpKey} highlight={highlight} nameStyle={nameStyle} interactive={interactive} />;
   if (isTranh(harpType)) return <TranhChart harpType={harpType} harpKey={harpKey} highlight={highlight} nameStyle={nameStyle} interactive={interactive} />;
@@ -78,6 +111,7 @@ export function HarpDiagram({ harpKey, harpType = 'diatonic', highlight = [], na
   if (isKalimba(harpType)) return <KalimbaChart harpKey={harpKey} harpType={harpType} highlight={highlight} nameStyle={nameStyle} interactive={interactive} />;
   if (isFingered(harpType)) return <RecorderChart harpType={harpType} harpKey={harpKey} highlight={highlight} nameStyle={nameStyle} interactive={interactive} />;
   if (isTremolo(harpType)) return <TremoloDiagram harpKey={harpKey} harpType={harpType} highlight={highlight} nameStyle={nameStyle} interactive={interactive} />;
+  if (isTwoRowChromatic(harpType)) return <TwoRowDiagram harpKey={harpKey} harpType={harpType} highlight={highlight} nameStyle={nameStyle} interactive={interactive} />;
   const layout = harpLayout(harpKey, harpType);
   const chrom = isChromatic(harpType);
   const holes = holeCount(harpType);
