@@ -11,6 +11,7 @@ import { ThemeToggle } from '../components/ThemeToggle';
 import { BackupNotice } from '../components/AppNotices';
 import { KeyPlate } from '../components/KeySelect';
 import { useAppState } from '../state';
+import { useScrollHint } from '../components/useScrollHint';
 import { PATTERNS } from '../audio/patterns';
 
 type Sort = 'recent' | 'title' | 'title-desc' | 'practiced';
@@ -56,6 +57,7 @@ export default function Library() {
     try { localStorage.setItem(SORT_KEY, v); } catch { /* bỏ qua */ }
   };
   const fileRef = useRef<HTMLInputElement>(null);
+  const filterRef = useScrollHint<HTMLDivElement>();
   const nav = useNavigate();
   const { toast } = useAppState();
   // chọn nhiều bài để xoá
@@ -135,7 +137,7 @@ export default function Library() {
           <span className="sr-only">Tìm bài</span>
           <input type="search" placeholder="Tìm theo tên, tác giả, thẻ" value={q} onChange={(e) => setQ(e.target.value)} />
         </label>
-        <div className="filter-row">
+        <div className="filter-row scroll-row" ref={filterRef}>
           <button type="button" className={`chip${fav ? ' on' : ''}`} aria-pressed={fav} onClick={() => setFav(!fav)}>
             <Icon name="star" size={15} filled={fav} /> Yêu thích
           </button>

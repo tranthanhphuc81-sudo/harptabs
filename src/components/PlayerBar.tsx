@@ -8,6 +8,8 @@ import { PlayerState } from './usePlayer';
 
 interface Props {
   p: PlayerState;
+  /** thêm class cho thanh (vd. pin-top: dính cả mép trên khi cuộn) */
+  className?: string;
   loopLabel?: string | null;
   onToggleLoop?: () => void;
   extra?: ReactNode;
@@ -147,7 +149,7 @@ function BeatTuner({ style, styleName, autoInstrument, sing }: { style: BeatStyl
 
 const COLLAPSED_KEY = 'harptabs.pbCollapsed';
 
-export function PlayerBar({ p, loopLabel, onToggleLoop, extra, above, autoStyle, autoApplied = false, autoInstrument }: Props) {
+export function PlayerBar({ p, className, loopLabel, onToggleLoop, extra, above, autoStyle, autoApplied = false, autoInstrument }: Props) {
   const { opts, setOpts } = p;
   const [tuner, setTuner] = useState(false);
   // thu gọn: chỉ còn nút phát ở cuối màn hình, không che tab; chạm nút mở rộng để hiện đủ
@@ -164,7 +166,7 @@ export function PlayerBar({ p, loopLabel, onToggleLoop, extra, above, autoStyle,
   const step = (d: number) => setOpts({ tempoScale: Math.min(1.6, Math.max(0.4, Math.round((opts.tempoScale + d) * 100) / 100)) });
   if (collapsed) {
     return (
-      <div className={`playerbar collapsed${above ? ' with-above' : ''}`} role="region" aria-label="Điều khiển phát (thu gọn)">
+      <div className={`playerbar collapsed${above ? ' with-above' : ''}${className ? ` ${className}` : ''}`} role="region" aria-label="Điều khiển phát (thu gọn)">
         <div className="pb-main">
           <button type="button" className="pb-play" onClick={p.toggle} aria-label={p.playing ? 'Dừng' : 'Phát'}>
             <Icon name={p.playing ? 'stop' : 'play'} size={26} />
@@ -180,7 +182,7 @@ export function PlayerBar({ p, loopLabel, onToggleLoop, extra, above, autoStyle,
     );
   }
   return (
-    <div className={`playerbar${tuner ? ' tuning' : ''}`} role="region" aria-label="Điều khiển phát">
+    <div className={`playerbar${tuner ? ' tuning' : ''}${className ? ` ${className}` : ''}`} role="region" aria-label="Điều khiển phát">
       <div className="pb-main">
         <button type="button" className="pb-play" onClick={p.toggle} aria-label={p.playing ? 'Dừng' : 'Phát'}>
           <Icon name={p.playing ? 'stop' : 'play'} size={26} />

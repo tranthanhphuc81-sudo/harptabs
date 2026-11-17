@@ -170,6 +170,9 @@ function BluesJam() {
             )}
           </div>
 
+          {/* nút phát ngay dưới dòng "Bấm phát để bắt đầu", không che khung 12 ô; cuộn xuống thì dính mép trên */}
+          <PlayerBar p={p} className="pin-top" />
+
           <ol className="jam-grid" aria-label="Khung 12 ô nhịp">
             {chords.map((c, i) => (
               <li key={i} className={`${bar === i ? 'on' : ''}${callResponse && isCallBar(i) ? ' call' : ''}`}>
@@ -231,7 +234,7 @@ function BluesJam() {
         </>
       )}
 
-      <PlayerBar p={p} />
+      {tab !== 'jam' && <PlayerBar p={p} />}
     </>
   );
 }

@@ -435,6 +435,46 @@ button, a, select { -webkit-tap-highlight-color: transparent; }
 .song-notes { padding: 12px 16px; border-left: 3px solid var(--accent); background: var(--accent-soft); border-radius: 0 var(--r-s) var(--r-s) 0; max-width: 72ch; }
 .legend { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; font-size: 0.85rem; }
 .legend .muted { flex-basis: 100%; }
+/* "Cách đọc tab": chú giải thu gọn, mở ra khi cần */
+.legend-help { flex-basis: auto; }
+.legend-help[open] { flex-basis: 100%; }
+.legend-help summary {
+  display: inline-flex; align-items: center; gap: 6px; min-height: 32px; padding: 0 12px 0 6px; cursor: pointer; list-style: none;
+  border: 1px dashed var(--line-strong); border-radius: 999px; color: var(--ink-2); font-weight: 600;
+}
+.legend-help summary::-webkit-details-marker { display: none; }
+.legend-help summary::before {
+  content: '?'; display: inline-grid; place-items: center; width: 20px; height: 20px; border-radius: 50%;
+  background: var(--accent-soft); color: var(--ink); font-size: 0.75rem; font-weight: 700;
+}
+.legend-help[open] summary { border-style: solid; color: var(--ink); }
+.legend-help > .lg-text, .legend-help > .muted { display: block; margin-top: 8px; max-width: 72ch; }
+
+/* hàng cuộn ngang (tuỳ chọn hiển thị, bộ lọc): mép mờ khi còn nút khuất — components/useScrollHint.ts */
+.scroll-row[data-more='right'] { -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 44px), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 44px), transparent); }
+.scroll-row[data-more='left'] { -webkit-mask-image: linear-gradient(90deg, transparent, #000 44px); mask-image: linear-gradient(90deg, transparent, #000 44px); }
+.scroll-row[data-more='both'] { -webkit-mask-image: linear-gradient(90deg, transparent, #000 44px, #000 calc(100% - 44px), transparent); mask-image: linear-gradient(90deg, transparent, #000 44px, #000 calc(100% - 44px), transparent); }
+.view-tools { display: flex; align-items: center; gap: 8px; overflow-x: auto; scrollbar-width: none; padding: 2px 0; font-size: 0.85rem; }
+.view-tools::-webkit-scrollbar { display: none; }
+.view-tools > * { flex: none; }
+@media (min-width: 700px) { .view-tools { flex-wrap: wrap; overflow: visible; } }
+
+/* menu "⋯" ở đầu trang bài */
+.more-menu { position: relative; }
+.icon-btn.on { background: var(--accent-soft); border-color: var(--accent); }
+.mm-list {
+  position: absolute; right: 0; top: calc(100% + 6px); z-index: 40; min-width: 210px; max-width: calc(100vw - 32px);
+  display: flex; flex-direction: column; padding: 6px;
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-m); box-shadow: var(--shadow);
+}
+/* điện thoại: hàng nút nằm bên trái → menu căn giữa theo nút, không chạm mép màn hình */
+@media (max-width: 699px) { .mm-list { right: auto; left: 50%; transform: translateX(-50%); } }
+.mm-item {
+  display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 12px; border: 0; border-radius: var(--r-s);
+  background: none; color: var(--ink); font: inherit; font-size: 0.95rem; text-align: left; cursor: pointer; white-space: nowrap;
+}
+.mm-item:hover, .mm-item:focus-visible { background: var(--surface-2); }
+.mm-item.danger { color: var(--bend); }
 /* thanh tự cuộn: nổi góc trái dưới (nút phát nhạc ở góc phải) */
 .autoscroll-bar {
   position: fixed; left: 12px; bottom: calc(var(--nav-h) + env(safe-area-inset-bottom) + 16px); z-index: 21;
@@ -953,6 +993,10 @@ button, a, select { -webkit-tap-highlight-color: transparent; }
 .viewas-field select { max-width: 100%; }
 .viewas .segmented { align-self: flex-end; }
 .viewas-status { margin: 0; }
+.viewas.compact { padding: 6px 10px; }
+.viewas.compact .viewas-field { flex-direction: row; align-items: center; gap: 10px; }
+.viewas.compact .field-label { white-space: nowrap; margin: 0; }
+.viewas.compact select { min-height: 36px; padding-top: 4px; padding-bottom: 4px; }
 
 
 /* ===== In / lưu PDF (nút In trong trang bài) ===== */
@@ -1152,6 +1196,7 @@ button, a, select { -webkit-tap-highlight-color: transparent; }
 .kara-stage { position: relative; }
 
 /* thanh phát thu gọn: chỉ nút phát (và hợp âm đang vang) ở góc dưới, không che tab */
+.playerbar.pin-top { top: 8px; margin-top: 0; }
 .playerbar.collapsed { width: fit-content; margin-left: auto; padding: 6px; gap: 6px; border-radius: 999px; overflow: visible; }
 .playerbar.collapsed.with-above { width: auto; margin-left: 0; border-radius: var(--r-l); padding: 10px 12px; }
 .playerbar.collapsed .pb-main { flex-wrap: nowrap; gap: 6px; }

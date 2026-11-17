@@ -30,6 +30,10 @@ import { PracticeResult } from '../components/PracticeResult';
 import { bestHarp, chordForOriginal, isOriginal, loadViewChoice, resolveChoice, saveViewChoice, ViewAs, ViewChoice, viewSong } from '../lib/viewAs';
 import type { TabFit } from '../lib/converter';
 import { Icon } from '../components/Icon';
+import { MoreMenu } from '../components/MoreMenu';
+import { useScrollHint } from '../components/useScrollHint';
+
+const HELP_KEY = 'harptabs.tabHelpOpen';
 import { KeyPlate } from '../components/KeySelect';
 import { ScanPageView } from '../components/ScanPageView';
 import type { SongScan } from '../lib/scanStore';
@@ -467,6 +471,10 @@ function SongPlayerView({ song, original, fit, view, choice, onChoice }: {
   };
   // xoá: bấm lần đầu để hỏi lại, bấm lần nữa trong 4 giây mới xoá
   const [confirmDel, setConfirmDel] = useState(false);
+  const toolsRef = useScrollHint<HTMLDivElement>();
+  // "Cách đọc tab": mặc định thu gọn; mở rồi thì lần sau vẫn mở
+  const [helpOpen, setHelpOpenState] = useState(() => { try { return localStorage.getItem(HELP_KEY) === '1'; } catch { return false; } });
+  const setHelpOpen = (v: boolean) => { setHelpOpenState(v); try { localStorage.setItem(HELP_KEY, v ? '1' : '0'); } catch { /* chế độ riêng tư */ } };
   const removeSong = async () => {
     if (!confirmDel) { setConfirmDel(true); setTimeout(() => setConfirmDel(false), 4000); return; }
     await deleteSongs([song.id]);
@@ -500,14 +508,14 @@ function SongPlayerView({ song, original, fit, view, choice, onChoice }: {
             <Icon name="star" filled={song.favorite} />
           </button>
           <button type="button" className="icon-btn" onClick={() => setRekeyOpen(true)} aria-label={`Chuyển sang ${BRAND.noun} khác`}><Icon name="swap" /></button>
-          <button type="button" className="icon-btn" onClick={share} aria-label="Chia sẻ bài"><Icon name="share" /></button>
-          <button type="button" className="icon-btn" onClick={printSong} aria-label="In / lưu PDF" title="In / lưu PDF"><Icon name="print" /></button>
-          <button type="button" className="icon-btn" onClick={exportSong} aria-label="Xuất file bài"><Icon name="download" /></button>
           <Link to={`/song/${song.id}/edit`} className="icon-btn" aria-label="Sửa bài"><Icon name="edit" /></Link>
-          <button type="button" className={confirmDel ? 'btn btn-danger del-confirm' : 'icon-btn'} onClick={removeSong}
-            aria-label={confirmDel ? 'Bấm lần nữa để xoá bài' : 'Xoá bài'}>
-            {confirmDel ? 'Xoá?' : <Icon name="trash" />}
-          </button>
+          {/* việc ít dùng gom vào "⋯" để đầu trang gọn, tab hiện lên sớm hơn */}
+          <MoreMenu label="Thêm việc với bài" items={[
+            { icon: 'share', label: 'Chia sẻ bài', onSelect: share },
+            { icon: 'print', label: 'In / lưu PDF', onSelect: printSong },
+            { icon: 'download', label: 'Xuất file bài', onSelect: exportSong },
+            { icon: 'trash', label: confirmDel ? 'Bấm lần nữa để xoá' : 'Xoá bài', onSelect: removeSong, danger: true, keepOpen: !confirmDel },
+          ]} />
         </div>
       </header>
 
@@ -518,22 +526,36 @@ function SongPlayerView({ song, original, fit, view, choice, onChoice }: {
         <div className="alert error">Bài có {issues.length} lỗi ký hiệu. <Link to={`/song/${song.id}/edit`}>Mở trình sửa</Link> để xem chi tiết.</div>
       )}
 
-      <p className="legend">
-        {sheetData ? <span className="lg-text">Bài lời + hợp âm: bấm Phát để nghe nhạc đệm theo hợp âm, chạm chữ để phát từ đó. Mỗi hợp âm giữ {(song.sheetBeats ?? bpb) === bpb ? 'một ô nhịp' : `${song.sheetBeats} phách`} (đổi trong Sửa bài).</span> : isDanBau(harpType) ? <span className="lg-text">Ký hiệu là <strong>điểm bồi</strong> trên dây: ½ = giữa dây, ⅓, ¼… gần ngựa đàn dần; ○ = dây buông. <strong>↑2</strong> / <strong>↓1</strong>: nắn cần cho nốt cao / thấp đi mấy nửa cung. Hình nhỏ dưới mỗi nốt: dây đàn với điểm cần chạm.</span> : isTranh(harpType) ? <span className="lg-text">Số là <strong>dây cần gảy</strong> (dây 1 trầm nhất). <strong>↑½</strong> / <strong>↑1</strong>: tay trái nhấn dây cho cao lên nửa cung / một cung. Hình nhỏ dưới số: các dây của đàn, dây tô màu là dây cần gảy.</span> : isOcarina(harpType) ? <span className="lg-text">Tên nốt kèm thế bấm ocarina: hàng trên tay trái, hàng dưới tay phải, chấm nhỏ là lỗ phụ, ô vuông ở đáy là hai lỗ ngón cái phía sau. <strong>●</strong> bịt, <strong>○</strong> mở.</span> : isPianica(harpType) ? <span className="lg-text">Tên nốt có quãng tám (<strong>C4</strong> = Đô giữa, # thăng, b giáng). Hình nhỏ dưới mỗi nốt: bàn phím cả cây kèn, <strong>phím tô màu</strong> là phím cần bấm.</span> : isOrgan(harpType) ? <span className="lg-text">Tên nốt có quãng tám (<strong>C4</strong> = Đô giữa, # thăng, b giáng), chơi bằng <strong>tay phải</strong>. Hình nhỏ dưới mỗi nốt: 3 quãng tám quanh nốt đó, <strong>phím tô màu</strong> là phím cần bấm. Tay trái bấm hợp âm ghi trên dòng hợp âm.</span> : isFretted(harpType) ? <span className="lg-text">Tab guitar: mỗi nốt là một cột, <strong>dòng trên cùng là dây 1</strong> (dây mảnh nhất), số là <strong>phím cần bấm</strong> (0 = buông). Bật Hợp âm để xem thế bấm hợp âm.</span> : isKalimba(harpType) ? <span className="lg-text">Số 1–7 là Đô–Si theo tông kalimba, chấm trên = lên quãng tám. Hình nhỏ dưới số: phím cần gảy (phím giữa dài nhất là nốt thấp nhất).</span> : rec ? <span className="lg-text">Tên nốt kèm thế bấm: <strong>●</strong> bịt kín, <strong>○</strong> mở, <strong>◐</strong> bịt nửa {isRecorder(harpType) ? ' (lỗ trên cùng lệch trái là ngón cái)' : ' (lỗ 1 gần miệng thổi ở trên cùng)'}</span> : <>
+      {(() => {
+        // chú giải cách đọc tab: thu vào "Cách đọc tab" (mở / đóng được, nhớ lựa chọn) để phần tab hiện lên sớm
+        const lgText = sheetData ? <span className="lg-text">Bài lời + hợp âm: bấm Phát để nghe nhạc đệm theo hợp âm, chạm chữ để phát từ đó. Mỗi hợp âm giữ {(song.sheetBeats ?? bpb) === bpb ? 'một ô nhịp' : `${song.sheetBeats} phách`} (đổi trong Sửa bài).</span> : isDanBau(harpType) ? <span className="lg-text">Ký hiệu là <strong>điểm bồi</strong> trên dây: ½ = giữa dây, ⅓, ¼… gần ngựa đàn dần; ○ = dây buông. <strong>↑2</strong> / <strong>↓1</strong>: nắn cần cho nốt cao / thấp đi mấy nửa cung. Hình nhỏ dưới mỗi nốt: dây đàn với điểm cần chạm.</span> : isTranh(harpType) ? <span className="lg-text">Số là <strong>dây cần gảy</strong> (dây 1 trầm nhất). <strong>↑½</strong> / <strong>↑1</strong>: tay trái nhấn dây cho cao lên nửa cung / một cung. Hình nhỏ dưới số: các dây của đàn, dây tô màu là dây cần gảy.</span> : isOcarina(harpType) ? <span className="lg-text">Tên nốt kèm thế bấm ocarina: hàng trên tay trái, hàng dưới tay phải, chấm nhỏ là lỗ phụ, ô vuông ở đáy là hai lỗ ngón cái phía sau. <strong>●</strong> bịt, <strong>○</strong> mở.</span> : isPianica(harpType) ? <span className="lg-text">Tên nốt có quãng tám (<strong>C4</strong> = Đô giữa, # thăng, b giáng). Hình nhỏ dưới mỗi nốt: bàn phím cả cây kèn, <strong>phím tô màu</strong> là phím cần bấm.</span> : isOrgan(harpType) ? <span className="lg-text">Tên nốt có quãng tám (<strong>C4</strong> = Đô giữa, # thăng, b giáng), chơi bằng <strong>tay phải</strong>. Hình nhỏ dưới mỗi nốt: 3 quãng tám quanh nốt đó, <strong>phím tô màu</strong> là phím cần bấm. Tay trái bấm hợp âm ghi trên dòng hợp âm.</span> : isFretted(harpType) ? <span className="lg-text">Tab guitar: mỗi nốt là một cột, <strong>dòng trên cùng là dây 1</strong> (dây mảnh nhất), số là <strong>phím cần bấm</strong> (0 = buông). Bật Hợp âm để xem thế bấm hợp âm.</span> : isKalimba(harpType) ? <span className="lg-text">Số 1–7 là Đô–Si theo tông kalimba, chấm trên = lên quãng tám. Hình nhỏ dưới số: phím cần gảy (phím giữa dài nhất là nốt thấp nhất).</span> : rec ? <span className="lg-text">Tên nốt kèm thế bấm: <strong>●</strong> bịt kín, <strong>○</strong> mở, <strong>◐</strong> bịt nửa {isRecorder(harpType) ? ' (lỗ trên cùng lệch trái là ngón cái)' : ' (lỗ 1 gần miệng thổi ở trên cùng)'}</span> : null;
+        return (
+          <div className="legend">
+            {!lgText && <>
         <span className="lg blow">4</span> thổi
         <span className="lg draw">−4</span> hút
         {trem ? null : isTwoRowChromatic(harpType) ? <><span className="lg bend">&lt;</span> hàng trên (cao nửa cung)</> : chrom ? <><span className="lg bend">&lt;</span> bấm nút gạt</> : <><span className="lg bend">′</span> bend nửa cung</>}
-        </>}
-        <span className="lg-dur print-only">Ô dài = giữ lâu hơn (ô thường 1 phách) · <strong>–</strong> nghỉ</span>
-        {!sheetData && <span className="muted no-print">Chạm vào nốt để nghe, hoặc chọn chỗ bắt đầu phát.</span>}
-        <button type="button" className={`chip no-print${pageTurn ? ' on' : ''}`} aria-pressed={pageTurn} onClick={togglePageTurn}>Chạm lật trang</button>
-        <button type="button" className={`chip no-print${autoOn ? ' on' : ''}`} aria-pressed={autoOn} onClick={toggleAuto}>Tự cuộn</button>
+            </>}
+            {lgText && <span className="lg-text print-only">{lgText}</span>}
+            <span className="lg-dur print-only">Ô dài = giữ lâu hơn (ô thường 1 phách) · <strong>–</strong> nghỉ</span>
+            <details className="legend-help no-print" open={helpOpen} onToggle={(e) => setHelpOpen(e.currentTarget.open)}>
+              <summary>{lgText ? 'Cách đọc tab' : 'Mẹo'}</summary>
+              {lgText}
+              {!sheetData && <span className="muted">Chạm vào nốt để nghe, hoặc chọn chỗ bắt đầu phát.</span>}
+            </details>
+          </div>
+        );
+      })()}
+      {/* tuỳ chọn hiển thị: một hàng, điện thoại thì cuộn ngang (mép mờ báo còn nút) */}
+      <div className="view-tools scroll-row no-print" ref={toolsRef}>
+        <button type="button" className={`chip${pageTurn ? ' on' : ''}`} aria-pressed={pageTurn} onClick={togglePageTurn}>Chạm lật trang</button>
+        <button type="button" className={`chip${autoOn ? ' on' : ''}`} aria-pressed={autoOn} onClick={toggleAuto}>Tự cuộn</button>
         {rec && !isFretted(harpType) && !sheetData && (() => {
           // cỡ hình dưới nốt: 60% – 250%, mỗi bước 20%
           const fs = settings.fingerScale ?? 1;
           const setFs = (v: number) => update({ fingerScale: Math.round(Math.min(2.5, Math.max(0.6, v)) * 10) / 10 });
           return (
-            <span className="finger-size no-print" role="group" aria-label="Cỡ hình dưới nốt">
+            <span className="finger-size" role="group" aria-label="Cỡ hình dưới nốt">
               <span className="small muted">Hình dưới nốt</span>
               <button type="button" className="icon-btn" onClick={() => setFs(fs - 0.2)} disabled={fs <= 0.6} aria-label="Thu nhỏ hình dưới nốt">−</button>
               <output>{Math.round(fs * 100)}%</output>
@@ -551,9 +573,8 @@ function SongPlayerView({ song, original, fit, view, choice, onChoice }: {
           onClick={() => setBeatPrefs({ showChords: !beatPrefs.showChords })}>
           Hợp âm{manualCount > 0 ? (original.source === 'sample' ? ' (chuẩn)' : ` (${manualCount} chọn tay)`) : ''}
         </button>
-      </p>
-      {fretted && (
-        <div className="guitar-tools no-print">
+        {/* guitar / ukulele: bảng lời + hợp âm, đệm rải, capo */}
+        {fretted && <>
           {!sheetData && <button type="button" className={`chip${sheet ? ' on' : ''}`} aria-pressed={sheet} onClick={toggleSheet}>Lời + hợp âm</button>}
           {!sheetData && <button type="button" className={`chip${arpOn ? ' on' : ''}`} aria-pressed={arpOn} onClick={toggleArp}>Đệm rải</button>}
           {!sheetData && flat.some((e) => e.lyric) && <button type="button" className="chip" onClick={() => setSheetApply(true)}>Dán hợp âm</button>}
@@ -569,9 +590,8 @@ function SongPlayerView({ song, original, fit, view, choice, onChoice }: {
               {capoHint ? `Gợi ý: capo ${capoHint} cho dễ bấm` : 'Gợi ý: bỏ capo'}
             </button>
           )}
-          {!chordSegs && <span className="small muted">Bật Hợp âm để xem gợi ý capo.</span>}
-        </div>
-      )}
+        </>}
+      </div>
       {fretted && (sheet || sheetData) && (() => {
         // điệu quạt đúng như nhạc đệm đang đánh (kiểu nhịp đang phát), ô đang đánh sáng theo nhạc
         const style = p.opts.style;
@@ -918,7 +938,8 @@ function ViewAsBar({ original, viewed, view, fit, choice, onChoice, onSaved }: {
   };
 
   return (
-    <section className={`viewas${active ? ' on' : ''}`} aria-label={`Xem bài cho ${BRAND.noun} khác`}>
+    // đang xem bản gốc: thu thành một dòng (nhãn + ô chọn) cho tab hiện lên sớm
+    <section className={`viewas${active ? ' on' : ''}${!active && !manual ? ' compact' : ''}`} aria-label={`Xem bài cho ${BRAND.noun} khác`}>
       <div className="row gap wrap center">
         <label className="field viewas-field">
           <span className="field-label">Xem cho {BRAND.noun}</span>
@@ -947,7 +968,7 @@ function ViewAsBar({ original, viewed, view, fit, choice, onChoice, onSaved }: {
           </div>
         )}
       </div>
-      {choice !== 'original' && (
+      {choice !== 'original' && (active || manual) && (
         <p className="small muted viewas-status">
           {!active
             ? (choice === 'auto' ? `Bản gốc (${nameOf(original)}) đã là ${BRAND.noun} dễ chơi nhất cho bài này.` : `Đang xem bản gốc — bài viết sẵn cho ${BRAND.noun} này.`)
