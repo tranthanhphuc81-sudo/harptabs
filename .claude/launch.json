@@ -72,6 +72,18 @@
         "set VITE_APP=organ&& npx vite --port 5179 --strictPort"
       ],
       "port": 5179
+    },
+    {
+      "name": "landing-dev",
+      "runtimeExecutable": "python",
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "5181",
+        "-d",
+        "landing"
+      ],
+      "port": 5181
     }
   ]
 }

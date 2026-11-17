@@ -31,14 +31,19 @@
   .hero p { margin: 0; max-width: 40em; color: #c5ced6; font-size: 1.05rem; }
   .hero .icons { display: flex; gap: 10px; margin-bottom: 18px; }
   .hero .icons img { width: 44px; height: 44px; border-radius: 11px; }
+  @media (max-width: 420px) { .hero .icons { gap: 7px; flex-wrap: wrap; } .hero .icons img { width: 38px; height: 38px; border-radius: 10px; } }
   .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
   .chips span { padding: 4px 12px; border-radius: 999px; background: rgba(255,255,255,0.09); font-size: 0.88rem; }
   main { padding: 28px 0 40px; }
   h2 { font-size: 1.35rem; margin: 30px 0 12px; }
   .apps { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 14px; }
-  .app { display: flex; flex-direction: column; gap: 10px; padding: 16px; border-radius: 16px; background: var(--surface); border: 1px solid var(--line); }
+  .app { display: flex; flex-direction: column; gap: 12px; padding: 16px; border-radius: 16px; background: var(--surface); border: 1px solid var(--line); border-top: 4px solid var(--app); }
+  /* ảnh chụp giao diện của từng app: bài hát, thư viện, luyện tập — chạm để xem lớn */
+  .shots { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 10px; margin: 0 -4px; border-radius: 12px; background: color-mix(in srgb, var(--app) 10%, var(--surface)); }
+  .shots a { display: block; border-radius: 10px; overflow: hidden; border: 1px solid color-mix(in srgb, var(--app) 25%, var(--line)); box-shadow: 0 6px 16px -10px rgba(0,0,0,0.45); background: var(--bg); }
+  .shots img { display: block; width: 100%; height: auto; aspect-ratio: 9 / 16; }
   .app .top { display: flex; gap: 12px; align-items: center; }
-  .app img { width: 56px; height: 56px; border-radius: 14px; flex: none; }
+  .app .top img { width: 56px; height: 56px; border-radius: 14px; flex: none; }
   .app h3 { margin: 0; font-size: 1.12rem; }
   .app .inst { margin: 0; color: var(--ink-2); font-size: 0.9rem; }
   .app ul { margin: 0; padding-left: 1.1em; font-size: 0.93rem; }
@@ -46,6 +51,7 @@
   .btns { display: flex; flex-wrap: wrap; gap: 8px; margin-top: auto; padding-top: 4px; }
   .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 42px; padding: 0 16px; border-radius: 999px; font-weight: 700; text-decoration: none; font-size: 0.95rem; }
   .btn.primary { background: var(--accent); color: var(--accent-ink); }
+  .app .btn.primary { background: var(--app); color: var(--app-ink); }
   .btn.ghost { border: 1.5px solid var(--line); }
   .btn small { font-weight: 500; opacity: 0.75; }
   .steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }
@@ -113,29 +119,31 @@
 </footer>
 
 <script>
-  // bảy app: tên, nhạc cụ, điểm chính, link web, tiền tố tag APK trên GitHub Releases
+  // bảy app: màu riêng (màu nhấn của bảng màu mặc định trong app), tên, nhạc cụ, điểm chính, link web, tiền tố tag APK trên GitHub Releases
   const APPS = [
-    { id: 'harmonica', name: 'Sổ Tab Harmonica', inst: 'Kèn harmonica diatonic 10 lỗ, chromatic, tremolo 16 / 21 / 24 lỗ', url: 'https://harptabs.pages.dev/', tag: 'apk',
+    { id: 'harmonica', color: '#d08a1e', ink: '#1d1406', name: 'Sổ Tab Harmonica', inst: 'Kèn harmonica diatonic 10 lỗ, chromatic, tremolo 16 / 21 / 24 lỗ', url: 'https://harptabs.pages.dev/', tag: 'apk',
       points: ['Tab số lỗ thổi / hút, bend, nút gạt', 'Tự chọn kèn hợp nhất cho từng bài', 'Học bend, overblow, blues 12 ô nhịp'] },
-    { id: 'sao', name: 'Sổ Tab Sáo', inst: 'Sáo dọc soprano / alto / tenor / bass, sáo trúc 6 lỗ, ocarina 12 lỗ', url: 'https://sotabsao.pages.dev/', tag: 'sao-apk',
+    { id: 'sao', color: '#2f7d55', ink: '#ffffff', name: 'Sổ Tab Sáo', inst: 'Sáo dọc soprano / alto / tenor / bass, sáo trúc 6 lỗ, ocarina 12 lỗ', url: 'https://sotabsao.pages.dev/', tag: 'sao-apk',
       points: ['Tên nốt kèm hình thế bấm dưới mỗi nốt', 'Bấm kiểu Baroque hoặc German', 'Sáo trúc chọn tông, ocarina 12 lỗ alto Đô'] },
-    { id: 'kalimba', name: 'Sổ Tab Kalimba', inst: 'Kalimba 17, 10, 8 phím', url: 'https://sotabkalimba.pages.dev/', tag: 'kalimba-apk',
+    { id: 'kalimba', color: '#a35a1f', ink: '#ffffff', name: 'Sổ Tab Kalimba', inst: 'Kalimba 17, 10, 8 phím', url: 'https://sotabkalimba.pages.dev/', tag: 'kalimba-apk',
       points: ['Tab số 1–7 có chấm như số khắc trên đàn', 'Hình phím cần gảy dưới mỗi nốt', 'Dò nốt để chỉnh dây từng phím'] },
-    { id: 'guitar', name: 'Sổ Tab Guitar', inst: 'Guitar 6 dây, ukulele 4 dây', url: 'https://sotabguitar.pages.dev/', tag: 'guitar-apk',
+    { id: 'guitar', color: '#d9620f', ink: '#1f0e03', name: 'Sổ Tab Guitar', inst: 'Guitar 6 dây, ukulele 4 dây', url: 'https://sotabguitar.pages.dev/', tag: 'guitar-apk',
       points: ['Tab dây.phím, sơ đồ hợp âm, capo', 'Dán bài lời + hợp âm để tập đệm hát', 'Điệu quạt chạy theo nhạc đệm'] },
-    { id: 'pianica', name: 'Sổ Tab Pianica', inst: 'Kèn pianica (melodica) 32 / 37 phím', url: 'https://sotabpianica.pages.dev/', tag: 'pianica-apk',
+    { id: 'pianica', color: '#1766c2', ink: '#ffffff', name: 'Sổ Tab Pianica', inst: 'Kèn pianica (melodica) 32 / 37 phím', url: 'https://sotabpianica.pages.dev/', tag: 'pianica-apk',
       points: ['Tên nốt kèm hình bàn phím tô phím cần bấm', 'Chạm bàn phím để nghe, soạn bài', 'Bài học cho học sinh mới tập'] },
-    { id: 'tranh', name: 'Sổ Tab Đàn Tranh – Đàn Bầu', inst: 'Đàn tranh 16 – 22 dây (dây Bắc / Đảo), đàn bầu', url: 'https://sotabdantranh.pages.dev/', tag: 'tranh-apk',
+    { id: 'tranh', color: '#a3231a', ink: '#ffffff', name: 'Sổ Tab Đàn Tranh – Đàn Bầu', inst: 'Đàn tranh 16 – 22 dây (dây Bắc / Đảo), đàn bầu', url: 'https://sotabdantranh.pages.dev/', tag: 'tranh-apk',
       points: ['Tab số dây kèm dấu nhấn nửa cung, một cung', 'Hình dây đàn dưới mỗi nốt, sơ đồ đàn chạm để nghe', 'Đàn bầu: điểm bồi ½ ⅓ ¼… kèm nắn cần'] },
-    { id: 'organ', name: 'Sổ Tab Organ', inst: 'Đàn organ 61 phím, piano 88 phím', url: 'https://sotaborgan.pages.dev/', tag: 'organ-apk',
+    { id: 'organ', color: '#8a2a3e', ink: '#ffffff', name: 'Sổ Tab Organ', inst: 'Đàn organ 61 phím, piano 88 phím', url: 'https://sotaborgan.pages.dev/', tag: 'organ-apk',
       points: ['Tên nốt kèm hình bàn phím, tay phải chơi giai điệu', 'Hợp âm tay trái tô trên bàn phím kèm số ngón', 'Bài học từ năm ngón tới đệm tự động'] },
   ];
+  const SHOTS = [[1, 'trang bài hát'], [2, 'thư viện bài'], [3, 'luyện tập']];
   const RELEASES = 'https://github.com/tranthanhphuc81-sudo/harptabs/releases';
   const esc = (s) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 
   document.getElementById('apps').innerHTML = APPS.map((a) => `
-    <article class="app">
+    <article class="app" style="--app:${a.color};--app-ink:${a.ink}">
       <div class="top"><img src="icons/${a.id}.png" alt=""><div><h3>${esc(a.name)}</h3><p class="inst">${esc(a.inst)}</p></div></div>
+      <div class="shots">${SHOTS.map(([n, label]) => `<a href="shots/${a.id}-${n}.webp" target="_blank" rel="noopener"><img src="shots/${a.id}-${n}.webp" width="360" height="640" loading="lazy" decoding="async" alt="${esc(a.name)}: ${label}"></a>`).join('')}</div>
       <ul>${a.points.map((p) => `<li>${esc(p)}</li>`).join('')}</ul>
       <div class="btns">
         <a class="btn primary" href="${a.url}">Mở app</a>
