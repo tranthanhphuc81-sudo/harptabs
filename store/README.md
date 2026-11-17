@@ -77,4 +77,4 @@ Micro, bản thu, bài hát, nhật ký luyện tập **không** rời máy nên
 
 ## Làm lại ảnh
 
-Ảnh chụp và ảnh bìa được tạo tự động: ảnh chụp bằng Chrome headless (giả lập máy 360×640 @3x) mở máy chủ chạy thử của từng app (`.claude/launch.json`), ảnh bìa vẽ từ biểu tượng app. Khi giao diện đổi nhiều, nhờ Claude chụp lại.
+Ảnh chụp và ảnh bìa được tạo tự động: ảnh chụp bằng Chrome headless (giả lập máy 360×640 @3x) mở máy chủ chạy thử của từng app (`.claude/launch.json`), ảnh bìa vẽ từ biểu tượng app trên nền màu riêng của từng app (Harmonica giữ ảnh bìa cũ). Khi giao diện đổi nhiều, nhờ Claude chụp lại.
