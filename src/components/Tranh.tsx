@@ -51,12 +51,12 @@ export function TranhChart({ harpType, harpKey = 'C', highlight = [], selected, 
               onClick={interactive ? () => (onPick ? onPick(t) : previewNote(m)) : undefined}
               aria-label={`Dây ${s}: ${midiToName(m, nameStyle)}`}>
               <span className="tc-num">{s}</span>
-              <span className="tc-name">{midiToName(m, nameStyle, false)}</span>
+              <span className="trc-name">{midiToName(m, nameStyle, false)}</span>
             </button>
           );
         })}
       </div>
-      {layout.length > 0 && <p className="small muted tc-hint">Dây 1 (trái) trầm nhất. Nốt không có trên dây thì nhấn: <strong>↑½</strong> nhấn nửa cung, <strong>↑1</strong> nhấn một cung.</p>}
+      {layout.length > 0 && <p className="small muted trc-hint">Dây 1 (trái) trầm nhất. Nốt không có trên dây thì nhấn: <strong>↑½</strong> nhấn nửa cung, <strong>↑1</strong> nhấn một cung.</p>}
     </div>
   );
 }

@@ -45,3 +45,14 @@ export const SHOWN_HARP_TYPES: readonly HarpType[] = IS_RECORDER_APP
   : IS_KALIMBA_APP
   ? ['kalimba17', 'kalimba10', 'kalimba8']
   : ['diatonic', 'chromatic', 'chromatic16', 'trochilusSolo', 'tomboS50', 'tremolo24', 'tremolo21', 'tremolo16', 'tremolo24m', 'tremolo21m', 'tremolo16m'];
+
+/** thư mục biểu tượng của app trong public/ (harmonica nằm ở gốc) */
+export const ICON_DIR = APP === 'harmonica' ? '' : `${APP}/`;
+
+/** hai nốt mẫu (nốt chính / nốt phụ) theo cách ghi tab của nhạc cụ — dùng ở ô xem trước bảng màu */
+export const TAB_SAMPLE: [string, string] = IS_RECORDER_APP ? ['Sol', 'La']
+  : IS_KALIMBA_APP ? ['5', '1̇']
+  : IS_GUITAR_APP ? ['3.2', '2.0']
+  : IS_PIANICA_APP || IS_ORGAN_APP ? ['C4', 'E4']
+  : IS_TRANH_APP ? ['5', '7^']
+  : ['4', '−4'];

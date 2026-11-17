@@ -1,6 +1,7 @@
 import 'fake-indexeddb/auto';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { db, ensureSeeded, importBackup } from './db';
+import { db, ensureSeeded, importBackup, loadSettings } from './db';
+import { DEFAULT_SETTINGS } from './types';
 import { SAMPLE_SONGS } from '../data/samples';
 
 beforeEach(async () => {
@@ -69,5 +70,16 @@ describe('gắn hợp âm chuẩn cho bài mẫu đã có trong máy', () => {
     expect((await db.songs.get('sample-mary-lamb'))!.chords).toEqual({ 0: 'Am' });
     expect((await db.songs.get('sample-ode-to-joy'))!.chords).toBeUndefined();
     expect((await db.kv.get('sampleChords'))!.value).toBe(2);
+  });
+});
+
+describe('bảng màu theo nhạc cụ', () => {
+  const load = async (v: object) => { await db.kv.put({ key: 'settings', value: v }); return (await loadSettings()).palette; };
+  it('bản cũ để "Thép" mặc định → đổi sang màu riêng của app; đã tự chọn thì giữ nguyên', async () => {
+    expect(await load({ palette: 'steel' })).toBe(DEFAULT_SETTINGS.palette);
+    expect(await load({})).toBe(DEFAULT_SETTINGS.palette);
+    expect(await load({ palette: 'walnut' })).toBe('walnut');
+    expect(await load({ palette: 'steel', paletteChosen: true })).toBe('steel');
+    await db.kv.delete('settings');
   });
 });

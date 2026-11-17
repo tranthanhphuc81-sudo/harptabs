@@ -1,4 +1,8 @@
-import { PALETTES, PaletteId, ThemeMode } from '../lib/themes';
+import { APP, BRAND, TAB_SAMPLE } from '../appConfig';
+import { APP_PALETTE, PALETTES, PaletteId, ThemeMode } from '../lib/themes';
+
+// bảng màu riêng của nhạc cụ này đứng đầu
+const ORDERED = [...PALETTES].sort((a, b) => Number(b.id === APP_PALETTE[APP]) - Number(a.id === APP_PALETTE[APP]));
 
 const MODES: { value: ThemeMode; label: string }[] = [
   { value: 'system', label: 'Theo máy' },
@@ -12,8 +16,8 @@ function Half({ id, mode }: { id: PaletteId; mode: 'light' | 'dark' }) {
     <span className="tc-half" data-palette={id} data-mode={mode}>
       <span className="tc-line" />
       <span className="tc-notes">
-        <span className="tc-blow">4</span>
-        <span className="tc-draw">−4</span>
+        <span className="tc-blow">{TAB_SAMPLE[0]}</span>
+        <span className="tc-draw">{TAB_SAMPLE[1]}</span>
       </span>
       <span className="tc-play" />
     </span>
@@ -37,14 +41,14 @@ export function ThemePicker({ palette, mode, onPalette, onMode }: {
         ))}
       </div>
       <div className="theme-grid" role="radiogroup" aria-label="Bảng màu">
-        {PALETTES.map((p) => (
+        {ORDERED.map((p) => (
           <button key={p.id} type="button" role="radio" aria-checked={palette === p.id} className={`theme-card${palette === p.id ? ' on' : ''}`} onClick={() => onPalette(p.id)}>
             <span className="tc-preview" aria-hidden="true">
               <Half id={p.id} mode="light" />
               <Half id={p.id} mode="dark" />
             </span>
             <span className="tc-text">
-              <span className="tc-name">{p.name}</span>
+              <span className="tc-name">{p.name}{p.id === APP_PALETTE[APP] && <span className="tc-default"> · hợp {BRAND.noun}</span>}</span>
               <span className="tc-hint">{p.hint}</span>
             </span>
           </button>

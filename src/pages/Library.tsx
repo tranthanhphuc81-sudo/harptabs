@@ -1,10 +1,10 @@
-import { IS_HARMONICA_APP } from '../appConfig';
+import { BRAND, IS_HARMONICA_APP } from '../appConfig';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { db, deleteSongs, fold, importBackup } from '../lib/db';
 import { compareTitle } from '../lib/songSort';
-import { HARP_KEYS, isChromatic, isTremolo } from '../lib/harp';
+import { HARP_KEYS, HARP_TYPE_LABEL, HarpType, isChromatic, isTremolo } from '../lib/harp';
 import { Song } from '../lib/types';
 import { Icon } from '../components/Icon';
 import { ThemeToggle } from '../components/ThemeToggle';
@@ -40,6 +40,16 @@ export default function Library() {
   const [key, setKey] = useState<string>('');
   const [kind, setKind] = useState<'' | 'diatonic' | 'chromatic' | 'tremolo'>('');
   const [diff, setDiff] = useState<number>(0);
+  // app nhiều loại nhạc cụ (guitar / ukulele, tranh / bầu, organ / piano…): lọc theo loại có trong thư viện
+  const [itype, setItype] = useState<HarpType | ''>('');
+  const types = useMemo(() => {
+    if (IS_HARMONICA_APP || !songs) return [];
+    const seen = new Map<HarpType, number>();
+    for (const s of songs) { const t = s.harpType ?? 'diatonic'; seen.set(t, (seen.get(t) ?? 0) + 1); }
+    return seen.size > 1 ? [...seen.entries()].sort((a, b) => b[1] - a[1]) : [];
+  }, [songs]);
+  const filtering = !!(q.trim() || fav || key || kind || diff || itype);
+  const clearFilters = () => { setQ(''); setFav(false); setKey(''); setKind(''); setDiff(0); setItype(''); };
   const [sort, setSortState] = useState<Sort>(loadSort);
   const setSort = (v: Sort) => {
     setSortState(v);
@@ -70,6 +80,7 @@ export default function Library() {
       .filter((s) => !fav || s.favorite)
       .filter((s) => !key || s.harpKey === key)
       .filter((s) => !kind || (kind === 'chromatic' ? isChromatic(s.harpType) : kind === 'tremolo' ? isTremolo(s.harpType) : !isChromatic(s.harpType) && !isTremolo(s.harpType)))
+      .filter((s) => !itype || (s.harpType ?? 'diatonic') === itype)
       .filter((s) => !diff || s.difficulty === diff)
       .filter((s) => !fq || fold(`${s.title} ${s.artist ?? ''} ${s.tags.join(' ')}`).includes(fq))
       .sort((a, b) => {
@@ -78,7 +89,7 @@ export default function Library() {
         if (sort === 'practiced') return (b.lastPracticedAt ?? 0) - (a.lastPracticedAt ?? 0);
         return b.updatedAt - a.updatedAt;
       });
-  }, [songs, q, fav, key, kind, diff, sort]);
+  }, [songs, q, fav, key, kind, diff, itype, sort]);
 
   const onImport = async (f: File | undefined) => {
     if (!f) return;
@@ -97,17 +108,17 @@ export default function Library() {
       <header className="page-head">
         <div>
           <h1>Bài hát</h1>
-          <p className="muted">{songs ? `${songs.length} bài trong máy` : 'Đang tải…'}</p>
+          <p className="muted">{!songs ? 'Đang tải…' : filtering ? `${list.length} / ${songs.length} bài khớp bộ lọc` : `${songs.length} bài trong máy`}</p>
         </div>
         <div className="head-actions">
           <ThemeToggle className="btn btn-ghost theme-btn" />
           {!!songs?.length && (
             <button type="button" className={`btn btn-ghost${selecting ? ' on' : ''}`} aria-pressed={selecting} onClick={() => (selecting ? stopSelecting() : setSelecting(true))}>
-              <Icon name="check" size={18} /> {selecting ? 'Xong' : 'Chọn'}
+              <Icon name="check" size={18} /> <span className="btn-label">{selecting ? 'Xong' : 'Chọn'}</span>
             </button>
           )}
-          <button type="button" className="btn btn-ghost" onClick={() => fileRef.current?.click()}>
-            <Icon name="upload" size={18} /> Nhập file
+          <button type="button" className="btn btn-ghost" title="Nhập file sao lưu (.json)" onClick={() => fileRef.current?.click()}>
+            <Icon name="upload" size={18} /> <span className="btn-label">Nhập file</span>
           </button>
           <button type="button" className="btn btn-primary" onClick={() => nav('/new')}>
             <Icon name="plus" size={18} /> Thêm bài
@@ -140,6 +151,12 @@ export default function Library() {
             {HARP_KEYS.map((k) => <option key={k} value={k}>Kèn {k}</option>)}
           </select>
           </>}
+          {types.length > 0 && (
+            <select aria-label={`Lọc theo loại ${BRAND.noun}`} value={itype} onChange={(e) => setItype(e.target.value as HarpType | '')} className={`chip-select${itype ? ' on' : ''}`}>
+              <option value="">Mọi loại {BRAND.noun}</option>
+              {types.map(([t, n]) => <option key={t} value={t}>{HARP_TYPE_LABEL[t]} ({n})</option>)}
+            </select>
+          )}
           <select aria-label="Lọc theo độ khó" value={diff} onChange={(e) => setDiff(Number(e.target.value))} className="chip-select">
             <option value={0}>Mọi độ khó</option>
             <option value={1}>Dễ</option>
@@ -152,6 +169,11 @@ export default function Library() {
             <option value="title">Tên A–Z</option>
             <option value="title-desc">Tên Z–A</option>
           </select>
+          {filtering && (
+            <button type="button" className="chip chip-clear" onClick={clearFilters}>
+              <Icon name="close" size={14} /> Bỏ lọc
+            </button>
+          )}
         </div>
       </div>
 
@@ -166,7 +188,10 @@ export default function Library() {
               </div>
             </>
           ) : (
-            <p>Không có bài nào khớp bộ lọc.</p>
+            <div className="row gap wrap">
+              <p>Không có bài nào khớp bộ lọc.</p>
+              <button type="button" className="btn btn-ghost" onClick={clearFilters}>Bỏ lọc</button>
+            </div>
           )}
         </div>
       )}

@@ -101,7 +101,11 @@ const SAMPLE_CHORDS_VERSION = 2;
 
 export async function loadSettings(): Promise<Settings> {
   const row = await db.kv.get('settings');
-  return { ...DEFAULT_SETTINGS, ...((row?.value as Partial<Settings>) ?? {}) };
+  const stored = (row?.value as Partial<Settings>) ?? {};
+  const s = { ...DEFAULT_SETTINGS, ...stored };
+  // bản cũ lưu bảng "Thép" cho mọi app: chưa tự chọn thì chuyển sang màu riêng của nhạc cụ
+  if (!stored.paletteChosen && (!stored.palette || stored.palette === 'steel')) s.palette = DEFAULT_SETTINGS.palette;
+  return s;
 }
 
 export async function saveSettings(s: Settings): Promise<void> {

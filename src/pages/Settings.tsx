@@ -135,7 +135,7 @@ export default function SettingsPage() {
 
       <section className="panel">
         <h2>Giao diện</h2>
-        <ThemePicker palette={s.palette} mode={s.theme} onPalette={(palette) => update({ palette })} onMode={(theme) => update({ theme })} />
+        <ThemePicker palette={s.palette} mode={s.theme} onPalette={(palette) => update({ palette, paletteChosen: true })} onMode={(theme) => update({ theme })} />
       </section>
 
       <section className="panel">

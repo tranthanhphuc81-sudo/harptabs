@@ -1,6 +1,6 @@
 import { useAppState } from './state';
 import { useWakeLock } from './components/useWakeLock';
-import { BRAND, IS_GUITAR_APP, IS_KALIMBA_APP, IS_ORGAN_APP, IS_TRANH_APP } from './appConfig';
+import { BRAND, ICON_DIR, IS_GUITAR_APP, IS_KALIMBA_APP, IS_ORGAN_APP, IS_TRANH_APP } from './appConfig';
 import { lazy, Suspense, useEffect, useState } from 'react';
 import { HashRouter, Navigate, NavLink, Route, Routes, useLocation } from 'react-router-dom';
 import { AppStateProvider, useOnline } from './state';
@@ -59,9 +59,7 @@ function Shell() {
     <div className="app">
       <nav className="nav" aria-label="Điều hướng chính">
         <div className="nav-brand" aria-hidden="true">
-          <span className="brand-mark">
-            {Array.from({ length: 10 }, (_, i) => <i key={i} />)}
-          </span>
+          <img className="brand-icon" src={`${import.meta.env.BASE_URL}${ICON_DIR}icon.svg`} alt="" width={36} height={36} />
           <span className="brand-name">{BRAND.line1}<br />{BRAND.line2}</span>
         </div>
         {NAV.map((n) => (

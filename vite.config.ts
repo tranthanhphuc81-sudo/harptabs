@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
+import { APP_PALETTE, paletteOf } from './src/lib/themes';
 
 // cùng mã nguồn ra bảy app: VITE_APP=recorder → Sổ Tab Sáo, VITE_APP=kalimba → Sổ Tab Kalimba, VITE_APP=guitar → Sổ Tab Guitar,
 // VITE_APP=pianica → Sổ Tab Pianica, VITE_APP=tranh → Sổ Tab Đàn Tranh, VITE_APP=organ → Sổ Tab Organ
@@ -25,6 +26,9 @@ const BRAND = ORGAN
   ? { name: 'Sổ Tab Sáo', short: 'Sáo Tab', desc: 'Sổ bài sáo dọc alto / soprano: tab tên nốt kèm thế bấm, phát nhạc đệm, dò nốt, học thổi. Chạy offline.', icons: 'recorder/' }
   : { name: 'Sổ Tab Harmonica', short: 'Harp Tab', desc: 'Sổ tab harmonica diatonic 10 lỗ: lưu bài, phát beat mẫu, dò nốt, học kỹ thuật. Chạy offline.', icons: '' };
 
+// bảng màu mặc định của app này: màu nền lúc mở, thanh trạng thái, màn hình chờ khi cài
+const PALETTE = paletteOf(APP_PALETTE[process.env.VITE_APP || 'harmonica'] ?? 'steel');
+
 export default defineConfig({
   base: './',
   plugins: [
@@ -35,7 +39,9 @@ export default defineConfig({
         .replace(/<title>.*<\/title>/, `<title>${BRAND.name}</title>`)
         .replace(/(<meta name="description" content=")[^"]*"/, `$1${BRAND.desc}"`)
         .replace(/href="\.\/icon\.svg"/, `href="./${BRAND.icons}icon.svg"`)
-        .replace(/href="\.\/icon-192\.png"/, `href="./${BRAND.icons}icon-192.png"`),
+        .replace(/href="\.\/icon-192\.png"/, `href="./${BRAND.icons}icon-192.png"`)
+        .replace("c.palette || 'steel'", `c.palette || '${PALETTE.id}'`)
+        .replace(/(<meta name="theme-color" content=")[^"]*"/, `$1${PALETTE.bar.light}"`),
     },
     VitePWA({
       // không tự tải lại khi có bản mới: người dùng bấm "Cập nhật" khi xong việc
@@ -46,8 +52,8 @@ export default defineConfig({
         short_name: BRAND.short,
         description: BRAND.desc,
         lang: 'vi',
-        theme_color: '#1f2a33',
-        background_color: '#eef1f2',
+        theme_color: PALETTE.bar.light,
+        background_color: PALETTE.light.bg,
         display: 'standalone',
         orientation: 'any',
         start_url: './',

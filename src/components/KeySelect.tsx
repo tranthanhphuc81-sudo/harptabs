@@ -1,4 +1,5 @@
 import { BRAND, SHOWN_HARP_TYPES } from '../appConfig';
+import { hasInstrumentArt, InstrumentArt, instrumentCaption } from './InstrumentArt';
 import { HARP_KEYS, HARP_TYPE_LABEL, HarpKey, harpKeyLabel, HarpType, harpName, holeCount, isChromatic, isDanBau, isFixedKey, isFretted, isKalimba, isPianica, isOrgan, isTranh, isSaoTruc, isTremolo, isTwoRowChromatic } from '../lib/harp';
 
 interface Props {
@@ -37,6 +38,16 @@ export function HarpTypeSelect({ value, onChange, id, label = `Loại ${BRAND.no
 }
 
 export function KeyPlate({ k, type = 'diatonic', size = 'm' }: { k: string; type?: HarpType; size?: 's' | 'm' | 'l' }) {
+  // nhạc cụ khác harmonica: hình vẽ đúng nhạc cụ + chữ nhỏ phân loại
+  if (hasInstrumentArt(type)) {
+    const cap = instrumentCaption(type, k);
+    return (
+      <span className={`keyplate instrument size-${size}`} role="img" aria-label={harpName(k, type)}>
+        <InstrumentArt type={type} />
+        {cap && <span className="kp-cap">{cap}</span>}
+      </span>
+    );
+  }
   const holes = holeCount(type);
   // tremolo: hai hàng lỗ (trên / dưới) — dáng đặc trưng của kèn
   const trem = isTremolo(type) || isTwoRowChromatic(type);

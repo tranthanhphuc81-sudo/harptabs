@@ -4,7 +4,7 @@
  * CSS của các bảng được dựng từ đây (themeCss) — sửa màu chỉ cần sửa file này.
  */
 
-export type PaletteId = 'steel' | 'walnut' | 'blues' | 'forest' | 'rose' | 'contrast';
+export type PaletteId = 'steel' | 'walnut' | 'blues' | 'forest' | 'rose' | 'contrast' | 'sunburst' | 'lacquer' | 'ivory' | 'sky';
 export type Mode = 'light' | 'dark';
 
 export const COLOR_TOKENS = [
@@ -85,6 +85,46 @@ export const PALETTES: Palette[] = [
     bar: { light: '#4a2433', dark: '#170d12' },
   },
   {
+    id: 'sunburst',
+    name: 'Sunburst',
+    hint: 'Gỗ cam cháy như mặt đàn guitar',
+    light: t(`#f8f1ea #fffbf7 #f2e6da #e8d7c6 #d4b99c #261811 #6b5444 #eadbcb #c2a78b #937a62
+      #a33d08 #fde4d0 #eba57a #275d72 #dcedf2 #8cbccb #b0213f #33692c #b8490c #d9620f #1f0e03 #fde6d3 rgba(255,251,247,0.85)`),
+    dark: t(`#150e0a #1f1510 #2a1d16 #3a2a20 #4f3a2d #f6e9de #c1a690 #4f3a2d #6e5442 #a28872
+      #ff9a5c #3a1d0c #80421f #7cc6dc #10262e #2d5d6c #ff7a92 #85cf7c #ff9a5c #f08a3c #1f0e03 #3a220f rgba(31,21,16,0.82)`),
+    bar: { light: '#3b2214', dark: '#150e0a' },
+  },
+  {
+    id: 'lacquer',
+    name: 'Sơn mài',
+    hint: 'Đỏ son, vàng thếp — chất đàn dân tộc',
+    light: t(`#f7f0e6 #fffaf2 #f1e6d6 #e6d5bf #d0b896 #2a1410 #6e4f43 #eadccb #c4a988 #96795a
+      #9a1f17 #f9e0d6 #e2a08c #6e5106 #f6ebc8 #d9bd6a #a3155a #2d6e3a #9a1f17 #a3231a #fffaf2 #f8dfd3 rgba(255,250,242,0.85)`),
+    dark: t(`#140b09 #1e1210 #2a1915 #3a241e #50332a #f5e9df #c0a395 #50332a #6e4c40 #a3857a
+      #f48a74 #3a1610 #7d3426 #e6c25e #2e240c #6e5a22 #ff7aa8 #7fcf8a #e6c25e #d9a63a #1a0f04 #33240f rgba(30,18,16,0.82)`),
+    bar: { light: '#5a1610', dark: '#140b09' },
+  },
+  {
+    id: 'ivory',
+    name: 'Ngà & mun',
+    hint: 'Trắng ngà, đen mun, đỏ nhung — như phím đàn piano',
+    light: t(`#f6f4ef #fffefb #eeebe3 #e2ddd2 #c9c2b3 #16151a #5b5862 #e5e1d8 #b5afa3 #858073
+      #7d2338 #f6e1e5 #d99aa8 #24508f #e0e9f6 #95b2dc #b8321c #2e7048 #7d2338 #8a2a3e #fffefb #f4e2e6 rgba(255,254,251,0.86)`),
+    dark: t(`#0f0e12 #18171c #222027 #2e2c34 #423f49 #f1eee6 #a7a3ad #423f49 #5c5864 #8e8a95
+      #f08ca0 #3a1620 #7a3445 #8fb6ef #142440 #345a8f #ff8a6b #6fcf95 #f0d9a8 #e7c98f #1a1408 #2e2615 rgba(24,23,28,0.82)`),
+    bar: { light: '#16151a', dark: '#0f0e12' },
+  },
+  {
+    id: 'sky',
+    name: 'Trời trong',
+    hint: 'Xanh da trời, cam tươi — sáng sủa, vui mắt',
+    light: t(`#eef5fb #ffffff #e4eef7 #d6e4f0 #b4cbe0 #12263a #4f667c #dce7f1 #a9bccd #7a8fa3
+      #a8410f #fde6d6 #eda57c #1a5ea8 #dcebfb #8fbbe8 #b3204f #2a7550 #1a6fc4 #1766c2 #ffffff #dcebfb rgba(255,255,255,0.84)`),
+    dark: t(`#0a1520 #10202e #172a3b #20364a #2f4b63 #e6f0f8 #9db4c8 #2f4b63 #48667f #7f9bb2
+      #ffa070 #3a1f10 #7f4526 #7fbcff #11284a #2f5c94 #ff7aa0 #66d19c #7fbcff #5aa9ff #04121f #13304f rgba(16,32,46,0.82)`),
+    bar: { light: '#163a5e', dark: '#0a1520' },
+  },
+  {
     id: 'contrast',
     name: 'Tương phản cao',
     hint: 'Đen trắng rõ nét — dễ đọc khi để xa, nắng gắt',
@@ -97,6 +137,11 @@ export const PALETTES: Palette[] = [
 ];
 
 export const DEFAULT_PALETTE: PaletteId = 'steel';
+
+/** bảng màu mặc định của từng app — mỗi nhạc cụ một vẻ riêng (người dùng vẫn đổi được ở Cài đặt) */
+export const APP_PALETTE: Record<string, PaletteId> = {
+  harmonica: 'steel', recorder: 'forest', kalimba: 'walnut', guitar: 'sunburst', pianica: 'sky', tranh: 'lacquer', organ: 'ivory',
+};
 export const paletteOf = (id: string | undefined): Palette => PALETTES.find((p) => p.id === id) ?? PALETTES[0];
 
 const SHADOWS: Record<Mode, string> = {
