@@ -68,6 +68,16 @@ export default function Tuner() {
   const cents = r ? Math.round(r.cents) : 0;
   const inTune = r && Math.abs(cents) <= 15;
 
+  // chú thích dưới nốt: guitar / ukulele ghi rõ dây + phím; bỏ chữ trùng; chỉ còn "Thế thường" thì không ghi (không nói thêm gì)
+  const techLine = (() => {
+    const labels = [...new Set(matches.map((m) => {
+      if (isTwoRowChromatic(type)) return (m.slide ? 'Hàng trên' : 'Hàng dưới') + (m.dir === 'blow' ? ', thổi' : ', hút');
+      if (isFretted(type)) { const [str, fret] = m.token.split('.'); return Number(fret) ? `Dây ${str} phím ${fret}` : `Dây ${str} buông`; }
+      return TECHNIQUE_LABEL[m.technique];
+    }))];
+    return labels.length === 1 && labels[0] === TECHNIQUE_LABEL.fingered ? '' : labels.join(' / ');
+  })();
+
   return (
     <div className="page page-tuner">
       <header className="page-head">
@@ -98,7 +108,7 @@ export default function Tuner() {
         <div className="tr-note">
           {r ? <>{midiToName(r.nearest, settings.noteNames)} <span className="muted">{r.hz.toFixed(1)} Hz</span></> : ' '}
         </div>
-        <div className="tr-tech">{matches.map((m) => (isTwoRowChromatic(type) ? (m.slide ? 'Hàng trên' : 'Hàng dưới') + (m.dir === 'blow' ? ', thổi' : ', hút') : TECHNIQUE_LABEL[m.technique])).join(' / ') || ' '}</div>
+        <div className="tr-tech">{techLine || ' '}</div>
         <div className="cents-meter" role="meter" aria-valuemin={-50} aria-valuemax={50} aria-valuenow={cents} aria-label="Độ lệch cao độ (cent)">
           <div className="cm-scale"><span>−50</span><span>0</span><span>+50</span></div>
           <div className="cm-track"><div className="cm-center" /><div className="cm-needle" style={{ left: `${50 + Math.max(-50, Math.min(50, cents))}%`, opacity: r ? 1 : 0 }} /></div>
