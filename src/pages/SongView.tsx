@@ -31,6 +31,7 @@ import { bestHarp, chordForOriginal, isOriginal, loadViewChoice, resolveChoice, 
 import type { TabFit } from '../lib/converter';
 import { Icon } from '../components/Icon';
 import { MoreMenu } from '../components/MoreMenu';
+import { SongNotes } from '../components/SongNotes';
 import { useScrollHint } from '../components/useScrollHint';
 
 const HELP_KEY = 'harptabs.tabHelpOpen';
@@ -521,7 +522,7 @@ function SongPlayerView({ song, original, fit, view, choice, onChoice }: {
 
       {!sheetData && <ViewAsBar original={original} view={view} fit={fit} choice={choice} onChoice={onChoice} viewed={song} onSaved={(id) => nav(`/song/${id}`)} />}
 
-      {song.notes && <p className="song-notes">{song.notes}</p>}
+      {song.notes && <SongNotes text={song.notes} />}
       {issues.length > 0 && (
         <div className="alert error">Bài có {issues.length} lỗi ký hiệu. <Link to={`/song/${song.id}/edit`}>Mở trình sửa</Link> để xem chi tiết.</div>
       )}
