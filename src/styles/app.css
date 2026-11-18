@@ -311,6 +311,8 @@ button, a, select { -webkit-tap-highlight-color: transparent; }
 .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--focus); outline: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--focus) 25%, transparent); }
 .help { font-size: 0.82rem; color: var(--ink-2); }
 .check { display: flex; align-items: center; gap: 8px; min-height: 42px; font-size: 0.95rem; }
+/* thanh trượt (tốc độ, cỡ hình, độ trễ…) theo màu nhấn của bảng màu thay cho xanh mặc định của trình duyệt */
+input[type='range'] { accent-color: var(--accent); }
 .check input, .radio-group input { width: 18px; height: 18px; accent-color: var(--ink); }
 .radio-group { border: 0; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
 .radio-group label { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
