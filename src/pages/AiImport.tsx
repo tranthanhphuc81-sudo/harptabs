@@ -1,6 +1,6 @@
 import { BRAND, IS_GUITAR_APP } from '../appConfig';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { lazy, Suspense, useMemo, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { AiInput, AiResponse, estimateCostUsd, MAX_IMAGES, VND_PER_USD } from '../../shared/ai';
 import { aiToTab, prepareImage, transcribe } from '../lib/ai';
@@ -17,6 +17,7 @@ import { Icon } from '../components/Icon';
 import { useAppState, useOnline } from '../state';
 import PasteTab from './PasteTab';
 import { AI_ENABLED } from '../lib/features';
+import { useScrollHint } from '../components/useScrollHint';
 
 // quét nhạc và đọc file nặng (OMR, MIDI, PDF): chỉ tải khi chọn
 const ScanImport = lazy(() => import('./ScanImport'));
@@ -42,6 +43,15 @@ export default function AiImport() {
   const [rawMode, setMode] = useState<Mode>(params.get('paste') ? 'paste' : editScan ? 'scan' : params.get('chords') || IS_GUITAR_APP ? 'chords' : 'file');
   // AI đang tạm khoá: không vào được chế độ Ảnh + AI / Tên bài
   const mode: Mode = !AI_ENABLED && (rawMode === 'image' || rawMode === 'name') ? 'file' : rawMode;
+  // hàng tab dài hơn màn hình điện thoại: mép mờ báo còn tab, tab đang chọn luôn cuộn vào tầm nhìn
+  const tabsRef = useScrollHint<HTMLDivElement>();
+  useEffect(() => {
+    const el = tabsRef.current, on = el?.querySelector<HTMLElement>('[aria-selected="true"]');
+    if (!el || !on) return;
+    const a = el.getBoundingClientRect(), b = on.getBoundingClientRect();
+    if (b.left < a.left + 8) el.scrollLeft += b.left - a.left - 28;
+    else if (b.right > a.right - 8) el.scrollLeft += b.right - a.right + 28;
+  }, [mode, tabsRef]);
   const [lastMode, setLastMode] = useState<Mode>('image'); // chế độ đã tạo ra kết quả đang hiện
   // ảnh khuông nhạc chọn ở ô "File nhạc" → mở "Quét nhạc" với sẵn các ảnh đó
   const [scanFiles, setScanFiles] = useState<{ n: number; files: File[] } | null>(null);
@@ -160,7 +170,7 @@ export default function AiImport() {
       <header className="page-head">
         <div>
           <h1>{editScan ? 'Sửa nốt trên ảnh' : 'Nhập bài'}</h1>
-          <p className="muted">Mở file nhạc MIDI / MusicXML (chính xác nhất), chụp khuông nhạc để máy tự đọc nốt{AI_ENABLED ? ', dán tab copy từ mạng, dò giai điệu từ bản thu, hoặc nhờ AI đọc ảnh / nhớ bài theo tên.' : ', dán tab copy từ mạng, hoặc dò giai điệu từ bản thu (tự hát / bài hát MP3).'}</p>
+          {!editScan && <p className="muted">File nhạc (chính xác nhất), ảnh bản nhạc, tab chép từ mạng{AI_ENABLED ? ', bản thu hoặc nhờ AI' : ' hoặc bản thu'} — chọn cách bên dưới.</p>}
         </div>
       </header>
 
@@ -171,7 +181,7 @@ export default function AiImport() {
       )}
       {(mode === 'image' || mode === 'name') && !online && <div className="alert">Bạn đang offline. Phần này cần mạng; các phần khác của app vẫn dùng bình thường.</div>}
 
-      <div className="segmented" role="tablist" aria-label="Cách nhập">
+      <div className="segmented scroll-row" ref={tabsRef} role="tablist" aria-label="Cách nhập">
         {IS_GUITAR_APP && (
           <button type="button" role="tab" aria-selected={mode === 'chords'} className={mode === 'chords' ? 'on' : ''} onClick={() => setMode('chords')}>
             <Icon name="edit" size={18} /> Dán hợp âm
