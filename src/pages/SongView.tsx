@@ -488,7 +488,7 @@ function SongPlayerView({ song, original, fit, view, choice, onChoice }: {
   return (
     <div className="page page-song">
       <header className="song-head">
-        <Link to="/" className="icon-btn back" aria-label="Về thư viện"><Icon name="back" /></Link>
+        <Link to="/" state={{ restore: true }} className="icon-btn back" aria-label="Về thư viện"><Icon name="back" /></Link>
         <KeyPlate k={song.harpKey} type={harpType} size="l" />
         <div className="sh-text">
           <h1>{song.title || 'Chưa đặt tên'}</h1>

@@ -8,6 +8,8 @@ import { ErrorBoundary } from '../components/ErrorBoundary';
 import Library from './Library';
 
 beforeEach(async () => {
+  sessionStorage.clear();
+  window.scrollTo = (() => {}) as typeof window.scrollTo; // jsdom không có cuộn trang
   await db.songs.clear();
   await db.songs.bulkPut([
     blankSong({ id: 'd', title: 'Bài diatonic', body: '4 -4' }),
@@ -25,6 +27,18 @@ describe('Thư viện', () => {
     fireEvent.change(screen.getByLabelText('Lọc theo loại kèn'), { target: { value: 'chromatic' } });
     expect(screen.queryByText('Bài diatonic')).toBeNull();
     expect(screen.getByText('Bài chromatic')).toBeTruthy();
+  });
+
+  it('quay lại từ trang bài: giữ nguyên bộ lọc đã chọn', async () => {
+    const first = render(<MemoryRouter><Library /></MemoryRouter>);
+    await screen.findByText('Bài diatonic');
+    fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'chrom' } });
+    first.unmount(); // rời thư viện (mở bài) → ghi lại bộ lọc
+    // nút quay lại = điều hướng POP (MemoryRouter mở lần đầu cũng là POP)
+    render(<MemoryRouter><Library /></MemoryRouter>);
+    expect(await screen.findByText('Bài chromatic')).toBeTruthy();
+    expect((screen.getByRole('searchbox') as HTMLInputElement).value).toBe('chrom');
+    expect(screen.queryByText('Bài diatonic')).toBeNull();
   });
 
   it('tìm kiếm không dấu', async () => {

@@ -1,7 +1,7 @@
 import { BRAND, IS_HARMONICA_APP } from '../appConfig';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { useMemo, useRef, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { Link, useLocation, useNavigate, useNavigationType } from 'react-router-dom';
 import { db, deleteSongs, fold, importBackup } from '../lib/db';
 import { compareTitle } from '../lib/songSort';
 import { HARP_KEYS, HARP_TYPE_LABEL, HarpType, isChromatic, isTremolo } from '../lib/harp';
@@ -28,6 +28,16 @@ function loadSort(): Sort {
 
 const DIFF = ['', 'Dễ', 'Vừa', 'Khó'];
 
+/** bộ lọc + vị trí cuộn lúc mở một bài — đọc lại khi quay về thư viện bằng nút quay lại (chỉ trong phiên này) */
+interface LibrarySnap { q: string; fav: boolean; key: string; kind: '' | 'diatonic' | 'chromatic' | 'tremolo'; diff: number; itype: HarpType | ''; y: number }
+const SNAP_KEY = 'harptabs.libraryView';
+function readSnap(): LibrarySnap | null {
+  try { const v = sessionStorage.getItem(SNAP_KEY); return v ? (JSON.parse(v) as LibrarySnap) : null; } catch { return null; }
+}
+function writeSnap(v: LibrarySnap) {
+  try { sessionStorage.setItem(SNAP_KEY, JSON.stringify(v)); } catch { /* chế độ riêng tư */ }
+}
+
 function styleLabel(s: Song['style']) {
   if (s === 'none') return 'Không beat';
   if (s === 'metronome') return 'Đếm nhịp';
@@ -36,13 +46,33 @@ function styleLabel(s: Song['style']) {
 
 export default function Library() {
   const songs = useLiveQuery(() => db.songs.toArray(), []);
-  const [q, setQ] = useState('');
-  const [fav, setFav] = useState(false);
-  const [key, setKey] = useState<string>('');
-  const [kind, setKind] = useState<'' | 'diatonic' | 'chromatic' | 'tremolo'>('');
-  const [diff, setDiff] = useState<number>(0);
+  // quay lại từ trang bài (nút quay lại của điện thoại / mũi tên trong app): giữ nguyên bộ lọc và chỗ đang cuộn tới
+  const navType = useNavigationType();
+  const location = useLocation();
+  const backFromSong = navType === 'POP' || !!(location.state as { restore?: boolean } | null)?.restore;
+  const [snap] = useState<LibrarySnap | null>(() => (backFromSong ? readSnap() : null));
+  const [q, setQ] = useState(snap?.q ?? '');
+  const [fav, setFav] = useState(snap?.fav ?? false);
+  const [key, setKey] = useState<string>(snap?.key ?? '');
+  const [kind, setKind] = useState<'' | 'diatonic' | 'chromatic' | 'tremolo'>(snap?.kind ?? '');
+  const [diff, setDiff] = useState<number>(snap?.diff ?? 0);
   // app nhiều loại nhạc cụ (guitar / ukulele, tranh / bầu, organ / piano…): lọc theo loại có trong thư viện
-  const [itype, setItype] = useState<HarpType | ''>('');
+  const [itype, setItype] = useState<HarpType | ''>(snap?.itype ?? '');
+  const restored = useRef(false);
+  useLayoutEffect(() => {
+    if (!snap || restored.current || !songs) return;
+    restored.current = true;
+    // danh sách đọc từ kho trên máy xong mới đủ dài để cuộn tới chỗ cũ
+    window.scrollTo(0, snap.y);
+    requestAnimationFrame(() => window.scrollTo(0, snap.y));
+  }, [snap, songs]);
+  const rememberView = () => writeSnap({ q, fav, key, kind, diff, itype, y: window.scrollY });
+  // rời thư viện bằng bất kỳ đường nào (mở bài, sang trang khác): ghi lại bộ lọc + chỗ cuộn cuối cùng
+  const latest = useRef({ q, fav, key, kind, diff, itype });
+  latest.current = { q, fav, key, kind, diff, itype };
+  // useLayoutEffect: phần dọn dẹp chạy ngay lúc rời trang, khi danh sách vẫn còn trên trang (chưa bị trang mới thay, chưa bị cuộn lên đầu)
+  // nên đọc thẳng window.scrollY được — không dựa vào sự kiện cuộn (máy có thể không phát khi app chạy nền)
+  useLayoutEffect(() => () => writeSnap({ ...latest.current, y: window.scrollY }), []);
   const types = useMemo(() => {
     if (IS_HARMONICA_APP || !songs) return [];
     const seen = new Map<HarpType, number>();
@@ -203,7 +233,7 @@ export default function Library() {
           <li key={s.id}>
             <Link to={`/song/${s.id}`} className={`song-row${selecting ? ' picking' : ''}${picked.has(s.id) ? ' picked' : ''}`}
               aria-pressed={selecting ? picked.has(s.id) : undefined}
-              onClick={selecting ? (e) => { e.preventDefault(); togglePick(s.id); } : undefined}>
+              onClick={selecting ? (e) => { e.preventDefault(); togglePick(s.id); } : rememberView}>
               {selecting && <span className="pick-box" aria-hidden="true">{picked.has(s.id) && <Icon name="check" size={16} />}</span>}
               <KeyPlate k={s.harpKey} type={s.harpType} />
               <span className="sr-body">
