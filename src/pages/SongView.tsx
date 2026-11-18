@@ -544,6 +544,7 @@ function SongPlayerView({ song, original, fit, view, choice, onChoice }: {
               <summary aria-label={lgText ? undefined : 'Mẹo'} title={lgText ? undefined : 'Mẹo'}>{lgText ? 'Cách đọc tab' : null}</summary>
               {lgText}
               {!sheetData && <span className="muted">Chạm vào nốt để nghe, hoặc chọn chỗ bắt đầu phát.</span>}
+              {showChords && !(fretted && sheet) && !sheetData && <span className="muted">Chạm vào tên hợp âm trên nốt để đổi. Viền đậm là hợp âm bạn đã chọn tay.</span>}
             </details>
           </div>
         );
@@ -609,7 +610,6 @@ function SongPlayerView({ song, original, fit, view, choice, onChoice }: {
           </div>
         );
       })()}
-      {showChords && !(fretted && sheet) && !sheetData && <p className="small muted">Chạm vào tên hợp âm trên nốt để đổi. Viền đậm là hợp âm bạn đã chọn tay.</p>}
 
       {waitMode && (
         <div className="wait-banner" role="status">
@@ -950,7 +950,7 @@ function ViewAsBar({ original, viewed, view, fit, choice, onChoice, onSaved }: {
             if (v === 'auto' || v === 'original') onChoice(v);
             else onChoice({ type: v as HarpType, key: isFixedKey(v as HarpType) ? recorderKey(v as HarpType) : key, mode: 'any' });
           }}>
-            <option value="auto">✨ Tự chọn {BRAND.noun} hợp nhất</option>
+            <option value="auto">✨ Tự chọn hợp nhất</option>
             <option value="original">Bản gốc ({harpName(original.harpKey, origType).replace(/^Kèn /, '')})</option>
             {SHOWN_HARP_TYPES.map((t) => <option key={t} value={t}>{HARP_TYPE_LABEL[t]}</option>)}
           </select>
