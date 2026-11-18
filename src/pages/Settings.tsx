@@ -132,13 +132,19 @@ export default function SettingsPage() {
   return (
     <div className="page page-settings">
       <header className="page-head"><h1>Cài đặt</h1></header>
+      {/* trang dài: nút nhảy nhanh tới từng mục */}
+      <nav className="settings-jump" aria-label="Tới mục">
+        {[['set-look', 'Giao diện'], ['set-view', 'Hiển thị'], ...(AI_ENABLED ? [['set-ai', 'Kết nối AI']] : []), ['set-data', 'Dữ liệu, sao lưu']].map(([id, label]) => (
+          <button key={id} type="button" className="chip" onClick={() => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>{label}</button>
+        ))}
+      </nav>
 
-      <section className="panel">
+      <section className="panel" id="set-look">
         <h2>Giao diện</h2>
         <ThemePicker palette={s.palette} mode={s.theme} onPalette={(palette) => update({ palette, paletteChosen: true })} onMode={(theme) => update({ theme })} />
       </section>
 
-      <section className="panel">
+      <section className="panel" id="set-view">
         <h2>Hiển thị</h2>
         <div className="form-grid">
           <label className="field">
@@ -221,7 +227,7 @@ export default function SettingsPage() {
         </div>
       </section>
 
-      {AI_ENABLED && <section className="panel">
+      {AI_ENABLED && <section className="panel" id="set-ai">
         <h2>Kết nối AI</h2>
         <p className="muted">AI chỉ dùng khi bạn nhập bài mới. Mọi phần còn lại chạy offline.</p>
         <fieldset className="radio-group">
@@ -273,7 +279,7 @@ export default function SettingsPage() {
         </div>
       </section>}
 
-      <section className="panel">
+      <section className="panel" id="set-data">
         <h2>Dữ liệu</h2>
         <p className="muted">{count ?? 0} bài đang lưu trên thiết bị này. Xoá dữ liệu trình duyệt sẽ mất bài, nên thỉnh thoảng hãy xuất file sao lưu.</p>
         <label className="check wide">

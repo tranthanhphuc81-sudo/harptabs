@@ -1,4 +1,6 @@
+import { useEffect } from 'react';
 import { APP, BRAND, TAB_SAMPLE } from '../appConfig';
+import { useScrollHint } from './useScrollHint';
 import { APP_PALETTE, PALETTES, PaletteId, ThemeMode } from '../lib/themes';
 
 // bảng màu riêng của nhạc cụ này đứng đầu
@@ -31,6 +33,13 @@ export function ThemePicker({ palette, mode, onPalette, onMode }: {
   onPalette: (p: PaletteId) => void;
   onMode: (m: ThemeMode) => void;
 }) {
+  // điện thoại: bảng màu là dải cuộn ngang — mở trang thì cuộn tới bảng đang dùng
+  const gridRef = useScrollHint<HTMLDivElement>();
+  useEffect(() => {
+    const g = gridRef.current, on = g?.querySelector<HTMLElement>('.theme-card.on');
+    if (g && on && g.scrollWidth > g.clientWidth) g.scrollLeft = Math.max(0, on.offsetLeft - g.offsetLeft - 12);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   return (
     <div className="theme-picker">
       <div className="segmented" role="radiogroup" aria-label="Sáng hay tối">
@@ -40,7 +49,7 @@ export function ThemePicker({ palette, mode, onPalette, onMode }: {
           </button>
         ))}
       </div>
-      <div className="theme-grid" role="radiogroup" aria-label="Bảng màu">
+      <div className="theme-grid scroll-row" ref={gridRef} role="radiogroup" aria-label="Bảng màu">
         {ORDERED.map((p) => (
           <button key={p.id} type="button" role="radio" aria-checked={palette === p.id} className={`theme-card${palette === p.id ? ' on' : ''}`} onClick={() => onPalette(p.id)}>
             <span className="tc-preview" aria-hidden="true">

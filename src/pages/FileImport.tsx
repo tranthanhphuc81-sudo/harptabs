@@ -130,12 +130,6 @@ export default function FileImport({ onImages, onAudio }: { onImages?: (files: F
 
   return (
     <div className="ai-form">
-      <p className="muted small">
-        Chọn file <strong>MusicXML</strong> (<code>.musicxml</code>, <code>.mxl</code>, <code>.xml</code>) hoặc <strong>MIDI</strong> (<code>.mid</code>).
-        File ghi sẵn từng nốt nên tab <strong>đúng tuyệt đối</strong>, không phải đoán như đọc ảnh.
-        Chọn file <strong>âm thanh</strong> (<code>.mp3</code>, <code>.m4a</code>, <code>.wav</code>…) thì app chuyển sang "Bản thu" để dò giai điệu (chỉ là bản nháp). Chọn <strong>ảnh khuông nhạc</strong> (<code>.jpg</code>, <code>.png</code>, chọn được nhiều trang) hoặc <strong>bản nhạc PDF</strong> (<code>.pdf</code>) thì app chuyển sang quét nốt ngay trên máy.
-        Tìm file này trên MuseScore, các diễn đàn nhạc, hoặc xuất từ phần mềm soạn nhạc (MuseScore, Sibelius, Finale…).
-      </p>
       <div className="row gap wrap center">
         <button type="button" className="btn btn-primary" disabled={busy} onClick={() => inputRef.current?.click()}>
           <Icon name="music" size={18} /> {file ? 'Chọn file khác' : 'Chọn file nhạc / ảnh'}
@@ -144,6 +138,14 @@ export default function FileImport({ onImages, onAudio }: { onImages?: (files: F
         <input ref={inputRef} type="file" hidden multiple={!!onImages} onChange={(e) => open(e.target.files)}
           accept={`.mid,.midi,.kar,.rmi,.musicxml,.mxl,.xml,audio/midi,audio/x-midi,application/vnd.recordare.musicxml,application/vnd.recordare.musicxml+xml${onImages ? ',.jpg,.jpeg,.png,.webp,.pdf,image/jpeg,image/png,image/webp,application/pdf' : ''}${onAudio ? ',.mp3,.m4a,.wav,.ogg,.aac,.flac' : ''}`} />
       </div>
+      {/* nhận những loại file nào: gọn từng dòng thay cho đoạn giải thích dài (nút chọn file nằm trên cùng) */}
+      {!file && (
+        <ul className="file-kinds small">
+          <li><strong>MusicXML, MIDI</strong> <span className="muted">(.musicxml .mxl .mid) — tab đúng tuyệt đối, không phải đoán</span></li>
+          {onImages && <li><strong>Ảnh, PDF bản nhạc</strong> <span className="muted">(.jpg .png .pdf, nhiều trang) — quét nốt ngay trên máy</span></li>}
+          {onAudio && <li><strong>Âm thanh</strong> <span className="muted">(.mp3 .m4a .wav) — dò giai điệu, ra bản nháp</span></li>}
+        </ul>
+      )}
       {error && <div className="alert error" role="alert">{error}</div>}
       <FileSources />
 
@@ -263,6 +265,7 @@ function FileSources() {
           <li key={s.url}><a href={s.url} target="_blank" rel="noreferrer">{s.name}</a> — {s.what}</li>
         ))}
       </ul>
+      <p className="small"><strong>Tự soạn bài?</strong> Phần mềm soạn nhạc (MuseScore, Sibelius, Finale…) đều xuất được: File → Export → MusicXML hoặc MIDI.</p>
       <p className="small"><strong>Cách tải về điện thoại rồi mở trong app:</strong> tải file (.mxl, .musicxml hoặc .mid) về máy → quay lại đây bấm <strong>Chọn file nhạc</strong> → chọn file vừa tải trong mục Tải xuống.</p>
       <p className="small"><strong>Chỉ có bản PDF đẹp?</strong> Mở bằng <a href="https://musescore.org" target="_blank" rel="noreferrer">MuseScore</a> (miễn phí, trên máy tính: File → Import PDF) hoặc <a href="https://audiveris.github.io/audiveris/" target="_blank" rel="noreferrer">Audiveris</a>, sửa vài chỗ sai rồi File → Export → MusicXML. PDF in sắc nét đọc chính xác hơn nhiều so với ảnh chụp.</p>
       <p className="small muted">Bài còn bản quyền: chỉ dùng để tự tập, không chia sẻ lại file.</p>

@@ -448,6 +448,8 @@ button, a, select { -webkit-tap-highlight-color: transparent; }
   background: var(--accent-soft); color: var(--ink); font-size: 0.75rem; font-weight: 700;
 }
 .legend-help[open] summary { border-style: solid; color: var(--ink); }
+.legend-help.tip-only summary { padding: 0 5px; min-width: 32px; justify-content: center; }
+.legend-help.tip-only[open] { flex-basis: auto; }
 .legend-help > .lg-text, .legend-help > .muted { display: block; margin-top: 8px; max-width: 72ch; }
 
 /* hàng cuộn ngang (tuỳ chọn hiển thị, bộ lọc): mép mờ khi còn nút khuất — components/useScrollHint.ts */
@@ -688,6 +690,9 @@ button, a, select { -webkit-tap-highlight-color: transparent; }
 .keypad button.blow { background: var(--blow-fill); color: var(--blow); border-color: var(--blow-edge); }
 .keypad button.draw { background: var(--draw-fill); color: var(--draw); border-color: var(--draw-edge); }
 .keypad .kp-mode { min-width: 56px; background: var(--ink); color: var(--bg); border-color: var(--ink); font-family: var(--font); font-size: 0.9rem; }
+.file-kinds { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.file-kinds li { padding-left: 14px; position: relative; }
+.file-kinds li::before { content: ''; position: absolute; left: 2px; top: 0.6em; width: 5px; height: 5px; border-radius: 50%; background: var(--accent); }
 .syntax-help summary { cursor: pointer; color: var(--draw); font-weight: 500; }
 .rec-check > p, .rec-check > div { margin: 10px 0 0; font-weight: 400; color: var(--ink); }
 .rec-result { display: flex; flex-direction: column; gap: 8px; }
@@ -960,6 +965,14 @@ button, a, select { -webkit-tap-highlight-color: transparent; }
 /* ===== Chọn bảng màu ===== */
 .theme-picker { display: flex; flex-direction: column; gap: 12px; }
 .theme-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap: 10px; }
+/* điện thoại: dải cuộn ngang thay cho lưới 5 hàng (đỡ phải cuộn gần hai màn hình mới tới cài đặt khác) */
+@media (max-width: 599px) {
+  .theme-grid { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: 148px; overflow-x: auto; scroll-snap-type: x proximity; scrollbar-width: none; padding: 4px 2px 6px; margin: -4px -2px -6px; }
+  .theme-grid::-webkit-scrollbar { display: none; }
+  .theme-card { scroll-snap-align: start; }
+}
+.settings-jump { display: flex; flex-wrap: wrap; gap: 8px; margin-top: -6px; }
+.page-settings .panel { scroll-margin-top: 12px; }
 .theme-card {
   display: flex; flex-direction: column; gap: 8px; padding: 8px; text-align: left; cursor: pointer;
   border-radius: var(--r-m); border: 1.5px solid var(--line); background: var(--surface); color: var(--ink);
@@ -1154,6 +1167,17 @@ button, a, select { -webkit-tap-highlight-color: transparent; }
 .jam-card { display: flex; flex-direction: column; gap: 4px; padding: 14px 16px; border-radius: var(--r-l); border: 1px solid var(--line); background: var(--surface); box-shadow: var(--shadow-sm); color: inherit; text-decoration: none; }
 .jam-card strong { font-size: 1.05rem; }
 .jam-card span { color: var(--ink-2); font-size: 0.9rem; }
+.jam-card strong { display: flex; align-items: center; gap: 8px; }
+.jam-card strong svg { flex: none; color: var(--accent); }
+/* trang Học: thẻ luyện tập xếp lưới; điện thoại 2 cột, mô tả tối đa 3 dòng */
+.practice { display: flex; flex-direction: column; gap: 10px; }
+.practice-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; }
+@media (max-width: 599px) {
+  .practice-grid { grid-template-columns: 1fr 1fr; }
+  .practice-grid .jam-card { padding: 12px; gap: 6px; }
+  .practice-grid .jam-card strong { font-size: 0.95rem; line-height: 1.25; align-items: flex-start; flex-direction: column; gap: 6px; }
+  .practice-grid .jam-card span { font-size: 0.8rem; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+}
 .jam-now { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; padding: 12px 16px; border-radius: var(--r-l); background: var(--surface); border: 1px solid var(--line); }
 .jam-now > div { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
 .jam-chord { font-size: 2.4rem; line-height: 1; font-family: var(--font-cond); }
@@ -1197,6 +1221,10 @@ button, a, select { -webkit-tap-highlight-color: transparent; }
 
 /* thanh phát thu gọn: chỉ nút phát (và hợp âm đang vang) ở góc dưới, không che tab */
 .playerbar.pin-top { top: 8px; margin-top: 0; }
+/* Tập ngẫu hứng: nút phát thu gọn nằm trong góc phải ô "Bấm phát để bắt đầu" (kéo lên đúng bằng cao thanh + khoảng cách trang),
+   không chiếm thêm một hàng; mở rộng thì về hàng riêng như thường */
+.page-jam .jam-now:has(+ .playerbar.pin-top.collapsed) { padding-right: 168px; min-height: 76px; }
+.page-jam .playerbar.pin-top.collapsed { margin-top: calc(-18px - 66px - 5px); margin-right: 5px; }
 .playerbar.collapsed { width: fit-content; margin-left: auto; padding: 6px; gap: 6px; border-radius: 999px; overflow: visible; }
 .playerbar.collapsed.with-above { width: auto; margin-left: 0; border-radius: var(--r-l); padding: 10px 12px; }
 .playerbar.collapsed .pb-main { flex-wrap: nowrap; gap: 6px; }

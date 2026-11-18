@@ -538,8 +538,9 @@ function SongPlayerView({ song, original, fit, view, choice, onChoice }: {
             </>}
             {lgText && <span className="lg-text print-only">{lgText}</span>}
             <span className="lg-dur print-only">Ô dài = giữ lâu hơn (ô thường 1 phách) · <strong>–</strong> nghỉ</span>
-            <details className="legend-help no-print" open={helpOpen} onToggle={(e) => setHelpOpen(e.currentTarget.open)}>
-              <summary>{lgText ? 'Cách đọc tab' : 'Mẹo'}</summary>
+            <details className={`legend-help no-print${lgText ? '' : ' tip-only'}`} open={helpOpen} onToggle={(e) => setHelpOpen(e.currentTarget.open)}>
+              {/* harmonica: chú giải thổi / hút đã hiện sẵn, chỉ còn mẹo ngắn → nút "?" gọn, nằm cùng hàng */}
+              <summary aria-label={lgText ? undefined : 'Mẹo'} title={lgText ? undefined : 'Mẹo'}>{lgText ? 'Cách đọc tab' : null}</summary>
               {lgText}
               {!sheetData && <span className="muted">Chạm vào nốt để nghe, hoặc chọn chỗ bắt đầu phát.</span>}
             </details>

@@ -33,7 +33,7 @@ function LogCard() {
   const st = streak(log, today);
   return (
     <Link to="/nhat-ky" className="jam-card log-card">
-      <strong>Nhật ký luyện tập</strong>
+      <strong><Icon name="check" size={20} /> Nhật ký luyện tập</strong>
       <span>Hôm nay {mins} / {log.goalMin ?? DEFAULT_GOAL_MIN} phút{st ? ` · ${st} ngày tập liền` : ''}. Xem bài tập gợi ý cho hôm nay và tiến bộ từng tuần.</span>
     </Link>
   );
@@ -48,37 +48,42 @@ export default function Learn() {
           <p className="muted">Kỹ thuật, thủ thuật và mẹo, kèm bài tập nghe được. Tất cả dùng offline.{IS_RECORDER_APP || IS_KALIMBA_APP || IS_GUITAR_APP || IS_PIANICA_APP || IS_TRANH_APP || IS_ORGAN_APP ? '' : ' Chơi kèn chromatic: xem nhóm bài cuối.'}</p>
         </div>
       </header>
+      {/* các bài tập có micro: lưới 2 cột trên điện thoại, mô tả gọn 3 dòng — danh sách bài học hiện lên sớm hơn */}
+      <section className="practice" aria-label="Luyện tập">
       <LogCard />
+      <div className="practice-grid">
       <Link to="/nghe-dap" className="jam-card">
-        <strong>Tập nghe – đáp</strong>
+        <strong><Icon name="mic" size={20} /> Tập nghe – đáp</strong>
         <span>Máy chơi một câu ngắn, bạn nghe rồi chơi lại; app nghe micro chấm từng nốt, sai thì chỉ chỗ bấm. Luyện tai và thuộc vị trí nốt, 7 cấp từ 1 nốt tới câu 4 nốt.</span>
       </Link>
       <Link to="/tap-nhip" className="jam-card">
-        <strong>Tập nhịp</strong>
+        <strong><Icon name="wave" size={20} /> Tập nhịp</strong>
         <span>Máy đếm nhịp chạy, bạn chơi theo mẫu (nốt đen, móc đơn, đảo phách, swing…); app nghe và báo mỗi tiếng sớm / muộn bao nhiêu mili giây, có hay vội hay kéo không.</span>
       </Link>
       {!IS_TRANH_APP && <Link to="/jam" className="jam-card">
-        <strong>{IS_RECORDER_APP ? 'Tập ngẫu hứng jazz' : IS_KALIMBA_APP ? 'Tập ngẫu hứng blues' : 'Tập ngẫu hứng blues & jazz'}</strong>
+        <strong><Icon name="music" size={20} /> {IS_RECORDER_APP ? 'Tập ngẫu hứng jazz' : IS_KALIMBA_APP ? 'Tập ngẫu hứng blues' : 'Tập ngẫu hứng blues & jazz'}</strong>
         <span>{IS_KALIMBA_APP ? 'Nền nhạc 12 ô nhịp, tô các phím ngũ cung 1 2 3 5 6 trên cây đàn (gảy phím nào cũng hợp), máy hỏi – bạn đáp và lick mẫu ghi bằng tab số.' : IS_GUITAR_APP ? 'Nền nhạc 12 ô nhịp và các vòng jazz, thang âm blues trên cần đàn, máy hỏi – bạn đáp và lick mẫu xếp theo dây.phím.' : IS_RECORDER_APP ? 'Nền nhạc swing các vòng ii–V–I, thế bấm các nốt của hợp âm đang vang, máy hỏi – bạn đáp và lick mẫu.' : `Nền nhạc 12 ô nhịp, thang âm blues trên ${BRAND.noun} của bạn, máy hỏi – bạn đáp và lick mẫu; có cả chế độ jazz.`}</span>
       </Link>}
       {IS_TRANH_APP && <Link to="/tap-boi-am" className="jam-card">
-        <strong>Tập bồi âm, nắn cần đàn bầu</strong>
+        <strong><Icon name="wave" size={20} /> Tập bồi âm, nắn cần đàn bầu</strong>
         <span>Bật micro, gảy từng điểm bồi: app nghe và cho biết ra đúng tiếng bồi chưa, sai do chạm lệch, ấn mạnh hay nhầm điểm. Chế độ nắn cần: thước cao độ báo đang thiếu, đủ hay quá.</span>
       </Link>}
       {IS_TRANH_APP && <Link to="/tap-cao-do?mode=bend" className="jam-card">
-        <strong>Tập nhấn đàn tranh</strong>
+        <strong><Icon name="sliders" size={20} /> Tập nhấn đàn tranh</strong>
         <span>Gảy dây rồi nhấn: thước cao độ báo nhấn thiếu, đủ hay quá cho các nốt Fa, Si… (nửa cung, một cung).</span>
       </Link>}
       {!IS_TRANH_APP && !IS_GUITAR_APP && !IS_KALIMBA_APP && !IS_ORGAN_APP && <Link to="/tap-cao-do" className="jam-card">
-        <strong>{IS_RECORDER_APP || IS_PIANICA_APP ? 'Tập giữ hơi nốt dài' : 'Tập bend và giữ hơi'}</strong>
+        <strong><Icon name="sliders" size={20} /> {IS_RECORDER_APP || IS_PIANICA_APP ? 'Tập giữ hơi nốt dài' : 'Tập bend và giữ hơi'}</strong>
         <span>{IS_RECORDER_APP || IS_PIANICA_APP
           ? 'Thổi một nốt thật đều và lâu: app đo giữ được bao lâu, cao độ có chao, có non / già không. Bài khởi động tốt nhất mỗi buổi tập.'
           : 'Bend từng lỗ với thước cao độ báo thiếu – đúng – quá; và giữ nốt dài: app đo giữ được bao lâu, cao độ có chao không.'}</span>
       </Link>}
       {IS_GUITAR_APP && <Link to="/tap-hop-am" className="jam-card">
-        <strong>Tập hợp âm với micro</strong>
+        <strong><Icon name="music" size={20} /> Tập hợp âm với micro</strong>
         <span>Bấm theo sơ đồ, quạt một lần: app nghe và chỉ ra dây nào câm, dây × nào bị quạt trúng, ngón nào bấm lệch phím; đếm tỉ lệ sạch từng hợp âm.</span>
       </Link>}
+      </div>
+      </section>
       {LESSON_GROUPS.map((g) => (
         <section key={g} className="lesson-group">
           <h2>{g}</h2>
