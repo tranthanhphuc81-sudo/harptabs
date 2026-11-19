@@ -265,6 +265,110 @@ export const FOLK_SAMPLES: SampleSong[] = [
 `,
   },
   {
+    sampleId: 'when-the-saints',
+    title: 'When the Saints Go Marching In',
+    artist: 'Dân ca tâm linh Mỹ · Public Domain',
+    harpKey: 'C', position: 2, songKey: 'G', bpm: 110, timeSig: '4/4', pickupBeats: 0,
+    style: 'march', difficulty: 1, tags: ['spiritual', 'vị trí 2'],
+    notes: 'Bản nhạc tâm linh Mỹ nổi tiếng ở vị trí 2 (cross harp). Giai điệu tự nhiên, nốt chủ là thổi lỗ 6 (Sol) và hút lỗ 2.',
+    body: `-3 -4 -5 6
+
+6:2 r -3
+
+-4 -5 6:2
+
+6:2 r -3
+
+-4 -5 6 -5
+
+-4 -4 -3:2
+
+-4:2 -5:2
+
+-5 -4 -4 -3
+
+-3 -4 -5 6
+
+6:2 -5 -4
+
+-5 -4 -3:2
+
+-2:3 r
+`,
+  },
+  {
+    sampleId: 'swing-low',
+    title: 'Swing Low, Sweet Chariot',
+    artist: 'Dân ca tâm linh Mỹ · Public Domain',
+    harpKey: 'C', position: 2, songKey: 'G', bpm: 76, timeSig: '4/4', pickupBeats: 0,
+    style: 'slow-rock', difficulty: 1, tags: ['spiritual', 'ballad', 'vị trí 2'],
+    notes: 'Bản tâm linh êm dịu ở vị trí 2. Có nốt bend -3\' (Sib) ở câu kết tạo chất blues mộc mạc.',
+    body: `-4 6 -4 -3
+
+-2:3 -3
+
+-4 -4 -3 -2
+
+-3:3 r
+
+-4 6 -4 -3
+
+-2:3 -3
+
+-4 -4 -3 -3'
+
+-2:3 r
+`,
+  },
+  {
+    sampleId: 'wayfaring-stranger',
+    title: 'Wayfaring Stranger',
+    artist: 'Dân ca tâm linh Mỹ · Public Domain',
+    harpKey: 'C', position: 3, songKey: 'Dm', bpm: 72, timeSig: '4/4', pickupBeats: 0,
+    style: 'ballad', difficulty: 2, tags: ['spiritual', 'ballad', 'vị trí 3'],
+    notes: 'Bản dân ca tâm linh da diết ở giọng Rê thứ (Dm), chơi ở vị trí 3 trên kèn C. Có nốt blue -4\' (Đô#) dẫn về nốt chủ Rê (-4).',
+    body: `-4 -4 5 -5
+
+-6:3 -5
+
+6:1.5 -5:0.5 5 4
+
+-4:3 r
+
+-4 -4 5 -5
+
+-6:3 -5
+
+6:1.5 -5:0.5 5 -4'
+
+-4:3 r
+`,
+  },
+  {
+    sampleId: 'god-rest-ye',
+    title: 'God Rest Ye Merry Gentlemen',
+    artist: 'Dân ca Giáng sinh Anh · Public Domain',
+    harpKey: 'C', position: 3, songKey: 'Dm', bpm: 100, timeSig: '4/4', pickupBeats: 0,
+    style: 'march', difficulty: 2, tags: ['Giáng sinh', 'dân ca Anh', 'vị trí 3'],
+    notes: 'Ca khúc Giáng sinh cổ truyền Anh giọng Rê thứ, chơi ở vị trí 3 trên kèn C hoàn toàn tự nhiên không cần bend.',
+    body: `-4 -4 6 6
+
+5 -5 6 -6
+
+7 -8 7 -7
+
+-6:3 r
+
+-4 -4 6 6
+
+5 -5 6 -6
+
+7 -6 6 5
+
+-4:3 r
+`,
+  },
+  {
     sampleId: 'greensleeves',
     title: 'Greensleeves',
     artist: 'Dân ca Anh (thế kỷ 16) · theo bản nhạc trên Wikipedia',

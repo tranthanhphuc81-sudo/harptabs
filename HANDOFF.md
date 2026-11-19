@@ -3,7 +3,7 @@
 > **Dự án**: HarpTabs / Sổ Tab — Sổ tab và ứng dụng luyện tập nhạc cụ chạy Offline-first PWA  
 > **Tác giả**: Trần Thanh Phúc (0913.65.65.39)  
 > **Thời điểm bàn giao**: 19/11/2026  
-> **Trạng thái kiểm thử**: 86/86 test suites passed (880 tests), TypeScript check 0 lỗi.
+> **Trạng thái kiểm thử**: 86/86 test suites passed (912 tests), TypeScript check 0 lỗi.
 
 ---
 
@@ -147,33 +147,40 @@ File `src/appConfig.ts` xuất các cờ Boolean (`IS_GUITAR_APP`, `IS_ORGAN_APP
 ## 6. CHI TIẾT TÍNH NĂNG VỪA BỔ SUNG TRONG PHIÊN NÀY
 
 Theo yêu cầu số 3 từ phiên làm việc trước:
-### 1. Bổ sung 2 bài học chuyên sâu trong `src/data/lessons.ts`:
+### 1. Bổ sung 5 bài học chuyên sâu trong `src/data/lessons.ts`:
 - **`vi-tri-2-cross-harp` ("Vị trí 2: Cross harp & Blues")**:
   - Hướng dẫn bản chất Cross harp: kèn C chơi giọng Sol (G) — nâng cao một quãng 5.
   - Nốt chủ âm: hút lỗ 2 (`-2`) hoặc thổi lỗ 6 (`6`). Hợp âm hút 1–4 là Sol trưởng (G).
   - Thang âm Blues Sol đầy đủ: `-2`, `-3'` (nốt blue bậc 3), `4`, `-4'` (nốt blue bậc 5 giáng), `-4`, `-5`, `6`.
   - Có bài tập Tab mẫu tương tác kèm mini-player phát điệu shuffle trực tiếp trong bài học.
-  - Liên kết nhanh sang trang Jam blues 12 ô nhịp.
 - **`vi-tri-3-slant-harp` ("Vị trí 3: Giai điệu thứ (Slant harp)")**:
   - Hướng dẫn bản chất Slant harp: kèn C chơi giọng Rê thứ (`Dm`) / Rê Dorian.
   - Nốt chủ âm: hút lỗ 4 (`-4`) ở quãng trung, hút lỗ 8 (`-8`) ở quãng cao, hút lỗ 1 (`-1`) ở quãng trầm.
   - Ưu thế độc đáo: quãng giữa (lỗ 4 đến 8) chứa đầy đủ thang âm Dorian tự nhiên (`-4 5 -5 6 -6 -7 7 -8`) mà **không cần bend**, cực kỳ êm ái cho nhạc ballad, dân ca Ireland/Celtic, nhạc phim trữ tình.
   - Kỹ thuật nâng cao: bend lỗ 4 (`-4'`) lấy nốt Đô# dẫn về Rê và bend lỗ 6 (`-6'`) cho Minor Blues.
-  - Có bài tập Tab tương tác phát nhạc điệu ballad trực tiếp.
+- **`blues-turnaround` ("Turnaround và câu kết blues")**:
+  - Hướng dẫn turnaround ô 11–12 (I → V), turnaround có bend từ lỗ 6 hạ về `-1`, và câu kết bài dứt khoát trên `-2:4`.
+- **`chuyen-vi-tri-1-2` ("Chuyển giữa vị trí 1 và 2")**:
+  - Kỹ thuật kết hợp vị trí 1 (hát giai điệu) và vị trí 2 (solo ngẫu hứng) trong cùng một bài, sử dụng nốt Sol làm cầu nối chung.
+- **`minor-pentatonic-vi-tri-3` ("Thang âm thứ ngũ cung ở vị trí 3")**:
+  - 5 nốt an toàn của Rê thứ ngũ cung (`-4`, `-5`, `6`, `-6`, `7`) và nốt blue `-4'` tạo lực kéo về `-4`.
 
-### 2. Bổ sung các bài mẫu (Sample Songs) chuẩn mực trong `src/data/samples3.ts`:
-- **`careless-love` (Vị trí 2 - Cross harp)**:
-  - Bản dân ca blues kinh điển giọng Sol (G) trên kèn C.
-  - Tận dụng nốt chủ `-2` và nốt bend `-3'` (Sib) tạo cảm giác da diết.
-  - Đảm bảo chuẩn 8 ô nhịp 4/4 (32 phách, 1 phách lấy đà).
-- **`drunken-sailor` (Vị trí 3 - Slant harp)**:
-  - Bản dân ca thủy thủ truyền thống giọng Rê thứ (Dm) trên kèn C.
-  - Chơi hoàn toàn tự nhiên không cần bend, nhịp điệu dồn dập (train style, 110 bpm).
-  - Chuẩn 8 ô nhịp 4/4 (32 phách).
+### 2. Bổ sung 6 bài mẫu (Sample Songs) chuẩn mực trong `src/data/samples3.ts`:
+- **Vị trí 2 (Cross harp - kèn C chơi giọng Sol)**:
+  - `careless-love`: Blues/Folk kinh điển, shuffle 84 bpm, nốt bend `-3'`.
+  - `when-the-saints`: Bản hành khúc tâm linh nổi tiếng, march 110 bpm, 48 phách chuẩn.
+  - `swing-low`: Giai điệu tâm linh da diết, slow-rock 76 bpm, nốt chủ `-2` và bend `-3'`.
+- **Vị trí 3 (Slant harp - kèn C chơi giọng Rê thứ Dm)**:
+  - `drunken-sailor`: Dân ca thủy thủ sôi động, train style 110 bpm, không cần bend.
+  - `wayfaring-stranger`: Ballad tâm linh trầm buồn, 72 bpm, nốt blue `-4'`.
+  - `god-rest-ye`: Ca khúc Giáng sinh truyền thống Anh, march 100 bpm, thang âm tự nhiên.
 
-### 3. Đảm bảo kiểm thử:
-- Đã chạy qua `samples.test.ts` (160 test case), xác nhận không lỗi tab, số phách khớp nhịp 100%, không xung đột id.
-- Toàn bộ 86 test suites với 880 bài test trong `npm test` đều vượt qua xuất sắc.
+### 3. Bổ sung 10 câu lick blues mới trong `src/data/licks.ts`:
+- Nhảy quãng tám (`octave-nhay`), Wah-wah tay phải (`wah-wah`), Shake lỗ 4–5 (`shake-45`), Câu hỏi trầm (`cau-hoi-tram`), Riff ngắt nhịp (`riff-ngat`), Hỏi đáp đơn giản (`doi-chieu`), Riff đầy trên IV (`iv-day`), V trượt xuống (`v-truot-xuong`), Turnaround lắc (`turn-lac`), Turnaround dứt khoát (`turn-dut`).
+
+### 4. Đảm bảo kiểm thử:
+- Đã chạy qua `samples.test.ts` (172 tests), `licks.test.ts` (31 tests), `accompPlan.test.ts` (7 tests).
+- Toàn bộ 86 test suites với **912 bài test** trong `npm test` đều vượt qua xuất sắc 100%.
 
 ---
 
