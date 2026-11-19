@@ -215,6 +215,56 @@ export const FOLK_SAMPLES: SampleSong[] = [
 `,
   },
   {
+    sampleId: 'careless-love',
+    title: 'Careless Love',
+    artist: 'Dân ca Blues/Folk Mỹ · Public Domain',
+    harpKey: 'C', position: 2, songKey: 'G', bpm: 84, timeSig: '4/4', pickupBeats: 1,
+    style: 'shuffle', difficulty: 2, tags: ['blues', 'đồng quê', 'vị trí 2'],
+    notes: 'Bài blues dân gian kinh điển ở vị trí 2 (cross harp, kèn C chơi giọng Sol). Nốt chủ là hút lỗ 2 (-2). Nốt -3\' là bend nửa cung (Sib) tạo màu sắc blues da diết.',
+    body: `-4
+
+-3:1.5 -3:0.5 -3 -2
+
+-3:3 -4
+
+-3:1.5 -3:0.5 -3 -2
+
+-4:3 -4
+
+-3:1.5 -3:0.5 -3 -2
+
+-3:2 4 5
+
+-4:1.5 -4:0.5 -3 -3'
+
+-2:3
+`,
+  },
+  {
+    sampleId: 'drunken-sailor',
+    title: 'Drunken Sailor',
+    artist: 'Dân ca thủy thủ truyền thống · theo bản nhạc trên Wikipedia',
+    harpKey: 'C', position: 3, songKey: 'Dm', bpm: 110, timeSig: '4/4', pickupBeats: 0,
+    style: 'train', difficulty: 1, tags: ['dân ca', 'thủy thủ', 'vị trí 3'],
+    notes: 'Bài hát thủy thủ vui nhộn ở giọng Rê thứ (Dm), chơi hoàn toàn tự nhiên ở vị trí 3 (slant harp) trên kèn C mà không cần bend.',
+    body: `-4:0.5 -4:0.5 -4:0.5 -4:0.5 -4:0.5 -4:0.5 -4:0.5 5:0.5
+
+-5:0.5 -5:0.5 -5:0.5 -5:0.5 -5:0.5 -5:0.5 -5:0.5 -4:0.5
+
+-4:0.5 -4:0.5 -4:0.5 -4:0.5 -4:0.5 -4:0.5 -4:0.5 5:0.5
+
+6:0.5 6:0.5 6:0.5 6:0.5 6:0.5 6:0.5 6:0.5 5:0.5
+
+-4:0.5 -4:0.5 -4:0.5 -4:0.5 -4:0.5 -4:0.5 -4:0.5 5:0.5
+
+-5:0.5 -5:0.5 -5:0.5 -5:0.5 -5:0.5 -5:0.5 -5:0.5 -6:0.5
+
+6:0.5 -5:0.5 5:0.5 4:0.5 -4:2
+
+-4:2 r:2
+`,
+  },
+  {
     sampleId: 'greensleeves',
     title: 'Greensleeves',
     artist: 'Dân ca Anh (thế kỷ 16) · theo bản nhạc trên Wikipedia',
