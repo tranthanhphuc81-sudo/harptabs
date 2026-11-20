@@ -12,7 +12,7 @@ export function UpdateNotice() {
   const [later, setLater] = useState(false);
   if (!ready || later) return null;
   return (
-    <div className="notice" role="status">
+    <div className="notice update-notice" role="status">
       <span>{t('Có bản mới của app. Lưu bài đang sửa (nếu có) rồi bấm cập nhật.')}</span>
       <span className="row gap">
         <button type="button" className="btn btn-primary btn-sm" onClick={applyUpdate}>{t('Cập nhật')}</button>

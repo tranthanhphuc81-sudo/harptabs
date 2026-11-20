@@ -1492,3 +1492,13 @@ input[type='range'] { accent-color: var(--accent); }
 @media print { .lang-toggle { display: none !important; } }
 /* đầu trang có thêm nút bên phải (vd. Blues | Jazz): chừa chỗ cho nút ngôn ngữ ở góc */
 @media (min-width: 560px) { .page-head:has(> .lang-toggle:not(.inline)) > :not(:first-child):not(.lang-toggle) { margin-right: 100px; } }
+
+/* thông báo có bản mới: nổi ở đầu màn hình — bản mới thường tải xong sau khi đã cuộn danh sách bài,
+   để ở đầu nội dung thì nằm khuất phía trên, chỉ thấy khi sang trang khác */
+.update-notice {
+  position: fixed; z-index: 45;
+  top: calc(env(safe-area-inset-top) + 10px); left: 12px; right: 12px;
+  max-width: 600px; margin: 0 auto;
+  box-shadow: var(--shadow);
+}
+@media (min-width: 900px) { .update-notice { left: 216px; right: 16px; } }
