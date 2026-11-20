@@ -33,7 +33,8 @@ export function tl(s: string | undefined): string | undefined {
 
 /** bài mẫu đọc từ máy: dịch tên / tác giả / ghi chú nếu người dùng chưa sửa */
 export function localizeSample<T extends { source?: string; title: string; artist?: string; notes?: string }>(song: T): T {
-  if (LANG !== 'en' || song.source !== 'sample') return song;
+  // Dexie gọi hook cả khi đọc bài không có (get / bulkGet trả undefined)
+  if (LANG !== 'en' || !song || song.source !== 'sample') return song;
   return { ...song, title: tl(song.title), artist: tl(song.artist), notes: tl(song.notes) };
 }
 

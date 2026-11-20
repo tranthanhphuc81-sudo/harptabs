@@ -40,7 +40,7 @@ class HarpDB extends Dexie {
 
 export const db = new HarpDB();
 // bài mẫu: hiện tên / tác giả / ghi chú bằng tiếng Anh khi đang dùng English (câu người dùng đã sửa thì giữ nguyên)
-db.songs.hook('reading', (s) => localizeSample(s));
+db.songs.hook('reading', (s) => (s ? localizeSample(s) : s));
 
 export function newId(): string {
   if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) return crypto.randomUUID();
