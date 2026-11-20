@@ -14,6 +14,7 @@ import { useAppState } from '../state';
 import { useScrollHint } from '../components/useScrollHint';
 import { PATTERNS } from '../audio/patterns';
 import { t as tx } from '../lib/i18n';
+import { LangToggle } from '../components/LangToggle';
 
 type Sort = 'recent' | 'title' | 'title-desc' | 'practiced';
 const SORTS: Sort[] = ['recent', 'title', 'title-desc', 'practiced'];
@@ -158,6 +159,7 @@ export default function Library() {
           </button>
           <input ref={fileRef} type="file" accept=".json,application/json" hidden onChange={(e) => onImport(e.target.files?.[0])} />
         </div>
+        <LangToggle />
       </header>
 
       <BackupNotice />

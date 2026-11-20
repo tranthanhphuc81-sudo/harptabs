@@ -12,6 +12,7 @@ import { HarpKey, keyOffset, midiToName } from '../lib/harp';
 import { BEND_DRILLS, bendAdvice, BendHold, bendStatus, nodeMidi, PluckDetector, PluckResult, pluckAdvice } from '../lib/bauPractice';
 import { useAppState } from '../state';
 import { t } from '../lib/i18n';
+import { LangToggle } from '../components/LangToggle';
 
 /**
  * Tập bồi âm đàn bầu: chọn điểm bồi, bật micro, gảy — app chấm từng lần gảy (đúng / dây buông / nhầm điểm / tắt tiếng),
@@ -128,6 +129,7 @@ export default function BauPractice() {
             ? t('Chọn điểm bồi, bật micro rồi gảy. App nghe từng lần gảy và cho biết đã ra đúng tiếng bồi chưa, sai thì sai ở đâu.')
             : t('Gảy bồi rồi nắn cần: thước bên dưới cho thấy cao độ đang thiếu, đủ hay quá so với nốt cần ra. Giữ đúng nửa giây là đạt.')}</p>
         </div>
+        <LangToggle />
       </header>
 
       <div className="segmented bp-mode" role="tablist" aria-label={t('Bài tập')}>

@@ -11,6 +11,7 @@ import { ChordVerdict, issueText, judgeChord, openStrings, StrumDetector } from 
 import { midiToName } from '../lib/harp';
 import { useAppState } from '../state';
 import { t as tx } from '../lib/i18n';
+import { LangToggle } from '../components/LangToggle';
 
 /**
  * Tập hợp âm guitar / ukulele: chọn hợp âm, bấm theo sơ đồ, quạt — app nghe phổ tiếng đàn và cho biết
@@ -85,6 +86,7 @@ export default function ChordPractice() {
           <h1>{tx('Tập hợp âm')}</h1>
           <p className="muted">{tx('Chọn hợp âm, bấm theo sơ đồ rồi quạt một lần, để đàn ngân. App nghe tiếng đàn và cho biết đã sạch chưa: dây nào câm, dây nào thừa, ngón nào bấm lệch.')}</p>
         </div>
+        <LangToggle />
       </header>
 
       <div className="row gap wrap end-align">

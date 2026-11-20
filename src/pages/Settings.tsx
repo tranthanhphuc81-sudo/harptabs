@@ -14,6 +14,7 @@ import { ThemePicker } from '../components/ThemePicker';
 import { SyncCalibrator } from '../components/SyncCalibrator';
 import { useAppState } from '../state';
 import { LANG, LANG_CHOSEN, LOCALE, setLang, t as tx, type Lang } from '../lib/i18n';
+import { LangToggle } from '../components/LangToggle';
 
 const MODELS = ['gemini-3.5-flash-lite', 'gemini-3.1-flash-lite'];
 
@@ -132,7 +133,7 @@ export default function SettingsPage() {
 
   return (
     <div className="page page-settings">
-      <header className="page-head"><h1>{tx('Cài đặt')}</h1></header>
+      <header className="page-head"><h1>{tx('Cài đặt')}</h1><LangToggle /></header>
       {/* trang dài: nút nhảy nhanh tới từng mục */}
       <nav className="settings-jump" aria-label={tx('Tới mục')}>
         {[['set-look', tx('Giao diện')], ['set-view', tx('Hiển thị')], ...(AI_ENABLED ? [['set-ai', tx('Kết nối AI')]] : []), ['set-data', tx('Dữ liệu, sao lưu')]].map(([id, label]) => (

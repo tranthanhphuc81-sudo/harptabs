@@ -9,6 +9,7 @@ import {
 } from '../lib/practiceLog';
 import { useAppState } from '../state';
 import { t } from '../lib/i18n';
+import { LangToggle } from '../components/LangToggle';
 
 /**
  * Nhật ký luyện tập: hôm nay tập bao nhiêu phút so với mục tiêu, chuỗi ngày tập liền, biểu đồ 7 ngày,
@@ -67,6 +68,7 @@ export default function PracticeLog() {
           <h1>{t('Nhật ký luyện tập')}</h1>
           <p className="muted">{t('App tự ghi thời gian khi bạn chơi theo bài, ngẫu hứng hoặc dùng các trang tập có micro, cùng kết quả từng bài tập. Nhật ký lưu trong máy này.')}</p>
         </div>
+        <LangToggle />
       </header>
 
       <section className="pl-today">

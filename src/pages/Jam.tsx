@@ -23,6 +23,7 @@ import { useAppState } from '../state';
 import { parseTab } from '../lib/tabText';
 import { t as tx } from '../lib/i18n';
 import { localizeLick, tl } from '../lib/i18nData';
+import { LangToggle } from '../components/LangToggle';
 
 /**
  * Tập ngẫu hứng blues: nền nhạc 12 ô nhịp chạy lặp (vị trí 2), hiện hợp âm đang vang và các lỗ thang âm blues để tự thổi;
@@ -263,6 +264,7 @@ export default function Jam() {
             <button type="button" role="tab" aria-selected={genre === 'jazz'} className={genre === 'jazz' ? 'on' : ''} onClick={() => pick('jazz')}>Jazz</button>
           </div>
         )}
+        <LangToggle />
       </header>
       {genre === 'blues' ? <BluesJam key="blues" /> : <JazzJam key="jazz" />}
     </div>

@@ -10,6 +10,7 @@ import { useWakeLock } from '../components/useWakeLock';
 import { logMetric, usePracticeTimer } from '../lib/practiceLog';
 import { bestShift, dropClicks, GOOD_MS, HitResult, loopbackLatency, matchHits, Onset, OnsetDetector, RHYTHM_PATTERNS, rhythmAdvice, rhythmStats, RhythmStats } from '../lib/rhythm';
 import { t as tx } from '../lib/i18n';
+import { LangToggle } from '../components/LangToggle';
 
 /**
  * Tập nhịp: máy đếm vào một ô nhịp rồi chạy tiếp N ô; người tập chơi theo mẫu nhịp (một nốt bất kỳ hoặc vỗ tay).
@@ -139,6 +140,7 @@ export default function RhythmPractice() {
           <h1>{tx('Tập nhịp')}</h1>
           <p className="muted">{tx('Máy đếm vào một ô nhịp, rồi bạn chơi theo mẫu {0} ô nhịp — chơi một nốt bất kỳ trên nhạc cụ, hoặc vỗ tay. App nghe và cho biết mỗi tiếng sớm hay muộn bao nhiêu.', BARS)}</p>
         </div>
+        <LangToggle />
       </header>
 
       <div className="row gap wrap end-align">

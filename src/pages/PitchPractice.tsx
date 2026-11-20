@@ -15,6 +15,7 @@ import { HarpKey, HarpType, harpLayout, isDanBau, keyOffset, isFretted, isTranh,
 import { BendDrill, bendDrills, canHoldNote, BendHold, bendStatus, BendStatus, HOLD_GOAL, HoldResult, holdGrade, NoteHold } from '../lib/pitchPractice';
 import { useAppState } from '../state';
 import { t as tx } from '../lib/i18n';
+import { LangToggle } from '../components/LangToggle';
 
 /**
  * Tập cao độ với micro: bend kèn harmonica / nhấn dây đàn tranh (thước cao độ báo thiếu – đúng – quá),
@@ -156,6 +157,7 @@ export default function PitchPractice() {
             ? tx('Thước cao độ cho thấy đang thiếu, đủ hay quá so với nốt cần ra. Giữ đúng nửa giây là một lần đạt.')
             : tx('Chọn một nốt, {0} thật đều và lâu nhất có thể. App đo giữ được bao lâu, cao độ có chao không. Mục tiêu: {1} giây, chao dưới ±15 cent.', tranh ? tx('gảy') : tx('thổi'), HOLD_GOAL)}</p>
         </div>
+        <LangToggle />
       </header>
 
       <div className="row gap wrap end-align">

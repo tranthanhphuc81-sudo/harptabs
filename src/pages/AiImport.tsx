@@ -19,6 +19,7 @@ import PasteTab from './PasteTab';
 import { AI_ENABLED } from '../lib/features';
 import { useScrollHint } from '../components/useScrollHint';
 import { LOCALE, t } from '../lib/i18n';
+import { LangToggle } from '../components/LangToggle';
 
 // quét nhạc và đọc file nặng (OMR, MIDI, PDF): chỉ tải khi chọn
 const ScanImport = lazy(() => import('./ScanImport'));
@@ -173,6 +174,7 @@ export default function AiImport() {
           <h1>{editScan ? t('Sửa nốt trên ảnh') : t('Nhập bài')}</h1>
           {!editScan && <p className="muted">{t('File nhạc (chính xác nhất), ảnh bản nhạc, tab chép từ mạng')}{AI_ENABLED ? t(', bản thu hoặc nhờ AI') : t(' hoặc bản thu')} {t('— chọn cách bên dưới.')}</p>}
         </div>
+        <LangToggle />
       </header>
 
       {(mode === 'image' || mode === 'name') && !configured && (

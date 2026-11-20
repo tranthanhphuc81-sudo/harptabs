@@ -52,6 +52,7 @@ import { useAutoScroll } from '../components/useAutoScroll';
 import { AUTO_SCROLL_MAX, AUTO_SCROLL_MIN, clampScrollPct } from '../lib/autoScroll';
 import { t as tx } from '../lib/i18n';
 import { tl } from '../lib/i18nData';
+import { LangToggle } from '../components/LangToggle';
 
 // màn hình karaoke: tải khi mở
 const KaraokeView = lazy(() => import('../components/KaraokeView'));
@@ -519,6 +520,7 @@ function SongPlayerView({ song, original, fit, view, choice, onChoice }: {
             { icon: 'download', label: tx('Xuất file bài'), onSelect: exportSong },
             { icon: 'trash', label: confirmDel ? tx('Bấm lần nữa để xoá') : tx('Xoá bài'), onSelect: removeSong, danger: true, keepOpen: !confirmDel },
           ]} />
+          <LangToggle inline />
         </div>
       </header>
 

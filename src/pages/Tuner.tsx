@@ -11,6 +11,7 @@ import { TokenText } from '../components/TabView';
 import { useAppState } from '../state';
 import { useWakeLock } from '../components/useWakeLock';
 import { t } from '../lib/i18n';
+import { LangToggle } from '../components/LangToggle';
 
 export default function Tuner() {
   const { settings } = useAppState();
@@ -86,6 +87,7 @@ export default function Tuner() {
           <h1>{t('Dò nốt')}</h1>
           <p className="muted">{isPianica(type) ? t('Thổi kèn pianica, app cho biết nốt gì, phím nào và có chuẩn không.') : isOrgan(type) ? t('Hát hoặc chơi một nốt (đàn khác, bài đang nghe), app cho biết nốt gì và nằm ở phím nào trên đàn — dùng để dò nốt một bài theo tai.') : isFretted(type) ? t('Gảy dây đàn, app cho biết nốt gì, nằm ở dây nào phím nào và có chuẩn không — dùng để lên dây.') : isKalimba(type) ? t('Gảy phím kalimba, app cho biết nốt gì, phím nào và có chuẩn không — dùng để chỉnh dây (gõ phím lên / xuống).') : isTranh(type) || isDanBau(type) ? t('Gảy dây đàn, app cho biết nốt gì, dây nào và có chuẩn không — dùng để lên dây.') : isFingered(type) ? t('Thổi sáo, app cho biết bạn đang ra nốt gì, thế bấm nào và có chuẩn không.') : <>{t('Thổi vào kèn, app cho biết bạn đang ra nốt gì, lỗ nào')}{trem ? t(' và có chuẩn không.') : isTwoRowChromatic(type) ? t(', hàng trên hay hàng dưới, và có chuẩn không.') : chrom ? t(', có bấm nút gạt hay không, và có chuẩn không.') : t(', và bend đã đủ sâu chưa.')}</>}</p>
         </div>
+        <LangToggle />
       </header>
 
       <div className="row gap wrap end-align">

@@ -14,6 +14,7 @@ import { EAR_LEVELS, earPool, easiestNote, makeQuestion, NoteSegmenter, sameNote
 import { HarpKey, HarpType, harpLayout, holeCount, isFretted, keyOffset, midiToHz, midiToName } from '../lib/harp';
 import { useAppState } from '../state';
 import { t as tx } from '../lib/i18n';
+import { LangToggle } from '../components/LangToggle';
 
 /**
  * Tập nghe – đáp: máy chơi nốt chủ làm mốc rồi một câu ngắn; người tập chơi lại trên nhạc cụ, app nghe micro chấm từng nốt.
@@ -162,6 +163,7 @@ export default function EarPractice() {
           <h1>{tx('Tập nghe – đáp')}</h1>
           <p className="muted">{tx('Máy chơi nốt chủ làm mốc rồi một câu ngắn. Bạn nghe và chơi lại trên')} {/^(guitar|ukulele|kalimba|tranh|danbau|organ|piano)/.test(type) ? tx('đàn') : /^(recorder|saoTruc)/.test(type) ? tx('sáo') : /^ocarina/.test(type) ? 'ocarina' : /^pianica/.test(type) ? 'pianica' : tx('kèn')} {tx('của mình — app nghe và chấm từng nốt. Luyện tai và thuộc vị trí nốt.')}</p>
         </div>
+        <LangToggle />
       </header>
 
       <div className="row gap wrap end-align">

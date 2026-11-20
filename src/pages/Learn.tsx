@@ -14,6 +14,7 @@ import { usePlayer } from '../components/usePlayer';
 import { Icon } from '../components/Icon';
 import { useAppState } from '../state';
 import { t } from '../lib/i18n';
+import { LangToggle } from '../components/LangToggle';
 
 /** **đậm** và `mã` trong nội dung bài học */
 function rich(text: string): ReactNode {
@@ -48,6 +49,7 @@ export default function Learn() {
           <h1>{t('Học {0} {1}', BRAND.verb, BRAND.instrument)}</h1>
           <p className="muted">{t('Kỹ thuật, thủ thuật và mẹo, kèm bài tập nghe được. Tất cả dùng offline.')}{IS_RECORDER_APP || IS_KALIMBA_APP || IS_GUITAR_APP || IS_PIANICA_APP || IS_TRANH_APP || IS_ORGAN_APP ? '' : t(' Chơi kèn chromatic: xem nhóm bài cuối.')}</p>
         </div>
+        <LangToggle />
       </header>
       {/* các bài tập có micro: lưới 2 cột trên điện thoại, mô tả gọn 3 dòng — danh sách bài học hiện lên sớm hơn */}
       <section className="practice" aria-label={t('Luyện tập')}>
@@ -167,6 +169,7 @@ export function LessonPage() {
             <h1>{lesson.title}</h1>
           </div>
         </div>
+        <LangToggle />
       </header>
       <p className="lead">{lesson.summary}</p>
       <div className="prose">
