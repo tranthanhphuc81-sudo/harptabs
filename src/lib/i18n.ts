@@ -26,9 +26,11 @@ function initial(): Lang {
   // vite.config.ts cũng nạp file này (qua themes.ts) — lúc đó không có import.meta.env
   const env = (import.meta as { env?: { MODE?: string } }).env;
   if (!env || env.MODE === 'test') return 'vi';
-  // link từ trang giới thiệu: ?lang=en / ?lang=vi — nhớ luôn lựa chọn này
+  // link từ trang giới thiệu: ?lang=en / ?lang=vi — nhớ lựa chọn rồi xoá khỏi địa chỉ,
+  // không thì mỗi lần tải lại (kể cả lúc bấm đổi ngôn ngữ) lại bị ép về ngôn ngữ trong link
   try {
     const q = new URLSearchParams(location.search).get('lang');
+    dropLangParam();
     if (q === 'vi' || q === 'en') {
       try { localStorage.setItem(KEY, q); } catch { /* chế độ riêng tư */ }
       return q;
@@ -57,7 +59,18 @@ export function setLang(lang: Lang | null) {
     if (lang) localStorage.setItem(KEY, lang);
     else localStorage.removeItem(KEY);
   } catch { /* chế độ riêng tư */ }
+  dropLangParam();
   location.reload();
+}
+
+/** bỏ ?lang= khỏi địa chỉ đang mở (giữ nguyên các tham số khác và phần #/trang) */
+function dropLangParam() {
+  try {
+    const u = new URL(location.href);
+    if (!u.searchParams.has('lang')) return;
+    u.searchParams.delete('lang');
+    history.replaceState(history.state, '', u.pathname + u.search + u.hash);
+  } catch { /* không có location / history */ }
 }
 
 /**
