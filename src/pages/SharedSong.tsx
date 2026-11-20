@@ -11,6 +11,7 @@ import { TabView } from '../components/TabView';
 import { usePlayer } from '../components/usePlayer';
 import { Icon } from '../components/Icon';
 import { useAppState } from '../state';
+import { t } from '../lib/i18n';
 
 /** Mở link bài được chia sẻ: xem trước, nghe thử, rồi thêm vào thư viện */
 export default function SharedSong() {
@@ -24,12 +25,12 @@ export default function SharedSong() {
     return () => { alive = false; };
   }, [d]);
 
-  if (song === undefined) return <div className="page"><p className="muted">Đang mở bài được chia sẻ…</p></div>;
+  if (song === undefined) return <div className="page"><p className="muted">{t('Đang mở bài được chia sẻ…')}</p></div>;
   if (!song) {
     return (
       <div className="page">
-        <div className="alert error" role="alert">Link chia sẻ bị hỏng hoặc thiếu (có thể app nhắn tin đã cắt bớt). Nhờ người gửi chia sẻ lại.</div>
-        <Link to="/" className="btn btn-ghost">Về thư viện</Link>
+        <div className="alert error" role="alert">{t('Link chia sẻ bị hỏng hoặc thiếu (có thể app nhắn tin đã cắt bớt). Nhờ người gửi chia sẻ lại.')}</div>
+        <Link to="/" className="btn btn-ghost">{t('Về thư viện')}</Link>
       </div>
     );
   }
@@ -58,32 +59,32 @@ function Preview({ song }: { song: Song }) {
   const add = async () => {
     if (existing) { nav(`/song/${existing}`, { replace: true }); return; }
     const now = Date.now();
-    await db.songs.put({ ...song, tags: [...new Set([...song.tags, 'Được chia sẻ'])], createdAt: now, updatedAt: now });
-    toast('Đã thêm vào thư viện');
+    await db.songs.put({ ...song, tags: [...new Set([...song.tags, t('Được chia sẻ')])], createdAt: now, updatedAt: now });
+    toast(t('Đã thêm vào thư viện'));
     nav(`/song/${song.id}`, { replace: true });
   };
 
   return (
     <div className="page">
       <header className="song-head">
-        <Link to="/" className="icon-btn back" aria-label="Về thư viện"><Icon name="back" /></Link>
+        <Link to="/" className="icon-btn back" aria-label={t('Về thư viện')}><Icon name="back" /></Link>
         <KeyPlate k={song.harpKey} type={type} size="l" />
         <div className="sh-text">
-          <p className="muted small">Bài được chia sẻ với bạn</p>
-          <h1>{song.title || 'Chưa đặt tên'}</h1>
+          <p className="muted small">{t('Bài được chia sẻ với bạn')}</p>
+          <h1>{song.title || t('Chưa đặt tên')}</h1>
           {song.artist && <p className="muted">{song.artist}</p>}
           <p className="sh-meta">
             <span>{harpName(song.harpKey, type)}</span>
             <span>{song.timeSig}</span>
             <span>{song.bpm} bpm</span>
-            <span>{notes} nốt</span>
+            <span>{t('{0} nốt', notes)}</span>
           </p>
         </div>
       </header>
       <TabView parsed={parsed} flat={flat} active={player.active} showNames={settings.showNoteNames} nameStyle={settings.noteNames} size={settings.tabSize} harpType={type} harpKey={song.harpKey} />
       <div className="row gap wrap preview-actions">
         <button type="button" className="btn btn-primary" onClick={add}>
-          <Icon name={existing ? 'library' : 'plus'} size={18} /> {existing ? 'Đã có trong thư viện — mở bài' : 'Thêm vào thư viện'}
+          <Icon name={existing ? 'library' : 'plus'} size={18} /> {existing ? t('Đã có trong thư viện — mở bài') : t('Thêm vào thư viện')}
         </button>
         <MiniPlay p={player} />
       </div>

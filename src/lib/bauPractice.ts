@@ -95,11 +95,11 @@ export class PluckDetector {
 /** lời khuyên ngắn cho từng kết quả */
 export function pluckAdvice(r: PluckResult, glyph: (n: number) => string): string {
   switch (r.kind) {
-    case 'ok': return Math.abs(r.cents ?? 0) > 25 ? `Đúng tiếng bồi (lệch ${r.cents! > 0 ? '+' : ''}${r.cents} cent — kiểm tra lại dây buông).` : 'Đúng tiếng bồi!';
-    case 'open': return 'Ra tiếng dây buông: cạnh bàn tay chưa chạm dây, hoặc chạm lệch xa điểm bồi.';
-    case 'wrong': return `Ra tiếng bồi điểm ${glyph(r.node!)}: tay đặt nhầm điểm — dời tay cho đúng vạch.`;
-    case 'muted': return 'Tiếng bị tắt: tay ấn quá mạnh hoặc nhấc tay chậm. Chỉ đặt hờ, gảy xong nhấc tay ngay.';
-    case 'off': return 'Ra cao độ lạ: dây buông chưa đúng tông, hoặc cần đàn đang bị nắn. Lên lại dây bằng Dò nốt.';
+    case 'ok': return Math.abs(r.cents ?? 0) > 25 ? tx('Đúng tiếng bồi (lệch {0}{1} cent — kiểm tra lại dây buông).', r.cents! > 0 ? '+' : '', r.cents) : tx('Đúng tiếng bồi!');
+    case 'open': return tx('Ra tiếng dây buông: cạnh bàn tay chưa chạm dây, hoặc chạm lệch xa điểm bồi.');
+    case 'wrong': return tx('Ra tiếng bồi điểm {0}: tay đặt nhầm điểm — dời tay cho đúng vạch.', glyph(r.node!));
+    case 'muted': return tx('Tiếng bị tắt: tay ấn quá mạnh hoặc nhấc tay chậm. Chỉ đặt hờ, gảy xong nhấc tay ngay.');
+    case 'off': return tx('Ra cao độ lạ: dây buông chưa đúng tông, hoặc cần đàn đang bị nắn. Lên lại dây bằng Dò nốt.');
   }
 }
 
@@ -114,13 +114,14 @@ export const BEND_DRILLS: { n: number; bend: number }[] = [
 export { BendHold, bendStatus } from './pitchPractice';
 export type { BendStatus } from './pitchPractice';
 import type { BendStatus } from './pitchPractice';
+import { t as tx } from './i18n';
 
 export function bendAdvice(status: BendStatus, bend: number): string {
   const push = bend >= 0;
   switch (status) {
-    case 'none': return 'Gảy bồi rồi nắn cần — app hiện cao độ ngay khi nghe thấy.';
-    case 'under': return push ? 'Thiếu: đẩy cần thêm chút nữa.' : 'Thiếu: kéo cần ra thêm chút nữa.';
-    case 'over': return push ? 'Quá tay: nới cần ra một chút.' : 'Quá tay: đẩy cần về một chút.';
-    case 'ok': return 'Đúng rồi — giữ yên tay!';
+    case 'none': return tx('Gảy bồi rồi nắn cần — app hiện cao độ ngay khi nghe thấy.');
+    case 'under': return push ? tx('Thiếu: đẩy cần thêm chút nữa.') : tx('Thiếu: kéo cần ra thêm chút nữa.');
+    case 'over': return push ? tx('Quá tay: nới cần ra một chút.') : tx('Quá tay: đẩy cần về một chút.');
+    case 'ok': return tx('Đúng rồi — giữ yên tay!');
   }
 }

@@ -7,6 +7,7 @@
 import { audio, outputTap } from './engine';
 import { outputDelay } from './latency';
 import { MAX_RECORD_MIN } from '../lib/recordings';
+import { t as tx } from '../lib/i18n';
 
 const MIMES = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/ogg;codecs=opus'];
 
@@ -40,7 +41,7 @@ export class KaraokeRecorder {
    */
   async start(echoCancellation: boolean, extraLagMs: number) {
     if (this.rec) return;
-    if (!recorderSupported()) throw new Error('Trình duyệt này chưa thu âm được — thử Chrome / Safari bản mới');
+    if (!recorderSupported()) throw new Error(tx('Trình duyệt này chưa thu âm được — thử Chrome / Safari bản mới'));
     this.stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation, noiseSuppression: false, autoGainControl: false } });
     const ctx = audio();
     void ctx.resume?.();

@@ -4,6 +4,7 @@
  */
 import { HarpKey, HarpNote, HarpType } from './harp';
 import { flatten, parseTab } from './tabText';
+import { t as tx } from './i18n';
 
 export interface EarLevel {
   id: string;
@@ -15,13 +16,13 @@ export interface EarLevel {
 }
 
 export const EAR_LEVELS: EarLevel[] = [
-  { id: 'l1', label: '1 nốt · Đô Rê Mi', degrees: [0, 2, 4], len: 1 },
-  { id: 'l2', label: '1 nốt · Đô → Sol', degrees: [0, 2, 4, 5, 7], len: 1 },
-  { id: 'l3', label: '1 nốt · cả gam', degrees: [0, 2, 4, 5, 7, 9, 11, 12], len: 1 },
-  { id: 'l4', label: '2 nốt · Đô → Sol', degrees: [0, 2, 4, 5, 7], len: 2 },
-  { id: 'l5', label: '3 nốt · Đô → Sol', degrees: [0, 2, 4, 5, 7], len: 3 },
-  { id: 'l6', label: '3 nốt · cả gam', degrees: [0, 2, 4, 5, 7, 9, 11, 12], len: 3 },
-  { id: 'l7', label: '4 nốt · cả gam', degrees: [0, 2, 4, 5, 7, 9, 11, 12], len: 4 },
+  { id: 'l1', label: tx('1 nốt · Đô Rê Mi'), degrees: [0, 2, 4], len: 1 },
+  { id: 'l2', label: tx('1 nốt · Đô → Sol'), degrees: [0, 2, 4, 5, 7], len: 1 },
+  { id: 'l3', label: tx('1 nốt · cả gam'), degrees: [0, 2, 4, 5, 7, 9, 11, 12], len: 1 },
+  { id: 'l4', label: tx('2 nốt · Đô → Sol'), degrees: [0, 2, 4, 5, 7], len: 2 },
+  { id: 'l5', label: tx('3 nốt · Đô → Sol'), degrees: [0, 2, 4, 5, 7], len: 3 },
+  { id: 'l6', label: tx('3 nốt · cả gam'), degrees: [0, 2, 4, 5, 7, 9, 11, 12], len: 3 },
+  { id: 'l7', label: tx('4 nốt · cả gam'), degrees: [0, 2, 4, 5, 7, 9, 11, 12], len: 4 },
 ];
 
 /** kỹ thuật dễ (không tính bend, overblow, nhấn, nắn, bịt nửa lỗ…) để ra đề */

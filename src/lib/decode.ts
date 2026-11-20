@@ -1,5 +1,6 @@
 /** Đọc file âm thanh (bản thu, MP3…) thành mẫu âm thanh */
 
+import { t } from './i18n';
 function context(): AudioContext {
   const AC = window.AudioContext ?? (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
   return new AC();
@@ -13,7 +14,7 @@ export async function decodeChannels(blob: Blob): Promise<{ channels: Float32Arr
     const channels = Array.from({ length: buf.numberOfChannels }, (_, c) => buf.getChannelData(c).slice());
     return { channels, sampleRate: buf.sampleRate };
   } catch {
-    throw new Error('Không đọc được file âm thanh này — thử file .mp3, .m4a hoặc .wav');
+    throw new Error(t('Không đọc được file âm thanh này — thử file .mp3, .m4a hoặc .wav'));
   } finally {
     void ctx.close();
   }

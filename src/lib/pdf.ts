@@ -3,6 +3,7 @@
  * Thư viện pdf.js (~1,5 MB) chỉ tải khi mở file PDF lần đầu; bản "legacy" chạy được cả WebView Android cũ.
  */
 
+import { t } from './i18n';
 /** File là PDF (theo kiểu file hoặc đuôi tên) */
 export const isPdf = (f: File) => f.type === 'application/pdf' || /\.pdf$/i.test(f.name);
 
@@ -37,7 +38,7 @@ export async function pdfToImages(file: File, maxPages: number): Promise<{ image
     doc = await pdfjs.getDocument({ data: new Uint8Array(await file.arrayBuffer()), isEvalSupported: false }).promise;
   } catch (e) {
     const name = (e as Error)?.name;
-    throw new Error(name === 'PasswordException' ? 'File PDF có mật khẩu, chưa mở được.' : 'Không mở được file PDF này.');
+    throw new Error(name === 'PasswordException' ? t('File PDF có mật khẩu, chưa mở được.') : t('Không mở được file PDF này.'));
   }
   const base = file.name.replace(/\.pdf$/i, '');
   const images: File[] = [];

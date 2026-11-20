@@ -7,6 +7,7 @@
  */
 import type { ChordSpan } from './harmony';
 import type { StrumPattern } from './patterns';
+import { t as tx } from '../lib/i18n';
 
 /**
  * rest = không đệm (ô lấy đà), arp = rải dây / móc, strum = quạt theo điệu, sparse = quạt thưa
@@ -198,16 +199,16 @@ function describe(bars: BarPlan[], feel: SongFeel): string {
   const fills = bars.filter((b) => b.fill !== 'none').length;
   const parts: string[] = [];
   if (feel.lyrical) {
-    parts.push('Bài chậm, nhiều nốt ngân: rải dây là chính');
+    parts.push(tx('Bài chậm, nhiều nốt ngân: rải dây là chính'));
     const s = n('strum') + n('sparse') + n('busy');
-    if (s) parts.push(`quạt mạnh ở ${s} ô cao trào / điệp khúc`);
+    if (s) parts.push(tx('quạt mạnh ở {0} ô cao trào / điệp khúc', s));
   } else {
-    parts.push(feel.lively ? 'Bài nhanh, rộn ràng: quạt theo điệu' : 'Quạt theo điệu');
-    if (n('sparse')) parts.push(`thưa lại ở ${n('sparse')} ô giai điệu dày`);
-    if (n('busy')) parts.push(`quạt dày lấp ${n('busy')} chỗ ngân`);
+    parts.push(feel.lively ? tx('Bài nhanh, rộn ràng: quạt theo điệu') : tx('Quạt theo điệu'));
+    if (n('sparse')) parts.push(tx('thưa lại ở {0} ô giai điệu dày', n('sparse')));
+    if (n('busy')) parts.push(tx('quạt dày lấp {0} chỗ ngân', n('busy')));
   }
-  if (fills) parts.push(`dồn / bass dẫn ở ${fills} chỗ hết câu`);
-  if (bars.some((b) => b.texture === 'final')) parts.push('kết bằng tiếng quạt ngân');
+  if (fills) parts.push(tx('dồn / bass dẫn ở {0} chỗ hết câu', fills));
+  if (bars.some((b) => b.texture === 'final')) parts.push(tx('kết bằng tiếng quạt ngân'));
   return parts.join(', ') + '.';
 }
 

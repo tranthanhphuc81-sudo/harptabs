@@ -6,6 +6,7 @@
  */
 import { detectVn, VnEncoding, vnDecoder } from './vnEncoding';
 import type { AiNote, AiTranscription } from '../../shared/ai';
+import { t as tx } from './i18n';
 
 // ───────────────────────── XML tối giản ─────────────────────────
 
@@ -54,7 +55,7 @@ export async function unzip(buf: Uint8Array): Promise<Map<string, Uint8Array>> {
   const dv = new DataView(buf.buffer, buf.byteOffset, buf.byteLength);
   let eocd = -1;
   for (let i = buf.length - 22; i >= Math.max(0, buf.length - 66000); i--) if (dv.getUint32(i, true) === 0x06054b50) { eocd = i; break; }
-  if (eocd < 0) throw new Error('File nén hỏng hoặc không phải .mxl');
+  if (eocd < 0) throw new Error(tx('File nén hỏng hoặc không phải .mxl'));
   const n = dv.getUint16(eocd + 10, true);
   let p = dv.getUint32(eocd + 16, true);
   const files = new Map<string, Uint8Array>();
@@ -168,7 +169,7 @@ export function toTranscription(
   });
   if (cur.length) lines.push({ notes: cur });
   return {
-    title: o.title || 'Bài nhập từ file',
+    title: o.title || tx('Bài nhập từ file'),
     artist: o.artist,
     songKey: o.songKey,
     tempo: o.tempo ? Math.round(o.tempo) : undefined,
@@ -176,7 +177,7 @@ export function toTranscription(
     pickupBeats: o.pickupBeats,
     confidence: 1,
     warnings: o.warnings ?? [],
-    sections: [{ name: 'Đoạn 1', lines }],
+    sections: [{ name: tx('Đoạn 1'), lines }],
   };
 }
 
@@ -218,8 +219,8 @@ function playOrder(measures: XmlEl[]): number[] {
 function parseMusicXmlDoc(doc: XmlEl, fileTitle: string): MusicFile {
   const score = doc.children.find((c) => c.name === 'score-partwise');
   if (!score) {
-    if (doc.children.some((c) => c.name === 'score-timewise')) throw new Error('File MusicXML dạng "timewise" chưa hỗ trợ — xuất lại dạng thường (partwise) từ MuseScore.');
-    throw new Error('Không phải file MusicXML');
+    if (doc.children.some((c) => c.name === 'score-timewise')) throw new Error(tx('File MusicXML dạng "timewise" chưa hỗ trợ — xuất lại dạng thường (partwise) từ MuseScore.'));
+    throw new Error(tx('Không phải file MusicXML'));
   }
   const credits = kids(score, 'credit');
   const creditOf = (type: string) => txt(kid(credits.find((c) => kids(c, 'credit-type').some((t) => txt(t) === type)), 'credit-words'));
@@ -314,7 +315,7 @@ function parseMusicXmlDoc(doc: XmlEl, fileTitle: string): MusicFile {
     const ns = melodyOf(p).map((n) => n.midi!).filter((v) => v !== null);
     return { id: p.id, name: names.get(p.id) ?? p.id, notes: ns.length, low: Math.min(...ns), high: Math.max(...ns) };
   }).filter((p) => p.notes > 0);
-  if (!parts.length) throw new Error('File không có nốt nào');
+  if (!parts.length) throw new Error(tx('File không có nốt nào'));
   // bè giai điệu: tên gợi ý (giọng hát, melody…) hoặc bè đầu tiên có nốt
   const melodyPart = parts.find((p) => /voice|vocal|voc|sing|melod|lead|soprano|giọng|hát|giai điệu/i.test(p.name))?.id ?? parts[0].id;
 
@@ -370,9 +371,9 @@ export function legacyText(bytes: Uint8Array, isCp1258 = looksCp1258(bytes)): st
 export function readMidi(buf: Uint8Array, encoding?: VnEncoding) {
   const dv = new DataView(buf.buffer, buf.byteOffset, buf.byteLength);
   const str = (p: number, n: number) => String.fromCharCode(...buf.subarray(p, p + n));
-  if (str(0, 4) !== 'MThd') throw new Error('Không phải file MIDI');
+  if (str(0, 4) !== 'MThd') throw new Error(tx('Không phải file MIDI'));
   const ntrk = dv.getUint16(10), div = dv.getUint16(12);
-  if (div & 0x8000) throw new Error('File MIDI dạng SMPTE chưa hỗ trợ');
+  if (div & 0x8000) throw new Error(tx('File MIDI dạng SMPTE chưa hỗ trợ'));
   const tpq = div;
   let p = 8 + dv.getUint32(4);
   let tempo: number | undefined, timeSig: [number, number] | undefined, key: [number, boolean] | undefined, seqName = '';
@@ -511,11 +512,11 @@ export function parseMidi(buf: Uint8Array, fileTitle = '', opts?: { encoding?: V
   tracks.forEach((tr, i) => {
     const chs = [...new Set(tr.notes.map((n) => n.ch))].filter((c) => c !== 9);
     for (const c of chs) {
-      groups.push({ id: `${i}:${c}`, name: tr.name || `Track ${i + 1}${chs.length > 1 ? ` kênh ${c + 1}` : ''}`, notes: tr.notes.filter((n) => n.ch === c), lyrics: tr.lyrics });
+      groups.push({ id: `${i}:${c}`, name: tr.name || `Track ${i + 1}${chs.length > 1 ? tx(' kênh {0}', c + 1) : ''}`, notes: tr.notes.filter((n) => n.ch === c), lyrics: tr.lyrics });
     }
   });
   const allLyrics = tracks.flatMap((t) => t.lyrics);
-  if (!groups.length) throw new Error('File MIDI không có nốt nào');
+  if (!groups.length) throw new Error(tx('File MIDI không có nốt nào'));
 
   /**
    * Bỏ giọng phụ / hoạ âm: file dò từ giọng hát (Basic Pitch…) hay thêm các nốt cao, yếu chồng lên giọng chính.
@@ -658,10 +659,10 @@ export async function readMusicFile(bytes: Uint8Array, fileName = '', opts?: { e
     const dec = new TextDecoder();
     let rootPath = container ? parseXml(dec.decode(container)).children[0]?.children.find((c) => c.name === 'rootfiles')?.children[0]?.attrs['full-path'] : undefined;
     if (!rootPath || !files.has(rootPath)) rootPath = [...files.keys()].find((k) => !k.startsWith('META-INF') && /\.(xml|musicxml)$/i.test(k));
-    if (!rootPath) throw new Error('Trong file .mxl không có bản nhạc');
+    if (!rootPath) throw new Error(tx('Trong file .mxl không có bản nhạc'));
     return parseMusicXml(dec.decode(files.get(rootPath)!), fileTitle);
   }
   const text = new TextDecoder().decode(bytes);
   if (/<score-(partwise|timewise)/.test(text)) return parseMusicXml(text, fileTitle);
-  throw new Error('Chưa đọc được loại file này. Hãy dùng MusicXML (.musicxml, .mxl) hoặc MIDI (.mid).');
+  throw new Error(tx('Chưa đọc được loại file này. Hãy dùng MusicXML (.musicxml, .mxl) hoặc MIDI (.mid).'));
 }

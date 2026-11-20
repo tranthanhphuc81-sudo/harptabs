@@ -5,28 +5,29 @@ import { PianoChart } from './Keyboard';
 import { TranhChart } from './Tranh';
 import { BauChart } from './DanBau';
 import { previewNote } from '../audio/engine';
+import { t } from '../lib/i18n';
 
 interface Row { id: string; label: string; pick: (n: HarpNote) => boolean }
 
 const ROWS: Row[] = [
   { id: 'ob', label: 'Overblow', pick: (n) => n.technique === 'overblow' },
-  { id: 'bb2', label: 'Thổi bend 1 cung', pick: (n) => n.technique === 'blowBend' && n.bend === 2 },
-  { id: 'bb1', label: 'Thổi bend ½ cung', pick: (n) => n.technique === 'blowBend' && n.bend === 1 },
-  { id: 'blow', label: 'Thổi', pick: (n) => n.technique === 'blow' },
-  { id: 'hole', label: 'Lỗ', pick: () => false },
-  { id: 'draw', label: 'Hút', pick: (n) => n.technique === 'draw' },
-  { id: 'db1', label: 'Hút bend ½ cung', pick: (n) => n.technique === 'drawBend' && n.bend === 1 },
-  { id: 'db2', label: 'Hút bend 1 cung', pick: (n) => n.technique === 'drawBend' && n.bend === 2 },
-  { id: 'db3', label: 'Hút bend 1½ cung', pick: (n) => n.technique === 'drawBend' && n.bend === 3 },
+  { id: 'bb2', label: t('Thổi bend 1 cung'), pick: (n) => n.technique === 'blowBend' && n.bend === 2 },
+  { id: 'bb1', label: t('Thổi bend ½ cung'), pick: (n) => n.technique === 'blowBend' && n.bend === 1 },
+  { id: 'blow', label: t('Thổi'), pick: (n) => n.technique === 'blow' },
+  { id: 'hole', label: t('Lỗ'), pick: () => false },
+  { id: 'draw', label: t('Hút'), pick: (n) => n.technique === 'draw' },
+  { id: 'db1', label: t('Hút bend ½ cung'), pick: (n) => n.technique === 'drawBend' && n.bend === 1 },
+  { id: 'db2', label: t('Hút bend 1 cung'), pick: (n) => n.technique === 'drawBend' && n.bend === 2 },
+  { id: 'db3', label: t('Hút bend 1½ cung'), pick: (n) => n.technique === 'drawBend' && n.bend === 3 },
   { id: 'od', label: 'Overdraw', pick: (n) => n.technique === 'overdraw' },
 ];
 
 const CHROM_ROWS: Row[] = [
-  { id: 'bs', label: 'Thổi + gạt', pick: (n) => n.technique === 'blowSlide' },
-  { id: 'blow', label: 'Thổi', pick: (n) => n.technique === 'blow' },
-  { id: 'hole', label: 'Lỗ', pick: () => false },
-  { id: 'draw', label: 'Hút', pick: (n) => n.technique === 'draw' },
-  { id: 'ds', label: 'Hút + gạt', pick: (n) => n.technique === 'drawSlide' },
+  { id: 'bs', label: t('Thổi + gạt'), pick: (n) => n.technique === 'blowSlide' },
+  { id: 'blow', label: t('Thổi'), pick: (n) => n.technique === 'blow' },
+  { id: 'hole', label: t('Lỗ'), pick: () => false },
+  { id: 'draw', label: t('Hút'), pick: (n) => n.technique === 'draw' },
+  { id: 'ds', label: t('Hút + gạt'), pick: (n) => n.technique === 'drawSlide' },
 ];
 
 interface Props {
@@ -48,22 +49,22 @@ function TremoloDiagram({ harpKey, harpType, highlight, nameStyle, interactive }
     return (
       <button key={hole} type="button" className={`hd-cell ${n.dir}${highlight.includes(n.token) ? ' on' : ''}`}
         onClick={interactive ? () => previewNote(n.midi) : undefined}
-        title={`Lỗ ${hole} ${n.dir === 'blow' ? 'thổi' : 'hút'} = ${midiToName(n.midi, nameStyle)}`}
-        aria-label={`Lỗ ${hole} ${n.dir === 'blow' ? 'thổi' : 'hút'}, nốt ${midiToName(n.midi, nameStyle)}`}>
+        title={t('Lỗ {0} {1} = {2}', hole, n.dir === 'blow' ? t('thổi') : t('hút'), midiToName(n.midi, nameStyle))}
+        aria-label={t('Lỗ {0} {1}, nốt {2}', hole, n.dir === 'blow' ? t('thổi') : t('hút'), midiToName(n.midi, nameStyle))}>
         {midiToName(n.midi, nameStyle, false)}
       </button>
     );
   };
   const cols = Array.from({ length: pairs }, (_, i) => i);
   return (
-    <div className="harp-diagram tremolo" role="group" aria-label={`Sơ đồ nốt ${harpName(harpKey, harpType).replace(/^Kèn/, 'kèn')}`}
+    <div className="harp-diagram tremolo" role="group" aria-label={t('Sơ đồ nốt {0}', harpName(harpKey, harpType).replace(/^Kèn/, 'kèn'))}
       style={{ ['--holes' as string]: pairs }}>
       <div className="hd-grid" style={{ gridTemplateColumns: `minmax(0, auto) repeat(${pairs}, minmax(0, 1fr))` }}>
-        <div className="hd-label">Thổi</div>
+        <div className="hd-label">{t('Thổi')}</div>
         {cols.map((i) => cell(2 * i + 1))}
-        <div className="hd-label">Lỗ</div>
+        <div className="hd-label">{t('Lỗ')}</div>
         {cols.map((i) => <div key={i} className="hd-hole">{2 * i + 1}<span className="hd-pair">·{2 * i + 2}</span></div>)}
-        <div className="hd-label">Hút</div>
+        <div className="hd-label">{t('Hút')}</div>
         {cols.map((i) => cell(2 * i + 2))}
       </div>
     </div>
@@ -77,26 +78,26 @@ function TwoRowDiagram({ harpKey, harpType, highlight, nameStyle, interactive }:
   const cell = (hole: number, upper: boolean) => {
     const n = layout.find((x) => x.hole === hole && x.slide === upper);
     if (!n) return <div key={hole} className="hd-empty" />;
-    const what = `Lỗ ${hole}${upper ? ' hàng trên' : ''} ${n.dir === 'blow' ? 'thổi' : 'hút'}`;
+    const what = t('Lỗ {0}{1} {2}', hole, upper ? t(' hàng trên') : '', n.dir === 'blow' ? t('thổi') : t('hút'));
     return (
       <button key={hole} type="button" className={`hd-cell ${n.dir}${highlight.includes(n.token) ? ' on' : ''}`}
         onClick={interactive ? () => previewNote(n.midi) : undefined}
         title={`${n.token} = ${midiToName(n.midi, nameStyle)}`}
-        aria-label={`${what}, nốt ${midiToName(n.midi, nameStyle)}`}>
+        aria-label={t('{0}, nốt {1}', what, midiToName(n.midi, nameStyle))}>
         {midiToName(n.midi, nameStyle, false)}
       </button>
     );
   };
   const cols = Array.from({ length: holes }, (_, i) => i + 1);
   return (
-    <div className="harp-diagram chromatic two-row" role="group" aria-label={`Sơ đồ nốt ${harpName(harpKey, harpType).replace(/^Kèn/, 'kèn')}`}
+    <div className="harp-diagram chromatic two-row" role="group" aria-label={t('Sơ đồ nốt {0}', harpName(harpKey, harpType).replace(/^Kèn/, 'kèn'))}
       style={{ ['--holes' as string]: holes }}>
       <div className="hd-grid" style={{ gridTemplateColumns: `minmax(0, auto) repeat(${holes}, minmax(0, 1fr))` }}>
-        <div className="hd-label">Hàng trên &lt;</div>
+        <div className="hd-label">{t('Hàng trên <')}</div>
         {cols.map((h) => cell(h, true))}
-        <div className="hd-label">Lỗ</div>
+        <div className="hd-label">{t('Lỗ')}</div>
         {cols.map((h) => <div key={h} className="hd-hole">{h}</div>)}
-        <div className="hd-label">Hàng dưới</div>
+        <div className="hd-label">{t('Hàng dưới')}</div>
         {cols.map((h) => cell(h, false))}
       </div>
     </div>
@@ -119,7 +120,7 @@ export function HarpDiagram({ harpKey, harpType = 'diatonic', highlight = [], na
     ? CHROM_ROWS.filter((r) => showAdvanced || !['bs', 'ds'].includes(r.id))
     : ROWS.filter((r) => showAdvanced || !['ob', 'od'].includes(r.id));
   return (
-    <div className={`harp-diagram${chrom ? ' chromatic' : ''}`} role="group" aria-label={`Sơ đồ nốt ${harpName(harpKey, harpType).replace(/^Kèn/, 'kèn')}`}
+    <div className={`harp-diagram${chrom ? ' chromatic' : ''}`} role="group" aria-label={t('Sơ đồ nốt {0}', harpName(harpKey, harpType).replace(/^Kèn/, 'kèn'))}
       style={{ ['--holes' as string]: holes }}>
       <div className="hd-grid" style={{ gridTemplateColumns: `minmax(0, auto) repeat(${holes}, minmax(0, 1fr))` }}>
         {rows.map((r) => (
@@ -138,7 +139,7 @@ export function HarpDiagram({ harpKey, harpType = 'diatonic', highlight = [], na
                   className={`hd-cell ${n.dir}${n.bend || n.over || n.slide ? ' adv' : ''}${on ? ' on' : ''}`}
                   onClick={interactive ? () => previewNote(n.midi) : undefined}
                   title={`${n.token} = ${midiToName(n.midi, nameStyle)}`}
-                  aria-label={`${n.token}, nốt ${midiToName(n.midi, nameStyle)}`}
+                  aria-label={t('{0}, nốt {1}', n.token, midiToName(n.midi, nameStyle))}
                 >
                   {midiToName(n.midi, nameStyle, false)}
                 </button>

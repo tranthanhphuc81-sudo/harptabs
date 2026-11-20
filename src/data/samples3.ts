@@ -301,7 +301,7 @@ export const FOLK_SAMPLES: SampleSong[] = [
     title: 'Swing Low, Sweet Chariot',
     artist: 'Dân ca tâm linh Mỹ · Public Domain',
     harpKey: 'C', position: 2, songKey: 'G', bpm: 76, timeSig: '4/4', pickupBeats: 0,
-    style: 'slow-rock', difficulty: 1, tags: ['spiritual', 'ballad', 'vị trí 2'],
+    style: 'slowrock', difficulty: 1, tags: ['spiritual', 'ballad', 'vị trí 2'],
     notes: 'Bản tâm linh êm dịu ở vị trí 2. Có nốt bend -3\' (Sib) ở câu kết tạo chất blues mộc mạc.',
     body: `-4 6 -4 -3
 

@@ -50,6 +50,7 @@ import { editNote, NoteEdit } from '../lib/tabEdit';
 import { suggestInstrument, suggestStyle } from '../audio/suggest';
 import { useAutoScroll } from '../components/useAutoScroll';
 import { AUTO_SCROLL_MAX, AUTO_SCROLL_MIN, clampScrollPct } from '../lib/autoScroll';
+import { t as tx } from '../lib/i18n';
 
 // màn hình karaoke: tải khi mở
 const KaraokeView = lazy(() => import('../components/KaraokeView'));
@@ -66,8 +67,8 @@ export default function SongView() {
   const { id } = useParams();
   // undefined = đang đọc, null = không có bài này (link cũ, bài đã xoá)
   const song = useLiveQuery(async () => (id ? (await db.songs.get(id)) ?? null : null), [id]);
-  if (song === undefined) return <div className="page"><p className="muted">Đang tải…</p></div>;
-  if (!song) return <div className="page"><p>Không tìm thấy bài này.</p><Link to="/" className="btn btn-ghost">Về thư viện</Link></div>;
+  if (song === undefined) return <div className="page"><p className="muted">{tx('Đang tải…')}</p></div>;
+  if (!song) return <div className="page"><p>{tx('Không tìm thấy bài này.')}</p><Link to="/" className="btn btn-ghost">{tx('Về thư viện')}</Link></div>;
   return <SongWithView key={song.id} original={song} />;
 }
 
@@ -174,10 +175,10 @@ function SongPlayerView({ song, original, fit, view, choice, onChoice }: {
     void db.songs.update(song.id, { chords: Object.keys(next).length ? next : undefined, updatedAt: Date.now() });
   };
   const chordWhere = (seg: ChordSegment) => {
-    if (seg.start < song.pickupBeats - 1e-6) return 'ở ô lấy đà';
+    if (seg.start < song.pickupBeats - 1e-6) return tx('ở ô lấy đà');
     const bar = Math.floor((seg.start - song.pickupBeats) / bpb + 1e-6) + 1;
     const half = Math.abs(((seg.start - song.pickupBeats) % bpb)) > 1e-6;
-    return `ô nhịp ${bar}${half ? ' (nửa sau)' : ''}`;
+    return tx('ô nhịp {0}{1}', bar, half ? tx(' (nửa sau)') : '');
   };
   const manualCount = Object.keys(song.chords ?? {}).length;
   // dán bài lời + hợp âm: khớp theo lời rồi ghi thành hợp âm chọn tay
@@ -186,12 +187,12 @@ function SongPlayerView({ song, original, fit, view, choice, onChoice }: {
     const ps = parseSheet(text);
     const segs = harmonizeSegments(flat, bpb, song.pickupBeats, tonality);
     const r = chordsFromSheet(ps.lines, flat, segs.map((s) => s.start));
-    if (!r.matched) { toast(r.total ? 'Không khớp được lời bài dán với lời trong tab' : 'Không thấy hợp âm nào trong bài dán'); return; }
+    if (!r.matched) { toast(r.total ? tx('Không khớp được lời bài dán với lời trong tab') : tx('Không thấy hợp âm nào trong bài dán')); return; }
     const next: Record<string, string> = {};
     for (const [k, name] of Object.entries(r.overrides)) next[k] = chordForOriginal(name, fit);
     void db.songs.update(song.id, { chords: next, updatedAt: Date.now() });
     setBeatPrefs({ showChords: true });
-    toast(`Đã đặt ${r.matched}/${r.total} hợp âm theo lời`);
+    toast(tx('Đã đặt {0}/{1} hợp âm theo lời', r.matched, r.total));
   };
 
   const [focus, setFocus] = useState<number | null>(null);
@@ -215,7 +216,7 @@ function SongPlayerView({ song, original, fit, view, choice, onChoice }: {
     const group = useLine ? sameLine : inSec;
     const first = group[0], last = group[group.length - 1];
     const title = parsed.sections[f.sectionIndex]?.title;
-    return { start: first.start, end: last.start + last.beats, label: useLine ? 'dòng này' : title || `đoạn ${f.sectionIndex + 1}` };
+    return { start: first.start, end: last.start + last.beats, label: useLine ? tx('dòng này') : title || tx('đoạn {0}', f.sectionIndex + 1) };
   };
   const loopInfo = p.opts.loop ? sectionRange(focus ?? p.active) : null;
   const toggleLoop = () => {
@@ -264,7 +265,7 @@ function SongPlayerView({ song, original, fit, view, choice, onChoice }: {
     const f = focus != null ? flat[focus] : null;
     if (!f) return;
     const body = editNote(original.body, original.harpKey, harpTypeOf(original), f, edit);
-    if (body === null) { toast('Kèn này không có nốt đó'); return; }
+    if (body === null) { toast(tx('Kèn này không có nốt đó')); return; }
     if (body === original.body) return;
     keepPlaying.current = true;
     window.setTimeout(() => { keepPlaying.current = false; }, 1500);
@@ -420,7 +421,7 @@ function SongPlayerView({ song, original, fit, view, choice, onChoice }: {
       setWaitIdx(startAt);
       setWaitMode(true);
     } catch (e) {
-      toast((e as Error).name === 'NotAllowedError' ? 'Cần cho phép dùng micro để luyện chế độ chờ nốt' : (e as Error).message);
+      toast((e as Error).name === 'NotAllowedError' ? tx('Cần cho phép dùng micro để luyện chế độ chờ nốt') : (e as Error).message);
     }
   };
   useEffect(() => () => micRef.current?.stop(), []);
@@ -455,7 +456,7 @@ function SongPlayerView({ song, original, fit, view, choice, onChoice }: {
     const prev = document.title;
     const root = document.documentElement;
     const theme = root.getAttribute('data-theme');
-    document.title = `${song.title || 'Bài hát'} – ${harpName(song.harpKey, harpType)}`;
+    document.title = `${song.title || tx('Bài hát')} – ${harpName(song.harpKey, harpType)}`;
     root.setAttribute('data-theme', 'light'); // in nền trắng kể cả khi đang dùng giao diện tối
     window.addEventListener('afterprint', () => {
       document.title = prev;
@@ -466,8 +467,8 @@ function SongPlayerView({ song, original, fit, view, choice, onChoice }: {
 
   const share = async () => {
     const r = await shareSong(original);
-    if (r.status === 'copied') toast('Đã chép link bài — dán vào tin nhắn để gửi');
-    else if (r.status === 'too-long') toast('Bài dài quá để gửi bằng link — dùng nút Xuất file rồi gửi file');
+    if (r.status === 'copied') toast(tx('Đã chép link bài — dán vào tin nhắn để gửi'));
+    else if (r.status === 'too-long') toast(tx('Bài dài quá để gửi bằng link — dùng nút Xuất file rồi gửi file'));
     else if (r.status === 'failed') setManualLink(`${r.text} ${r.url}`);
   };
   // xoá: bấm lần đầu để hỏi lại, bấm lần nữa trong 4 giây mới xoá
@@ -479,7 +480,7 @@ function SongPlayerView({ song, original, fit, view, choice, onChoice }: {
   const removeSong = async () => {
     if (!confirmDel) { setConfirmDel(true); setTimeout(() => setConfirmDel(false), 4000); return; }
     await deleteSongs([song.id]);
-    toast(`Đã xoá "${song.title || 'bài'}"`);
+    toast(tx('Đã xoá "{0}"', song.title || tx('bài')));
     nav('/', { replace: true });
   };
 
@@ -488,34 +489,34 @@ function SongPlayerView({ song, original, fit, view, choice, onChoice }: {
   return (
     <div className="page page-song">
       <header className="song-head">
-        <Link to="/" state={{ restore: true }} className="icon-btn back" aria-label="Về thư viện"><Icon name="back" /></Link>
+        <Link to="/" state={{ restore: true }} className="icon-btn back" aria-label={tx('Về thư viện')}><Icon name="back" /></Link>
         <KeyPlate k={song.harpKey} type={harpType} size="l" />
         <div className="sh-text">
-          <h1>{song.title || 'Chưa đặt tên'}</h1>
+          <h1>{song.title || tx('Chưa đặt tên')}</h1>
           {song.artist && <p className="muted">{song.artist}</p>}
           <p className="sh-meta">
             <span>{harpName(song.harpKey, harpType)}</span>
-            {!chrom && !trem && !rec && song.position && <span>Vị trí {song.position}</span>}
-            {song.songKey && <span>Giọng {song.songKey}</span>}
+            {!chrom && !trem && !rec && song.position && <span>{tx('Vị trí {0}', song.position)}</span>}
+            {song.songKey && <span>{tx('Giọng {0}', song.songKey)}</span>}
             <span>{song.timeSig}</span>
-            <span>{sheetData ? `${sheetData.slots.length} hợp âm` : `${stats.notes} nốt`}</span>
+            <span>{sheetData ? tx('{0} hợp âm', sheetData.slots.length) : tx('{0} nốt', stats.notes)}</span>
             {stats.bends > 0 && <span className="bend-count">{stats.bends} bend</span>}
-            {stats.slides > 0 && <span className="bend-count">{stats.slides} {isTwoRowChromatic(harpType) ? 'nốt hàng trên' : 'nốt gạt'}</span>}
+            {stats.slides > 0 && <span className="bend-count">{stats.slides} {isTwoRowChromatic(harpType) ? tx('nốt hàng trên') : tx('nốt gạt')}</span>}
             <span className="print-only">{song.bpm} bpm</span>
           </p>
         </div>
         <div className="sh-actions">
-          <button type="button" className={`icon-btn${song.favorite ? ' starred' : ''}`} onClick={toggleFav} aria-pressed={song.favorite} aria-label="Yêu thích">
+          <button type="button" className={`icon-btn${song.favorite ? ' starred' : ''}`} onClick={toggleFav} aria-pressed={song.favorite} aria-label={tx('Yêu thích')}>
             <Icon name="star" filled={song.favorite} />
           </button>
-          <button type="button" className="icon-btn" onClick={() => setRekeyOpen(true)} aria-label={`Chuyển sang ${BRAND.noun} khác`}><Icon name="swap" /></button>
-          <Link to={`/song/${song.id}/edit`} className="icon-btn" aria-label="Sửa bài"><Icon name="edit" /></Link>
+          <button type="button" className="icon-btn" onClick={() => setRekeyOpen(true)} aria-label={tx('Chuyển sang {0} khác', BRAND.noun)}><Icon name="swap" /></button>
+          <Link to={`/song/${song.id}/edit`} className="icon-btn" aria-label={tx('Sửa bài')}><Icon name="edit" /></Link>
           {/* việc ít dùng gom vào "⋯" để đầu trang gọn, tab hiện lên sớm hơn */}
-          <MoreMenu label="Thêm việc với bài" items={[
-            { icon: 'share', label: 'Chia sẻ bài', onSelect: share },
-            { icon: 'print', label: 'In / lưu PDF', onSelect: printSong },
-            { icon: 'download', label: 'Xuất file bài', onSelect: exportSong },
-            { icon: 'trash', label: confirmDel ? 'Bấm lần nữa để xoá' : 'Xoá bài', onSelect: removeSong, danger: true, keepOpen: !confirmDel },
+          <MoreMenu label={tx('Thêm việc với bài')} items={[
+            { icon: 'share', label: tx('Chia sẻ bài'), onSelect: share },
+            { icon: 'print', label: tx('In / lưu PDF'), onSelect: printSong },
+            { icon: 'download', label: tx('Xuất file bài'), onSelect: exportSong },
+            { icon: 'trash', label: confirmDel ? tx('Bấm lần nữa để xoá') : tx('Xoá bài'), onSelect: removeSong, danger: true, keepOpen: !confirmDel },
           ]} />
         </div>
       </header>
@@ -524,73 +525,73 @@ function SongPlayerView({ song, original, fit, view, choice, onChoice }: {
 
       {song.notes && <SongNotes text={song.notes} />}
       {issues.length > 0 && (
-        <div className="alert error">Bài có {issues.length} lỗi ký hiệu. <Link to={`/song/${song.id}/edit`}>Mở trình sửa</Link> để xem chi tiết.</div>
+        <div className="alert error">{tx('Bài có {0} lỗi ký hiệu.', issues.length)} <Link to={`/song/${song.id}/edit`}>{tx('Mở trình sửa')}</Link> {tx('để xem chi tiết.')}</div>
       )}
 
       {(() => {
         // chú giải cách đọc tab: thu vào "Cách đọc tab" (mở / đóng được, nhớ lựa chọn) để phần tab hiện lên sớm
-        const lgText = sheetData ? <span className="lg-text">Bài lời + hợp âm: bấm Phát để nghe nhạc đệm theo hợp âm, chạm chữ để phát từ đó. Mỗi hợp âm giữ {(song.sheetBeats ?? bpb) === bpb ? 'một ô nhịp' : `${song.sheetBeats} phách`} (đổi trong Sửa bài).</span> : isDanBau(harpType) ? <span className="lg-text">Ký hiệu là <strong>điểm bồi</strong> trên dây: ½ = giữa dây, ⅓, ¼… gần ngựa đàn dần; ○ = dây buông. <strong>↑2</strong> / <strong>↓1</strong>: nắn cần cho nốt cao / thấp đi mấy nửa cung. Hình nhỏ dưới mỗi nốt: dây đàn với điểm cần chạm.</span> : isTranh(harpType) ? <span className="lg-text">Số là <strong>dây cần gảy</strong> (dây 1 trầm nhất). <strong>↑½</strong> / <strong>↑1</strong>: tay trái nhấn dây cho cao lên nửa cung / một cung. Hình nhỏ dưới số: các dây của đàn, dây tô màu là dây cần gảy.</span> : isOcarina(harpType) ? <span className="lg-text">Tên nốt kèm thế bấm ocarina: hàng trên tay trái, hàng dưới tay phải, chấm nhỏ là lỗ phụ, ô vuông ở đáy là hai lỗ ngón cái phía sau. <strong>●</strong> bịt, <strong>○</strong> mở.</span> : isPianica(harpType) ? <span className="lg-text">Tên nốt có quãng tám (<strong>C4</strong> = Đô giữa, # thăng, b giáng). Hình nhỏ dưới mỗi nốt: bàn phím cả cây kèn, <strong>phím tô màu</strong> là phím cần bấm.</span> : isOrgan(harpType) ? <span className="lg-text">Tên nốt có quãng tám (<strong>C4</strong> = Đô giữa, # thăng, b giáng), chơi bằng <strong>tay phải</strong>. Hình nhỏ dưới mỗi nốt: 3 quãng tám quanh nốt đó, <strong>phím tô màu</strong> là phím cần bấm. Tay trái bấm hợp âm ghi trên dòng hợp âm.</span> : isFretted(harpType) ? <span className="lg-text">Tab guitar: mỗi nốt là một cột, <strong>dòng trên cùng là dây 1</strong> (dây mảnh nhất), số là <strong>phím cần bấm</strong> (0 = buông). Bật Hợp âm để xem thế bấm hợp âm.</span> : isKalimba(harpType) ? <span className="lg-text">Số 1–7 là Đô–Si theo tông kalimba, chấm trên = lên quãng tám. Hình nhỏ dưới số: phím cần gảy (phím giữa dài nhất là nốt thấp nhất).</span> : rec ? <span className="lg-text">Tên nốt kèm thế bấm: <strong>●</strong> bịt kín, <strong>○</strong> mở, <strong>◐</strong> bịt nửa {isRecorder(harpType) ? ' (lỗ trên cùng lệch trái là ngón cái)' : ' (lỗ 1 gần miệng thổi ở trên cùng)'}</span> : null;
+        const lgText = sheetData ? <span className="lg-text">{tx('Bài lời + hợp âm: bấm Phát để nghe nhạc đệm theo hợp âm, chạm chữ để phát từ đó. Mỗi hợp âm giữ')} {(song.sheetBeats ?? bpb) === bpb ? tx('một ô nhịp') : tx('{0} phách', song.sheetBeats)} {tx('(đổi trong Sửa bài).')}</span> : isDanBau(harpType) ? <span className="lg-text">{tx('Ký hiệu là')} <strong>{tx('điểm bồi')}</strong> {tx('trên dây: ½ = giữa dây, ⅓, ¼… gần ngựa đàn dần; ○ = dây buông.')} <strong>↑2</strong> / <strong>↓1</strong>{tx(': nắn cần cho nốt cao / thấp đi mấy nửa cung. Hình nhỏ dưới mỗi nốt: dây đàn với điểm cần chạm.')}</span> : isTranh(harpType) ? <span className="lg-text">{tx('Số là')} <strong>{tx('dây cần gảy')}</strong> {tx('(dây 1 trầm nhất).')} <strong>↑½</strong> / <strong>↑1</strong>{tx(': tay trái nhấn dây cho cao lên nửa cung / một cung. Hình nhỏ dưới số: các dây của đàn, dây tô màu là dây cần gảy.')}</span> : isOcarina(harpType) ? <span className="lg-text">{tx('Tên nốt kèm thế bấm ocarina: hàng trên tay trái, hàng dưới tay phải, chấm nhỏ là lỗ phụ, ô vuông ở đáy là hai lỗ ngón cái phía sau.')} <strong>●</strong> {tx('bịt,')} <strong>○</strong> {tx('mở.')}</span> : isPianica(harpType) ? <span className="lg-text">{tx('Tên nốt có quãng tám (')}<strong>C4</strong> {tx('= Đô giữa, # thăng, b giáng). Hình nhỏ dưới mỗi nốt: bàn phím cả cây kèn,')} <strong>{tx('phím tô màu')}</strong> {tx('là phím cần bấm.')}</span> : isOrgan(harpType) ? <span className="lg-text">{tx('Tên nốt có quãng tám (')}<strong>C4</strong> {tx('= Đô giữa, # thăng, b giáng), chơi bằng')} <strong>{tx('tay phải')}</strong>{tx('. Hình nhỏ dưới mỗi nốt: 3 quãng tám quanh nốt đó,')} <strong>{tx('phím tô màu')}</strong> {tx('là phím cần bấm. Tay trái bấm hợp âm ghi trên dòng hợp âm.')}</span> : isFretted(harpType) ? <span className="lg-text">{tx('Tab guitar: mỗi nốt là một cột,')} <strong>{tx('dòng trên cùng là dây 1')}</strong> {tx('(dây mảnh nhất), số là')} <strong>{tx('phím cần bấm')}</strong> {tx('(0 = buông). Bật Hợp âm để xem thế bấm hợp âm.')}</span> : isKalimba(harpType) ? <span className="lg-text">{tx('Số 1–7 là Đô–Si theo tông kalimba, chấm trên = lên quãng tám. Hình nhỏ dưới số: phím cần gảy (phím giữa dài nhất là nốt thấp nhất).')}</span> : rec ? <span className="lg-text">{tx('Tên nốt kèm thế bấm:')} <strong>●</strong> {tx('bịt kín,')} <strong>○</strong> {tx('mở,')} <strong>◐</strong> {tx('bịt nửa')} {isRecorder(harpType) ? tx(' (lỗ trên cùng lệch trái là ngón cái)') : tx(' (lỗ 1 gần miệng thổi ở trên cùng)')}</span> : null;
         return (
           <div className="legend">
             {!lgText && <>
-        <span className="lg blow">4</span> thổi
-        <span className="lg draw">−4</span> hút
-        {trem ? null : isTwoRowChromatic(harpType) ? <><span className="lg bend">&lt;</span> hàng trên (cao nửa cung)</> : chrom ? <><span className="lg bend">&lt;</span> bấm nút gạt</> : <><span className="lg bend">′</span> bend nửa cung</>}
+        <span className="lg blow">4</span> {tx('thổi')}
+        <span className="lg draw">−4</span> {tx('hút')}
+        {trem ? null : isTwoRowChromatic(harpType) ? <><span className="lg bend">&lt;</span> {tx('hàng trên (cao nửa cung)')}</> : chrom ? <><span className="lg bend">&lt;</span> {tx('bấm nút gạt')}</> : <><span className="lg bend">′</span> {tx('bend nửa cung')}</>}
             </>}
             {lgText && <span className="lg-text print-only">{lgText}</span>}
-            <span className="lg-dur print-only">Ô dài = giữ lâu hơn (ô thường 1 phách) · <strong>–</strong> nghỉ</span>
+            <span className="lg-dur print-only">{tx('Ô dài = giữ lâu hơn (ô thường 1 phách) ·')} <strong>–</strong> {tx('nghỉ')}</span>
             <details className={`legend-help no-print${lgText ? '' : ' tip-only'}`} open={helpOpen} onToggle={(e) => setHelpOpen(e.currentTarget.open)}>
               {/* harmonica: chú giải thổi / hút đã hiện sẵn, chỉ còn mẹo ngắn → nút "?" gọn, nằm cùng hàng */}
-              <summary aria-label={lgText ? undefined : 'Mẹo'} title={lgText ? undefined : 'Mẹo'}>{lgText ? 'Cách đọc tab' : null}</summary>
+              <summary aria-label={lgText ? undefined : tx('Mẹo')} title={lgText ? undefined : tx('Mẹo')}>{lgText ? tx('Cách đọc tab') : null}</summary>
               {lgText}
-              {!sheetData && <span className="muted">Chạm vào nốt để nghe, hoặc chọn chỗ bắt đầu phát.</span>}
-              {showChords && !(fretted && sheet) && !sheetData && <span className="muted">Chạm vào tên hợp âm trên nốt để đổi. Viền đậm là hợp âm bạn đã chọn tay.</span>}
+              {!sheetData && <span className="muted">{tx('Chạm vào nốt để nghe, hoặc chọn chỗ bắt đầu phát.')}</span>}
+              {showChords && !(fretted && sheet) && !sheetData && <span className="muted">{tx('Chạm vào tên hợp âm trên nốt để đổi. Viền đậm là hợp âm bạn đã chọn tay.')}</span>}
             </details>
           </div>
         );
       })()}
       {/* tuỳ chọn hiển thị: một hàng, điện thoại thì cuộn ngang (mép mờ báo còn nút) */}
       <div className="view-tools scroll-row no-print" ref={toolsRef}>
-        <button type="button" className={`chip${pageTurn ? ' on' : ''}`} aria-pressed={pageTurn} onClick={togglePageTurn}>Chạm lật trang</button>
-        <button type="button" className={`chip${autoOn ? ' on' : ''}`} aria-pressed={autoOn} onClick={toggleAuto}>Tự cuộn</button>
+        <button type="button" className={`chip${pageTurn ? ' on' : ''}`} aria-pressed={pageTurn} onClick={togglePageTurn}>{tx('Chạm lật trang')}</button>
+        <button type="button" className={`chip${autoOn ? ' on' : ''}`} aria-pressed={autoOn} onClick={toggleAuto}>{tx('Tự cuộn')}</button>
         {rec && !isFretted(harpType) && !sheetData && (() => {
           // cỡ hình dưới nốt: 60% – 250%, mỗi bước 20%
           const fs = settings.fingerScale ?? 1;
           const setFs = (v: number) => update({ fingerScale: Math.round(Math.min(2.5, Math.max(0.6, v)) * 10) / 10 });
           return (
-            <span className="finger-size" role="group" aria-label="Cỡ hình dưới nốt">
-              <span className="small muted">Hình dưới nốt</span>
-              <button type="button" className="icon-btn" onClick={() => setFs(fs - 0.2)} disabled={fs <= 0.6} aria-label="Thu nhỏ hình dưới nốt">−</button>
+            <span className="finger-size" role="group" aria-label={tx('Cỡ hình dưới nốt')}>
+              <span className="small muted">{tx('Hình dưới nốt')}</span>
+              <button type="button" className="icon-btn" onClick={() => setFs(fs - 0.2)} disabled={fs <= 0.6} aria-label={tx('Thu nhỏ hình dưới nốt')}>−</button>
               <output>{Math.round(fs * 100)}%</output>
-              <button type="button" className="icon-btn" onClick={() => setFs(fs + 0.2)} disabled={fs >= 2.5} aria-label="Phóng to hình dưới nốt">+</button>
+              <button type="button" className="icon-btn" onClick={() => setFs(fs + 0.2)} disabled={fs >= 2.5} aria-label={tx('Phóng to hình dưới nốt')}>+</button>
             </span>
           );
         })()}
         {isKeyboard(harpType) && !arp && !sheetData && <>
           <button type="button" className={`chip${showFingers ? ' on' : ''}`} aria-pressed={showFingers}
-            onClick={() => { update({ showFingerNums: !showFingers }); setFingerEdit(false); }}>Số ngón</button>
-          {showFingers && <button type="button" className={`chip${fingerEdit ? ' on' : ''}`} aria-pressed={fingerEdit} onClick={() => setFingerEdit((v) => !v)}>Sửa ngón</button>}
-          {showFingers && manualFingers.size > 0 && <button type="button" className="chip" onClick={clearFingers}>Bỏ {manualFingers.size} ngón chọn tay</button>}
+            onClick={() => { update({ showFingerNums: !showFingers }); setFingerEdit(false); }}>{tx('Số ngón')}</button>
+          {showFingers && <button type="button" className={`chip${fingerEdit ? ' on' : ''}`} aria-pressed={fingerEdit} onClick={() => setFingerEdit((v) => !v)}>{tx('Sửa ngón')}</button>}
+          {showFingers && manualFingers.size > 0 && <button type="button" className="chip" onClick={clearFingers}>{tx('Bỏ {0} ngón chọn tay', manualFingers.size)}</button>}
         </>}
         <button type="button" className={`chip legend-chords${beatPrefs.showChords ? ' on' : ''}`} aria-pressed={beatPrefs.showChords}
           onClick={() => setBeatPrefs({ showChords: !beatPrefs.showChords })}>
-          Hợp âm{manualCount > 0 ? (original.source === 'sample' ? ' (chuẩn)' : ` (${manualCount} chọn tay)`) : ''}
+          {tx('Hợp âm')}{manualCount > 0 ? (original.source === 'sample' ? tx(' (chuẩn)') : tx(' ({0} chọn tay)', manualCount)) : ''}
         </button>
         {/* guitar / ukulele: bảng lời + hợp âm, đệm rải, capo */}
         {fretted && <>
-          {!sheetData && <button type="button" className={`chip${sheet ? ' on' : ''}`} aria-pressed={sheet} onClick={toggleSheet}>Lời + hợp âm</button>}
-          {!sheetData && <button type="button" className={`chip${arpOn ? ' on' : ''}`} aria-pressed={arpOn} onClick={toggleArp}>Đệm rải</button>}
-          {!sheetData && flat.some((e) => e.lyric) && <button type="button" className="chip" onClick={() => setSheetApply(true)}>Dán hợp âm</button>}
+          {!sheetData && <button type="button" className={`chip${sheet ? ' on' : ''}`} aria-pressed={sheet} onClick={toggleSheet}>{tx('Lời + hợp âm')}</button>}
+          {!sheetData && <button type="button" className={`chip${arpOn ? ' on' : ''}`} aria-pressed={arpOn} onClick={toggleArp}>{tx('Đệm rải')}</button>}
+          {!sheetData && flat.some((e) => e.lyric) && <button type="button" className="chip" onClick={() => setSheetApply(true)}>{tx('Dán hợp âm')}</button>}
           <label className="capo-field">
             <span>Capo</span>
-            <select value={capo} onChange={(e) => setCapo(Number(e.target.value))} aria-label="Kẹp capo ở phím">
-              <option value={0}>Không</option>
-              {Array.from({ length: MAX_CAPO }, (_, i) => <option key={i + 1} value={i + 1}>Phím {i + 1}</option>)}
+            <select value={capo} onChange={(e) => setCapo(Number(e.target.value))} aria-label={tx('Kẹp capo ở phím')}>
+              <option value={0}>{tx('Không')}</option>
+              {Array.from({ length: MAX_CAPO }, (_, i) => <option key={i + 1} value={i + 1}>{tx('Phím {0}', i + 1)}</option>)}
             </select>
           </label>
           {chordSegs && capoHint !== capo && (
             <button type="button" className="chip" onClick={() => setCapo(capoHint)}>
-              {capoHint ? `Gợi ý: capo ${capoHint} cho dễ bấm` : 'Gợi ý: bỏ capo'}
+              {capoHint ? tx('Gợi ý: capo {0} cho dễ bấm', capoHint) : tx('Gợi ý: bỏ capo')}
             </button>
           )}
         </>}
@@ -602,21 +603,21 @@ function SongPlayerView({ song, original, fit, view, choice, onChoice }: {
         const guitarAccomp = accomp === 'gobo' || accomp === 'strum';
         return (
           <div className="strum-row no-print">
-            <span className="strum-hint">{guitarAccomp ? (accomp === 'gobo' ? 'Gõ bo' : 'Quạt chả') : 'Điệu'} {STYLE_OPTIONS.find((s) => s.value === style)?.label ?? strumHint(style, song.timeSig).name}:</span>
+            <span className="strum-hint">{guitarAccomp ? (accomp === 'gobo' ? tx('Gõ bo') : tx('Quạt chả')) : tx('Điệu')} {STYLE_OPTIONS.find((s) => s.value === style)?.label ?? strumHint(style, song.timeSig).name}:</span>
             {guitarAccomp && <StrumStrip style={style} beatsPerBar={bpb} pickupBeats={song.pickupBeats} accomp={accomp} playing={p.playing && !!p.opts.sing} beatAt={p.beatAt} />}
             {!p.opts.sing
-              ? <button type="button" className="chip" onClick={() => p.setOpts({ sing: true })}>🎤 Nghe guitar đệm theo điệu này</button>
-              : !guitarAccomp && <span className="small muted">Đang đệm {accomp === 'piano' ? 'piano' : 'ban nhạc'} — chọn Guitar gõ bo / quạt chả ở thanh phát để xem điệu quạt.</span>}
+              ? <button type="button" className="chip" onClick={() => p.setOpts({ sing: true })}>{tx('🎤 Nghe guitar đệm theo điệu này')}</button>
+              : !guitarAccomp && <span className="small muted">{tx('Đang đệm')} {accomp === 'piano' ? 'piano' : tx('ban nhạc')} {tx('— chọn Guitar gõ bo / quạt chả ở thanh phát để xem điệu quạt.')}</span>}
           </div>
         );
       })()}
 
       {waitMode && (
         <div className="wait-banner" role="status">
-          <span>Chờ bạn thổi: <strong className="wb-target">{activeToken ?? '–'}</strong>
+          <span>{tx('Chờ bạn thổi:')} <strong className="wb-target">{activeToken ?? '–'}</strong>
             {activeIdx != null && flat[activeIdx]?.midi != null && <span className="muted"> ({midiToName(flat[activeIdx].midi!, settings.noteNames)})</span>}
           </span>
-          <span>Nghe được: <strong>{heard ? midiToName(heard.nearest, settings.noteNames) : '…'}</strong>
+          <span>{tx('Nghe được:')} <strong>{heard ? midiToName(heard.nearest, settings.noteNames) : '…'}</strong>
             {heard && <span className={`cents ${Math.abs(heard.cents) < 20 ? 'ok' : ''}`}>{heard.cents > 0 ? '+' : ''}{Math.round(heard.cents)}¢</span>}
           </span>
           <span className="muted">{waitIdx + 1}/{playable.length}</span>
@@ -624,16 +625,16 @@ function SongPlayerView({ song, original, fit, view, choice, onChoice }: {
       )}
 
       {autoShown && (
-        <div className="autoscroll-bar no-print" role="group" aria-label="Tự cuộn">
+        <div className="autoscroll-bar no-print" role="group" aria-label={tx('Tự cuộn')}>
           <button type="button" className="icon-btn as-play" onClick={auto.running ? auto.stop : auto.start}
-            aria-label={auto.running ? 'Dừng tự cuộn' : 'Bắt đầu tự cuộn'}>{auto.running ? '❚❚' : '▶'}</button>
-          <button type="button" className="icon-btn" onClick={() => stepAuto(-5)} disabled={autoPct <= AUTO_SCROLL_MIN} aria-label="Cuộn chậm hơn">−</button>
+            aria-label={auto.running ? tx('Dừng tự cuộn') : tx('Bắt đầu tự cuộn')}>{auto.running ? '❚❚' : '▶'}</button>
+          <button type="button" className="icon-btn" onClick={() => stepAuto(-5)} disabled={autoPct <= AUTO_SCROLL_MIN} aria-label={tx('Cuộn chậm hơn')}>−</button>
           <output className="as-speed" aria-live="polite">{autoPct}%<small>{Math.round((song.bpm * autoPct) / 100)} bpm</small></output>
-          <button type="button" className="icon-btn" onClick={() => stepAuto(5)} disabled={autoPct >= AUTO_SCROLL_MAX} aria-label="Cuộn nhanh hơn">+</button>
+          <button type="button" className="icon-btn" onClick={() => stepAuto(5)} disabled={autoPct >= AUTO_SCROLL_MAX} aria-label={tx('Cuộn nhanh hơn')}>+</button>
         </div>
       )}
-      {autoShown && !auto.running && <p className="small muted no-print page-turn-hint">Tự cuộn: bấm ▶, trang trôi theo nhịp bài (chỉnh nhanh / chậm bằng − +). Chạm hay kéo màn hình là dừng; bấm ▶ lại để chạy tiếp từ dòng đang xem.</p>}
-      {pageTurn && !autoShown && !p.playing && !waitMode && !editMode && <p className="small muted no-print page-turn-hint">Chạm phần dưới màn hình để sang trang, phần trên để lùi trang.</p>}
+      {autoShown && !auto.running && <p className="small muted no-print page-turn-hint">{tx('Tự cuộn: bấm ▶, trang trôi theo nhịp bài (chỉnh nhanh / chậm bằng − +). Chạm hay kéo màn hình là dừng; bấm ▶ lại để chạy tiếp từ dòng đang xem.')}</p>}
+      {pageTurn && !autoShown && !p.playing && !waitMode && !editMode && <p className="small muted no-print page-turn-hint">{tx('Chạm phần dưới màn hình để sang trang, phần trên để lùi trang.')}</p>}
       <div className="tab-pager" onClickCapture={onPagerClick}>
       {sheetData
         ? <SheetView lines={sheetData.lines} slots={sheetData.slots} capo={capo} active={p.active ?? null} onSeek={(i) => p.play(i)} />
@@ -656,11 +657,11 @@ function SongPlayerView({ song, original, fit, view, choice, onChoice }: {
         onChordClick={setChordEdit}
       /></div>}
       </div>
-      {fingerEdit && fingerNums && <p className="small muted no-print">Chạm vào nốt để đổi ngón (1 → 2 → … → 5). Ngón bạn chọn ghi đậm và giữ nguyên; app tính lại ngón các nốt quanh đó cho thuận tay.</p>}
-      {showFingers && !fingerEdit && <p className="small muted no-print">Số trên mỗi nốt là ngón tay phải: 1 = ngón cái, 2 trỏ, 3 giữa, 4 áp út, 5 út.</p>}
+      {fingerEdit && fingerNums && <p className="small muted no-print">{tx('Chạm vào nốt để đổi ngón (1 → 2 → … → 5). Ngón bạn chọn ghi đậm và giữ nguyên; app tính lại ngón các nốt quanh đó cho thuận tay.')}</p>}
+      {showFingers && !fingerEdit && <p className="small muted no-print">{tx('Số trên mỗi nốt là ngón tay phải: 1 = ngón cái, 2 trỏ, 3 giữa, 4 áp út, 5 út.')}</p>}
 
       {fretted && shownSegs && <>
-        {capo > 0 && <p className="small muted">Capo phím {capo}: bấm các thế dưới đây, nghe ra đúng giọng bài.</p>}
+        {capo > 0 && <p className="small muted">{tx('Capo phím {0}: bấm các thế dưới đây, nghe ra đúng giọng bài.', capo)}</p>}
         <ChordStrip names={sheetData ? sheetChords(sheetData.lines).map((c) => shapeName(c, capo)) : shownSegs.filter((c) => c.chord.root >= 0).map((c) => c.chord.name)} inst={inst} />
       </>}
 
@@ -668,13 +669,13 @@ function SongPlayerView({ song, original, fit, view, choice, onChoice }: {
 
       <div className="below-tab">
         <button type="button" className="btn btn-ghost" onClick={() => setShowDiagram((v) => !v)} aria-expanded={showDiagram}>
-          {isFretted(harpType) ? (showDiagram ? 'Ẩn cần đàn' : 'Hiện cần đàn') : showDiagram ? `Ẩn sơ đồ ${BRAND.noun}` : `Hiện sơ đồ ${BRAND.noun}`}
+          {isFretted(harpType) ? (showDiagram ? tx('Ẩn cần đàn') : tx('Hiện cần đàn')) : showDiagram ? tx('Ẩn sơ đồ {0}', BRAND.noun) : tx('Hiện sơ đồ {0}', BRAND.noun)}
         </button>
       </div>
       {showDiagram && <HarpDiagram harpKey={song.harpKey} harpType={harpType} highlight={activeToken ? [activeToken] : []} nameStyle={settings.noteNames} />}
 
       <ScanSection songId={song.id} />
-      <p className="print-only print-foot">In từ {BRAND.name} · {BRAND.host} · © Trần Thanh Phúc · 0913.65.65.39</p>
+      <p className="print-only print-foot">{tx('In từ {0} · {1} · © Trần Thanh Phúc · 0913.65.65.39', BRAND.name, BRAND.host)}</p>
 
       <PlayerBar
         p={player}
@@ -703,22 +704,22 @@ function SongPlayerView({ song, original, fit, view, choice, onChoice }: {
             onClose={() => setEditMode(false)}
           />
         ) : (
-          <p className="small muted">{`Đang xem bản đã đổi sang ${BRAND.noun} khác — chọn “Bản gốc” ở trên để sửa nốt.`} <button type="button" className="link-btn" onClick={() => setEditMode(false)}>Đóng</button></p>
+          <p className="small muted">{tx('Đang xem bản đã đổi sang {0} khác — chọn “Bản gốc” ở trên để sửa nốt.', BRAND.noun)} <button type="button" className="link-btn" onClick={() => setEditMode(false)}>{tx('Đóng')}</button></p>
         ))}
         extra={arp ? (
-          <span className="small muted">Đang xem tab đệm rải — tắt "Đệm rải" để sửa nốt, chờ nốt, karaoke.</span>
+          <span className="small muted">{tx('Đang xem tab đệm rải — tắt "Đệm rải" để sửa nốt, chờ nốt, karaoke.')}</span>
         ) : sheetData ? (
           // bài lời + hợp âm không có giai điệu: sửa lời và hợp âm trong Sửa bài
-          <Link to={`/song/${song.id}/edit`} className="chip"><Icon name="edit" size={15} /> Sửa lời + hợp âm</Link>
+          <Link to={`/song/${song.id}/edit`} className="chip"><Icon name="edit" size={15} /> {tx('Sửa lời + hợp âm')}</Link>
         ) : <>
           <button type="button" className={`chip${editMode ? ' on' : ''}`} aria-pressed={editMode} onClick={() => setEditMode((v) => !v)}>
-            <Icon name="edit" size={15} /> Sửa nốt
+            <Icon name="edit" size={15} /> {tx('Sửa nốt')}
           </button>
-          <button type="button" className="chip" onClick={() => (canEdit ? setLyricEdit(true) : toast(`Đang xem bản đã đổi sang ${BRAND.noun} khác — chọn “Bản gốc” ở trên để sửa lời`))}>
-            📝 Sửa lời
+          <button type="button" className="chip" onClick={() => (canEdit ? setLyricEdit(true) : toast(tx('Đang xem bản đã đổi sang {0} khác — chọn “Bản gốc” ở trên để sửa lời', BRAND.noun)))}>
+            {tx('📝 Sửa lời')}
           </button>
           <button type="button" className={`chip${waitMode ? ' on' : ''}`} aria-pressed={waitMode} onClick={() => (waitMode ? stopWait() : startWait())}>
-            <Icon name="mic" size={15} /> Chờ nốt
+            <Icon name="mic" size={15} /> {tx('Chờ nốt')}
           </button>
           <button type="button" className="chip" onClick={() => { if (waitMode) stopWait(); setEditMode(false); setKaraoke(true); }}>
             🎤 Karaoke
@@ -733,7 +734,7 @@ function SongPlayerView({ song, original, fit, view, choice, onChoice }: {
             window.setTimeout(() => { keepPlaying.current = false; }, 1500);
             setHistory((h) => [...h.slice(-49), { body: original.body, focus }]);
             void db.songs.update(original.id, { body, updatedAt: Date.now() });
-            toast('Đã lưu lời');
+            toast(tx('Đã lưu lời'));
           }}
           onClose={() => setLyricEdit(false)} />
       )}
@@ -798,51 +799,51 @@ function RekeyDialog({ song, onClose, onDone }: { song: Song; onClose: () => voi
 
   const apply = async (asNew: boolean) => {
     const now = Date.now();
-    const shiftNote = preview.fit.shift % 12 !== 0 ? ` Đã dịch giọng ${preview.fit.shift > 0 ? '+' : ''}${preview.fit.shift} nửa cung.` : '';
+    const shiftNote = preview.fit.shift % 12 !== 0 ? tx(' Đã dịch giọng {0}{1} nửa cung.', preview.fit.shift > 0 ? '+' : '', preview.fit.shift) : '';
     if (asNew) {
       const id = newId();
       await db.songs.put({ ...song, ...typeFields, id, title: `${song.title} (${toName})`, harpKey: target, body: preview.body, songKey: undefined, chords: transposeChords(song.chords, preview.fit.shift), source: 'user', createdAt: now, updatedAt: now, favorite: false });
-      toast(`Đã tạo bản cho ${toName}.${shiftNote}`);
+      toast(tx('Đã tạo bản cho {0}.{1}', toName, shiftNote));
       onDone(id);
     } else {
       await db.songs.update(song.id, { ...typeFields, harpKey: target, body: preview.body, songKey: mode === 'octave' ? song.songKey : undefined, chords: transposeChords(song.chords, preview.fit.shift), updatedAt: now });
-      toast(`Đã chuyển sang ${toName}.${shiftNote}`);
+      toast(tx('Đã chuyển sang {0}.{1}', toName, shiftNote));
       onDone(song.id);
     }
   };
 
   return (
     <dialog ref={dialogRef} className="sheet" onClose={onClose} aria-labelledby="rekey-title">
-      <h2 id="rekey-title">Chuyển sang {BRAND.noun} khác</h2>
+      <h2 id="rekey-title">{tx('Chuyển sang {0} khác', BRAND.noun)}</h2>
       <label className="field">
-        <span className="field-label">Loại {BRAND.noun}</span>
+        <span className="field-label">{tx('Loại {0}', BRAND.noun)}</span>
         <select value={toType} onChange={(e) => setToType(e.target.value as HarpType)}>
           {SHOWN_HARP_TYPES.map((t) => <option key={t} value={t}>{HARP_TYPE_LABEL[t]}</option>)}
         </select>
       </label>
       {!isFixedKey(toType) && <label className="field">
-        <span className="field-label">Kèn bạn có</span>
+        <span className="field-label">{tx('Kèn bạn có')}</span>
         <select value={target} onChange={(e) => setTarget(e.target.value as HarpKey)}>
-          {HARP_KEYS.map((k) => <option key={k} value={k}>Kèn {harpKeyLabel(k, toType)}</option>)}
+          {HARP_KEYS.map((k) => <option key={k} value={k}>{tx('Kèn {0}', harpKeyLabel(k, toType))}</option>)}
         </select>
       </label>}
       <fieldset className="radio-group">
-        <legend className="field-label">Cách chuyển</legend>
-        <label><input type="radio" checked={mode === 'any'} onChange={() => setMode('any')} /> Dịch giọng cho dễ thổi nhất <span className="muted">(giai điệu giữ nguyên, cao độ thay đổi)</span></label>
-        <label><input type="radio" checked={mode === 'octave'} onChange={() => setMode('octave')} /> Giữ đúng giọng gốc <span className="muted">(để chơi cùng bản thu{isRecorder(toType) ? ', nốt ngoài tầm sáo sẽ thiếu' : isTremolo(toType) ? ', nốt thăng giáng không có trên kèn tremolo' : isTwoRowChromatic(toType) ? ', có thể phải đổi sang hàng trên nhiều hơn' : isChromatic(toType) ? ', có thể phải bấm gạt nhiều hơn' : ', có thể phải bend'})</span></label>
+        <legend className="field-label">{tx('Cách chuyển')}</legend>
+        <label><input type="radio" checked={mode === 'any'} onChange={() => setMode('any')} /> {tx('Dịch giọng cho dễ thổi nhất')} <span className="muted">{tx('(giai điệu giữ nguyên, cao độ thay đổi)')}</span></label>
+        <label><input type="radio" checked={mode === 'octave'} onChange={() => setMode('octave')} /> {tx('Giữ đúng giọng gốc')} <span className="muted">{tx('(để chơi cùng bản thu')}{isRecorder(toType) ? tx(', nốt ngoài tầm sáo sẽ thiếu') : isTremolo(toType) ? tx(', nốt thăng giáng không có trên kèn tremolo') : isTwoRowChromatic(toType) ? tx(', có thể phải đổi sang hàng trên nhiều hơn') : isChromatic(toType) ? tx(', có thể phải bấm gạt nhiều hơn') : tx(', có thể phải bend')})</span></label>
       </fieldset>
       <p className="rekey-stats">
         {isTremolo(toType) || isFingered(toType)
-          ? <><strong>{s.natural}</strong> nốt chơi được</>
+          ? <><strong>{s.natural}</strong> {tx('nốt chơi được')}</>
           : isChromatic(toType)
-          ? <><strong>{s.natural}</strong> nốt thường, <strong>{s.slides}</strong> nốt {isTwoRowChromatic(toType) ? 'hàng trên' : 'bấm gạt'}</>
-          : <><strong>{s.natural}</strong> nốt thường, <strong>{s.bends}</strong> nốt bend, <strong>{s.overblows}</strong> overblow</>}
-        {s.unplayable > 0 && <>, <strong className="danger">{s.unplayable}</strong> nốt không chơi được (sẽ thành dấu nghỉ)</>}
+          ? <><strong>{s.natural}</strong> {tx('nốt thường,')} <strong>{s.slides}</strong> {tx('nốt')} {isTwoRowChromatic(toType) ? tx('hàng trên') : tx('bấm gạt')}</>
+          : <><strong>{s.natural}</strong> {tx('nốt thường,')} <strong>{s.bends}</strong> {tx('nốt bend,')} <strong>{s.overblows}</strong> overblow</>}
+        {s.unplayable > 0 && <>, <strong className="danger">{s.unplayable}</strong> {tx('nốt không chơi được (sẽ thành dấu nghỉ)')}</>}
       </p>
       <div className="row gap end">
-        <button type="button" className="btn btn-ghost" onClick={() => dialogRef.current?.close()}>Huỷ</button>
-        <button type="button" className="btn btn-ghost" onClick={() => apply(true)}>Lưu thành bài mới</button>
-        <button type="button" className="btn btn-primary" onClick={() => apply(false)}>Chuyển bài này</button>
+        <button type="button" className="btn btn-ghost" onClick={() => dialogRef.current?.close()}>{tx('Huỷ')}</button>
+        <button type="button" className="btn btn-ghost" onClick={() => apply(true)}>{tx('Lưu thành bài mới')}</button>
+        <button type="button" className="btn btn-primary" onClick={() => apply(false)}>{tx('Chuyển bài này')}</button>
       </div>
     </dialog>
   );
@@ -856,7 +857,7 @@ function ScanSection({ songId }: { songId: string }) {
   if (!scan) return null;
   return (
     <details className="scan-saved" open={open} onToggle={(e) => setOpen((e.target as HTMLDetailsElement).open)}>
-      <summary>Bản nhạc gốc (ảnh đã quét{scan.pages.length > 1 ? `, ${scan.pages.length} trang` : ''})</summary>
+      <summary>{tx('Bản nhạc gốc (ảnh đã quét{0})', scan.pages.length > 1 ? `, ${scan.pages.length} trang` : '')}</summary>
       {open && <ScanPages scan={scan} zoom={zoom} setZoom={setZoom} songId={songId} />}
     </details>
   );
@@ -868,12 +869,12 @@ function ScanPages({ scan, zoom, setZoom, songId }: { scan: SongScan; zoom: numb
   return (
     <div className="scan-saved-body">
       <div className="row between center wrap gap">
-        <p className="small muted">{IS_HARMONICA_APP ? <>Số trên nốt là lỗ kèn lúc quét: <span className="tok-blow">cam = thổi</span>, <span className="tok-draw">xanh = hút</span>.</> : <>Chữ trên nốt là cách chơi nốt đó trên {BRAND.noun} lúc quét.</>}</p>
+        <p className="small muted">{IS_HARMONICA_APP ? <>{tx('Số trên nốt là lỗ kèn lúc quét:')} <span className="tok-blow">{tx('cam = thổi')}</span>, <span className="tok-draw">{tx('xanh = hút')}</span>.</> : <>{tx('Chữ trên nốt là cách chơi nốt đó trên {0} lúc quét.', BRAND.noun)}</>}</p>
         <div className="row gap wrap">
-          <div className="segmented" role="group" aria-label="Phóng to ảnh">
+          <div className="segmented" role="group" aria-label={tx('Phóng to ảnh')}>
             {[1, 2, 3].map((z) => <button key={z} type="button" className={zoom === z ? 'on' : ''} aria-pressed={zoom === z} onClick={() => setZoom(z)}>{z}×</button>)}
           </div>
-          <Link to={`/ai?scan=${songId}`} className="btn btn-ghost"><Icon name="edit" size={18} /> Sửa nốt trên ảnh</Link>
+          <Link to={`/ai?scan=${songId}`} className="btn btn-ghost"><Icon name="edit" size={18} /> {tx('Sửa nốt trên ảnh')}</Link>
         </div>
       </div>
       {scan.pages.map((p, i) => (
@@ -890,9 +891,9 @@ function ShareLinkDialog({ text, onClose }: { text: string; onClose: () => void 
   useEffect(() => { ref.current?.showModal?.(); area.current?.select(); }, []);
   return (
     <dialog ref={ref} className="sheet" onClose={onClose} aria-labelledby="share-title">
-      <h2 id="share-title">Chép link bài</h2>
-      <p className="muted small">Máy này không mở được menu chia sẻ. Chọn hết nội dung dưới đây, chép rồi dán vào tin nhắn. Người nhận bấm link là mở được bài.</p>
-      <textarea ref={area} readOnly rows={4} value={text} onFocus={(e) => e.currentTarget.select()} aria-label="Link bài" />
+      <h2 id="share-title">{tx('Chép link bài')}</h2>
+      <p className="muted small">{tx('Máy này không mở được menu chia sẻ. Chọn hết nội dung dưới đây, chép rồi dán vào tin nhắn. Người nhận bấm link là mở được bài.')}</p>
+      <textarea ref={area} readOnly rows={4} value={text} onFocus={(e) => e.currentTarget.select()} aria-label={tx('Link bài')} />
       <div className="row gap end">
         <button type="button" className="btn btn-primary" onClick={() => ref.current?.close()}>Xong</button>
       </div>
@@ -923,9 +924,9 @@ function ViewAsBar({ original, viewed, view, fit, choice, onChoice, onSaved }: {
   const nameOf = (s: Song) => harpName(s.harpKey, harpTypeOf(s)).replace(/^Kèn/, 'kèn');
   // kỹ thuật khó mà kèn đang xem đòi hỏi
   const techBits = (st: TabFit['stats'], t: HarpType = type) => [
-    st.overblows && `${st.overblows} nốt overblow`,
-    st.bends && `${st.bends} nốt bend`,
-    st.slides && `${st.slides} ${isTwoRowChromatic(t) ? 'nốt hàng trên' : 'nốt bấm gạt'}`,
+    st.overblows && tx('{0} nốt overblow', st.overblows),
+    st.bends && tx('{0} nốt bend', st.bends),
+    st.slides && `${st.slides} ${isTwoRowChromatic(t) ? tx('nốt hàng trên') : tx('nốt bấm gạt')}`,
   ].filter(Boolean).join(', ');
   const hardBits = fit ? techBits(fit.stats) : '';
   const origBits = choice === 'auto' && active ? techBits(bestHarp(original).originalFit.stats, origType) : '';
@@ -935,54 +936,54 @@ function ViewAsBar({ original, viewed, view, fit, choice, onChoice, onSaved }: {
     const id = newId();
     const name = nameOf(viewed);
     await db.songs.put({ ...viewed, id, title: `${original.title} (${name})`, source: 'user', favorite: false, createdAt: now, updatedAt: now, lastPracticedAt: undefined });
-    toast(`Đã lưu bản cho ${name}`);
+    toast(tx('Đã lưu bản cho {0}', name));
     onSaved(id);
   };
 
   return (
     // đang xem bản gốc: thu thành một dòng (nhãn + ô chọn) cho tab hiện lên sớm
-    <section className={`viewas${active ? ' on' : ''}${!active && !manual ? ' compact' : ''}`} aria-label={`Xem bài cho ${BRAND.noun} khác`}>
+    <section className={`viewas${active ? ' on' : ''}${!active && !manual ? ' compact' : ''}`} aria-label={tx('Xem bài cho {0} khác', BRAND.noun)}>
       <div className="row gap wrap center">
         <label className="field viewas-field">
-          <span className="field-label">Xem cho {BRAND.noun}</span>
+          <span className="field-label">{tx('Xem cho {0}', BRAND.noun)}</span>
           <select value={manual ? choice.type : choice} onChange={(e) => {
             const v = e.target.value;
             if (v === 'auto' || v === 'original') onChoice(v);
             else onChoice({ type: v as HarpType, key: isFixedKey(v as HarpType) ? recorderKey(v as HarpType) : key, mode: 'any' });
           }}>
-            <option value="auto">✨ Tự chọn hợp nhất</option>
-            <option value="original">Bản gốc ({harpName(original.harpKey, origType).replace(/^Kèn /, '')})</option>
+            <option value="auto">{tx('✨ Tự chọn hợp nhất')}</option>
+            <option value="original">{tx('Bản gốc ({0})', harpName(original.harpKey, origType).replace(/^Kèn /, ''))}</option>
             {SHOWN_HARP_TYPES.map((t) => <option key={t} value={t}>{HARP_TYPE_LABEL[t]}</option>)}
           </select>
         </label>
         {manual && !isFixedKey(type) && (
           <label className="field viewas-field">
-            <span className="field-label">{isKalimba(type) ? 'Tông kalimba' : isSaoTruc(type) ? 'Tông sáo' : `Tông ${BRAND.noun}`}</span>
+            <span className="field-label">{isKalimba(type) ? tx('Tông kalimba') : isSaoTruc(type) ? tx('Tông sáo') : tx('Tông {0}', BRAND.noun)}</span>
             <select value={key} onChange={(e) => set({ key: e.target.value as HarpKey })}>
-              {HARP_KEYS.map((k) => <option key={k} value={k}>{isKalimba(type) ? `Kalimba ${k}` : isSaoTruc(type) ? `Sáo ${k}` : isTranh(type) || isDanBau(type) ? `Đàn ${k}` : `Kèn ${harpKeyLabel(k, type)}`}</option>)}
+              {HARP_KEYS.map((k) => <option key={k} value={k}>{isKalimba(type) ? `Kalimba ${k}` : isSaoTruc(type) ? tx('Sáo {0}', k) : isTranh(type) || isDanBau(type) ? tx('Đàn {0}', k) : tx('Kèn {0}', harpKeyLabel(k, type))}</option>)}
             </select>
           </label>
         )}
         {manual && active && (
-          <div className="segmented" role="radiogroup" aria-label="Cách xếp tab">
-            <button type="button" role="radio" aria-checked={mode === 'any'} className={mode === 'any' ? 'on' : ''} onClick={() => set({ mode: 'any' })}>Dễ {BRAND.verb} nhất</button>
-            <button type="button" role="radio" aria-checked={mode === 'octave'} className={mode === 'octave' ? 'on' : ''} onClick={() => set({ mode: 'octave' })}>Giữ giọng gốc</button>
+          <div className="segmented" role="radiogroup" aria-label={tx('Cách xếp tab')}>
+            <button type="button" role="radio" aria-checked={mode === 'any'} className={mode === 'any' ? 'on' : ''} onClick={() => set({ mode: 'any' })}>{tx('Dễ {0} nhất', BRAND.verb)}</button>
+            <button type="button" role="radio" aria-checked={mode === 'octave'} className={mode === 'octave' ? 'on' : ''} onClick={() => set({ mode: 'octave' })}>{tx('Giữ giọng gốc')}</button>
           </div>
         )}
       </div>
       {choice !== 'original' && (active || manual) && (
         <p className="small muted viewas-status">
           {!active
-            ? (choice === 'auto' ? `Bản gốc (${nameOf(original)}) đã là ${BRAND.noun} dễ chơi nhất cho bài này.` : `Đang xem bản gốc — bài viết sẵn cho ${BRAND.noun} này.`)
+            ? (choice === 'auto' ? tx('Bản gốc ({0}) đã là {1} dễ chơi nhất cho bài này.', nameOf(original), BRAND.noun) : tx('Đang xem bản gốc — bài viết sẵn cho {0} này.', BRAND.noun))
             : <>
-              {choice === 'auto' ? <>Tự chọn <strong>{nameOf(viewed)}</strong>, giữ đúng giọng bài{origBits ? ` (bản gốc ${nameOf(original)} cần ${origBits})` : ''}</> : <>Tab xếp lại cho {nameOf(viewed)}</>}
-              {', bài gốc không đổi'}
-              {shift !== 0 && <> · đã dịch giọng {fit!.shift > 0 ? '+' : ''}{fit!.shift} nửa cung</>}
-              {missing > 0 && <> · <strong className="danger">{missing} nốt</strong> không có trên {BRAND.noun} này (thành dấu nghỉ)</>}
-              {hardBits && <> · cần {hardBits}</>}
-              {manual && mode === 'octave' && (missing > 0 || (fit?.stats.overblows ?? 0) > 0 || (fit?.stats.bends ?? 0) > 0) && ' — thử "Dễ thổi nhất"'}
+              {choice === 'auto' ? <>{tx('Tự chọn')} <strong>{nameOf(viewed)}</strong>{tx(', giữ đúng giọng bài')}{origBits ? tx(' (bản gốc {0} cần {1})', nameOf(original), origBits) : ''}</> : <>{tx('Tab xếp lại cho {0}', nameOf(viewed))}</>}
+              {tx(', bài gốc không đổi')}
+              {shift !== 0 && <> {tx('· đã dịch giọng {0}{1} nửa cung', fit!.shift > 0 ? '+' : '', fit!.shift)}</>}
+              {missing > 0 && <> · <strong className="danger">{tx('{0} nốt', missing)}</strong> {tx('không có trên {0} này (thành dấu nghỉ)', BRAND.noun)}</>}
+              {hardBits && <> {tx('· cần {0}', hardBits)}</>}
+              {manual && mode === 'octave' && (missing > 0 || (fit?.stats.overblows ?? 0) > 0 || (fit?.stats.bends ?? 0) > 0) && tx(' — thử "Dễ thổi nhất"')}
               {'. '}
-              <button type="button" className="link-btn" onClick={saveCopy}>Lưu thành bài mới</button>
+              <button type="button" className="link-btn" onClick={saveCopy}>{tx('Lưu thành bài mới')}</button>
             </>}
         </p>
       )}

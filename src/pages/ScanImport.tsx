@@ -26,19 +26,20 @@ import { RecordingCheck } from '../components/RecordingCheck';
 import type { ScoreNote, Suggestion } from '../lib/audioAlign';
 import { nameToMidi } from '../lib/harp';
 import { useAppState } from '../state';
+import { LOCALE, t as tx } from '../lib/i18n';
 
 /** Ảnh chụp rất lớn thì thu nhỏ trước cho nhanh; bước đọc tự đưa về cỡ chuẩn */
 const MAX_SIDE = 2600;
 const TIME_SIGS = ['2/4', '3/4', '4/4', '6/8', '3/8', '2/2'];
 const DURATIONS: { beats: number; label: string }[] = [
-  { beats: 0.25, label: 'Móc kép' }, { beats: 1 / 3, label: 'Móc đơn liên ba' }, { beats: 0.5, label: 'Móc đơn' }, { beats: 2 / 3, label: 'Đen liên ba' },
-  { beats: 0.75, label: 'Móc chấm' }, { beats: 1, label: 'Đen' }, { beats: 1.5, label: 'Đen chấm' }, { beats: 2, label: 'Trắng' },
-  { beats: 3, label: 'Trắng chấm' }, { beats: 4, label: 'Tròn' },
+  { beats: 0.25, label: tx('Móc kép') }, { beats: 1 / 3, label: tx('Móc đơn liên ba') }, { beats: 0.5, label: tx('Móc đơn') }, { beats: 2 / 3, label: tx('Đen liên ba') },
+  { beats: 0.75, label: tx('Móc chấm') }, { beats: 1, label: tx('Đen') }, { beats: 1.5, label: tx('Đen chấm') }, { beats: 2, label: tx('Trắng') },
+  { beats: 3, label: tx('Trắng chấm') }, { beats: 4, label: tx('Tròn') },
 ];
 
 async function fileToGray(file: File): Promise<Gray> {
   const bmp = await createImageBitmap(file).catch(() => null);
-  if (!bmp) throw new Error(`Không đọc được ảnh "${file.name}"`);
+  if (!bmp) throw new Error(tx('Không đọc được ảnh "{0}"', file.name));
   const f = Math.min(1, MAX_SIDE / Math.max(bmp.width, bmp.height));
   const w = Math.round(bmp.width * f), h = Math.round(bmp.height * f);
   const canvas = document.createElement('canvas');
@@ -62,12 +63,12 @@ type Shot = { url: string; status: 'reading' | 'ok' | 'unclear' | 'fail'; text?:
 function ShotHint({ shot, what, value, onUse }: { shot: Shot; what: string; value: string; onUse: (t: string) => void }) {
   return (
     <span className="title-shot">
-      <img src={shot.url} alt={`Vùng ${what} trên ảnh`} />
+      <img src={shot.url} alt={tx('Vùng {0} trên ảnh', what)} />
       <span className="muted small">
-        {shot.status === 'reading' ? `Đang đọc ${what}…`
-          : shot.status === 'ok' ? <>Máy đọc: <strong>{shot.text}</strong>{value !== shot.text && <> · <button type="button" className="link-btn" onClick={() => onUse(shot.text!)}>Dùng</button></>}</>
-          : shot.status === 'unclear' ? 'Kiểu chữ này máy chưa đọc được — gõ theo ảnh trên'
-          : 'Chưa đọc được chữ (lần đầu cần mạng để tải bộ đọc) — gõ theo ảnh trên'}
+        {shot.status === 'reading' ? tx('Đang đọc {0}…', what)
+          : shot.status === 'ok' ? <>{tx('Máy đọc:')} <strong>{shot.text}</strong>{value !== shot.text && <> · <button type="button" className="link-btn" onClick={() => onUse(shot.text!)}>{tx('Dùng')}</button></>}</>
+          : shot.status === 'unclear' ? tx('Kiểu chữ này máy chưa đọc được — gõ theo ảnh trên')
+          : tx('Chưa đọc được chữ (lần đầu cần mạng để tải bộ đọc) — gõ theo ảnh trên')}
       </span>
     </span>
   );
@@ -75,7 +76,7 @@ function ShotHint({ shot, what, value, onUse }: { shot: Shot; what: string; valu
 
 const durIndex = (b: number) => DURATIONS.findIndex((d) => Math.abs(d.beats - b) < 0.01);
 
-const keySigLabel = (k: number) => (k === 0 ? 'Không dấu hoá' : `${Math.abs(k)} dấu ${k > 0 ? 'thăng ♯' : 'giáng ♭'}`) + ` (${keyName(k)} trưởng)`;
+const keySigLabel = (k: number) => (k === 0 ? tx('Không dấu hoá') : tx('{0} dấu {1}', Math.abs(k), k > 0 ? tx('thăng ♯') : tx('giáng ♭'))) + tx(' ({0} trưởng)', keyName(k));
 
 /** editSongId: mở lại ảnh đã quét của một bài để sửa tiếp (lưu sẽ cập nhật bài đó) */
 /** `initialFiles`: ảnh đã chọn ở chỗ khác (ô "File nhạc") — mở trang là quét luôn */
@@ -151,7 +152,7 @@ export default function ScanImport({ editSongId, initialFiles }: { editSongId?: 
       }));
       setScanDraft(null);
     } catch (e) {
-      toast((e as Error).message || 'Không mở được bản quét dở');
+      toast((e as Error).message || tx('Không mở được bản quét dở'));
     } finally {
       setBusy(false);
     }
@@ -168,7 +169,7 @@ export default function ScanImport({ editSongId, initialFiles }: { editSongId?: 
     (async () => {
       const [song, scan] = await Promise.all([db.songs.get(editSongId), db.scans.get(editSongId)]);
       if (!alive) return;
-      if (!song || !scan) { setError('Bài này chưa có ảnh quét được lưu.'); return; }
+      if (!song || !scan) { setError(tx('Bài này chưa có ảnh quét được lưu.')); return; }
       setBusy(true);
       try {
         const ps = await loadScanPages(scan);
@@ -188,7 +189,7 @@ export default function ScanImport({ editSongId, initialFiles }: { editSongId?: 
         setHarpType(scan.harpType ?? song.harpType ?? 'diatonic');
         setAllowTranspose(scan.allowTranspose);
       } catch (e) {
-        setError((e as Error).message || 'Không mở được ảnh đã lưu');
+        setError((e as Error).message || tx('Không mở được ảnh đã lưu'));
       } finally {
         if (alive) setBusy(false);
       }
@@ -216,7 +217,7 @@ export default function ScanImport({ editSongId, initialFiles }: { editSongId?: 
       for (const band of lyricBands(p, si)) {
         const words = await readWords(cropToCanvas(p.image, band, 2), 2);
         if (run !== lyricRun.current) return;
-        if (!words) { setLyricProgress(null); setLyricMsg('Chưa tải được bộ đọc chữ (cần mạng lần đầu) — thử lại sau, hoặc gõ lời vào ô bên dưới.'); return; }
+        if (!words) { setLyricProgress(null); setLyricMsg(tx('Chưa tải được bộ đọc chữ (cần mạng lần đầu) — thử lại sau, hoặc gõ lời vào ô bên dưới.')); return; }
         // dải lời có thể chạm tên hợp âm của khuông kế tiếp: bỏ các dòng hợp âm
         const syls = toSyllables(withoutChordLines(words.map((w) => ({ ...w, x0: w.x0 + band.x0, x1: w.x1 + band.x0 }))));
         if (!looksLikeLyrics(syls)) continue;
@@ -231,7 +232,7 @@ export default function ScanImport({ editSongId, initialFiles }: { editSongId?: 
     }
     if (run !== lyricRun.current) return;
     setLyricProgress(null);
-    setLyricMsg(found ? null : 'Không thấy lời in dưới khuông — gõ lời vào ô bên dưới nếu cần.');
+    setLyricMsg(found ? null : tx('Không thấy lời in dưới khuông — gõ lời vào ô bên dưới nếu cần.'));
   };
 
   // ───── tên hợp âm in trên khuông: đọc sau lời (cùng bộ đọc chữ), dùng làm hợp âm đệm của bài ─────
@@ -260,7 +261,7 @@ export default function ScanImport({ editSongId, initialFiles }: { editSongId?: 
     setPages((cur) => cur.map((p) => (p.notes.some((n) => touched.has(n.id) || n.chord)
       ? { ...p, notes: p.notes.map((n) => (touched.has(n.id) || n.chord ? { ...n, chord: found.get(n.id) } : n)) }
       : p)));
-    setChordMsg(found.size ? `Đọc được ${found.size} tên hợp âm in trên khuông — nhạc đệm chơi theo các hợp âm này.` : null);
+    setChordMsg(found.size ? tx('Đọc được {0} tên hợp âm in trên khuông — nhạc đệm chơi theo các hợp âm này.', found.size) : null);
   };
 
   const read = (list: Gray[]) => {
@@ -272,16 +273,16 @@ export default function ScanImport({ editSongId, initialFiles }: { editSongId?: 
         const r = readSheet(list);
         if (!r.pages.length) {
           setPages([]);
-          setError('Không tìm thấy khuông nhạc. Hãy chụp thẳng, đủ sáng, thấy rõ cả 5 dòng kẻ và lấp đầy khung hình bằng bản nhạc.');
+          setError(tx('Không tìm thấy khuông nhạc. Hãy chụp thẳng, đủ sáng, thấy rõ cả 5 dòng kẻ và lấp đầy khung hình bằng bản nhạc.'));
         } else {
           setPages(r.pages);
           void readLyrics(r.pages).then(() => readChords(r.pages));
           setKeySig(r.keySig);
           setTimeSig(r.timeSig);
-          if (r.pages.length < list.length) toast(`Có ${list.length - r.pages.length} ảnh không thấy khuông nhạc, đã bỏ qua`);
+          if (r.pages.length < list.length) toast(tx('Có {0} ảnh không thấy khuông nhạc, đã bỏ qua', list.length - r.pages.length));
         }
       } catch (e) {
-        setError((e as Error).message || 'Không đọc được bản nhạc');
+        setError((e as Error).message || tx('Không đọc được bản nhạc'));
       } finally {
         setBusy(false);
       }
@@ -311,7 +312,7 @@ export default function ScanImport({ editSongId, initialFiles }: { editSongId?: 
           skipped += total - images.length;
         } finally { setBusy(false); }
       }
-      if (list.length > room || skipped > 0) toast(`Tối đa ${MAX_IMAGES} trang mỗi lần — đã lấy ${Math.min(room, list.length)} trang đầu`);
+      if (list.length > room || skipped > 0) toast(tx('Tối đa {0} trang mỗi lần — đã lấy {1} trang đầu', MAX_IMAGES, Math.min(room, list.length)));
       if (list.length) {
         const next = [...grays, ...(await Promise.all(list.slice(0, room).map(fileToGray)))];
         setGrays(next);
@@ -489,7 +490,7 @@ export default function ScanImport({ editSongId, initialFiles }: { editSongId?: 
       staffNo++;
       const edges = [-Infinity, ...st.bars, Infinity];
       p.notes.filter((n) => n.staff === si).sort((a, b) => a.x - b.x).forEach((n, k) => {
-        where.set(n.id, `Khuông ${staffNo}, nốt ${k + 1}`);
+        where.set(n.id, tx('Khuông {0}, nốt {1}', staffNo, k + 1));
         const midi = n.rest ? null : nameToMidi(notePitch(n, keySig));
         const prev = score[score.length - 1];
         if (n.tied && midi !== null && prev && prev.midi === midi) { prev.beats += n.beats; return; }
@@ -538,13 +539,13 @@ export default function ScanImport({ editSongId, initialFiles }: { editSongId?: 
       for (const p of next) p.notes.sort((a, b) => a.staff - b.staff || a.x - b.x);
       return next;
     });
-    toast(`Đã sửa ${list.length} chỗ theo bản thu — nghe thử lại để kiểm tra`);
+    toast(tx('Đã sửa {0} chỗ theo bản thu — nghe thử lại để kiểm tra', list.length));
   };
 
   const save = async () => {
     if (!converted) return;
     const fields = {
-      title: title.trim() || 'Bài quét',
+      title: title.trim() || tx('Bài quét'),
       artist: artist.trim() || undefined,
       harpKey: converted.harpKey,
       harpType: converted.harpType === 'diatonic' ? undefined : converted.harpType,
@@ -561,23 +562,23 @@ export default function ScanImport({ editSongId, initialFiles }: { editSongId?: 
     const existing = editSongId ? await db.songs.get(editSongId) : undefined;
     const song = existing
       ? { ...existing, ...fields, updatedAt: Date.now() }
-      : blankSong({ ...fields, source: 'scan', tags: ['Quét'], notes: 'Quét từ ảnh khuông nhạc — nghe lại và sửa nếu có chỗ sai.' });
+      : blankSong({ ...fields, source: 'scan', tags: [tx('Quét')], notes: tx('Quét từ ảnh khuông nhạc — nghe lại và sửa nếu có chỗ sai.') });
     try {
       // ảnh + vị trí nốt + số lỗ kèn được lưu kèm bài để mở lại xem / sửa trên ảnh
       const tokens: Record<string, string | null> = {};
       tokenOf.forEach((v, k) => { tokens[k] = v; });
       await saveScan(song.id, pages, { keySig, timeSig, tempo, target, harpType, allowTranspose, tokens });
     } catch {
-      toast('Không lưu được ảnh quét (bộ nhớ đầy?) — tab vẫn được lưu');
+      toast(tx('Không lưu được ảnh quét (bộ nhớ đầy?) — tab vẫn được lưu'));
     }
     await db.songs.put(song);
     markBaseline(pages, meta);
     await db.scans.delete(draftKey).catch(() => {});
     if (existing) {
-      toast('Đã cập nhật bài');
+      toast(tx('Đã cập nhật bài'));
       nav(`/song/${song.id}`, { replace: true });
     } else {
-      toast('Đã lưu vào thư viện kèm ảnh quét — kiểm tra lại rồi bấm Lưu bài');
+      toast(tx('Đã lưu vào thư viện kèm ảnh quét — kiểm tra lại rồi bấm Lưu bài'));
       nav(`/song/${song.id}/edit`);
     }
   };
@@ -589,11 +590,10 @@ export default function ScanImport({ editSongId, initialFiles }: { editSongId?: 
       <div className="shots">
         {pages.length === 0 && !busy && grays.length < MAX_IMAGES && (
           <div className="shot-add">
-            <button type="button" className="btn btn-primary" onClick={() => camRef.current?.click()} disabled={busy}><Icon name="camera" size={18} /> Chụp bản nhạc</button>
-            <button type="button" className="btn btn-ghost" onClick={() => galRef.current?.click()} disabled={busy}><Icon name="image" size={18} /> Chọn ảnh / PDF có sẵn</button>
+            <button type="button" className="btn btn-primary" onClick={() => camRef.current?.click()} disabled={busy}><Icon name="camera" size={18} /> {tx('Chụp bản nhạc')}</button>
+            <button type="button" className="btn btn-ghost" onClick={() => galRef.current?.click()} disabled={busy}><Icon name="image" size={18} /> {tx('Chọn ảnh / PDF có sẵn')}</button>
             <p className="muted small">
-              Máy tự đọc nốt ngay trên điện thoại — <strong>không cần mạng, không tốn tiền</strong>. Hợp với bản nhạc in khoá Sol hoặc khoá Fa, một bè giai điệu (đọc cả tên hợp âm in trên khuông).
-              Chụp thẳng, đủ sáng, cho bản nhạc lấp đầy khung hình.
+              {tx('Máy tự đọc nốt ngay trên điện thoại —')} <strong>{tx('không cần mạng, không tốn tiền')}</strong>{tx('. Hợp với bản nhạc in khoá Sol hoặc khoá Fa, một bè giai điệu (đọc cả tên hợp âm in trên khuông). Chụp thẳng, đủ sáng, cho bản nhạc lấp đầy khung hình.')}
             </p>
           </div>
         )}
@@ -604,45 +604,45 @@ export default function ScanImport({ editSongId, initialFiles }: { editSongId?: 
       {scanDraft && !dirty && !busy && (
         <div className="notice" role="status">
           <span>
-            Có bản quét dở chưa lưu ({scanDraft.pages.length} trang{scanDraft.title ? <>, <strong>{scanDraft.title}</strong></> : ''}) lúc {new Date(scanDraft.savedAt).toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' })}.
-            {' '}Quét ảnh mới sẽ thay bản này.
+            {tx('Có bản quét dở chưa lưu (')}{scanDraft.pages.length} trang{scanDraft.title ? <>, <strong>{scanDraft.title}</strong></> : ''}{tx(') lúc')} {new Date(scanDraft.savedAt).toLocaleString(LOCALE, { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' })}.
+            {' '}{tx('Quét ảnh mới sẽ thay bản này.')}
           </span>
           <span className="row gap">
-            <button type="button" className="btn btn-primary btn-sm" onClick={restoreScanDraft}>Mở lại</button>
-            <button type="button" className="btn btn-ghost btn-sm" onClick={discardScanDraft}>Bỏ</button>
+            <button type="button" className="btn btn-primary btn-sm" onClick={restoreScanDraft}>{tx('Mở lại')}</button>
+            <button type="button" className="btn btn-ghost btn-sm" onClick={discardScanDraft}>{tx('Bỏ')}</button>
           </span>
         </div>
       )}
-      {busy && <><p className="muted small">Đang đọc nốt nhạc…</p><div className="progress" aria-hidden="true"><span /></div></>}
-      {error && <div className="alert error" role="alert">{error} <button type="button" className="link-btn" onClick={reset}>Chọn ảnh khác</button></div>}
+      {busy && <><p className="muted small">{tx('Đang đọc nốt nhạc…')}</p><div className="progress" aria-hidden="true"><span /></div></>}
+      {error && <div className="alert error" role="alert">{error} <button type="button" className="link-btn" onClick={reset}>{tx('Chọn ảnh khác')}</button></div>}
 
       {pages.length > 0 && (
         <>
           <div className="row between center wrap gap">
             <p className="small">
-              Đọc được <strong>{noteCount} nốt</strong> trên {pages.reduce((t, p) => t + p.staves.length, 0)} khuông.
-              {' '}Chạm vào nốt để sửa. {IS_HARMONICA_APP ? <>Số trên nốt là lỗ kèn: <span className="tok-blow">cam = thổi</span>, <span className="tok-draw">xanh = hút</span>.</> : <>Chữ trên nốt là cách chơi nốt đó trên {BRAND.noun}.</>}
+              {tx('Đọc được')} <strong>{tx('{0} nốt', noteCount)}</strong> {tx('trên')} {pages.reduce((t, p) => t + p.staves.length, 0)} {tx('khuông.')}
+              {' '}{tx('Chạm vào nốt để sửa.')} {IS_HARMONICA_APP ? <>{tx('Số trên nốt là lỗ kèn:')} <span className="tok-blow">{tx('cam = thổi')}</span>, <span className="tok-draw">{tx('xanh = hút')}</span>.</> : <>{tx('Chữ trên nốt là cách chơi nốt đó trên {0}.', BRAND.noun)}</>}
             </p>
             <div className="row gap wrap">
-              <div className="segmented" role="group" aria-label="Phóng to ảnh">
+              <div className="segmented" role="group" aria-label={tx('Phóng to ảnh')}>
                 {[1, 2, 3].map((z) => <button key={z} type="button" className={zoom === z ? 'on' : ''} aria-pressed={zoom === z} onClick={() => setZoom(z)}>{z}×</button>)}
               </div>
-              {!fromStore && grays.length < MAX_IMAGES && <button type="button" className="btn btn-ghost" onClick={() => galRef.current?.click()}><Icon name="plus" size={18} /> Thêm trang</button>}
-              <button type="button" className="btn btn-ghost" onClick={reset}>{fromStore ? 'Quét ảnh khác' : 'Làm lại'}</button>
+              {!fromStore && grays.length < MAX_IMAGES && <button type="button" className="btn btn-ghost" onClick={() => galRef.current?.click()}><Icon name="plus" size={18} /> {tx('Thêm trang')}</button>}
+              <button type="button" className="btn btn-ghost" onClick={reset}>{fromStore ? tx('Quét ảnh khác') : tx('Làm lại')}</button>
             </div>
           </div>
           {guessCount > 0 && (
             <div className="alert" role="note">
-              Máy tự chèn {guessCount} dấu lặng (dấu <strong>?</strong> màu cam) vào ô thiếu phách. Có thể đó là chỗ máy <strong>sót nốt</strong> — hãy so với bản nhạc, nếu đúng là nốt thì chạm vào, bấm “Thành nốt” và chỉnh cao độ.
+              {tx('Máy tự chèn {0} dấu lặng (dấu', guessCount)} <strong>?</strong> {tx('màu cam) vào ô thiếu phách. Có thể đó là chỗ máy')} <strong>{tx('sót nốt')}</strong> {tx('— hãy so với bản nhạc, nếu đúng là nốt thì chạm vào, bấm “Thành nốt” và chỉnh cao độ.')}
             </div>
           )}
           {offBars.size > 0 && (
             <div className="alert" role="note">
-              Có {offBars.size} ô nhịp không đủ/thừa phách (vạch nhịp màu đỏ). Thường do máy đọc nhầm trường độ hoặc sót nốt — chạm vào nốt trong ô đó để sửa.
+              {tx('Có {0} ô nhịp không đủ/thừa phách (vạch nhịp màu đỏ). Thường do máy đọc nhầm trường độ hoặc sót nốt — chạm vào nốt trong ô đó để sửa.', offBars.size)}
             </div>
           )}
 
-          <RecordingCheck score={checkData.score} meter={barBeats(timeSig)} label={(id) => checkData.where.get(id) ?? 'Nốt'} onApply={applySuggestions} onFocus={setSelected} />
+          <RecordingCheck score={checkData.score} meter={barBeats(timeSig)} label={(id) => checkData.where.get(id) ?? tx('Nốt')} onApply={applySuggestions} onFocus={setSelected} />
 
           {pages.map((p, pi) => (
             <figure key={pi} className="scan-page">
@@ -653,49 +653,49 @@ export default function ScanImport({ editSongId, initialFiles }: { editSongId?: 
           ))}
 
           {sel && (
-            <div className="scan-tools" role="toolbar" aria-label="Sửa nốt">
+            <div className="scan-tools" role="toolbar" aria-label={tx('Sửa nốt')}>
               <div className="row center gap">
-                <strong className="grow">{sel.rest ? 'Dấu lặng' : notePitch(sel, keySig)}</strong>
+                <strong className="grow">{sel.rest ? tx('Dấu lặng') : notePitch(sel, keySig)}</strong>
                 {!sel.rest && <>
-                  <button type="button" className="chip" aria-label="Cao lên một bậc" onClick={() => moveStep(sel, 1)}>▲</button>
-                  <button type="button" className="chip" aria-label="Thấp xuống một bậc" onClick={() => moveStep(sel, -1)}>▼</button>
+                  <button type="button" className="chip" aria-label={tx('Cao lên một bậc')} onClick={() => moveStep(sel, 1)}>▲</button>
+                  <button type="button" className="chip" aria-label={tx('Thấp xuống một bậc')} onClick={() => moveStep(sel, -1)}>▼</button>
                 </>}
-                <button type="button" className="icon-btn" onClick={() => setSelected(null)} aria-label="Đóng"><Icon name="close" size={18} /></button>
+                <button type="button" className="icon-btn" onClick={() => setSelected(null)} aria-label={tx('Đóng')}><Icon name="close" size={18} /></button>
               </div>
               <div className="row gap wrap center">
-                {!sel.rest && ([[1, '♯'], [-1, '♭'], [0, '♮'], [null, 'Tự']] as const).map(([a, l]) => (
-                  <button key={l} type="button" className={`chip${sel.accidental === a ? ' on' : ''}`} title={a === null ? 'Theo hoá biểu' : undefined}
+                {!sel.rest && ([[1, '♯'], [-1, '♭'], [0, '♮'], [null, tx('Tự')]] as const).map(([a, l]) => (
+                  <button key={l} type="button" className={`chip${sel.accidental === a ? ' on' : ''}`} title={a === null ? tx('Theo hoá biểu') : undefined}
                     onClick={() => editNote(sel.id, () => ({ accidental: a }))}>{l}</button>
                 ))}
-                <select className="chip-select" aria-label="Trường độ" value={durIndex(sel.beats)} onChange={(e) => editNote(sel.id, () => ({ beats: DURATIONS[Number(e.target.value)]?.beats ?? sel.beats }))}>
+                <select className="chip-select" aria-label={tx('Trường độ')} value={durIndex(sel.beats)} onChange={(e) => editNote(sel.id, () => ({ beats: DURATIONS[Number(e.target.value)]?.beats ?? sel.beats }))}>
                   {DURATIONS.map((d, i) => <option key={d.label} value={i}>{d.label}</option>)}
-                  {durIndex(sel.beats) === -1 && <option value={-1}>{`${+sel.beats.toFixed(2)} phách`}</option>}
+                  {durIndex(sel.beats) === -1 && <option value={-1}>{tx('{0} phách', +sel.beats.toFixed(2))}</option>}
                 </select>
               </div>
               <div className="row gap wrap">
-                <button type="button" className="chip" onClick={() => editNote(sel.id, (n) => ({ rest: !n.rest }))}>{sel.rest ? 'Thành nốt' : 'Thành lặng'}</button>
-                {!sel.rest && <button type="button" className={`chip${sel.tied ? ' on' : ''}`} title="Dấu nối: cộng trường độ vào nốt trước cùng cao độ" onClick={() => editNote(sel.id, (n) => ({ tied: !n.tied }))}>⌒ Nối nốt trước</button>}
-                <button type="button" className="chip" onClick={() => insertAfter(sel)}><Icon name="plus" size={16} /> Thêm sau</button>
-                <button type="button" className="chip" onClick={() => { editNote(sel.id, () => null); setSelected(null); }}><Icon name="trash" size={16} /> Xoá</button>
+                <button type="button" className="chip" onClick={() => editNote(sel.id, (n) => ({ rest: !n.rest }))}>{sel.rest ? tx('Thành nốt') : tx('Thành lặng')}</button>
+                {!sel.rest && <button type="button" className={`chip${sel.tied ? ' on' : ''}`} title={tx('Dấu nối: cộng trường độ vào nốt trước cùng cao độ')} onClick={() => editNote(sel.id, (n) => ({ tied: !n.tied }))}>{tx('⌒ Nối nốt trước')}</button>}
+                <button type="button" className="chip" onClick={() => insertAfter(sel)}><Icon name="plus" size={16} /> {tx('Thêm sau')}</button>
+                <button type="button" className="chip" onClick={() => { editNote(sel.id, () => null); setSelected(null); }}><Icon name="trash" size={16} /> {tx('Xoá')}</button>
               </div>
             </div>
           )}
 
-          <section className="scan-lyrics" aria-label="Lời bài hát">
+          <section className="scan-lyrics" aria-label={tx('Lời bài hát')}>
             <div className="row between center wrap gap">
-              <strong>Lời bài hát</strong>
+              <strong>{tx('Lời bài hát')}</strong>
               {lyricProgress
-                ? <span className="muted small" role="status">Đang đọc lời… {lyricProgress.done}/{lyricProgress.total} khuông</span>
-                : <button type="button" className="btn btn-ghost btn-sm" onClick={() => void readLyrics(pages)}>Đọc lời trên ảnh</button>}
+                ? <span className="muted small" role="status">{tx('Đang đọc lời… {0}/{1} khuông', lyricProgress.done, lyricProgress.total)}</span>
+                : <button type="button" className="btn btn-ghost btn-sm" onClick={() => void readLyrics(pages)}>{tx('Đọc lời trên ảnh')}</button>}
             </div>
             <p className="muted small">
-              {lyricMsg ?? 'Mỗi ô là lời dưới một khuông, các chữ cách nhau bằng dấu cách — chữ thứ mấy vào nốt có lời thứ mấy. Máy đọc có thể sai dấu: sửa lại cho đúng rồi nghe thử.'}
+              {lyricMsg ?? tx('Mỗi ô là lời dưới một khuông, các chữ cách nhau bằng dấu cách — chữ thứ mấy vào nốt có lời thứ mấy. Máy đọc có thể sai dấu: sửa lại cho đúng rồi nghe thử.')}
             </p>
-            {chordMsg && <p className="small" role="status">{chordMsg} Sửa hợp âm sau khi lưu, ở trang bài (nút Hợp âm).</p>}
+            {chordMsg && <p className="small" role="status">{tx('{0} Sửa hợp âm sau khi lưu, ở trang bài (nút Hợp âm).', chordMsg)}</p>}
             {pages.map((p, pi) => p.staves.map((_, si) => {
               const no = pages.slice(0, pi).reduce((t, q) => t + q.staves.length, 0) + si + 1;
               return (
-                <LyricRow key={`${pi}:${si}`} label={`Khuông ${no}`} value={staffLyrics(p.notes, si)}
+                <LyricRow key={`${pi}:${si}`} label={tx('Khuông {0}', no)} value={staffLyrics(p.notes, si)}
                   onCommit={(text) => setLyrics(relyric(lyricSlots(p.notes, si), text))} />
               );
             }))}
@@ -703,39 +703,39 @@ export default function ScanImport({ editSongId, initialFiles }: { editSongId?: 
 
           <div className="row gap wrap end-align">
             <label className="field grow">
-              <span className="field-label">Tên bài</span>
-              <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Ví dụ: Làng tôi" />
-              {titleShot && <ShotHint shot={titleShot} what="tên bài" value={title} onUse={setAutoTitle} />}
+              <span className="field-label">{tx('Tên bài')}</span>
+              <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder={tx('Ví dụ: Làng tôi')} />
+              {titleShot && <ShotHint shot={titleShot} what={tx('tên bài')} value={title} onUse={setAutoTitle} />}
             </label>
             <label className="field grow">
-              <span className="field-label">Tác giả</span>
-              <input value={artist} onChange={(e) => setArtist(e.target.value)} placeholder="Ví dụ: Trịnh Công Sơn" />
-              {artistShot && <ShotHint shot={artistShot} what="tên tác giả" value={artist} onUse={(t) => { autoArtist.current = t; setArtist(t); }} />}
+              <span className="field-label">{tx('Tác giả')}</span>
+              <input value={artist} onChange={(e) => setArtist(e.target.value)} placeholder={tx('Ví dụ: Trịnh Công Sơn')} />
+              {artistShot && <ShotHint shot={artistShot} what={tx('tên tác giả')} value={artist} onUse={(t) => { autoArtist.current = t; setArtist(t); }} />}
             </label>
             <label className="field">
-              <span className="field-label">Hoá biểu</span>
+              <span className="field-label">{tx('Hoá biểu')}</span>
               <select value={keySig} onChange={(e) => setKeySig(Number(e.target.value))}>
                 {Array.from({ length: 15 }, (_, i) => i - 7).map((k) => <option key={k} value={k}>{keySigLabel(k)}</option>)}
               </select>
             </label>
             <label className="field">
-              <span className="field-label">Nhịp</span>
+              <span className="field-label">{tx('Nhịp')}</span>
               <select value={timeSig} onChange={(e) => setTimeSig(e.target.value)}>
                 {(TIME_SIGS.includes(timeSig) ? TIME_SIGS : [timeSig, ...TIME_SIGS]).map((t) => <option key={t}>{t}</option>)}
               </select>
             </label>
             <label className="field">
-              <span className="field-label">Tốc độ (bpm)</span>
+              <span className="field-label">{tx('Tốc độ (bpm)')}</span>
               <input type="number" inputMode="numeric" min={30} max={260} value={tempo} onChange={(e) => setTempo(Math.min(260, Math.max(30, Number(e.target.value) || 90)))} />
             </label>
           </div>
           <div className="row gap wrap end-align">
             <HarpTypeSelect value={harpType} onChange={setHarpType} />
-            <KeySelect value={target} onChange={setTarget} allowAuto label={`Chơi trên ${BRAND.noun}`} harpType={harpType} />
+            <KeySelect value={target} onChange={setTarget} allowAuto label={tx('Chơi trên {0}', BRAND.noun)} harpType={harpType} />
             {target !== 'auto' && (
               <label className="check">
                 <input type="checkbox" checked={allowTranspose} onChange={(e) => setAllowTranspose(e.target.checked)} />
-                Cho phép dịch giọng để dễ thổi
+                {tx('Cho phép dịch giọng để dễ thổi')}
               </label>
             )}
           </div>
@@ -743,21 +743,21 @@ export default function ScanImport({ editSongId, initialFiles }: { editSongId?: 
           {converted && parsed && (
             <section className="ai-result" aria-label="Tab">
               <div>
-                <h2>{title.trim() || 'Bài quét'}</h2>
+                <h2>{title.trim() || tx('Bài quét')}</h2>
                 <p className="muted">
                   {harpName(converted.harpKey, converted.harpType)}
-                  {converted.fit.shift % 12 !== 0 && `, đã dịch giọng ${converted.fit.shift > 0 ? '+' : ''}${converted.fit.shift} nửa cung`}
+                  {converted.fit.shift % 12 !== 0 && tx(', đã dịch giọng {0}{1} nửa cung', converted.fit.shift > 0 ? '+' : '', converted.fit.shift)}
                   {`, ${timeSig}, ${tempo} bpm`}
                 </p>
               </div>
               <p className="small">
-                {converted.fit.stats.natural} nốt thường, {converted.fit.stats.bends} nốt bend
-                {converted.fit.stats.unplayable > 0 && `, ${converted.fit.stats.unplayable} nốt ngoài tầm ${BRAND.noun} (×, đã thành dấu nghỉ)`}.
+                {converted.fit.stats.natural} {tx('nốt thường,')} {converted.fit.stats.bends} {tx('nốt bend')}
+                {converted.fit.stats.unplayable > 0 && tx(', {0} nốt ngoài tầm {1} (×, đã thành dấu nghỉ)', converted.fit.stats.unplayable, BRAND.noun)}.
               </p>
               <TabView parsed={parsed} flat={flat} active={player.active} size="s" showNames={settings.showNoteNames} nameStyle={settings.noteNames} harpType={converted.harpType} harpKey={converted.harpKey} />
               <div className="row gap preview-actions">
                 <MiniPlay p={player} />
-                <button type="button" className="btn btn-primary" onClick={save}>{editSongId ? 'Lưu thay đổi' : 'Lưu vào thư viện'}</button>
+                <button type="button" className="btn btn-primary" onClick={save}>{editSongId ? tx('Lưu thay đổi') : tx('Lưu vào thư viện')}</button>
               </div>
             </section>
           )}
@@ -776,7 +776,7 @@ function LyricRow({ label, value, onCommit }: { label: string; value: string; on
   return (
     <label className="field lyric-row">
       <span className="field-label">{label}</span>
-      <input value={draft} placeholder="(không có lời)" lang="vi"
+      <input value={draft} placeholder={tx('(không có lời)')} lang="vi"
         onFocus={() => { editing.current = true; }}
         onChange={(e) => setDraft(e.target.value)}
         onBlur={commit}

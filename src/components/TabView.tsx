@@ -5,6 +5,7 @@ import { FretTokenText } from './Fretboard';
 import { BAU_GLYPH } from './DanBau';
 import { FlatEvent, ParsedTab, TabLine } from '../lib/tabText';
 import type { ChordSegment } from '../audio/harmony';
+import { t } from '../lib/i18n';
 
 interface Props {
   parsed: ParsedTab;
@@ -91,7 +92,7 @@ const Line = memo(function Line({ events, si, li, index, active, selected, click
         const bad = !isRest && ev.midi === null;
         const cls = ['nt', isRest ? 'rest' : draw ? 'draw' : 'blow', bad ? 'bad' : '', fi === active ? 'is-active' : '', fi === selected ? 'is-selected' : '']
           .filter(Boolean).join(' ');
-        const label = isRest ? `nghỉ ${ev.beats} phách` : `${draw ? 'hút' : 'thổi'} lỗ ${ev.token!.replace('-', '').replace('<', harpType && isTwoRowChromatic(harpType) ? ' hàng trên' : ' bấm gạt')}${ev.lyric ? `, ${ev.lyric}` : ''}`;
+        const label = isRest ? t('nghỉ {0} phách', ev.beats) : t('{0} lỗ {1}{2}', draw ? t('hút') : t('thổi'), ev.token!.replace('-', '').replace('<', harpType && isTwoRowChromatic(harpType) ? t(' hàng trên') : t(' bấm gạt')), ev.lyric ? `, ${ev.lyric}` : '');
         const note = (
           <button
             type="button"
@@ -103,7 +104,7 @@ const Line = memo(function Line({ events, si, li, index, active, selected, click
             tabIndex={clickable ? 0 : -1}
             aria-label={label}
           >
-            {fingerNums && <span className={`nt-fnum${manualFingers?.has(fi) ? ' manual' : ''}`} aria-label={fingerNums[fi] ? `ngón ${fingerNums[fi]}` : undefined}>{fingerNums[fi] ?? ' '}</span>}
+            {fingerNums && <span className={`nt-fnum${manualFingers?.has(fi) ? ' manual' : ''}`} aria-label={fingerNums[fi] ? t('ngón {0}', fingerNums[fi]) : undefined}>{fingerNums[fi] ?? ' '}</span>}
             {showNames && <span className="nt-name">{ev.midi !== null ? midiToName(ev.midi, nameStyle, false) : ''}</span>}
             <span className="nt-hole">{isRest ? '–' : <TokenText token={ev.token!} nameStyle={nameStyle} strings={harpType && isFretted(harpType) ? holeCount(harpType) : undefined} />}</span>
             {harpType && !isRest && !isFretted(harpType) && (() => { const f = fingeringOf(ev.token, harpType, harpKey); return f ? <span className="nt-finger"><FingeringIcon fingers={f} size="s" /></span> : null; })()}
@@ -118,7 +119,7 @@ const Line = memo(function Line({ events, si, li, index, active, selected, click
               {segs?.map((seg) => (
                 <button key={seg.start} type="button" className={`nt-chord${seg.manual ? ' manual' : ''}`}
                   onClick={() => onChord(seg)}
-                  aria-label={`Hợp âm ${seg.chord.name}${seg.manual ? ' (chọn tay)' : ' (tự đoán)'}, chạm để đổi`}>
+                  aria-label={t('Hợp âm {0}{1}, chạm để đổi', seg.chord.name, seg.manual ? t(' (chọn tay)') : t(' (tự đoán)'))}>
                   {seg.chord.name}
                 </button>
               ))}
@@ -207,7 +208,7 @@ function TabViewInner({ parsed, flat, active, selected, onNoteClick, showNames, 
     window.scrollBy({ top: (r.top + r.bottom) / 2 - (top + bottom) / 2, behavior: reduce ? 'auto' : 'smooth' });
   }, [selected]);
 
-  if (!parsed.sections.length) return <p className="muted">Chưa có nốt nào.</p>;
+  if (!parsed.sections.length) return <p className="muted">{t('Chưa có nốt nào.')}</p>;
   const act = active != null ? flat[active] : undefined;
   const sel = selected != null ? flat[selected] : undefined;
 

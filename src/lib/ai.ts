@@ -8,14 +8,15 @@ import { TabEvent, TabSection, serializeTab } from './tabText';
 import type { Settings } from './types';
 import type { BeatStyle } from '../audio/patterns';
 import { suggestStyle } from '../audio/suggest';
+import { t as tx } from './i18n';
 
 export async function transcribe(input: AiInput, s: Settings, signal?: AbortSignal): Promise<AiResponse> {
   const err = validateInput(input);
   if (err) throw new Error(err);
-  if (typeof navigator !== 'undefined' && !navigator.onLine) throw new Error('Bạn đang offline — tính năng AI cần mạng');
+  if (typeof navigator !== 'undefined' && !navigator.onLine) throw new Error(tx('Bạn đang offline — tính năng AI cần mạng'));
 
   if (s.aiMode === 'direct') {
-    if (!s.geminiKey) throw new Error('Chưa nhập Gemini API key trong Cài đặt');
+    if (!s.geminiKey) throw new Error(tx('Chưa nhập Gemini API key trong Cài đặt'));
     const res = await fetch(geminiUrl(s.model), {
       method: 'POST',
       headers: { 'content-type': 'application/json', 'x-goog-api-key': s.geminiKey },
@@ -24,15 +25,15 @@ export async function transcribe(input: AiInput, s: Settings, signal?: AbortSign
     });
     const raw = await res.json().catch(() => ({}));
     if (!res.ok) {
-      if (res.status === 400 && /API key/i.test(JSON.stringify(raw))) throw new Error('API key không hợp lệ');
-      if (res.status === 429) throw new Error('Vượt hạn mức của Gemini, đợi một lát rồi thử lại');
-      if (res.status === 404) throw new Error(`Không tìm thấy model "${s.model}" — kiểm tra lại tên model trong Cài đặt`);
-      throw new Error(raw?.error?.message ?? `Lỗi Gemini (${res.status})`);
+      if (res.status === 400 && /API key/i.test(JSON.stringify(raw))) throw new Error(tx('API key không hợp lệ'));
+      if (res.status === 429) throw new Error(tx('Vượt hạn mức của Gemini, đợi một lát rồi thử lại'));
+      if (res.status === 404) throw new Error(tx('Không tìm thấy model "{0}" — kiểm tra lại tên model trong Cài đặt', s.model));
+      throw new Error(raw?.error?.message ?? tx('Lỗi Gemini ({0})', res.status));
     }
     return parseGeminiResponse(raw, s.model);
   }
 
-  if (!s.proxyUrl) throw new Error('Chưa cấu hình địa chỉ máy chủ AI trong Cài đặt');
+  if (!s.proxyUrl) throw new Error(tx('Chưa cấu hình địa chỉ máy chủ AI trong Cài đặt'));
   const res = await fetch(`${s.proxyUrl.replace(/\/+$/, '')}/v1/transcribe`, {
     method: 'POST',
     headers: { 'content-type': 'application/json', ...(s.appToken ? { 'x-app-token': s.appToken } : {}) },
@@ -40,14 +41,14 @@ export async function transcribe(input: AiInput, s: Settings, signal?: AbortSign
     signal,
   });
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data?.error ?? `Máy chủ AI lỗi (${res.status})`);
+  if (!res.ok) throw new Error(data?.error ?? tx('Máy chủ AI lỗi ({0})', res.status));
   return data as AiResponse;
 }
 
 /** Nén ảnh trước khi gửi: cạnh dài tối đa 2000px, JPEG 85% → rẻ hơn và nhanh hơn */
 export async function prepareImage(file: File): Promise<{ mimeType: string; data: string; preview: string }> {
   const bmp = await createImageBitmap(file).catch(() => null);
-  if (!bmp) throw new Error(`Không đọc được ảnh "${file.name}"`);
+  if (!bmp) throw new Error(tx('Không đọc được ảnh "{0}"', file.name));
   const scale = Math.min(1, 2000 / Math.max(bmp.width, bmp.height));
   const canvas = document.createElement('canvas');
   canvas.width = Math.round(bmp.width * scale);

@@ -3,6 +3,7 @@
  * Ghi chú ngắn vừa một dòng thì không có nút mở. Khi in luôn in đủ.
  */
 import { useLayoutEffect, useRef, useState } from 'react';
+import { t } from '../lib/i18n';
 
 export function SongNotes({ text }: { text: string }) {
   const [open, setOpen] = useState(false);
@@ -24,7 +25,7 @@ export function SongNotes({ text }: { text: string }) {
       <span ref={ref} className="sn-text">{text}</span>
       {(long || open) && (
         <button type="button" className="sn-more link-btn no-print" aria-expanded={open} onClick={() => setOpen((v) => !v)}>
-          {open ? 'Thu gọn' : 'Xem thêm'}
+          {open ? t('Thu gọn') : t('Xem thêm')}
         </button>
       )}
     </div>

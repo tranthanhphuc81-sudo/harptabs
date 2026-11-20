@@ -6,6 +6,7 @@ import { HarpType, isFretted, isOcarina, isDanBau, isPianica, isOrgan, isTranh, 
 import type { BeatStyle } from './patterns';
 import type { Instrument } from './engine';
 import { estimateTonality, parseTonality } from './harmony';
+import { t } from '../lib/i18n';
 
 /** bỏ dấu tiếng Việt, chữ thường (để so từ khoá) */
 const fold = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D').toLowerCase();
@@ -28,23 +29,23 @@ export interface StyleSuggestion { style: BeatStyle; reason: string }
 
 /** từ khoá thể loại (đã bỏ dấu, chữ thường) → kiểu nhịp; xét theo thứ tự, khớp trước thắng */
 const GENRES: [RegExp, BeatStyle, string][] = [
-  [/\bbolero\b/, 'bolero', 'có chữ "bolero"'],
-  [/\brumba\b/, 'rumba', 'có chữ "rumba"'],
-  [/\btango\b/, 'tango', 'có chữ "tango"'],
-  [/cha ?cha/, 'chacha', 'có chữ "cha cha"'],
-  [/\bbossa\b/, 'bossa', 'có chữ "bossa"'],
-  [/\bsamba\b/, 'samba', 'có chữ "samba"'],
-  [/\bsalsa\b/, 'salsa', 'có chữ "salsa"'],
-  [/\breggae\b/, 'reggae', 'có chữ "reggae"'],
-  [/\bska\b/, 'ska', 'có chữ "ska"'],
-  [/\bdisco\b/, 'disco', 'có chữ "disco"'],
-  [/\bjazz|\bswing\b/, 'jazz', 'nhạc jazz'],
-  [/\bpolka\b/, 'polka', 'có chữ "polka"'],
-  [/\bmarch\b|hanh khuc/, 'march', 'hành khúc'],
-  [/\bvalse\b|\bwaltz\b/, 'waltz', 'điệu valse'],
-  [/\bblues\b/, 'shuffle', 'nhạc blues'],
-  [/slow ?rock/, 'slowrock', 'có chữ "slow rock"'],
-  [/\brock\b/, 'rock', 'nhạc rock'],
+  [/\bbolero\b/, 'bolero', t('có chữ "bolero"')],
+  [/\brumba\b/, 'rumba', t('có chữ "rumba"')],
+  [/\btango\b/, 'tango', t('có chữ "tango"')],
+  [/cha ?cha/, 'chacha', t('có chữ "cha cha"')],
+  [/\bbossa\b/, 'bossa', t('có chữ "bossa"')],
+  [/\bsamba\b/, 'samba', t('có chữ "samba"')],
+  [/\bsalsa\b/, 'salsa', t('có chữ "salsa"')],
+  [/\breggae\b/, 'reggae', t('có chữ "reggae"')],
+  [/\bska\b/, 'ska', t('có chữ "ska"')],
+  [/\bdisco\b/, 'disco', t('có chữ "disco"')],
+  [/\bjazz|\bswing\b/, 'jazz', t('nhạc jazz')],
+  [/\bpolka\b/, 'polka', t('có chữ "polka"')],
+  [/\bmarch\b|hanh khuc/, 'march', t('hành khúc')],
+  [/\bvalse\b|\bwaltz\b/, 'waltz', t('điệu valse')],
+  [/\bblues\b/, 'shuffle', t('nhạc blues')],
+  [/slow ?rock/, 'slowrock', t('có chữ "slow rock"')],
+  [/\brock\b/, 'rock', t('nhạc rock')],
 ];
 
 const COUNTRY = /\bcountry\b|dong que|cao boi|fiddle|bluegrass/;
@@ -73,45 +74,45 @@ export function rhythmFeatures(notes: NoteLike[], pickupBeats = 0) {
 
 export function suggestStyle(song: SongLike, notes: NoteLike[]): StyleSuggestion {
   const text = fold([song.title, song.artist, song.notes, ...(song.tags ?? [])].filter(Boolean).join(' '));
-  for (const [re, style, why] of GENRES) if (re.test(text)) return { style, reason: `Bài ${why}` };
+  for (const [re, style, why] of GENRES) if (re.test(text)) return { style, reason: t('Bài {0}', why) };
 
   const beats = Number(song.timeSig.split('/')[0]) || 4;
   const bpm = song.bpm;
-  if (beats === 3) return { style: 'waltz', reason: 'Nhịp 3/4' };
-  if (beats === 6) return { style: 'waltz', reason: 'Nhịp 6/8 đung đưa' };
-  if (LYRICAL.test(text)) return { style: 'ballad', reason: 'Bài trữ tình, êm' };
+  if (beats === 3) return { style: 'waltz', reason: t('Nhịp 3/4') };
+  if (beats === 6) return { style: 'waltz', reason: t('Nhịp 6/8 đung đưa') };
+  if (LYRICAL.test(text)) return { style: 'ballad', reason: t('Bài trữ tình, êm') };
   if (COUNTRY.test(text)) {
     return bpm >= 100
-      ? { style: 'train', reason: 'Nhạc đồng quê, nhịp nhanh' }
-      : { style: 'country', reason: 'Nhạc đồng quê, nhịp vừa' };
+      ? { style: 'train', reason: t('Nhạc đồng quê, nhịp nhanh') }
+      : { style: 'country', reason: t('Nhạc đồng quê, nhịp vừa') };
   }
 
   if (beats === 2) {
-    if (bpm >= 112) return { style: 'polka', reason: 'Nhịp 2/4, nhanh' };
-    return { style: 'march', reason: 'Nhịp 2/4' };
+    if (bpm >= 112) return { style: 'polka', reason: t('Nhịp 2/4, nhanh') };
+    return { style: 'march', reason: t('Nhịp 2/4') };
   }
 
   const f = rhythmFeatures(notes, song.pickupBeats);
   const key = parseTonality(song.songKey) ?? estimateTonality(notes);
   if (f.triplet > 0.25 || f.dotted > 0.25) {
     return bpm < 80
-      ? { style: 'slowrock', reason: 'Giai điệu chùm ba, chậm' }
-      : { style: 'shuffle', reason: 'Giai điệu lắc (chùm ba / chấm dôi)' };
+      ? { style: 'slowrock', reason: t('Giai điệu chùm ba, chậm') }
+      : { style: 'shuffle', reason: t('Giai điệu lắc (chùm ba / chấm dôi)') };
   }
 
-  if (f.vietnamese && key.minor && bpm <= 110) return { style: 'bolero', reason: 'Lời Việt, giọng thứ, chậm vừa' };
-  if (key.minor && f.synco > 0.15) return { style: 'rumba', reason: 'Giọng thứ, nhiều nốt lệch nhịp' };
-  if (key.minor && bpm >= 100) return { style: 'tango', reason: 'Giọng thứ, nhịp vừa nhanh' };
+  if (f.vietnamese && key.minor && bpm <= 110) return { style: 'bolero', reason: t('Lời Việt, giọng thứ, chậm vừa') };
+  if (key.minor && f.synco > 0.15) return { style: 'rumba', reason: t('Giọng thứ, nhiều nốt lệch nhịp') };
+  if (key.minor && bpm >= 100) return { style: 'tango', reason: t('Giọng thứ, nhịp vừa nhanh') };
 
-  if (FESTIVE.test(text) && bpm >= 115) return { style: 'train', reason: 'Bài Giáng sinh / năm mới, nhịp nhanh' };
-  if (f.synco > 0.2) return { style: bpm >= 110 ? 'rock' : 'rumba', reason: 'Nhiều nốt lệch nhịp' };
-  if (bpm < 92) return { style: f.vietnamese ? 'rumba' : 'ballad', reason: f.vietnamese ? 'Lời Việt, chậm' : 'Nhịp chậm, êm' };
+  if (FESTIVE.test(text) && bpm >= 115) return { style: 'train', reason: t('Bài Giáng sinh / năm mới, nhịp nhanh') };
+  if (f.synco > 0.2) return { style: bpm >= 110 ? 'rock' : 'rumba', reason: t('Nhiều nốt lệch nhịp') };
+  if (bpm < 92) return { style: f.vietnamese ? 'rumba' : 'ballad', reason: f.vietnamese ? t('Lời Việt, chậm') : t('Nhịp chậm, êm') };
   if (bpm >= 110) {
     return FOLK.test(text)
-      ? { style: 'train', reason: 'Dân ca, nhịp vừa nhanh' }
-      : { style: 'rock', reason: 'Nhịp vừa nhanh' };
+      ? { style: 'train', reason: t('Dân ca, nhịp vừa nhanh') }
+      : { style: 'rock', reason: t('Nhịp vừa nhanh') };
   }
-  return { style: 'ballad', reason: 'Nhịp vừa' };
+  return { style: 'ballad', reason: t('Nhịp vừa') };
 }
 
 export interface InstrumentSuggestion { instrument: Instrument; reason: string }
@@ -182,19 +183,19 @@ const FOREIGN_FOLK = /dan ca (my|anh|phap|duc|nga|y|ai ?len|scotland|tay ban nha
 
 /** Nhạc cụ hợp với từng kiểu nhịp (kiểu không ghi = kèn harmonica) */
 const STYLE_INSTRUMENT: Partial<Record<BeatStyle, [Instrument, string]>> = {
-  bolero: ['guitar', 'Bolero hợp guitar'],
-  rumba: ['guitar', 'Rumba hợp guitar'],
-  bossa: ['guitar', 'Bossa nova hợp guitar'],
-  tango: ['accordion', 'Tango hợp accordion'],
-  polka: ['accordion', 'Polka hợp accordion'],
-  jazz: ['sax', 'Jazz hợp saxophone'],
-  ska: ['sax', 'Ska hợp kèn saxophone'],
-  slowrock: ['piano', 'Slow rock hợp piano'],
-  ballad: ['piano', 'Ballad hợp piano'],
-  chacha: ['organ', 'Cha cha cha hợp organ'],
-  disco: ['organ', 'Disco hợp organ'],
-  salsa: ['piano', 'Salsa hợp piano'],
-  samba: ['flute', 'Samba hợp sáo'],
+  bolero: ['guitar', t('Bolero hợp guitar')],
+  rumba: ['guitar', t('Rumba hợp guitar')],
+  bossa: ['guitar', t('Bossa nova hợp guitar')],
+  tango: ['accordion', t('Tango hợp accordion')],
+  polka: ['accordion', t('Polka hợp accordion')],
+  jazz: ['sax', t('Jazz hợp saxophone')],
+  ska: ['sax', t('Ska hợp kèn saxophone')],
+  slowrock: ['piano', t('Slow rock hợp piano')],
+  ballad: ['piano', t('Ballad hợp piano')],
+  chacha: ['organ', t('Cha cha cha hợp organ')],
+  disco: ['organ', t('Disco hợp organ')],
+  salsa: ['piano', t('Salsa hợp piano')],
+  samba: ['flute', t('Samba hợp sáo')],
 };
 
 const median = (xs: number[]) => {
@@ -209,37 +210,37 @@ const median = (xs: number[]) => {
  */
 export function suggestInstrument(song: SongLike, notes: NoteLike[], style: BeatStyle): InstrumentSuggestion {
   // bài cho kèn tremolo: phát bằng tiếng kèn tremolo
-  if (isTremolo(song.harpType)) return { instrument: 'tremolo', reason: 'Bài cho kèn tremolo' };
+  if (isTremolo(song.harpType)) return { instrument: 'tremolo', reason: t('Bài cho kèn tremolo') };
   // bài cho sáo dọc: phát bằng tiếng sáo dọc để nghe đúng như mình sẽ thổi
-  if (isRecorder(song.harpType)) return { instrument: 'recorder', reason: 'Bài cho sáo dọc' };
-  if (isSaoTruc(song.harpType)) return { instrument: 'flute', reason: 'Bài cho sáo trúc' };
-  if (isKalimba(song.harpType)) return { instrument: 'kalimba', reason: 'Bài cho kalimba' };
-  if (isDanBau(song.harpType)) return { instrument: 'danbau', reason: 'Bài cho đàn bầu' };
-  if (isTranh(song.harpType)) return { instrument: 'dantranh', reason: 'Bài cho đàn tranh' };
-  if (isOcarina(song.harpType)) return { instrument: 'ocarina', reason: 'Bài cho ocarina' };
-  if (isPianica(song.harpType)) return { instrument: 'accordion', reason: 'Bài cho kèn pianica' };
-  if (isOrgan(song.harpType)) return { instrument: 'piano', reason: 'Bài cho đàn organ / piano' };
-  if (isFretted(song.harpType)) return song.harpType === 'ukulele4' ? { instrument: 'ukulele', reason: 'Bài cho ukulele' } : { instrument: 'guitar', reason: 'Bài cho guitar' };
+  if (isRecorder(song.harpType)) return { instrument: 'recorder', reason: t('Bài cho sáo dọc') };
+  if (isSaoTruc(song.harpType)) return { instrument: 'flute', reason: t('Bài cho sáo trúc') };
+  if (isKalimba(song.harpType)) return { instrument: 'kalimba', reason: t('Bài cho kalimba') };
+  if (isDanBau(song.harpType)) return { instrument: 'danbau', reason: t('Bài cho đàn bầu') };
+  if (isTranh(song.harpType)) return { instrument: 'dantranh', reason: t('Bài cho đàn tranh') };
+  if (isOcarina(song.harpType)) return { instrument: 'ocarina', reason: t('Bài cho ocarina') };
+  if (isPianica(song.harpType)) return { instrument: 'accordion', reason: t('Bài cho kèn pianica') };
+  if (isOrgan(song.harpType)) return { instrument: 'piano', reason: t('Bài cho đàn organ / piano') };
+  if (isFretted(song.harpType)) return song.harpType === 'ukulele4' ? { instrument: 'ukulele', reason: t('Bài cho ukulele') } : { instrument: 'guitar', reason: t('Bài cho guitar') };
   const text = fold([song.title, song.artist, song.notes, ...(song.tags ?? [])].filter(Boolean).join(' '));
-  for (const [re, instrument] of NAMED_INSTRUMENTS) if (re.test(text)) return { instrument, reason: 'Bài ghi rõ nhạc cụ' };
-  if (HYMN.test(text)) return { instrument: 'organ', reason: 'Thánh ca hợp organ' };
-  if (LULLABY.test(text) && !VN_FOLK.test(text)) return { instrument: 'musicbox', reason: 'Bài hát ru hợp hộp nhạc' };
+  for (const [re, instrument] of NAMED_INSTRUMENTS) if (re.test(text)) return { instrument, reason: t('Bài ghi rõ nhạc cụ') };
+  if (HYMN.test(text)) return { instrument: 'organ', reason: t('Thánh ca hợp organ') };
+  if (LULLABY.test(text) && !VN_FOLK.test(text)) return { instrument: 'musicbox', reason: t('Bài hát ru hợp hộp nhạc') };
   const vnLyrics = VIET_CHARS.test(notes.map((n) => n.lyric ?? '').join(' '));
   if (VN_FOLK.test(text) || (FOLK_ANY.test(text) && !FOREIGN_FOLK.test(text) && vnLyrics)) {
     // dân ca chậm, ngân dài: đàn bầu; còn lại sáo trúc
-    if (song.bpm < 76) return { instrument: 'danbau', reason: 'Dân ca Việt chậm hợp đàn bầu' };
-    return { instrument: 'flute', reason: 'Dân ca Việt hợp sáo trúc' };
+    if (song.bpm < 76) return { instrument: 'danbau', reason: t('Dân ca Việt chậm hợp đàn bầu') };
+    return { instrument: 'flute', reason: t('Dân ca Việt hợp sáo trúc') };
   }
 
   const pitch = median(notes.filter((n) => n.midi !== null).map((n) => n.midi as number));
   if (style === 'waltz') {
     return song.bpm >= 150
-      ? { instrument: 'accordion', reason: 'Valse nhanh hợp accordion' }
-      : { instrument: 'violin', reason: 'Valse hợp violin' };
+      ? { instrument: 'accordion', reason: t('Valse nhanh hợp accordion') }
+      : { instrument: 'violin', reason: t('Valse hợp violin') };
   }
   // ballad chậm mà giai điệu nằm cao: violin hát ngân hợp hơn piano
-  if (style === 'ballad' && song.bpm < 75 && pitch >= 74) return { instrument: 'violin', reason: 'Ballad chậm, giai điệu cao hợp violin' };
+  if (style === 'ballad' && song.bpm < 75 && pitch >= 74) return { instrument: 'violin', reason: t('Ballad chậm, giai điệu cao hợp violin') };
   const byStyle = STYLE_INSTRUMENT[style];
   if (byStyle) return { instrument: byStyle[0], reason: byStyle[1] };
-  return { instrument: 'harmonica', reason: 'Giữ tiếng kèn harmonica' };
+  return { instrument: 'harmonica', reason: t('Giữ tiếng kèn harmonica') };
 }

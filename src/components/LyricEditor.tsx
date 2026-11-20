@@ -3,6 +3,7 @@ import type { HarpKey, HarpType } from '../lib/harp';
 import { lyricLines, setLyrics } from '../lib/tabEdit';
 import { splitLyrics } from '../lib/tabText';
 import { TokenText } from './TabView';
+import { t as tx } from '../lib/i18n';
 
 /**
  * Sửa lời cả bài theo từng dòng tab: mỗi dòng một ô, chữ cách nhau bằng dấu cách —
@@ -28,10 +29,9 @@ export function LyricEditor({ body, harpKey, harpType, onSave, onClose }: {
 
   return (
     <dialog ref={ref} className="sheet lyric-editor" onClose={onClose} aria-labelledby="le-title">
-      <h2 id="le-title">Sửa lời</h2>
+      <h2 id="le-title">{tx('Sửa lời')}</h2>
       <p className="small muted">
-        Mỗi ô là lời của một dòng tab, các chữ cách nhau bằng dấu cách: chữ thứ mấy vào nốt thứ mấy.
-        Gạch nối <code>Hap-py</code> cho âm tiết cùng một từ, <code>_</code> cho nốt luyến (không có chữ).
+        {tx('Mỗi ô là lời của một dòng tab, các chữ cách nhau bằng dấu cách: chữ thứ mấy vào nốt thứ mấy. Gạch nối')} <code>Hap-py</code> {tx('cho âm tiết cùng một từ,')} <code>_</code> {tx('cho nốt luyến (không có chữ).')}
       </p>
       <div className="le-lines">
         {lines.map((l, i) => {
@@ -47,8 +47,8 @@ export function LyricEditor({ body, harpKey, harpType, onSave, onClose }: {
                 {l.tokens.map((t, j) => <span key={j} className={t.startsWith('-') ? 'draw' : 'blow'}><TokenText token={t} /></span>)}
               </div>
               <label className="le-input">
-                <span className="sr-only">Lời dòng {i + 1}</span>
-                <input value={text} lang="vi" placeholder="(không có lời)"
+                <span className="sr-only">{tx('Lời dòng {0}', i + 1)}</span>
+                <input value={text} lang="vi" placeholder={tx('(không có lời)')}
                   onChange={(e) => setTexts((m) => new Map(m).set(k, e.target.value))} />
                 <span className={`small ${over ? 'danger' : 'muted'}`}>{words}/{l.tokens.length}</span>
               </label>
@@ -57,8 +57,8 @@ export function LyricEditor({ body, harpKey, harpType, onSave, onClose }: {
         })}
       </div>
       <div className="row gap end">
-        <button type="button" className="btn btn-ghost" onClick={() => ref.current?.close()}>Huỷ</button>
-        <button type="button" className="btn btn-primary" onClick={save} disabled={!changed.length}>Lưu lời</button>
+        <button type="button" className="btn btn-ghost" onClick={() => ref.current?.close()}>{tx('Huỷ')}</button>
+        <button type="button" className="btn btn-primary" onClick={save} disabled={!changed.length}>{tx('Lưu lời')}</button>
       </div>
     </dialog>
   );

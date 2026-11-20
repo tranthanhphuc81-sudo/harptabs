@@ -1,6 +1,7 @@
 import { previewNote } from '../audio/engine';
 import { getTranhTuning, harpLayout, HarpKey, HarpType, holeCount, keyOffset, midiToName, NoteNameStyle } from '../lib/harp';
 import { tranhStrings } from '../data/tranh';
+import { t as tx } from '../lib/i18n';
 
 /**
  * Đàn tranh: hình các dây thu nhỏ dưới mỗi nốt (dây 1 trầm nhất bên trái, dây cần gảy tô màu, nhấn thì có mũi tên),
@@ -40,7 +41,7 @@ export function TranhChart({ harpType, harpKey = 'C', highlight = [], selected, 
   const layout = harpLayout(harpKey, harpType);
   return (
     <div className="tranh-wrap">
-      <div className="tranh-chart" role="group" aria-label="Sơ đồ đàn tranh" style={{ gridTemplateColumns: `repeat(${n}, minmax(1.9rem, 1fr))` }}>
+      <div className="tranh-chart" role="group" aria-label={tx('Sơ đồ đàn tranh')} style={{ gridTemplateColumns: `repeat(${n}, minmax(1.9rem, 1fr))` }}>
         {opens.map((m, i) => {
           const s = i + 1;
           const t = String(s);
@@ -49,14 +50,14 @@ export function TranhChart({ harpType, harpKey = 'C', highlight = [], selected, 
               className={`tc-string${hiStrings.has(s) ? ' on' : ''}${selected && /^(\d+)/.exec(selected)?.[1] === t ? ' sel' : ''}`}
               style={{ height: `${100 - i * (40 / n)}%` }}
               onClick={interactive ? () => (onPick ? onPick(t) : previewNote(m)) : undefined}
-              aria-label={`Dây ${s}: ${midiToName(m, nameStyle)}`}>
+              aria-label={tx('Dây {0}: {1}', s, midiToName(m, nameStyle))}>
               <span className="tc-num">{s}</span>
               <span className="trc-name">{midiToName(m, nameStyle, false)}</span>
             </button>
           );
         })}
       </div>
-      {layout.length > 0 && <p className="small muted trc-hint">Dây 1 (trái) trầm nhất. Nốt không có trên dây thì nhấn: <strong>↑½</strong> nhấn nửa cung, <strong>↑1</strong> nhấn một cung.</p>}
+      {layout.length > 0 && <p className="small muted trc-hint">{tx('Dây 1 (trái) trầm nhất. Nốt không có trên dây thì nhấn:')} <strong>↑½</strong> {tx('nhấn nửa cung,')} <strong>↑1</strong> {tx('nhấn một cung.')}</p>}
     </div>
   );
 }

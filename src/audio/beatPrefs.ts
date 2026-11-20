@@ -10,6 +10,7 @@ import { IS_GUITAR_APP, IS_KALIMBA_APP, IS_RECORDER_APP, IS_PIANICA_APP, IS_TRAN
 import { useSyncExternalStore } from 'react';
 import { Accomp, applyMix, DrumKit, Instrument } from './engine';
 import type { BeatStyle } from './patterns';
+import { t } from '../lib/i18n';
 
 export interface BeatPrefs {
   /** nhạc cụ phát giai điệu */
@@ -102,16 +103,16 @@ export const TEMPO_RANGES: Partial<Record<BeatStyle, [number, number]>> = {
 };
 
 export const KIT_OPTIONS: { value: DrumKit; label: string }[] = [
-  { value: 'acoustic', label: 'Trống thật' },
-  { value: 'electronic', label: 'Điện tử' },
-  { value: 'soft', label: 'Nhẹ (chổi)' },
+  { value: 'acoustic', label: t('Trống thật') },
+  { value: 'electronic', label: t('Điện tử') },
+  { value: 'soft', label: t('Nhẹ (chổi)') },
 ];
 
 export const SWING_OPTIONS = [
-  { value: 0, label: 'Thẳng' },
-  { value: 0.12, label: 'Lắc nhẹ' },
-  { value: 0.22, label: 'Lắc vừa' },
-  { value: 0.33, label: 'Lắc đậm' },
+  { value: 0, label: t('Thẳng') },
+  { value: 0.12, label: t('Lắc nhẹ') },
+  { value: 0.22, label: t('Lắc vừa') },
+  { value: 0.33, label: t('Lắc đậm') },
 ];
 
 /** Cài đặt thực dùng khi phát kiểu nhịp `style` (`songInstrument`: nhạc cụ tự chọn cho bài đang mở) */

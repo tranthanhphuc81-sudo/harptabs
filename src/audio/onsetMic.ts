@@ -3,6 +3,7 @@
  * một AudioWorklet tính năng lượng từng khối 128 mẫu kèm thời điểm của khối, gửi về theo lô.
  */
 import { audio } from './engine';
+import { t as tx } from '../lib/i18n';
 
 const WORKLET = `
 class EnergyTap extends AudioWorkletProcessor {
@@ -33,8 +34,8 @@ export class OnsetMic {
 
   async start() {
     const c = audio();
-    if (!c.audioWorklet || typeof AudioWorkletNode === 'undefined') throw new Error('Trình duyệt này chưa hỗ trợ đo nhịp (cần Chrome / Safari mới hơn).');
-    if (!navigator.mediaDevices?.getUserMedia) throw new Error('Thiết bị không hỗ trợ micro trong trình duyệt này');
+    if (!c.audioWorklet || typeof AudioWorkletNode === 'undefined') throw new Error(tx('Trình duyệt này chưa hỗ trợ đo nhịp (cần Chrome / Safari mới hơn).'));
+    if (!navigator.mediaDevices?.getUserMedia) throw new Error(tx('Thiết bị không hỗ trợ micro trong trình duyệt này'));
     await c.resume();
     loaded ??= c.audioWorklet.addModule(URL.createObjectURL(new Blob([WORKLET], { type: 'application/javascript' })));
     await loaded;

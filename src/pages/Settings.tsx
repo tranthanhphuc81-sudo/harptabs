@@ -13,10 +13,11 @@ import { Icon } from '../components/Icon';
 import { ThemePicker } from '../components/ThemePicker';
 import { SyncCalibrator } from '../components/SyncCalibrator';
 import { useAppState } from '../state';
+import { LANG, LANG_CHOSEN, LOCALE, setLang, t as tx, type Lang } from '../lib/i18n';
 
 const MODELS = ['gemini-3.5-flash-lite', 'gemini-3.1-flash-lite'];
 
-const num = (n: number) => n.toLocaleString('vi-VN', { maximumFractionDigits: 1 });
+const num = (n: number) => n.toLocaleString(LOCALE, { maximumFractionDigits: 1 });
 const mb = (b: number) => (b < 1e6 ? `${Math.max(1, Math.round(b / 1e3))} KB` : b < 1e9 ? `${num(b / 1e6)} MB` : `${num(b / 1e9)} GB`);
 
 /** Trình duyệt có giữ dữ liệu lâu dài không, đang dùng bao nhiêu bộ nhớ */
@@ -58,7 +59,7 @@ export default function SettingsPage() {
     await deleteAllRecordings();
     setConfirmRecs(false);
     void storage.refresh();
-    toast('Đã xoá hết bản thu karaoke');
+    toast(tx('Đã xoá hết bản thu karaoke'));
   };
   const backup = useLiveQuery(async () => {
     const [songs, meta] = await Promise.all([db.songs.toArray(), loadBackupMeta()]);
@@ -76,48 +77,48 @@ export default function SettingsPage() {
     };
   }, []);
 
-  const vnd = (usd: number) => `${Math.round(usd * VND_PER_USD).toLocaleString('vi-VN')}đ`;
+  const vnd = (usd: number) => tx('{0}đ', Math.round(usd * VND_PER_USD).toLocaleString(LOCALE));
 
   const test = async () => {
     setTesting(true);
     try {
       if (s.aiMode === 'proxy') {
-        if (!s.proxyUrl) throw new Error('Chưa nhập địa chỉ máy chủ');
+        if (!s.proxyUrl) throw new Error(tx('Chưa nhập địa chỉ máy chủ'));
         const r = await fetch(`${s.proxyUrl.replace(/\/+$/, '')}/health`);
-        if (!r.ok) throw new Error(`Máy chủ trả lỗi ${r.status}`);
-        toast('Kết nối máy chủ AI thành công');
+        if (!r.ok) throw new Error(tx('Máy chủ trả lỗi {0}', r.status));
+        toast(tx('Kết nối máy chủ AI thành công'));
       } else {
-        if (!s.geminiKey) throw new Error('Chưa nhập API key');
+        if (!s.geminiKey) throw new Error(tx('Chưa nhập API key'));
         const r = await fetch(geminiUrl(s.model).replace(':generateContent', ''), { headers: { 'x-goog-api-key': s.geminiKey } });
-        if (r.status === 404) throw new Error(`Key hợp lệ nhưng không có model "${s.model}"`);
-        if (!r.ok) throw new Error('API key không hợp lệ hoặc chưa bật Gemini API');
-        toast(`Key hợp lệ, model ${s.model} sẵn sàng`);
+        if (r.status === 404) throw new Error(tx('Key hợp lệ nhưng không có model "{0}"', s.model));
+        if (!r.ok) throw new Error(tx('API key không hợp lệ hoặc chưa bật Gemini API'));
+        toast(tx('Key hợp lệ, model {0} sẵn sàng', s.model));
       }
     } catch (e) {
-      toast((e as Error).message === 'Failed to fetch' ? 'Không kết nối được — kiểm tra mạng hoặc địa chỉ' : (e as Error).message);
+      toast((e as Error).message === 'Failed to fetch' ? tx('Không kết nối được — kiểm tra mạng hoặc địa chỉ') : (e as Error).message);
     } finally {
       setTesting(false);
     }
   };
 
   const doExport = async () => {
-    toast(`Đã xuất ${await downloadBackup()} bài`);
+    toast(tx('Đã xuất {0} bài', await downloadBackup()));
     void storage.refresh();
   };
 
   const askPersist = async () => {
     toast(await storage.persist()
-      ? 'Trình duyệt sẽ giữ dữ liệu, không tự xoá khi máy đầy bộ nhớ'
-      : 'Trình duyệt chưa đồng ý — cài app lên màn hình chính rồi thử lại, và nhớ xuất file sao lưu');
+      ? tx('Trình duyệt sẽ giữ dữ liệu, không tự xoá khi máy đầy bộ nhớ')
+      : tx('Trình duyệt chưa đồng ý — cài app lên màn hình chính rồi thử lại, và nhớ xuất file sao lưu'));
   };
 
   const doImport = async (f?: File) => {
     if (!f) return;
     try {
       const r = await importBackup(JSON.parse(await f.text()));
-      toast(`Đã nhập ${r.added} bài mới, cập nhật ${r.updated}, bỏ qua ${r.skipped}${r.practice ? '; đã khôi phục nhật ký luyện tập' : ''}`);
+      toast(tx('Đã nhập {0} bài mới, cập nhật {1}, bỏ qua {2}{3}', r.added, r.updated, r.skipped, r.practice ? tx('; đã khôi phục nhật ký luyện tập') : ''));
     } catch (e) {
-      toast((e as Error).message || 'File không hợp lệ');
+      toast((e as Error).message || tx('File không hợp lệ'));
     } finally {
       if (fileRef.current) fileRef.current.value = '';
     }
@@ -126,139 +127,148 @@ export default function SettingsPage() {
   const restoreSamples = async () => {
     await db.kv.bulkDelete(['seeded', 'seededSamples']);
     await ensureSeeded();
-    toast('Đã khôi phục các bài mẫu');
+    toast(tx('Đã khôi phục các bài mẫu'));
   };
 
   return (
     <div className="page page-settings">
-      <header className="page-head"><h1>Cài đặt</h1></header>
+      <header className="page-head"><h1>{tx('Cài đặt')}</h1></header>
       {/* trang dài: nút nhảy nhanh tới từng mục */}
-      <nav className="settings-jump" aria-label="Tới mục">
-        {[['set-look', 'Giao diện'], ['set-view', 'Hiển thị'], ...(AI_ENABLED ? [['set-ai', 'Kết nối AI']] : []), ['set-data', 'Dữ liệu, sao lưu']].map(([id, label]) => (
+      <nav className="settings-jump" aria-label={tx('Tới mục')}>
+        {[['set-look', tx('Giao diện')], ['set-view', tx('Hiển thị')], ...(AI_ENABLED ? [['set-ai', tx('Kết nối AI')]] : []), ['set-data', tx('Dữ liệu, sao lưu')]].map(([id, label]) => (
           <button key={id} type="button" className="chip" onClick={() => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>{label}</button>
         ))}
       </nav>
 
       <section className="panel" id="set-look">
-        <h2>Giao diện</h2>
+        <h2>{tx('Giao diện')}</h2>
+        {/* nhãn luôn ghi cả hai thứ tiếng: lỡ chọn nhầm vẫn tìm ra chỗ đổi lại */}
+        <label className="field lang-field">
+          <span className="field-label">Ngôn ngữ · Language</span>
+          <select value={LANG_CHOSEN ? LANG : 'auto'} onChange={(e) => setLang(e.target.value === 'auto' ? null : e.target.value as Lang)}>
+            <option value="auto">{tx('Theo máy')} (Auto)</option>
+            <option value="vi">Tiếng Việt</option>
+            <option value="en">English</option>
+          </select>
+        </label>
         <ThemePicker palette={s.palette} mode={s.theme} onPalette={(palette) => update({ palette, paletteChosen: true })} onMode={(theme) => update({ theme })} />
       </section>
 
       <section className="panel" id="set-view">
-        <h2>Hiển thị</h2>
+        <h2>{tx('Hiển thị')}</h2>
         <div className="form-grid">
           <label className="field">
-            <span className="field-label">Cỡ chữ tab</span>
+            <span className="field-label">{tx('Cỡ chữ tab')}</span>
             <select value={s.tabSize} onChange={(e) => update({ tabSize: e.target.value as typeof s.tabSize })}>
-              <option value="s">Nhỏ</option><option value="m">Vừa</option><option value="l">Lớn (để xa khi {BRAND.verb})</option>
+              <option value="s">{tx('Nhỏ')}</option><option value="m">{tx('Vừa')}</option><option value="l">{tx('Lớn (để xa khi {0})', BRAND.verb)}</option>
             </select>
           </label>
           {!IS_HARMONICA_APP && !IS_GUITAR_APP && (
             <label className="field">
-              <span className="field-label">Cỡ hình dưới nốt: {Math.round((s.fingerScale ?? 1) * 100)}%</span>
+              <span className="field-label">{tx('Cỡ hình dưới nốt: {0}%', Math.round((s.fingerScale ?? 1) * 100))}</span>
               <input type="range" min={0.6} max={2.5} step={0.1} value={s.fingerScale ?? 1} onChange={(e) => update({ fingerScale: Number(e.target.value) })} />
             </label>
           )}
           <label className="field">
-            <span className="field-label">Tên nốt</span>
+            <span className="field-label">{tx('Tên nốt')}</span>
             <select value={s.noteNames} onChange={(e) => update({ noteNames: e.target.value as typeof s.noteNames })}>
-              <option value="letter">C D E F G A B</option><option value="solfege">Đô Rê Mi Fa Sol La Si</option>
+              <option value="letter">C D E F G A B</option><option value="solfege">{tx('Đô Rê Mi Fa Sol La Si')}</option>
             </select>
           </label>
-          <HarpTypeSelect value={s.defaultHarpType} onChange={(t) => update({ defaultHarpType: t })} label={`Loại ${BRAND.noun} mặc định`} />
+          <HarpTypeSelect value={s.defaultHarpType} onChange={(t) => update({ defaultHarpType: t })} label={tx('Loại {0} mặc định', BRAND.noun)} />
           {IS_RECORDER_APP && (
             <label className="field">
-              <span className="field-label">Kiểu bấm sáo</span>
+              <span className="field-label">{tx('Kiểu bấm sáo')}</span>
               <select value={s.recorderFingering ?? 'baroque'} onChange={(e) => update({ recorderFingering: e.target.value as 'baroque' | 'german' })}>
-                <option value="baroque">Baroque (phổ biến, lỗ 4 nhỏ hơn lỗ 5)</option>
-                <option value="german">German (lỗ 4 to hơn lỗ 5)</option>
+                <option value="baroque">{tx('Baroque (phổ biến, lỗ 4 nhỏ hơn lỗ 5)')}</option>
+                <option value="german">{tx('German (lỗ 4 to hơn lỗ 5)')}</option>
               </select>
             </label>
           )}
           {IS_RECORDER_APP && (
             <label className="field">
-              <span className="field-label">Sáo trúc: bịt hết lỗ ra nốt</span>
+              <span className="field-label">{tx('Sáo trúc: bịt hết lỗ ra nốt')}</span>
               <select value={s.saoTrucClosed ?? 5} onChange={(e) => update({ saoTrucClosed: Number(e.target.value) })}>
-                {DEGREE_NAMES.map((n, i) => <option key={n} value={i + 1}>{n} {i === 4 ? '(sáo Đô bịt hết ra Sol — phổ biến)' : `(sáo Đô bịt hết ra ${n})`}</option>)}
+                {DEGREE_NAMES.map((n, i) => <option key={n} value={i + 1}>{n} {i === 4 ? tx('(sáo Đô bịt hết ra Sol — phổ biến)') : tx('(sáo Đô bịt hết ra {0})', n)}</option>)}
               </select>
-              <span className="small muted">Tính theo tông sáo: sáo Đô chọn "Sol" thì bịt hết lỗ ra Sol, mở dần ra La, Si, Đô…</span>
+              <span className="small muted">{tx('Tính theo tông sáo: sáo Đô chọn "Sol" thì bịt hết lỗ ra Sol, mở dần ra La, Si, Đô…')}</span>
             </label>
           )}
           {IS_TRANH_APP && (
             <label className="field">
-              <span className="field-label">Lên dây đàn tranh</span>
+              <span className="field-label">{tx('Lên dây đàn tranh')}</span>
               <select value={s.tranhTuning ?? 'bac'} onChange={(e) => update({ tranhTuning: e.target.value as 'bac' | 'dao' })}>
-                <option value="bac">Dây Bắc: Sol La Đô Rê Mi (phổ biến, người mới học)</option>
-                <option value="dao">Dây Đảo: Sol La Đô Rê Fa</option>
+                <option value="bac">{tx('Dây Bắc: Sol La Đô Rê Mi (phổ biến, người mới học)')}</option>
+                <option value="dao">{tx('Dây Đảo: Sol La Đô Rê Fa')}</option>
               </select>
             </label>
           )}
           {IS_GUITAR_APP && (
             <label className="field">
-              <span className="field-label">Sơ đồ hợp âm</span>
+              <span className="field-label">{tx('Sơ đồ hợp âm')}</span>
               <select value={s.chordHorizontal ? 'h' : 'v'} onChange={(e) => update({ chordHorizontal: e.target.value === 'h' })}>
-                <option value="v">Dựng đứng (như sách hợp âm, dây trầm bên trái)</option>
-                <option value="h">Nằm ngang (cùng hướng với tab, dây 1 ở trên)</option>
+                <option value="v">{tx('Dựng đứng (như sách hợp âm, dây trầm bên trái)')}</option>
+                <option value="h">{tx('Nằm ngang (cùng hướng với tab, dây 1 ở trên)')}</option>
               </select>
-              <span className="small muted">Sách và trang hợp âm đều vẽ dựng đứng. Chọn nằm ngang nếu bạn chỉ dùng app này và muốn nhìn giống tab.</span>
+              <span className="small muted">{tx('Sách và trang hợp âm đều vẽ dựng đứng. Chọn nằm ngang nếu bạn chỉ dùng app này và muốn nhìn giống tab.')}</span>
             </label>
           )}
-          <KeySelect value={s.defaultHarpKey} onChange={(k) => update({ defaultHarpKey: k as HarpKey })} label={IS_HARMONICA_APP ? 'Kèn mặc định' : 'Tông mặc định'} harpType={s.defaultHarpType} />
+          <KeySelect value={s.defaultHarpKey} onChange={(k) => update({ defaultHarpKey: k as HarpKey })} label={IS_HARMONICA_APP ? tx('Kèn mặc định') : tx('Tông mặc định')} harpType={s.defaultHarpType} />
           <label className="check wide">
             <input type="checkbox" checked={s.showNoteNames} onChange={(e) => update({ showNoteNames: e.target.checked })} />
-            Hiện tên nốt phía trên tab
+            {tx('Hiện tên nốt phía trên tab')}
           </label>
           <label className="check wide">
             <input type="checkbox" checked={s.keepAwake} onChange={(e) => update({ keepAwake: e.target.checked })} />
-            Giữ màn hình sáng khi đang phát bài, chờ nốt hoặc dò nốt
+            {tx('Giữ màn hình sáng khi đang phát bài, chờ nốt hoặc dò nốt')}
           </label>
           {s.keepAwake && (
             <label className="check wide">
               <input type="checkbox" checked={s.keepAwakeAlways ?? true} onChange={(e) => update({ keepAwakeAlways: e.target.checked })} />
-              Luôn giữ sáng suốt lúc app đang mở (tốn pin hơn)
+              {tx('Luôn giữ sáng suốt lúc app đang mở (tốn pin hơn)')}
             </label>
           )}
           <SyncCalibrator value={s.syncOffsetMs} onChange={(syncOffsetMs) => update({ syncOffsetMs })} />
           <label className="field wide">
-            <span className="field-label">Độ trễ micro khi chấm điểm karaoke: {s.micLatencyMs} ms</span>
+            <span className="field-label">{tx('Độ trễ micro khi chấm điểm karaoke: {0} ms', s.micLatencyMs)}</span>
             <input type="range" min={0} max={300} step={10} value={s.micLatencyMs} onChange={(e) => update({ micLatencyMs: Number(e.target.value) })} />
-            <span className="help">Hát đúng mà điểm "vào nhịp" thấp (nhất là micro Bluetooth): tăng số này.</span>
+            <span className="help">{tx('Hát đúng mà điểm "vào nhịp" thấp (nhất là micro Bluetooth): tăng số này.')}</span>
           </label>
         </div>
       </section>
 
       {AI_ENABLED && <section className="panel" id="set-ai">
-        <h2>Kết nối AI</h2>
-        <p className="muted">AI chỉ dùng khi bạn nhập bài mới. Mọi phần còn lại chạy offline.</p>
+        <h2>{tx('Kết nối AI')}</h2>
+        <p className="muted">{tx('AI chỉ dùng khi bạn nhập bài mới. Mọi phần còn lại chạy offline.')}</p>
         <fieldset className="radio-group">
-          <legend className="sr-only">Cách kết nối</legend>
+          <legend className="sr-only">{tx('Cách kết nối')}</legend>
           <label>
             <input type="radio" checked={s.aiMode === 'proxy'} onChange={() => update({ aiMode: 'proxy' })} />
-            Qua máy chủ AI <span className="muted">(khuyên dùng, API key nằm trên máy chủ — xem thư mục worker/)</span>
+            {tx('Qua máy chủ AI')} <span className="muted">{tx('(khuyên dùng, API key nằm trên máy chủ — xem thư mục worker/)')}</span>
           </label>
           <label>
             <input type="radio" checked={s.aiMode === 'direct'} onChange={() => update({ aiMode: 'direct' })} />
-            Gọi thẳng Gemini bằng key của bạn <span className="muted">(chỉ cho máy cá nhân, key lưu trên thiết bị này)</span>
+            {tx('Gọi thẳng Gemini bằng key của bạn')} <span className="muted">{tx('(chỉ cho máy cá nhân, key lưu trên thiết bị này)')}</span>
           </label>
         </fieldset>
         <div className="form-grid">
           {s.aiMode === 'proxy' ? (
             <>
               <label className="field wide">
-                <span className="field-label">Địa chỉ máy chủ AI</span>
+                <span className="field-label">{tx('Địa chỉ máy chủ AI')}</span>
                 <input type="url" inputMode="url" value={s.proxyUrl} onChange={(e) => update({ proxyUrl: e.target.value.trim() })} placeholder="https://harptabs-ai.ten-ban.workers.dev" />
               </label>
               <label className="field wide">
-                <span className="field-label">Mã ứng dụng (nếu máy chủ có đặt APP_TOKEN)</span>
+                <span className="field-label">{tx('Mã ứng dụng (nếu máy chủ có đặt APP_TOKEN)')}</span>
                 <input value={s.appToken} onChange={(e) => update({ appToken: e.target.value.trim() })} autoComplete="off" />
               </label>
             </>
           ) : (
             <label className="field wide">
-              <span className="field-label">Gemini API key <a href="https://aistudio.google.com/apikey" target="_blank" rel="noreferrer">lấy key miễn phí</a></span>
+              <span className="field-label">Gemini API key <a href="https://aistudio.google.com/apikey" target="_blank" rel="noreferrer">{tx('lấy key miễn phí')}</a></span>
               <span className="row gap">
                 <input className="grow" type={showKey ? 'text' : 'password'} value={s.geminiKey} onChange={(e) => update({ geminiKey: e.target.value.trim() })} autoComplete="off" spellCheck={false} />
-                <button type="button" className="btn btn-ghost" onClick={() => setShowKey(!showKey)}>{showKey ? 'Ẩn' : 'Hiện'}</button>
+                <button type="button" className="btn btn-ghost" onClick={() => setShowKey(!showKey)}>{showKey ? tx('Ẩn') : tx('Hiện')}</button>
               </span>
             </label>
           )}
@@ -266,71 +276,71 @@ export default function SettingsPage() {
             <span className="field-label">Model</span>
             <input list="models" value={s.model} onChange={(e) => update({ model: e.target.value.trim() })} spellCheck={false} />
             <datalist id="models">{MODELS.map((m) => <option key={m} value={m} />)}</datalist>
-            <span className="help">Flash-lite rẻ và đủ tốt cho phần lớn bản nhạc. Khi dùng máy chủ proxy, model ngoài danh sách cho phép sẽ được đổi về mặc định.</span>
+            <span className="help">{tx('Flash-lite rẻ và đủ tốt cho phần lớn bản nhạc. Khi dùng máy chủ proxy, model ngoài danh sách cho phép sẽ được đổi về mặc định.')}</span>
           </label>
         </div>
         <div className="row gap center wrap">
-          <button type="button" className="btn btn-ghost" onClick={test} disabled={testing}>{testing ? 'Đang kiểm tra…' : 'Kiểm tra kết nối'}</button>
+          <button type="button" className="btn btn-ghost" onClick={test} disabled={testing}>{testing ? tx('Đang kiểm tra…') : tx('Kiểm tra kết nối')}</button>
           {usage && (
             <span className="muted small">
-              Tháng này {usage.month} lần, khoảng {vnd(usage.monthUsd)}. Tổng cộng {usage.total} lần, khoảng {vnd(usage.totalUsd)}.
+              {tx('Tháng này {0} lần, khoảng {1}. Tổng cộng {2} lần, khoảng {3}.', usage.month, vnd(usage.monthUsd), usage.total, vnd(usage.totalUsd))}
             </span>
           )}
         </div>
       </section>}
 
       <section className="panel" id="set-data">
-        <h2>Dữ liệu</h2>
-        <p className="muted">{count ?? 0} bài đang lưu trên thiết bị này. Xoá dữ liệu trình duyệt sẽ mất bài, nên thỉnh thoảng hãy xuất file sao lưu.</p>
+        <h2>{tx('Dữ liệu')}</h2>
+        <p className="muted">{tx('{0} bài đang lưu trên thiết bị này. Xoá dữ liệu trình duyệt sẽ mất bài, nên thỉnh thoảng hãy xuất file sao lưu.', count ?? 0)}</p>
         <label className="check wide">
           <input type="checkbox" checked={s.shareStats} onChange={(e) => update({ shareStats: e.target.checked })} />
           <span>
-            Gửi thống kê ẩn danh
-            <span className="muted small" style={{ display: 'block' }}>Mỗi ngày một lần, app gửi một mã ngẫu nhiên của máy này, loại app (web / đã cài / Android) và số lần mở app, để tác giả biết có bao nhiêu người dùng. Không gửi bài hát, tên hay thông tin cá nhân.</span>
+            {tx('Gửi thống kê ẩn danh')}
+            <span className="muted small" style={{ display: 'block' }}>{tx('Mỗi ngày một lần, app gửi một mã ngẫu nhiên của máy này, loại app (web / đã cài / Android) và số lần mở app, để tác giả biết có bao nhiêu người dùng. Không gửi bài hát, tên hay thông tin cá nhân.')}</span>
           </span>
         </label>
         <dl className="storage-info">
           <div>
-            <dt>Sao lưu gần nhất</dt>
+            <dt>{tx('Sao lưu gần nhất')}</dt>
             <dd>
-              {backup?.lastBackupAt ? new Date(backup.lastBackupAt).toLocaleDateString('vi-VN') : 'Chưa sao lưu'}
-              {!!backup?.changed && <span className="muted"> · {backup.changed} bài mới / đã sửa sau đó</span>}
+              {backup?.lastBackupAt ? new Date(backup.lastBackupAt).toLocaleDateString(LOCALE) : tx('Chưa sao lưu')}
+              {!!backup?.changed && <span className="muted"> {tx('· {0} bài mới / đã sửa sau đó', backup.changed)}</span>}
             </dd>
           </div>
           <div>
-            <dt>Giữ dữ liệu lâu dài</dt>
+            <dt>{tx('Giữ dữ liệu lâu dài')}</dt>
             <dd>
-              {storage.persisted === null ? 'Trình duyệt không hỗ trợ'
-                : storage.persisted ? 'Đã bật — trình duyệt không tự xoá khi máy đầy bộ nhớ'
-                : <>Chưa bật — trình duyệt có thể tự xoá khi máy đầy bộ nhớ <button type="button" className="link-btn" onClick={askPersist}>Bật</button></>}
+              {storage.persisted === null ? tx('Trình duyệt không hỗ trợ')
+                : storage.persisted ? tx('Đã bật — trình duyệt không tự xoá khi máy đầy bộ nhớ')
+                : <>{tx('Chưa bật — trình duyệt có thể tự xoá khi máy đầy bộ nhớ')} <button type="button" className="link-btn" onClick={askPersist}>{tx('Bật')}</button></>}
             </dd>
           </div>
           {storage.usage !== undefined && (
             <div>
-              <dt>Bộ nhớ đang dùng</dt>
-              <dd>{mb(storage.usage)}{storage.quota ? <span className="muted"> · máy còn trống khoảng {mb(Math.max(0, storage.quota - storage.usage))}</span> : null}</dd>
+              <dt>{tx('Bộ nhớ đang dùng')}</dt>
+              <dd>{mb(storage.usage)}{storage.quota ? <span className="muted"> {tx('· máy còn trống khoảng {0}', mb(Math.max(0, storage.quota - storage.usage)))}</span> : null}</dd>
             </div>
           )}
           <div>
-            <dt>Bản thu karaoke</dt>
+            <dt>{tx('Bản thu karaoke')}</dt>
             <dd>
-              {recs?.count ? <>{recs.count} bản · {mb(recs.bytes)} <button type="button" className="link-btn" onClick={() => void clearRecs()}>{confirmRecs ? 'Xoá thật?' : 'Xoá hết'}</button></> : 'Chưa có'}
-              <span className="muted small" style={{ display: 'block' }}>Chỉ lưu trên máy này — không có trong file sao lưu.</span>
+              {recs?.count ? <>{tx('{0} bản · {1}', recs.count, mb(recs.bytes))} <button type="button" className="link-btn" onClick={() => void clearRecs()}>{confirmRecs ? tx('Xoá thật?') : tx('Xoá hết')}</button></> : tx('Chưa có')}
+              <span className="muted small" style={{ display: 'block' }}>{tx('Chỉ lưu trên máy này — không có trong file sao lưu.')}</span>
             </dd>
           </div>
         </dl>
         <div className="row gap wrap">
-          <button type="button" className="btn btn-primary" onClick={doExport}><Icon name="download" size={18} /> Xuất file sao lưu</button>
-          <button type="button" className="btn btn-ghost" onClick={() => fileRef.current?.click()}><Icon name="upload" size={18} /> Nhập file sao lưu</button>
-          <button type="button" className="btn btn-ghost" onClick={restoreSamples}>Khôi phục bài mẫu</button>
+          <button type="button" className="btn btn-primary" onClick={doExport}><Icon name="download" size={18} /> {tx('Xuất file sao lưu')}</button>
+          <button type="button" className="btn btn-ghost" onClick={() => fileRef.current?.click()}><Icon name="upload" size={18} /> {tx('Nhập file sao lưu')}</button>
+          <button type="button" className="btn btn-ghost" onClick={restoreSamples}>{tx('Khôi phục bài mẫu')}</button>
           <input ref={fileRef} type="file" accept=".json,application/json" hidden onChange={(e) => doImport(e.target.files?.[0])} />
         </div>
       </section>
 
       <p className="muted small about">
-        {BRAND.name} 1.0. Bài mẫu chỉ gồm nhạc thuộc phạm vi công cộng.<br />
-        Cùng bộ còn app cho harmonica, sáo / ocarina, kalimba, guitar / ukulele, kèn pianica, đàn tranh – đàn bầu, organ / piano: <a href="https://sotab.pages.dev/" target="_blank" rel="noopener">sotab.pages.dev</a><br />
-        © {new Date().getFullYear()} Trần Thanh Phúc. Liên hệ: <a href="tel:+84913656539">0913.65.65.39</a>
+        {tx('{0} 1.0. Bài mẫu chỉ gồm nhạc thuộc phạm vi công cộng.', BRAND.name)}<br />
+        {tx('Cùng bộ còn app cho harmonica, sáo / ocarina, kalimba, guitar / ukulele, kèn pianica, đàn tranh – đàn bầu, organ / piano:')} <a href="https://sotab.pages.dev/" target="_blank" rel="noopener">sotab.pages.dev</a><br />
+        {tx('© {0} Trần Thanh Phúc. Liên hệ:', new Date().getFullYear())} <a href="tel:+84913656539">0913.65.65.39</a>
       </p>
     </div>
   );

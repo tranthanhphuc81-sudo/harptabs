@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import type { KLine } from '../lib/karaoke';
 import type { KaraokeScorer } from '../lib/karaokeScore';
+import { t } from '../lib/i18n';
 
 /**
  * Dải cao độ khi chấm điểm: vạch ngang = nốt cần hát, chấm = giọng đang hát (đã gập về cùng quãng tám),
@@ -68,5 +69,5 @@ export function PitchStrip({ lines, scorer, getBeat, spb }: {
     return () => cancelAnimationFrame(raf);
   }, [lines, scorer, getBeat, spb]);
 
-  return <canvas ref={ref} className="kara-pitch" aria-label="Cao độ giọng hát so với nốt cần hát" role="img" />;
+  return <canvas ref={ref} className="kara-pitch" aria-label={t('Cao độ giọng hát so với nốt cần hát')} role="img" />;
 }

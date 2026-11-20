@@ -5,6 +5,7 @@
 import { db } from './db';
 import type { HarpKey, HarpType } from './harp';
 import { Gray, OmrNote, OmrPage, OmrStaff, toGray } from './omr';
+import { t } from './i18n';
 
 export interface SavedScanPage {
   image: Blob;
@@ -43,7 +44,7 @@ export async function grayToBlob(g: Gray): Promise<Blob> {
     img.data[j + 3] = 255;
   }
   ctx.putImageData(img, 0, 0);
-  return new Promise((resolve, reject) => c.toBlob((b) => (b ? resolve(b) : reject(new Error('Không nén được ảnh'))), 'image/jpeg', 0.85));
+  return new Promise((resolve, reject) => c.toBlob((b) => (b ? resolve(b) : reject(new Error(t('Không nén được ảnh')))), 'image/jpeg', 0.85));
 }
 
 export async function blobToGray(b: Blob): Promise<Gray> {

@@ -2,6 +2,7 @@ import { memo, useMemo } from 'react';
 import type { ChordSegment } from '../audio/harmony';
 import type { BeatStyle } from '../audio/patterns';
 import type { FlatEvent, ParsedTab } from '../lib/tabText';
+import { t } from '../lib/i18n';
 
 /**
  * Bảng lời + hợp âm kiểu sách đệm hát: tên hợp âm đặt trên chữ đúng chỗ đổi hợp âm.
@@ -17,17 +18,17 @@ interface Item {
 /** điệu quạt / gõ gợi ý theo kiểu nhịp (↓ quạt xuống, ↑ quạt lên, B = gảy dây trầm) */
 export function strumHint(style: BeatStyle, timeSig: string): { name: string; pattern: string } {
   const beats = Number(timeSig.split('/')[0]) || 4;
-  if (style === 'waltz' || beats === 3) return { name: 'Valse', pattern: 'B ↓ ↓  (1 trầm, 2 – 3 quạt)' };
-  if (beats === 6 || style === 'slowrock') return { name: 'Slow rock', pattern: 'B ↓ ↓ ↑ ↓ ↓  mỗi nửa ô' };
+  if (style === 'waltz' || beats === 3) return { name: 'Valse', pattern: t('B ↓ ↓  (1 trầm, 2 – 3 quạt)') };
+  if (beats === 6 || style === 'slowrock') return { name: 'Slow rock', pattern: t('B ↓ ↓ ↑ ↓ ↓  mỗi nửa ô') };
   switch (style) {
     case 'bolero': return { name: 'Bolero', pattern: 'B ↓↑ ↓  B ↓↑ ↓↑' };
     case 'rumba': case 'chacha': return { name: 'Rumba', pattern: 'B ↓ ↑ B ↑ ↓ ↑' };
     case 'bossa': case 'samba': return { name: 'Bossa', pattern: 'B ↓ ↓ B ↓ B ↓ ↓' };
-    case 'shuffle': case 'jazz': return { name: 'Shuffle', pattern: '↓ ↓↑ ↓ ↓↑ (nhịp nảy)' };
-    case 'reggae': case 'ska': return { name: 'Reggae', pattern: '– ↑ – ↑ (chặn tiếng, gõ phách nghịch)' };
-    case 'train': case 'country': case 'polka': case 'march': return { name: 'Đồng quê', pattern: 'B ↓ B ↓ (trầm – quạt xen kẽ)' };
-    case 'rock': case 'disco': return { name: 'Rock', pattern: '↓ ↓ ↓ ↓ ↓ ↓ ↓ ↓ (quạt đều nửa phách)' };
-    default: return { name: 'Quạt chả', pattern: '↓ ↓↑ ↑↓↑' };
+    case 'shuffle': case 'jazz': return { name: 'Shuffle', pattern: t('↓ ↓↑ ↓ ↓↑ (nhịp nảy)') };
+    case 'reggae': case 'ska': return { name: 'Reggae', pattern: t('– ↑ – ↑ (chặn tiếng, gõ phách nghịch)') };
+    case 'train': case 'country': case 'polka': case 'march': return { name: t('Đồng quê'), pattern: t('B ↓ B ↓ (trầm – quạt xen kẽ)') };
+    case 'rock': case 'disco': return { name: 'Rock', pattern: t('↓ ↓ ↓ ↓ ↓ ↓ ↓ ↓ (quạt đều nửa phách)') };
+    default: return { name: t('Quạt chả'), pattern: '↓ ↓↑ ↑↓↑' };
   }
 }
 

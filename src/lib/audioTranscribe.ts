@@ -14,6 +14,7 @@ import type { AiTranscription } from '../../shared/ai';
 import { AudioNote, segmentNotes, trackPitch } from './audioAlign';
 import { trackMelodyInMix } from './melodyMix';
 import { MelNote, toTranscription } from './musicFile';
+import { t as tx } from './i18n';
 
 /** solo: một giọng (tự hát, ngân nga, thổi kèn); mix: bài hát gốc có nhạc đệm */
 export type RecordingKind = 'solo' | 'mix';
@@ -180,10 +181,10 @@ export function audioToTranscription(notes: DetectedNote[], o: AudioTabOptions):
   const { notes: mel, pickupBeats } = quantizeNotes(notes, o);
   const songKey = guessKey(mel);
   const warnings: string[] = [];
-  if (mel.length < 8) warnings.push('Dò được rất ít nốt — thử bản thu rõ hơn, ít tiếng ồn.');
+  if (mel.length < 8) warnings.push(tx('Dò được rất ít nốt — thử bản thu rõ hơn, ít tiếng ồn.'));
   return {
     ...toTranscription(mel, {
-      title: o.title || 'Bài từ bản thu', artist: o.artist, songKey, flats: !!songKey && FLAT_KEYS.has(songKey),
+      title: o.title || tx('Bài từ bản thu'), artist: o.artist, songKey, flats: !!songKey && FLAT_KEYS.has(songKey),
       tempo: o.bpm, timeSig: o.timeSig, barBeats: o.barBeats, pickupBeats, warnings,
     }),
     confidence: 0.5,

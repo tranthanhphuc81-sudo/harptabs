@@ -8,6 +8,7 @@
 import { ChordInstrument, chordShape } from '../data/chordShapes';
 import { GUITAR_TUNING, UKULELE_TUNING } from '../data/guitar';
 import { hzToMidiFloat, midiToHz } from './harp';
+import { t as tx } from './i18n';
 
 /** phổ biên độ (tuyến tính) và độ rộng mỗi ô tần số (Hz) */
 export interface Spectrum { mag: Float32Array; binHz: number }
@@ -171,8 +172,8 @@ export class StrumDetector {
 /** lời khuyên cho từng lỗi; tên nốt theo cài đặt */
 export function issueText(x: ChordIssue, name: (midi: number) => string): string {
   switch (x.kind) {
-    case 'weak': return `Dây ${x.string} (${name(x.midi)}) gần như không kêu: ngón tay khác đang chạm vào dây này, bấm chưa đủ lực (bấm sát phím đàn), hoặc quạt sót.`;
-    case 'extra': return `Dây ${x.string} (dấu ×) cũng kêu: bắt đầu quạt từ dây kế bên, hoặc chạm hờ một ngón tay vào dây này cho nó câm.`;
-    case 'foreign': return `Có nốt ${name(x.midi)} không thuộc hợp âm: có ngón bấm lệch phím hoặc nhầm dây — so lại với sơ đồ.`;
+    case 'weak': return tx('Dây {0} ({1}) gần như không kêu: ngón tay khác đang chạm vào dây này, bấm chưa đủ lực (bấm sát phím đàn), hoặc quạt sót.', x.string, name(x.midi));
+    case 'extra': return tx('Dây {0} (dấu ×) cũng kêu: bắt đầu quạt từ dây kế bên, hoặc chạm hờ một ngón tay vào dây này cho nó câm.', x.string);
+    case 'foreign': return tx('Có nốt {0} không thuộc hợp âm: có ngón bấm lệch phím hoặc nhầm dây — so lại với sơ đồ.', name(x.midi));
   }
 }

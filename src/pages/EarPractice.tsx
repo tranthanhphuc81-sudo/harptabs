@@ -4,7 +4,7 @@ import { MicPitch } from '../audio/pitch';
 import { audio, playTone } from '../audio/engine';
 import { accompanyPhrase, playCadence, playTonicRoll } from '../audio/practiceBacking';
 import { SAMPLE_SONGS } from '../data/samples';
-import { BRAND, SHOWN_HARP_TYPES } from '../appConfig';
+import { IS_BLOWN_APP, SHOWN_HARP_TYPES } from '../appConfig';
 import { FingeringIcon } from '../components/Fingering';
 import { HarpTypeSelect, KeySelect } from '../components/KeySelect';
 import { Icon } from '../components/Icon';
@@ -13,6 +13,7 @@ import { useWakeLock } from '../components/useWakeLock';
 import { EAR_LEVELS, earPool, easiestNote, makeQuestion, NoteSegmenter, sameNote, songPhrases } from '../lib/earPractice';
 import { HarpKey, HarpType, harpLayout, holeCount, isFretted, keyOffset, midiToHz, midiToName } from '../lib/harp';
 import { useAppState } from '../state';
+import { t as tx } from '../lib/i18n';
 
 /**
  * Tập nghe – đáp: máy chơi nốt chủ làm mốc rồi một câu ngắn; người tập chơi lại trên nhạc cụ, app nghe micro chấm từng nốt.
@@ -135,7 +136,7 @@ export default function EarPractice() {
       const n = seg.current.feed(t, r ? r.midi : null, level.current);
       if (n !== null) noteRef.current(n);
     };
-    try { await m.start(); mic.current = m; setOn(true); next(); } catch (e) { setErr(e instanceof Error ? e.message : 'Không mở được micro'); }
+    try { await m.start(); mic.current = m; setOn(true); next(); } catch (e) { setErr(e instanceof Error ? e.message : tx('Không mở được micro')); }
   };
   const stop = () => { clearTimeout(timer.current); mic.current?.stop(); mic.current = null; setOn(false); setPhase('idle'); };
   useEffect(() => { if (mic.current) { stop(); void start(); } }, [lowHz]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -158,8 +159,8 @@ export default function EarPractice() {
     <div className="page ear-practice">
       <header className="page-head">
         <div>
-          <h1>Tập nghe – đáp</h1>
-          <p className="muted">Máy chơi nốt chủ làm mốc rồi một câu ngắn. Bạn nghe và chơi lại trên {/^(guitar|ukulele|kalimba|tranh|danbau|organ|piano)/.test(type) ? 'đàn' : /^(recorder|saoTruc)/.test(type) ? 'sáo' : /^ocarina/.test(type) ? 'ocarina' : 'kèn'} của mình — app nghe và chấm từng nốt. Luyện tai và thuộc vị trí nốt.</p>
+          <h1>{tx('Tập nghe – đáp')}</h1>
+          <p className="muted">{tx('Máy chơi nốt chủ làm mốc rồi một câu ngắn. Bạn nghe và chơi lại trên')} {/^(guitar|ukulele|kalimba|tranh|danbau|organ|piano)/.test(type) ? tx('đàn') : /^(recorder|saoTruc)/.test(type) ? tx('sáo') : /^ocarina/.test(type) ? 'ocarina' : tx('kèn')} {tx('của mình — app nghe và chấm từng nốt. Luyện tai và thuộc vị trí nốt.')}</p>
         </div>
       </header>
 
@@ -167,33 +168,33 @@ export default function EarPractice() {
         <HarpTypeSelect value={type} onChange={setType} id="ep-type" />
         <KeySelect value={key} onChange={(k) => k !== 'auto' && setKey(k as HarpKey)} id="ep-key" harpType={type} />
         <label className="field" htmlFor="ep-level">
-          <span className="field-label">Cấp độ</span>
+          <span className="field-label">{tx('Cấp độ')}</span>
           <select id="ep-level" value={levelIdx} onChange={(e) => { setLevelIdx(Number(e.target.value)); setStreak(0); }}>
             {EAR_LEVELS.map((l, i) => { const s = stats[l.id]; return <option key={l.id} value={i}>{i + 1}. {l.label}{s?.tries ? ` (${Math.round((100 * s.ok) / s.tries)}%)` : ''}</option>; })}
           </select>
         </label>
         <button type="button" className={`btn btn-lg ${on ? 'btn-ghost' : 'btn-primary'}`} onClick={on ? stop : start} disabled={!pool}>
-          <Icon name="mic" size={20} /> {on ? 'Dừng' : 'Bắt đầu'}
+          <Icon name="mic" size={20} /> {on ? tx('Dừng') : tx('Bắt đầu')}
         </button>
       </div>
       {err && <div className="alert error" role="alert">{err}</div>}
-      {!pool && <div className="alert">Nhạc cụ này không đủ nốt cho cấp độ đã chọn. Chọn cấp thấp hơn hoặc loại khác.</div>}
+      {!pool && <div className="alert">{tx('Nhạc cụ này không đủ nốt cho cấp độ đã chọn. Chọn cấp thấp hơn hoặc loại khác.')}</div>}
 
-      {pool && <p className="small muted">Nốt chủ: <strong>{name(pool.tonic)}</strong> · nốt có trong đề: {pool.pool.map((m) => midiToName(m, settings.noteNames, false)).join(' ')}</p>}
+      {pool && <p className="small muted">{tx('Nốt chủ:')} <strong>{name(pool.tonic)}</strong> {tx('· nốt có trong đề: {0}', pool.pool.map((m) => midiToName(m, settings.noteNames, false)).join(' '))}</p>}
 
       <section className={`bp-result ep-stage${phase === 'right' ? ' k-ok' : phase === 'wrong' ? ' k-muted' : ''}`} aria-live="polite">
-        {phase === 'idle' && <p className="muted">{on ? 'Đang chuẩn bị…' : 'Bấm Bắt đầu (cần micro). Nên đeo tai nghe hoặc để loa nhỏ để micro không nghe lẫn tiếng máy.'}</p>}
+        {phase === 'idle' && <p className="muted">{on ? tx('Đang chuẩn bị…') : tx('Bấm Bắt đầu (cần micro). Nên đeo tai nghe hoặc để loa nhỏ để micro không nghe lẫn tiếng máy.')}</p>}
         {phase === 'playing' && <strong className="bp-kind">Nghe…</strong>}
-        {phase === 'listen' && <><strong className="bp-kind">Đến lượt bạn</strong><p>Chơi lại {question.length > 1 ? `${question.length} nốt` : 'nốt vừa nghe'}.</p></>}
-        {phase === 'right' && <strong className="bp-kind">Đúng rồi!</strong>}
+        {phase === 'listen' && <><strong className="bp-kind">{tx('Đến lượt bạn')}</strong><p>{tx('Chơi lại')} {question.length > 1 ? tx('{0} nốt', question.length) : tx('nốt vừa nghe')}.</p></>}
+        {phase === 'right' && <strong className="bp-kind">{tx('Đúng rồi!')}</strong>}
         {phase === 'wrong' && <>
-          <strong className="bp-kind">Chưa đúng</strong>
-          <p>{heard.length ? <>Nốt thứ {heard.length}: bạn chơi <strong>{name(heard[heard.length - 1])}</strong>, đúng là:</> : 'Đáp án:'}</p>
+          <strong className="bp-kind">{tx('Chưa đúng')}</strong>
+          <p>{heard.length ? <>{tx('Nốt thứ {0}: bạn chơi', heard.length)} <strong>{name(heard[heard.length - 1])}</strong>{tx(', đúng là:')}</> : tx('Đáp án:')}</p>
           <div className="ep-answer">{question.map(where)}</div>
         </>}
-        {(phase === 'right' || phase === 'wrong') && source && <p className="small">Câu này trong bài <strong>{source}</strong>.</p>}
+        {(phase === 'right' || phase === 'wrong') && source && <p className="small">{tx('Câu này trong bài')} <strong>{source}</strong>.</p>}
         {question.length > 0 && (
-          <div className="ep-dots" aria-label="Tiến độ câu">
+          <div className="ep-dots" aria-label={tx('Tiến độ câu')}>
             {question.map((_, i) => <span key={i} className={`bp-dot${i < heard.length ? (sameNote(heard[i], question[i], anyOctave) ? ' k-ok' : ' k-muted') : ''}`} />)}
           </div>
         )}
@@ -201,30 +202,30 @@ export default function EarPractice() {
 
       {on && (
         <div className="row gap wrap">
-          <button type="button" className="btn btn-ghost" onClick={() => ask(question, source)} disabled={!question.length || phase === 'playing'}>Nghe lại</button>
-          <button type="button" className="btn btn-ghost" onClick={next} disabled={phase === 'playing'}>Câu mới</button>
-          {phase === 'listen' && question.length > 0 && <button type="button" className="btn btn-ghost" onClick={() => { setPhase('wrong'); setStreak(0); record(false); }}>Xem đáp án</button>}
+          <button type="button" className="btn btn-ghost" onClick={() => ask(question, source)} disabled={!question.length || phase === 'playing'}>{tx('Nghe lại')}</button>
+          <button type="button" className="btn btn-ghost" onClick={next} disabled={phase === 'playing'}>{tx('Câu mới')}</button>
+          {phase === 'listen' && question.length > 0 && <button type="button" className="btn btn-ghost" onClick={() => { setPhase('wrong'); setStreak(0); record(false); }}>{tx('Xem đáp án')}</button>}
         </div>
       )}
 
       <div className="row gap wrap center ep-score">
-        <span>Đúng liền: <strong>{streak}</strong>{autoUp && levelIdx < EAR_LEVELS.length - 1 ? ' / 5 để lên cấp' : ''}</span>
-        <span>Cấp này: <strong>{st?.ok ?? 0}/{st?.tries ?? 0}</strong></span>
+        <span>{tx('Đúng liền:')} <strong>{streak}</strong>{autoUp && levelIdx < EAR_LEVELS.length - 1 ? tx(' / 5 để lên cấp') : ''}</span>
+        <span>{tx('Cấp này:')} <strong>{st?.ok ?? 0}/{st?.tries ?? 0}</strong></span>
       </div>
       <div className="row gap wrap">
-        <label className="check"><input type="checkbox" checked={withTonic} onChange={(e) => setWithTonic(e.target.checked)} /> Phát hợp âm chủ làm mốc</label>
-        <label className="check"><input type="checkbox" checked={withPiano} onChange={(e) => setWithPiano(e.target.checked)} /> Đệm piano</label>
-        <label className="check"><input type="checkbox" checked={anyOctave} onChange={(e) => setAnyOctave(e.target.checked)} /> Chấp nhận khác quãng tám</label>
-        <label className="check"><input type="checkbox" checked={autoUp} onChange={(e) => setAutoUp(e.target.checked)} /> Đúng 5 câu liền thì lên cấp</label>
+        <label className="check"><input type="checkbox" checked={withTonic} onChange={(e) => setWithTonic(e.target.checked)} /> {tx('Phát hợp âm chủ làm mốc')}</label>
+        <label className="check"><input type="checkbox" checked={withPiano} onChange={(e) => setWithPiano(e.target.checked)} /> {tx('Đệm piano')}</label>
+        <label className="check"><input type="checkbox" checked={anyOctave} onChange={(e) => setAnyOctave(e.target.checked)} /> {tx('Chấp nhận khác quãng tám')}</label>
+        <label className="check"><input type="checkbox" checked={autoUp} onChange={(e) => setAutoUp(e.target.checked)} /> {tx('Đúng 5 câu liền thì lên cấp')}</label>
       </div>
 
       <details className="card bp-tips">
-        <summary>Cách tập hiệu quả</summary>
+        <summary>{tx('Cách tập hiệu quả')}</summary>
         <ul>
-          <li>Trước khi chơi, <strong>hát thầm</strong> lại câu vừa nghe — hát được thì chơi sẽ dễ.</li>
-          <li>So với nốt chủ: nốt vừa nghe cao hơn hay thấp hơn, gần hay xa? Đoán rồi thử, sai thì nghe lại.</li>
-          <li>Chơi từng nốt rõ ràng, ngắt nhẹ giữa các nốt{BRAND.verb === 'thổi' ? ' (đánh lưỡi "tu" khi thổi)' : ''}.</li>
-          <li>Mỗi ngày 10 phút. Cấp nào đúng trên 80% thì lên cấp kế.</li>
+          <li>{tx('Trước khi chơi,')} <strong>{tx('hát thầm')}</strong> {tx('lại câu vừa nghe — hát được thì chơi sẽ dễ.')}</li>
+          <li>{tx('So với nốt chủ: nốt vừa nghe cao hơn hay thấp hơn, gần hay xa? Đoán rồi thử, sai thì nghe lại.')}</li>
+          <li>{tx('Chơi từng nốt rõ ràng, ngắt nhẹ giữa các nốt')}{IS_BLOWN_APP ? tx(' (đánh lưỡi "tu" khi thổi)') : ''}.</li>
+          <li>{tx('Mỗi ngày 10 phút. Cấp nào đúng trên 80% thì lên cấp kế.')}</li>
         </ul>
       </details>
     </div>

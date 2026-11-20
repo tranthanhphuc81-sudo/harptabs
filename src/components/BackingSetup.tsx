@@ -7,6 +7,7 @@ import type { FlatEvent } from '../lib/tabText';
 import { fromAnchors, fromBpm, fromTaps, TempoMap, TempoPoint } from '../lib/tempoMap';
 import type { Backing, Song } from '../lib/types';
 import { Icon } from './Icon';
+import { t as tx } from '../lib/i18n';
 
 /** người chạm thường trễ hơn lúc nghe chừng này (giây) */
 const TAP_REACTION = 0.12;
@@ -21,9 +22,9 @@ function analyze(samples: Float32Array, sampleRate: number, score: ScoreNote[]):
     const w = new Worker(new URL('../lib/audioAlign.worker.ts', import.meta.url), { type: 'module' });
     w.onmessage = (e: MessageEvent<{ ok: boolean; result?: Comparison; error?: string }>) => {
       w.terminate();
-      if (e.data.ok && e.data.result) resolve(e.data.result); else reject(new Error(e.data.error || 'Lỗi phân tích'));
+      if (e.data.ok && e.data.result) resolve(e.data.result); else reject(new Error(e.data.error || tx('Lỗi phân tích')));
     };
-    w.onerror = (e) => { w.terminate(); reject(new Error(e.message || 'Lỗi phân tích')); };
+    w.onerror = (e) => { w.terminate(); reject(new Error(e.message || tx('Lỗi phân tích'))); };
     w.postMessage({ samples, sampleRate, score, mode: 'mix' }, [samples.buffer]);
   });
 }
@@ -98,7 +99,7 @@ export function BackingSetup({ song, flat, lines, existing, onSaved, onClose }: 
       setConfidence(conf);
       setKeyOffset(keyShift(r.offset));
       setSource('auto');
-      if (!m) { setMap(null); setErr('Máy chưa gióng được nhạc với tab — canh bằng tay bên dưới.'); setStep('review'); return; }
+      if (!m) { setMap(null); setErr(tx('Máy chưa gióng được nhạc với tab — canh bằng tay bên dưới.')); setStep('review'); return; }
       setMap(m);
       setOffsetMs(0);
       setStep('review');
@@ -115,7 +116,7 @@ export function BackingSetup({ song, flat, lines, existing, onSaved, onClose }: 
     setErr(null);
     try {
       const b = await decodeBacking(f);
-      if (b.duration > MAX_BACKING_MIN * 60) { setErr(`Bài dài quá (tối đa ${MAX_BACKING_MIN} phút)`); return; }
+      if (b.duration > MAX_BACKING_MIN * 60) { setErr(tx('Bài dài quá (tối đa {0} phút)', MAX_BACKING_MIN)); return; }
       setFile({ blob: f, name: f.name, mime: f.type || 'audio/mpeg' });
       setBuffer(b);
       await autoSync(b);
@@ -175,7 +176,7 @@ export function BackingSetup({ song, flat, lines, existing, onSaved, onClose }: 
     player.current?.stop();
     setPlaying(false);
     const m = fromTaps(taps);
-    if (!m) { setErr('Cần chạm ít nhất 2 câu'); return; }
+    if (!m) { setErr(tx('Cần chạm ít nhất 2 câu')); return; }
     setMap(m); setSource('tap'); setConfidence(taps.length / Math.max(1, lyricLines.length)); setOffsetMs(0); setErr(null);
     setStep('review');
   };
@@ -217,20 +218,20 @@ export function BackingSetup({ song, flat, lines, existing, onSaved, onClose }: 
   const line = lines[preview.line];
   return (
     <dialog ref={ref} className="sheet backing-setup" onClose={() => { player.current?.stop(); onClose(); }} aria-labelledby="bk-title">
-      <h2 id="bk-title">Nhạc nền MP3</h2>
+      <h2 id="bk-title">{tx('Nhạc nền MP3')}</h2>
       <input ref={fileRef} type="file" accept="audio/*,.mp3,.m4a,.aac,.wav,.ogg,.opus,.flac" hidden onChange={(e) => void pick(e.target.files?.[0])} />
       {err && <p className="alert error small" role="alert">{err}</p>}
 
       {step === 'pick' && (
         <>
-          <p className="muted">Chọn file nhạc của bài này mà bạn có sẵn trên máy (beat karaoke hoặc bản gốc). Máy sẽ tự gióng lời theo nhạc.</p>
-          <button type="button" className="btn btn-primary" onClick={() => fileRef.current?.click()}><Icon name="upload" size={18} /> Chọn file nhạc</button>
+          <p className="muted">{tx('Chọn file nhạc của bài này mà bạn có sẵn trên máy (beat karaoke hoặc bản gốc). Máy sẽ tự gióng lời theo nhạc.')}</p>
+          <button type="button" className="btn btn-primary" onClick={() => fileRef.current?.click()}><Icon name="upload" size={18} /> {tx('Chọn file nhạc')}</button>
         </>
       )}
 
       {step === 'analyzing' && (
         <>
-          <p className="muted small">Đang dò giai điệu trong file và gióng với tab… (bài dài có thể mất chục giây)</p>
+          <p className="muted small">{tx('Đang dò giai điệu trong file và gióng với tab… (bài dài có thể mất chục giây)')}</p>
           <div className="progress" aria-hidden="true"><span /></div>
         </>
       )}
@@ -240,23 +241,23 @@ export function BackingSetup({ song, flat, lines, existing, onSaved, onClose }: 
           <p className="small">
             <strong>{file?.name}</strong>{buffer && <span className="muted"> · {Math.floor(buffer.duration / 60)}:{String(Math.round(buffer.duration % 60)).padStart(2, '0')}</span>}
           </p>
-          {stale && <p className="alert small">Tab đã sửa sau lần đồng bộ trước — nên đồng bộ lại.</p>}
+          {stale && <p className="alert small">{tx('Tab đã sửa sau lần đồng bộ trước — nên đồng bộ lại.')}</p>}
           {map ? (
             <p className="small">
-              {source === 'auto' ? <>Máy tự gióng: khớp <strong>{Math.round(confidence * 100)}%</strong> nốt</> : source === 'tap' ? <>Canh tay: {Math.round(confidence * 100)}% số câu</> : <>Nhịp đều</>}
-              {keyOffset !== 0 && <> · nhạc {keyOffset > 0 ? 'cao' : 'thấp'} hơn tab {Math.abs(keyOffset)} nửa cung (lời và chấm điểm theo nhạc)</>}
-              {source === 'auto' && confidence < LOW_CONFIDENCE && <><br /><span className="danger">Gióng chưa chắc — nghe thử, nếu lệch thì canh tay.</span></>}
+              {source === 'auto' ? <>{tx('Máy tự gióng: khớp')} <strong>{Math.round(confidence * 100)}%</strong> {tx('nốt')}</> : source === 'tap' ? <>{tx('Canh tay: {0}% số câu', Math.round(confidence * 100))}</> : <>{tx('Nhịp đều')}</>}
+              {keyOffset !== 0 && <> {tx('· nhạc')} {keyOffset > 0 ? 'cao' : tx('thấp')} {tx('hơn tab')} {Math.abs(keyOffset)} {tx('nửa cung (lời và chấm điểm theo nhạc)')}</>}
+              {source === 'auto' && confidence < LOW_CONFIDENCE && <><br /><span className="danger">{tx('Gióng chưa chắc — nghe thử, nếu lệch thì canh tay.')}</span></>}
             </p>
-          ) : <p className="muted small">Chưa có bản đồ nhịp.</p>}
+          ) : <p className="muted small">{tx('Chưa có bản đồ nhịp.')}</p>}
 
           {map && (
             <div className="bk-preview">
               <div className="row gap center wrap">
-                <select className="chip-select" value={fromLine} onChange={(e) => setFromLine(Number(e.target.value))} aria-label="Nghe thử từ câu">
-                  {lyricLines.map(({ l, i }, k) => <option key={i} value={i}>Câu {k + 1}: {l.syls.map((s) => s.text).join(' ').slice(0, 28)}</option>)}
+                <select className="chip-select" value={fromLine} onChange={(e) => setFromLine(Number(e.target.value))} aria-label={tx('Nghe thử từ câu')}>
+                  {lyricLines.map(({ l, i }, k) => <option key={i} value={i}>{tx('Câu {0}: {1}', k + 1, l.syls.map((s) => s.text).join(' ').slice(0, 28))}</option>)}
                 </select>
                 <button type="button" className="btn btn-primary btn-sm" onClick={playPreview} disabled={!buffer}>
-                  <Icon name={playing ? 'stop' : 'play'} size={16} /> {playing ? 'Dừng' : 'Nghe thử'}
+                  <Icon name={playing ? 'stop' : 'play'} size={16} /> {playing ? tx('Dừng') : tx('Nghe thử')}
                 </button>
               </div>
               {playing && line && (
@@ -265,54 +266,54 @@ export function BackingSetup({ song, flat, lines, existing, onSaved, onClose }: 
                 </p>
               )}
               <label className="field">
-                <span className="field-label">Lời sớm / muộn so với nhạc: {offsetMs > 0 ? '+' : ''}{offsetMs} ms</span>
+                <span className="field-label">{tx('Lời sớm / muộn so với nhạc: {0}{1} ms', offsetMs > 0 ? '+' : '', offsetMs)}</span>
                 <input type="range" min={-1000} max={1000} step={20} value={offsetMs} onChange={(e) => setOffsetMs(Number(e.target.value))} />
               </label>
             </div>
           )}
 
           <div className="row gap wrap">
-            <button type="button" className="btn btn-ghost btn-sm" onClick={startTap} disabled={!buffer || !lyricLines.length}>Canh tay: chạm theo câu</button>
-            <button type="button" className="btn btn-ghost btn-sm" onClick={() => setStep('bpm')} disabled={!buffer}>Nhịp đều</button>
-            <button type="button" className="btn btn-ghost btn-sm" onClick={() => buffer && void autoSync(buffer)} disabled={!buffer}>Tự đồng bộ lại</button>
-            <button type="button" className="btn btn-ghost btn-sm" onClick={() => fileRef.current?.click()}>Đổi file</button>
-            {existing && <button type="button" className="btn btn-ghost btn-sm" onClick={() => void remove()}><Icon name="trash" size={16} /> Bỏ nhạc nền</button>}
+            <button type="button" className="btn btn-ghost btn-sm" onClick={startTap} disabled={!buffer || !lyricLines.length}>{tx('Canh tay: chạm theo câu')}</button>
+            <button type="button" className="btn btn-ghost btn-sm" onClick={() => setStep('bpm')} disabled={!buffer}>{tx('Nhịp đều')}</button>
+            <button type="button" className="btn btn-ghost btn-sm" onClick={() => buffer && void autoSync(buffer)} disabled={!buffer}>{tx('Tự đồng bộ lại')}</button>
+            <button type="button" className="btn btn-ghost btn-sm" onClick={() => fileRef.current?.click()}>{tx('Đổi file')}</button>
+            {existing && <button type="button" className="btn btn-ghost btn-sm" onClick={() => void remove()}><Icon name="trash" size={16} /> {tx('Bỏ nhạc nền')}</button>}
           </div>
         </>
       )}
 
       {step === 'tap' && (
         <>
-          <p className="muted small">Nhạc đang phát từ đầu. Chạm nút lớn đúng lúc mỗi câu dưới đây bắt đầu hát. Chạm được vài câu là đủ.</p>
-          <p className="bk-tap-line">{lyricLines[tapLine] ? lyricLines[tapLine].l.syls.map((s) => s.text).join(' ') : 'Hết câu'}</p>
+          <p className="muted small">{tx('Nhạc đang phát từ đầu. Chạm nút lớn đúng lúc mỗi câu dưới đây bắt đầu hát. Chạm được vài câu là đủ.')}</p>
+          <p className="bk-tap-line">{lyricLines[tapLine] ? lyricLines[tapLine].l.syls.map((s) => s.text).join(' ') : tx('Hết câu')}</p>
           <div className="row gap center wrap">
-            <button type="button" className="kara-play" onClick={tap} disabled={!lyricLines[tapLine] || !playing} aria-label="Câu này bắt đầu">
+            <button type="button" className="kara-play" onClick={tap} disabled={!lyricLines[tapLine] || !playing} aria-label={tx('Câu này bắt đầu')}>
               <Icon name="check" size={28} />
             </button>
-            <button type="button" className="btn btn-ghost btn-sm" onClick={() => setTapLine((n) => n + 1)} disabled={!lyricLines[tapLine]}>Bỏ qua câu</button>
-            <button type="button" className="btn btn-primary btn-sm" onClick={finishTap} disabled={taps.length < 2}>Xong ({taps.length} câu)</button>
+            <button type="button" className="btn btn-ghost btn-sm" onClick={() => setTapLine((n) => n + 1)} disabled={!lyricLines[tapLine]}>{tx('Bỏ qua câu')}</button>
+            <button type="button" className="btn btn-primary btn-sm" onClick={finishTap} disabled={taps.length < 2}>{tx('Xong ({0} câu)', taps.length)}</button>
           </div>
         </>
       )}
 
       {step === 'bpm' && (
         <>
-          <p className="muted small">Nhạc giữ đều một tốc độ (beat karaoke thường như vậy): nhập giây câu đầu tiên bắt đầu hát và tốc độ.</p>
+          <p className="muted small">{tx('Nhạc giữ đều một tốc độ (beat karaoke thường như vậy): nhập giây câu đầu tiên bắt đầu hát và tốc độ.')}</p>
           <div className="row gap wrap end-align">
-            <label className="field"><span className="field-label">Câu đầu bắt đầu ở giây</span>
+            <label className="field"><span className="field-label">{tx('Câu đầu bắt đầu ở giây')}</span>
               <input type="number" min={0} step={0.1} value={firstSec} onChange={(e) => setFirstSec(Math.max(0, Number(e.target.value) || 0))} /></label>
-            <label className="field"><span className="field-label">Tốc độ (bpm)</span>
+            <label className="field"><span className="field-label">{tx('Tốc độ (bpm)')}</span>
               <input type="number" min={30} max={260} value={bpm} onChange={(e) => setBpm(Math.min(260, Math.max(30, Number(e.target.value) || song.bpm)))} /></label>
-            <button type="button" className="btn btn-primary btn-sm" onClick={applyBpm}>Dùng</button>
-            <button type="button" className="btn btn-ghost btn-sm" onClick={() => setStep('review')}>Huỷ</button>
+            <button type="button" className="btn btn-primary btn-sm" onClick={applyBpm}>{tx('Dùng')}</button>
+            <button type="button" className="btn btn-ghost btn-sm" onClick={() => setStep('review')}>{tx('Huỷ')}</button>
           </div>
         </>
       )}
 
-      <p className="muted small">File chỉ lưu trên máy này để hát cho riêng bạn — không có trong file sao lưu, link chia sẻ hay gửi đi đâu. Chỉ dùng file bạn có quyền dùng.</p>
+      <p className="muted small">{tx('File chỉ lưu trên máy này để hát cho riêng bạn — không có trong file sao lưu, link chia sẻ hay gửi đi đâu. Chỉ dùng file bạn có quyền dùng.')}</p>
       <div className="row gap end">
-        <button type="button" className="btn btn-ghost" onClick={() => ref.current?.close()}>Đóng</button>
-        {step === 'review' && <button type="button" className="btn btn-primary" onClick={() => void save()} disabled={!map || !file || !buffer || saving}>{saving ? 'Đang lưu…' : 'Lưu'}</button>}
+        <button type="button" className="btn btn-ghost" onClick={() => ref.current?.close()}>{tx('Đóng')}</button>
+        {step === 'review' && <button type="button" className="btn btn-primary" onClick={() => void save()} disabled={!map || !file || !buffer || saving}>{saving ? tx('Đang lưu…') : tx('Lưu')}</button>}
       </div>
     </dialog>
   );

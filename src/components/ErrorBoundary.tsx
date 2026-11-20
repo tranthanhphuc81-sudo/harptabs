@@ -1,4 +1,5 @@
 import { Component, ErrorInfo, ReactNode } from 'react';
+import { t } from '../lib/i18n';
 
 interface Props { children: ReactNode }
 interface State { error: Error | null }
@@ -23,14 +24,14 @@ export class ErrorBoundary extends Component<Props, State> {
     return (
       <div className="page">
         <div className="panel" role="alert">
-          <h2>{stale ? 'App vừa có bản mới' : 'Trang này gặp lỗi'}</h2>
+          <h2>{stale ? t('App vừa có bản mới') : t('Trang này gặp lỗi')}</h2>
           <p className="muted">
-            {stale ? 'Tải lại để dùng bản mới nhất.' : 'Bài hát và cài đặt của bạn vẫn còn nguyên. Thử tải lại hoặc quay về thư viện.'}
+            {stale ? t('Tải lại để dùng bản mới nhất.') : t('Bài hát và cài đặt của bạn vẫn còn nguyên. Thử tải lại hoặc quay về thư viện.')}
           </p>
           {!stale && <p className="muted small">{error.message}</p>}
           <div className="row gap wrap">
-            <button className="btn btn-primary" onClick={() => location.reload()}>Tải lại</button>
-            <a className="btn btn-ghost" href="#/" onClick={() => this.setState({ error: null })}>Về thư viện</a>
+            <button className="btn btn-primary" onClick={() => location.reload()}>{t('Tải lại')}</button>
+            <a className="btn btn-ghost" href="#/" onClick={() => this.setState({ error: null })}>{t('Về thư viện')}</a>
           </div>
         </div>
       </div>

@@ -1,6 +1,7 @@
 import { previewNote } from '../audio/engine';
 import { BAU_NODES, BAU_OPEN } from '../data/danbau';
 import { HarpKey, keyOffset, midiToName, NoteNameStyle } from '../lib/harp';
+import { t as tx } from '../lib/i18n';
 
 /**
  * Đàn bầu: dây đàn nằm ngang, cần đàn bên trái, ngựa đàn bên phải. Điểm bồi 1/n nằm cách ngựa 1/n chiều dài dây,
@@ -49,7 +50,7 @@ export function BauChart({ harpKey = 'C', highlight = [], selected, nameStyle = 
   const nodeOf = (t: string | null | undefined) => Number(/^b(\d)/.exec(t ?? '')?.[1] ?? 0);
   const hi = new Set(highlight.map(nodeOf));
   return (
-    <div className="bau-chart" role="group" aria-label="Sơ đồ đàn bầu">
+    <div className="bau-chart" role="group" aria-label={tx('Sơ đồ đàn bầu')}>
       <div className="bc-string" aria-hidden="true" />
       <div className="bc-nodes">
         {BAU_NODES.map(({ n, semis }) => {
@@ -58,14 +59,14 @@ export function BauChart({ harpKey = 'C', highlight = [], selected, nameStyle = 
             <button key={n} type="button" tabIndex={interactive ? 0 : -1}
               className={`bc-node${hi.has(n) ? ' on' : ''}${nodeOf(selected) === n ? ' sel' : ''}`}
               onClick={interactive ? () => (onPick ? onPick(t) : previewNote(open + semis)) : undefined}
-              aria-label={`${n === 1 ? 'Dây buông' : `Bồi 1/${n}`}: ${midiToName(open + semis, nameStyle)}`}>
+              aria-label={`${n === 1 ? tx('Dây buông') : tx('Bồi 1/{0}', n)}: ${midiToName(open + semis, nameStyle)}`}>
               <span className="bc-frac">{BAU_GLYPH[n]}</span>
               <span className="bc-name">{midiToName(open + semis, nameStyle, false)}</span>
             </button>
           );
         })}
       </div>
-      <p className="small muted bc-hint">Cần đàn bên trái, ngựa đàn bên phải. Chạm nhẹ cạnh bàn tay vào điểm bồi rồi gảy; ↑ / ↓ là nắn cần cho nốt cao / thấp đi mấy nửa cung.</p>
+      <p className="small muted bc-hint">{tx('Cần đàn bên trái, ngựa đàn bên phải. Chạm nhẹ cạnh bàn tay vào điểm bồi rồi gảy; ↑ / ↓ là nắn cần cho nốt cao / thấp đi mấy nửa cung.')}</p>
     </div>
   );
 }

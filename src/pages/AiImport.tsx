@@ -18,6 +18,7 @@ import { useAppState, useOnline } from '../state';
 import PasteTab from './PasteTab';
 import { AI_ENABLED } from '../lib/features';
 import { useScrollHint } from '../components/useScrollHint';
+import { LOCALE, t } from '../lib/i18n';
 
 // quét nhạc và đọc file nặng (OMR, MIDI, PDF): chỉ tải khi chọn
 const ScanImport = lazy(() => import('./ScanImport'));
@@ -30,7 +31,7 @@ interface Img { id: string; mimeType: string; data: string; preview: string }
 
 function vnd(usd: number) {
   const v = usd * VND_PER_USD;
-  return v < 10 ? '< 10đ' : `${Math.round(v).toLocaleString('vi-VN')}đ`;
+  return v < 10 ? t('< 10đ') : t('{0}đ', Math.round(v).toLocaleString(LOCALE));
 }
 
 export default function AiImport() {
@@ -89,7 +90,7 @@ export default function AiImport() {
   const addFiles = async (files: FileList | null) => {
     if (!files) return;
     const room = MAX_IMAGES - images.length;
-    if (files.length > room) toast(`Tối đa ${MAX_IMAGES} ảnh mỗi lần`);
+    if (files.length > room) toast(t('Tối đa {0} ảnh mỗi lần', MAX_IMAGES));
     const picked = Array.from(files).slice(0, room);
     try {
       const prepared = await Promise.all(picked.map(prepareImage));
@@ -116,7 +117,7 @@ export default function AiImport() {
       setLastMode(mode);
       await db.aiLog.add({ at: Date.now(), kind: mode === 'name' ? 'name' : 'image', model: r.usage.model, inputTokens: r.usage.inputTokens, outputTokens: r.usage.outputTokens, costUsd: estimateCostUsd(r.usage) });
     } catch (e) {
-      if ((e as Error).name !== 'AbortError') setError((e as Error).message || 'Có lỗi xảy ra');
+      if ((e as Error).name !== 'AbortError') setError((e as Error).message || t('Có lỗi xảy ra'));
     } finally {
       setBusy(false);
       abortRef.current = null;
@@ -127,7 +128,7 @@ export default function AiImport() {
     if (!resp || !converted) return;
     const r = resp.result;
     const song = blankSong({
-      title: r.title || title || 'Bài mới',
+      title: r.title || title || t('Bài mới'),
       artist: r.artist || artist || undefined,
       harpKey: converted.harpKey,
       songKey: converted.fit.shift % 12 === 0 ? converted.songKey : undefined,
@@ -140,11 +141,11 @@ export default function AiImport() {
       source: lastMode === 'image' ? 'ai-image' : 'ai-name',
       tags: ['AI'],
       notes: lastMode === 'image'
-        ? 'Quét từ ảnh — AI hay đọc sai cao độ. Nghe lại, so với bản nhạc và sửa những chỗ sai.'
-        : r.confidence < 0.6 ? 'AI chưa chắc chắn về giai điệu — nghe lại và sửa những chỗ sai.' : undefined,
+        ? t('Quét từ ảnh — AI hay đọc sai cao độ. Nghe lại, so với bản nhạc và sửa những chỗ sai.')
+        : r.confidence < 0.6 ? t('AI chưa chắc chắn về giai điệu — nghe lại và sửa những chỗ sai.') : undefined,
     });
     await db.songs.put(song);
-    toast('Đã lưu vào thư viện — kiểm tra lại rồi bấm Lưu bài');
+    toast(t('Đã lưu vào thư viện — kiểm tra lại rồi bấm Lưu bài'));
     nav(`/song/${song.id}/edit`);
   };
 
@@ -169,43 +170,43 @@ export default function AiImport() {
     <div className="page page-ai">
       <header className="page-head">
         <div>
-          <h1>{editScan ? 'Sửa nốt trên ảnh' : 'Nhập bài'}</h1>
-          {!editScan && <p className="muted">File nhạc (chính xác nhất), ảnh bản nhạc, tab chép từ mạng{AI_ENABLED ? ', bản thu hoặc nhờ AI' : ' hoặc bản thu'} — chọn cách bên dưới.</p>}
+          <h1>{editScan ? t('Sửa nốt trên ảnh') : t('Nhập bài')}</h1>
+          {!editScan && <p className="muted">{t('File nhạc (chính xác nhất), ảnh bản nhạc, tab chép từ mạng')}{AI_ENABLED ? t(', bản thu hoặc nhờ AI') : t(' hoặc bản thu')} {t('— chọn cách bên dưới.')}</p>}
         </div>
       </header>
 
       {(mode === 'image' || mode === 'name') && !configured && (
         <div className="alert">
-          Chưa kết nối AI. Vào <Link to="/settings">Cài đặt</Link> để nhập địa chỉ máy chủ AI, hoặc dán Gemini API key của bạn (chỉ nên dùng cho máy cá nhân).
+          {t('Chưa kết nối AI. Vào')} <Link to="/settings">{t('Cài đặt')}</Link> {t('để nhập địa chỉ máy chủ AI, hoặc dán Gemini API key của bạn (chỉ nên dùng cho máy cá nhân).')}
         </div>
       )}
-      {(mode === 'image' || mode === 'name') && !online && <div className="alert">Bạn đang offline. Phần này cần mạng; các phần khác của app vẫn dùng bình thường.</div>}
+      {(mode === 'image' || mode === 'name') && !online && <div className="alert">{t('Bạn đang offline. Phần này cần mạng; các phần khác của app vẫn dùng bình thường.')}</div>}
 
-      <div className="segmented scroll-row" ref={tabsRef} role="tablist" aria-label="Cách nhập">
+      <div className="segmented scroll-row" ref={tabsRef} role="tablist" aria-label={t('Cách nhập')}>
         {IS_GUITAR_APP && (
           <button type="button" role="tab" aria-selected={mode === 'chords'} className={mode === 'chords' ? 'on' : ''} onClick={() => setMode('chords')}>
-            <Icon name="edit" size={18} /> Dán hợp âm
+            <Icon name="edit" size={18} /> {t('Dán hợp âm')}
           </button>
         )}
         <button type="button" role="tab" aria-selected={mode === 'file'} className={mode === 'file' ? 'on' : ''} onClick={() => setMode('file')}>
-          <Icon name="music" size={18} /> File nhạc
+          <Icon name="music" size={18} /> {t('File nhạc')}
         </button>
         <button type="button" role="tab" aria-selected={mode === 'scan'} className={mode === 'scan' ? 'on' : ''} onClick={() => setMode('scan')}>
-          <Icon name="scan" size={18} /> Quét nhạc
+          <Icon name="scan" size={18} /> {t('Quét nhạc')}
         </button>
         <button type="button" role="tab" aria-selected={mode === 'paste'} className={mode === 'paste' ? 'on' : ''} onClick={() => setMode('paste')}>
-          <Icon name="edit" size={18} /> Dán tab
+          <Icon name="edit" size={18} /> {t('Dán tab')}
         </button>
         <button type="button" role="tab" aria-selected={mode === 'audio'} className={mode === 'audio' ? 'on' : ''} onClick={() => setMode('audio')}>
-          <Icon name="mic" size={18} /> Bản thu
+          <Icon name="mic" size={18} /> {t('Bản thu')}
         </button>
         {AI_ENABLED && (
           <>
             <button type="button" role="tab" aria-selected={mode === 'image'} className={mode === 'image' ? 'on' : ''} onClick={() => setMode('image')}>
-              <Icon name="camera" size={18} /> Ảnh + AI
+              <Icon name="camera" size={18} /> {t('Ảnh + AI')}
             </button>
             <button type="button" role="tab" aria-selected={mode === 'name'} className={mode === 'name' ? 'on' : ''} onClick={() => setMode('name')}>
-              <Icon name="search" size={18} /> Tên bài
+              <Icon name="search" size={18} /> {t('Tên bài')}
             </button>
           </>
         )}
@@ -222,73 +223,73 @@ export default function AiImport() {
                 <figure key={im.id} className="shot">
                   <img src={im.preview} alt={`Trang ${i + 1}`} />
                   <figcaption>Trang {i + 1}</figcaption>
-                  <button type="button" className="icon-btn shot-x" onClick={() => setImages(images.filter((x) => x.id !== im.id))} aria-label={`Bỏ trang ${i + 1}`}>
+                  <button type="button" className="icon-btn shot-x" onClick={() => setImages(images.filter((x) => x.id !== im.id))} aria-label={t('Bỏ trang {0}', i + 1)}>
                     <Icon name="close" size={16} />
                   </button>
                 </figure>
               ))}
               {images.length < MAX_IMAGES && (
                 <div className="shot-add">
-                  <button type="button" className="btn btn-primary" onClick={() => camRef.current?.click()}><Icon name="camera" size={18} /> Chụp ảnh</button>
-                  <button type="button" className="btn btn-ghost" onClick={() => galRef.current?.click()}><Icon name="image" size={18} /> Chọn ảnh có sẵn</button>
-                  <p className="muted small">Chụp thẳng, đủ sáng, thấy rõ khoá nhạc và dấu hoá. Tối đa {MAX_IMAGES} trang, theo thứ tự.</p>
-                  <p className="muted small"><strong>Đang thử nghiệm:</strong> AI thường đọc sai cao độ. Bản nhạc in thì dùng <button type="button" className="link-btn" onClick={() => setMode('scan')}>Quét nhạc</button> chính xác hơn, không tốn tiền.</p>
+                  <button type="button" className="btn btn-primary" onClick={() => camRef.current?.click()}><Icon name="camera" size={18} /> {t('Chụp ảnh')}</button>
+                  <button type="button" className="btn btn-ghost" onClick={() => galRef.current?.click()}><Icon name="image" size={18} /> {t('Chọn ảnh có sẵn')}</button>
+                  <p className="muted small">{t('Chụp thẳng, đủ sáng, thấy rõ khoá nhạc và dấu hoá. Tối đa {0} trang, theo thứ tự.', MAX_IMAGES)}</p>
+                  <p className="muted small"><strong>{t('Đang thử nghiệm:')}</strong> {t('AI thường đọc sai cao độ. Bản nhạc in thì dùng')} <button type="button" className="link-btn" onClick={() => setMode('scan')}>{t('Quét nhạc')}</button> {t('chính xác hơn, không tốn tiền.')}</p>
                 </div>
               )}
               <input ref={camRef} type="file" accept="image/*" capture="environment" hidden onChange={(e) => addFiles(e.target.files)} />
               <input ref={galRef} type="file" accept="image/*" multiple hidden onChange={(e) => addFiles(e.target.files)} />
             </div>
             <label className="field">
-              <span className="field-label">Tên bài (tuỳ chọn)</span>
+              <span className="field-label">{t('Tên bài (tuỳ chọn)')}</span>
               <input value={title} onChange={(e) => setTitle(e.target.value)} />
             </label>
           </>
         ) : (
           <div className="row gap wrap">
             <label className="field grow">
-              <span className="field-label">Tên bài hát</span>
-              <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Ví dụ: Oh! Susanna" />
+              <span className="field-label">{t('Tên bài hát')}</span>
+              <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder={t('Ví dụ: Oh! Susanna')} />
             </label>
             <label className="field grow">
-              <span className="field-label">Tác giả / ca sĩ (giúp AI đoán đúng bài)</span>
+              <span className="field-label">{t('Tác giả / ca sĩ (giúp AI đoán đúng bài)')}</span>
               <input value={artist} onChange={(e) => setArtist(e.target.value)} />
             </label>
           </div>
         )}
 
         <label className="field">
-          <span className="field-label">Lời bài hát (tuỳ chọn)</span>
-          <textarea rows={4} value={lyrics} onChange={(e) => setLyrics(e.target.value)} placeholder="Dán lời vào đây để AI ghép từng chữ vào nốt." />
+          <span className="field-label">{t('Lời bài hát (tuỳ chọn)')}</span>
+          <textarea rows={4} value={lyrics} onChange={(e) => setLyrics(e.target.value)} placeholder={t('Dán lời vào đây để AI ghép từng chữ vào nốt.')} />
           <span className="help">
             {mode === 'name'
-              ? 'AI không tự viết lời bài hát (vấn đề bản quyền). Muốn có lời, hãy dán lời bạn có vào đây.'
-              : 'Để trống thì AI dùng lời in trên bản nhạc.'}
+              ? t('AI không tự viết lời bài hát (vấn đề bản quyền). Muốn có lời, hãy dán lời bạn có vào đây.')
+              : t('Để trống thì AI dùng lời in trên bản nhạc.')}
           </span>
         </label>
         <label className="field">
-          <span className="field-label">Ghi chú cho AI (tuỳ chọn)</span>
-          <input value={hint} onChange={(e) => setHint(e.target.value)} placeholder="Ví dụ: chỉ lấy điệp khúc, bản nhạc giọng Rê" />
+          <span className="field-label">{t('Ghi chú cho AI (tuỳ chọn)')}</span>
+          <input value={hint} onChange={(e) => setHint(e.target.value)} placeholder={t('Ví dụ: chỉ lấy điệp khúc, bản nhạc giọng Rê')} />
         </label>
 
         <div className="row gap wrap end-align">
-          <KeySelect value={target} onChange={setTarget} allowAuto label={`Chơi trên ${BRAND.noun}`} />
+          <KeySelect value={target} onChange={setTarget} allowAuto label={t('Chơi trên {0}', BRAND.noun)} />
           {target !== 'auto' && (
             <label className="check">
               <input type="checkbox" checked={allowTranspose} onChange={(e) => setAllowTranspose(e.target.checked)} />
-              Cho phép dịch giọng để dễ thổi
+              {t('Cho phép dịch giọng để dễ thổi')}
             </label>
           )}
         </div>
 
         <div className="row gap center wrap">
           {busy ? (
-            <button type="button" className="btn btn-ghost" onClick={() => abortRef.current?.abort()}>Huỷ</button>
+            <button type="button" className="btn btn-ghost" onClick={() => abortRef.current?.abort()}>{t('Huỷ')}</button>
           ) : (
-            <button type="button" className="btn btn-primary btn-lg" disabled={!canRun} onClick={run}>Chuyển thành tab</button>
+            <button type="button" className="btn btn-primary btn-lg" disabled={!canRun} onClick={run}>{t('Chuyển thành tab')}</button>
           )}
           <span className="muted small">
-            {busy ? 'AI đang đọc giai điệu, thường mất 10–40 giây…' : `Ước tính khoảng ${vnd(estimate)} mỗi lần với ${settings.model}.`}
-            {monthCost && monthCost.n > 0 && ` Tháng này: ${monthCost.n} lần, khoảng ${vnd(monthCost.usd)}.`}
+            {busy ? t('AI đang đọc giai điệu, thường mất 10–40 giây…') : t('Ước tính khoảng {0} mỗi lần với {1}.', vnd(estimate), settings.model)}
+            {monthCost && monthCost.n > 0 && t(' Tháng này: {0} lần, khoảng {1}.', monthCost.n, vnd(monthCost.usd))}
           </span>
         </div>
         {busy && <div className="progress" aria-hidden="true"><span /></div>}
@@ -296,50 +297,49 @@ export default function AiImport() {
       </div>
 
       {resp && converted && parsed && (
-        <section className="ai-result" aria-label="Kết quả">
+        <section className="ai-result" aria-label={t('Kết quả')}>
           <div className="row between center wrap gap">
             <div>
               <h2>{resp.result.title}</h2>
               <p className="muted">
-                Kèn {converted.harpKey}
-                {converted.fit.shift % 12 !== 0 && `, đã dịch giọng ${converted.fit.shift > 0 ? '+' : ''}${converted.fit.shift} nửa cung`}
+                {t('Kèn')} {converted.harpKey}
+                {converted.fit.shift % 12 !== 0 && t(', đã dịch giọng {0}{1} nửa cung', converted.fit.shift > 0 ? '+' : '', converted.fit.shift)}
                 {`, ${converted.timeSig}, ${converted.bpm} bpm`}
               </p>
             </div>
             {!fromImage && (
-              <div className="confidence" title="Độ tin cậy AI tự đánh giá">
-                <span>Độ tin cậy</span>
+              <div className="confidence" title={t('Độ tin cậy AI tự đánh giá')}>
+                <span>{t('Độ tin cậy')}</span>
                 <meter min={0} max={1} low={0.4} high={0.75} optimum={1} value={resp.result.confidence} />
                 <strong>{Math.round(resp.result.confidence * 100)}%</strong>
               </div>
             )}
           </div>
           <p className="small">
-            {converted.fit.stats.natural} nốt thường, {converted.fit.stats.bends} nốt bend
-            {converted.fit.stats.unplayable > 0 && `, ${converted.fit.stats.unplayable} nốt ngoài tầm ${BRAND.noun} (đã thành dấu nghỉ)`}
-            {`. Lần này tốn khoảng ${vnd(estimateCostUsd(resp.usage))}.`}
+            {converted.fit.stats.natural} {t('nốt thường,')} {converted.fit.stats.bends} {t('nốt bend')}
+            {converted.fit.stats.unplayable > 0 && t(', {0} nốt ngoài tầm {1} (đã thành dấu nghỉ)', converted.fit.stats.unplayable, BRAND.noun)}
+            {t('. Lần này tốn khoảng {0}.', vnd(estimateCostUsd(resp.usage)))}
           </p>
           {fromImage && (
             <div className="alert" role="note">
-              <strong>Kiểm tra kỹ trước khi tập.</strong> Đọc ảnh khuông nhạc đang thử nghiệm: AI thường đếm đủ số nốt nhưng đọc sai cao độ.
-              Bấm Nghe thử và so với bản nhạc, sửa những chỗ sai trong trang Sửa bài.
+              <strong>{t('Kiểm tra kỹ trước khi tập.')}</strong> {t('Đọc ảnh khuông nhạc đang thử nghiệm: AI thường đếm đủ số nốt nhưng đọc sai cao độ. Bấm Nghe thử và so với bản nhạc, sửa những chỗ sai trong trang Sửa bài.')}
               <div className="row gap wrap" style={{ marginTop: 8 }}>
-                <button type="button" className="btn btn-ghost" onClick={tryByName}><Icon name="search" size={18} /> Thử bằng tên bài</button>
+                <button type="button" className="btn btn-ghost" onClick={tryByName}><Icon name="search" size={18} /> {t('Thử bằng tên bài')}</button>
               </div>
             </div>
           )}
           {(tooShort || resp.result.warnings.length > 0 || converted.invalidPitches > 0 || (!fromImage && resp.result.confidence < 0.4)) && (
             <ul className="warnings">
-              {tooShort && <li>AI chỉ trả về {noteCount} nốt — có thể mới là một đoạn ngắn, thiếu phần lớn bài. {fromImage ? 'Thử lại, hoặc chụp từng phần của bản nhạc.' : 'Có thể AI không biết rõ bài này.'}</li>}
-              {!fromImage && resp.result.confidence < 0.4 && <li>AI không chắc về giai điệu bài này. Hãy nghe thử và sửa lại trước khi tập.</li>}
-              {converted.invalidPitches > 0 && <li>{converted.invalidPitches} nốt AI ghi sai định dạng đã được bỏ qua.</li>}
+              {tooShort && <li>{t('AI chỉ trả về')} {noteCount} {t('nốt — có thể mới là một đoạn ngắn, thiếu phần lớn bài.')} {fromImage ? t('Thử lại, hoặc chụp từng phần của bản nhạc.') : t('Có thể AI không biết rõ bài này.')}</li>}
+              {!fromImage && resp.result.confidence < 0.4 && <li>{t('AI không chắc về giai điệu bài này. Hãy nghe thử và sửa lại trước khi tập.')}</li>}
+              {converted.invalidPitches > 0 && <li>{t('{0} nốt AI ghi sai định dạng đã được bỏ qua.', converted.invalidPitches)}</li>}
               {resp.result.warnings.map((w, i) => <li key={i}>{w}</li>)}
             </ul>
           )}
           <TabView parsed={parsed} flat={flat} active={player.active} size="s" showNames={settings.showNoteNames} nameStyle={settings.noteNames} harpType={converted.harpType} harpKey={converted.harpKey} />
           <div className="row gap preview-actions">
             <MiniPlay p={player} />
-            <button type="button" className="btn btn-primary" onClick={save}>Lưu vào thư viện</button>
+            <button type="button" className="btn btn-primary" onClick={save}>{t('Lưu vào thư viện')}</button>
           </div>
         </section>
       )}

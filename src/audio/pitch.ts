@@ -1,5 +1,6 @@
 /** Dò cao độ từ micro bằng thuật toán YIN — chạy hoàn toàn trên máy. */
 import { hzToMidiFloat } from '../lib/harp';
+import { t as tx } from '../lib/i18n';
 
 export interface PitchReading {
   hz: number;
@@ -92,7 +93,7 @@ export class MicPitch {
 
   async start() {
     if (this.stream) return;
-    if (!navigator.mediaDevices?.getUserMedia) throw new Error('Thiết bị không hỗ trợ micro trong trình duyệt này');
+    if (!navigator.mediaDevices?.getUserMedia) throw new Error(tx('Thiết bị không hỗ trợ micro trong trình duyệt này'));
     this.stream = await navigator.mediaDevices.getUserMedia({
       audio: { echoCancellation: this.o.echoCancellation, noiseSuppression: false, autoGainControl: false },
     });

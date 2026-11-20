@@ -10,6 +10,7 @@
  *   Dòng chữ không đứng sau dòng tab được hiển thị như ghi chú.
  */
 import { HarpKey, HarpType, cleanToken, harpName, parseToken, isTabToken } from './harp';
+import { t as tx } from './i18n';
 
 export interface TabEvent {
   /** token đã chuẩn hoá, null nếu là dấu nghỉ */
@@ -124,7 +125,7 @@ export function parseTab(body: string, key: HarpKey, type: HarpType = 'diatonic'
       const events: TabEvent[] = [];
       for (const raw of tokensOf(line)) {
         const { head, beats, bad } = splitTokenDuration(raw);
-        if (bad) issues.push({ lineNo, level: 'error', message: `Độ dài không hợp lệ ở "${raw}" — dùng dạng 4:2, 4:0.5 hoặc 4:1/2` });
+        if (bad) issues.push({ lineNo, level: 'error', message: tx('Độ dài không hợp lệ ở "{0}" — dùng dạng 4:2, 4:0.5 hoặc 4:1/2', raw) });
         const b = beats ?? 1;
         if (isRest(head)) {
           events.push({ token: null, midi: null, beats: b });
@@ -132,7 +133,7 @@ export function parseTab(body: string, key: HarpKey, type: HarpType = 'diatonic'
         }
         const note = parseToken(head, key, type);
         if (!note) {
-          issues.push({ lineNo, level: 'error', message: `"${cleanToken(head)}" không chơi được trên ${harpName(key, type).replace(/^Kèn/, 'kèn')}` });
+          issues.push({ lineNo, level: 'error', message: tx('"{0}" không chơi được trên {1}', cleanToken(head), harpName(key, type).replace(/^Kèn/, 'kèn')) });
           events.push({ token: cleanToken(head), midi: null, beats: b });
         } else {
           events.push({ token: note.token, midi: note.midi, beats: b });
@@ -149,7 +150,7 @@ export function parseTab(body: string, key: HarpKey, type: HarpType = 'diatonic'
       const syl = splitLyrics(line);
       const targets = lastTab.events.filter((e) => e.token !== null);
       if (syl.length > targets.length) {
-        issues.push({ lineNo, level: 'warning', message: `Lời có ${syl.length} chữ nhưng dòng tab chỉ có ${targets.length} nốt` });
+        issues.push({ lineNo, level: 'warning', message: tx('Lời có {0} chữ nhưng dòng tab chỉ có {1} nốt', syl.length, targets.length) });
       }
       targets.forEach((ev, idx) => {
         const s = syl[idx];

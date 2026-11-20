@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { audio, click } from '../audio/engine';
 import { heardTime, outputDelay } from '../audio/latency';
+import { t as tx } from '../lib/i18n';
 
 /** Bù trễ đèn nốt: phát tiếng tích đều + chấm sáng, kéo thanh trượt tới khi chấm sáng đúng lúc nghe tiếng */
 export function SyncCalibrator({ value, onChange }: { value: number; onChange: (ms: number) => void }) {
@@ -39,10 +40,10 @@ export function SyncCalibrator({ value, onChange }: { value: number; onChange: (
     return () => { window.clearInterval(timer); cancelAnimationFrame(raf); };
   }, [testing]);
 
-  const label = value === 0 ? '0 ms' : `${value > 0 ? '+' : ''}${value} ms — đèn ${value > 0 ? 'sáng muộn hơn' : 'sáng sớm hơn'}`;
+  const label = value === 0 ? '0 ms' : tx('{0}{1} ms — đèn {2}', value > 0 ? '+' : '', value, value > 0 ? tx('sáng muộn hơn') : tx('sáng sớm hơn'));
   return (
     <div className="field wide sync-cal">
-      <label className="field-label" htmlFor="sync-offset">Bù trễ đèn nốt</label>
+      <label className="field-label" htmlFor="sync-offset">{tx('Bù trễ đèn nốt')}</label>
       <div className="row gap center wrap">
         <input id="sync-offset" className="grow" type="range" min={-300} max={400} step={10} value={value}
           onChange={(e) => onChange(Number(e.target.value))} aria-valuetext={label} />
@@ -50,14 +51,13 @@ export function SyncCalibrator({ value, onChange }: { value: number; onChange: (
       </div>
       <div className="row gap center wrap">
         <button type="button" className={`btn btn-ghost btn-sm${testing ? ' on' : ''}`} aria-pressed={testing} onClick={() => setTesting((v) => !v)}>
-          {testing ? 'Dừng thử' : 'Thử'}
+          {testing ? tx('Dừng thử') : tx('Thử')}
         </button>
         {testing && <span ref={dot} className="sync-dot" aria-hidden="true" />}
-        {value !== 0 && <button type="button" className="link-btn" onClick={() => onChange(0)}>Về 0</button>}
+        {value !== 0 && <button type="button" className="link-btn" onClick={() => onChange(0)}>{tx('Về 0')}</button>}
       </div>
       <span className="help">
-        App đã tự trừ độ trễ máy báo{reported !== null ? ` (${reported} ms)` : ''}. Nếu đèn nốt vẫn sáng trước tiếng (hay gặp với loa / tai nghe Bluetooth),
-        bấm Thử rồi kéo sang phải tới khi chấm sáng đúng lúc nghe tiếng tích.
+        {tx('App đã tự trừ độ trễ máy báo{0}. Nếu đèn nốt vẫn sáng trước tiếng (hay gặp với loa / tai nghe Bluetooth), bấm Thử rồi kéo sang phải tới khi chấm sáng đúng lúc nghe tiếng tích.', reported !== null ? ` (${reported} ms)` : '')}
       </span>
     </div>
   );

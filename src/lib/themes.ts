@@ -4,6 +4,7 @@
  * CSS của các bảng được dựng từ đây (themeCss) — sửa màu chỉ cần sửa file này.
  */
 
+import { t as tx } from './i18n';
 export type PaletteId = 'steel' | 'walnut' | 'blues' | 'forest' | 'rose' | 'contrast' | 'sunburst' | 'lacquer' | 'ivory' | 'sky';
 export type Mode = 'light' | 'dark';
 
@@ -28,7 +29,7 @@ export interface Palette {
 
 const t = (s: string): Tokens => {
   const v = s.trim().split(/\s+/);
-  if (v.length !== COLOR_TOKENS.length) throw new Error(`Bảng màu thiếu / thừa: ${v.length}`);
+  if (v.length !== COLOR_TOKENS.length) throw new Error(tx('Bảng màu thiếu / thừa: {0}', v.length));
   return Object.fromEntries(COLOR_TOKENS.map((k, i) => [k, v[i]])) as Tokens;
 };
 
@@ -36,8 +37,8 @@ const t = (s: string): Tokens => {
 export const PALETTES: Palette[] = [
   {
     id: 'steel',
-    name: 'Thép',
-    hint: 'Xám thép, nút đồng thau',
+    name: tx('Thép'),
+    hint: tx('Xám thép, nút đồng thau'),
     light: t(`#f3f5f7 #ffffff #edf0f3 #e1e6ea #cbd3da #17212a #5a6773 #dfe4e8 #aeb8c0 #7d8892
       #95600c #f9ebcd #e3bd72 #22589b #dfe9f7 #94b5df #b3264a #2e7d4f #2f6db5 #d08a1e #1d1406 #fbefd8 rgba(255,255,255,0.82)`),
     dark: t(`#0e1317 #161d23 #1f272e #29333b #3a4650 #e6ebef #97a5b0 #3a4650 #56636e #8a97a1
@@ -46,8 +47,8 @@ export const PALETTES: Palette[] = [
   },
   {
     id: 'walnut',
-    name: 'Gỗ ấm',
-    hint: 'Giấy kem, gỗ óc chó — ấm mắt khi tập lâu',
+    name: tx('Gỗ ấm'),
+    hint: tx('Giấy kem, gỗ óc chó — ấm mắt khi tập lâu'),
     light: t(`#f5efe6 #fffaf3 #efe5d6 #e4d6c2 #cfbb9f #2b1f14 #6f5c49 #e6dccd #b9a78f #8c7a64
       #8f4a0e #f7e3c9 #dfae73 #2c5868 #dcebee #8fb9c4 #a82d3c #3a7336 #8a4b14 #a35a1f #fffaf3 #f6e2cc rgba(255,250,243,0.85)`),
     dark: t(`#17110c #211912 #2b2118 #3a2d22 #4d3d2f #f1e6d8 #b9a58e #4d3d2f #6b5845 #a08c75
@@ -56,8 +57,8 @@ export const PALETTES: Palette[] = [
   },
   {
     id: 'blues',
-    name: 'Blues đêm',
-    hint: 'Xanh chàm và vàng sax — chất quán bar',
+    name: tx('Blues đêm'),
+    hint: tx('Xanh chàm và vàng sax — chất quán bar'),
     light: t(`#eef0fb #ffffff #e6e9f8 #d9ddf2 #bcc3e6 #1a1f3d #565d85 #dde1f3 #a9b0d6 #7a82ad
       #9a520a #fbe9d2 #ebb36e #333eae #e1e4fb #9aa2ec #b8235f #2a7656 #4b55d6 #4b55d6 #ffffff #e3e5fb rgba(255,255,255,0.84)`),
     dark: t(`#0b0e24 #13173a #1b2049 #262c5a #353d73 #e7e9ff #9ea4d6 #353d73 #4f5895 #8890c6
@@ -66,8 +67,8 @@ export const PALETTES: Palette[] = [
   },
   {
     id: 'forest',
-    name: 'Rừng thông',
-    hint: 'Xanh rêu, đất nung — dịu và tự nhiên',
+    name: tx('Rừng thông'),
+    hint: tx('Xanh rêu, đất nung — dịu và tự nhiên'),
     light: t(`#eef3ee #fbfdfb #e4ece5 #d6e1d8 #b7c8ba #17261c #516b5b #dbe5dd #a6b9aa #77907d
       #944619 #f6e2d4 #dca37f #1d6656 #d7ece6 #86c0b2 #a92b48 #2c7438 #2c7a63 #2f7d55 #ffffff #dcefe2 rgba(251,253,251,0.85)`),
     dark: t(`#0c140f #131e17 #1a271f #24352a #33483a #e3eee6 #98b0a0 #33483a #4d6655 #86a08e
@@ -76,8 +77,8 @@ export const PALETTES: Palette[] = [
   },
   {
     id: 'rose',
-    name: 'Hoa đào',
-    hint: 'Hồng phấn, tím mận — nhẹ nhàng, tươi',
+    name: tx('Hoa đào'),
+    hint: tx('Hồng phấn, tím mận — nhẹ nhàng, tươi'),
     light: t(`#fbf1f3 #ffffff #f6e6ea #efd9df #ddb9c3 #2e1a22 #74545f #f0dfe4 #c9a6b1 #9a7884
       #974511 #fbe4d3 #e8a978 #643a92 #ece2f7 #b79ddc #b8224b #2d7651 #b43c6c #c2477a #ffffff #f9dfe8 rgba(255,255,255,0.84)`),
     dark: t(`#170d12 #22141b #2c1a23 #3b2530 #4f3340 #f6e8ee #c2a2b0 #4f3340 #6e4d5c #a8879a
@@ -87,7 +88,7 @@ export const PALETTES: Palette[] = [
   {
     id: 'sunburst',
     name: 'Sunburst',
-    hint: 'Gỗ cam cháy như mặt đàn guitar',
+    hint: tx('Gỗ cam cháy như mặt đàn guitar'),
     light: t(`#f8f1ea #fffbf7 #f2e6da #e8d7c6 #d4b99c #261811 #6b5444 #eadbcb #c2a78b #937a62
       #a33d08 #fde4d0 #eba57a #275d72 #dcedf2 #8cbccb #b0213f #33692c #b8490c #d9620f #1f0e03 #fde6d3 rgba(255,251,247,0.85)`),
     dark: t(`#150e0a #1f1510 #2a1d16 #3a2a20 #4f3a2d #f6e9de #c1a690 #4f3a2d #6e5442 #a28872
@@ -96,8 +97,8 @@ export const PALETTES: Palette[] = [
   },
   {
     id: 'lacquer',
-    name: 'Sơn mài',
-    hint: 'Đỏ son, vàng thếp — chất đàn dân tộc',
+    name: tx('Sơn mài'),
+    hint: tx('Đỏ son, vàng thếp — chất đàn dân tộc'),
     light: t(`#f7f0e6 #fffaf2 #f1e6d6 #e6d5bf #d0b896 #2a1410 #6e4f43 #eadccb #c4a988 #96795a
       #9a1f17 #f9e0d6 #e2a08c #6e5106 #f6ebc8 #d9bd6a #a3155a #2d6e3a #9a1f17 #a3231a #fffaf2 #f8dfd3 rgba(255,250,242,0.85)`),
     dark: t(`#140b09 #1e1210 #2a1915 #3a241e #50332a #f5e9df #c0a395 #50332a #6e4c40 #a3857a
@@ -106,8 +107,8 @@ export const PALETTES: Palette[] = [
   },
   {
     id: 'ivory',
-    name: 'Ngà & mun',
-    hint: 'Trắng ngà, đen mun, đỏ nhung — như phím đàn piano',
+    name: tx('Ngà & mun'),
+    hint: tx('Trắng ngà, đen mun, đỏ nhung — như phím đàn piano'),
     light: t(`#f6f4ef #fffefb #eeebe3 #e2ddd2 #c9c2b3 #16151a #5b5862 #e5e1d8 #b5afa3 #858073
       #7d2338 #f6e1e5 #d99aa8 #24508f #e0e9f6 #95b2dc #b8321c #2e7048 #7d2338 #8a2a3e #fffefb #f4e2e6 rgba(255,254,251,0.86)`),
     dark: t(`#0f0e12 #18171c #222027 #2e2c34 #423f49 #f1eee6 #a7a3ad #423f49 #5c5864 #8e8a95
@@ -116,8 +117,8 @@ export const PALETTES: Palette[] = [
   },
   {
     id: 'sky',
-    name: 'Trời trong',
-    hint: 'Xanh da trời, cam tươi — sáng sủa, vui mắt',
+    name: tx('Trời trong'),
+    hint: tx('Xanh da trời, cam tươi — sáng sủa, vui mắt'),
     light: t(`#eef5fb #ffffff #e4eef7 #d6e4f0 #b4cbe0 #12263a #4f667c #dce7f1 #a9bccd #7a8fa3
       #a8410f #fde6d6 #eda57c #1a5ea8 #dcebfb #8fbbe8 #b3204f #2a7550 #1a6fc4 #1766c2 #ffffff #dcebfb rgba(255,255,255,0.84)`),
     dark: t(`#0a1520 #10202e #172a3b #20364a #2f4b63 #e6f0f8 #9db4c8 #2f4b63 #48667f #7f9bb2
@@ -126,8 +127,8 @@ export const PALETTES: Palette[] = [
   },
   {
     id: 'contrast',
-    name: 'Tương phản cao',
-    hint: 'Đen trắng rõ nét — dễ đọc khi để xa, nắng gắt',
+    name: tx('Tương phản cao'),
+    hint: tx('Đen trắng rõ nét — dễ đọc khi để xa, nắng gắt'),
     light: t(`#ffffff #ffffff #f0f0f0 #8a8a8a #000000 #000000 #333333 #e0e0e0 #8a8a8a #444444
       #6b3300 #ffe2b8 #6b3300 #002f8f #d6e4ff #002f8f #a3001b #006b2e #0040c0 #ffcc00 #000000 #fff3b0 rgba(255,255,255,0.96)`),
     dark: t(`#000000 #0a0a0a #1a1a1a #8a8a8a #ffffff #ffffff #d6d6d6 #333333 #8a8a8a #cfcfcf

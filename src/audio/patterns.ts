@@ -15,6 +15,7 @@
  *             w = bass walking tự dẫn theo hợp âm kế tiếp, n = gốc hợp âm của ô sau (đón nhịp)
  *   comp: x/X = gõ hợp âm đệm (theo hợp âm đang dùng, công tắc "Đệm hợp âm")
  */
+import { t } from '../lib/i18n';
 export type BeatStyle =
   | 'none' | 'metronome' | 'rock' | 'ballad' | 'shuffle' | 'slowrock'
   | 'train' | 'bolero' | 'rumba' | 'chacha' | 'tango' | 'bossa' | 'disco' | 'jazz' | 'reggae' | 'ska' | 'country' | 'march' | 'polka' | 'samba' | 'salsa' | 'waltz';
@@ -44,38 +45,38 @@ export interface BeatPattern {
 
 export const PATTERNS: Record<Exclude<BeatStyle, 'none' | 'metronome'>, BeatPattern> = {
   rock: {
-    label: 'Rock / Pop', hint: 'Nhịp 4/4 phổ thông', beats: 4, subdiv: 2,
+    label: 'Rock / Pop', hint: t('Nhịp 4/4 phổ thông'), beats: 4, subdiv: 2,
     kick: 'X...xx..', snare: '..X...X.', hat: 'xxxxxxxx',
     // guitar dằn ở 2, 4, xen tiếng đẩy nửa phách
     comp: 'x.Xxx.Xx' + 'x.Xxx.XX',
   },
   ballad: {
-    label: 'Ballad', hint: 'Chậm, nhẹ nhàng', beats: 4, subdiv: 2,
+    label: 'Ballad', hint: t('Chậm, nhẹ nhàng'), beats: 4, subdiv: 2,
     kick: 'X....x..', snare: '..x...x.', shaker: 'xxxxxxxx',
     // gõ nhẹ đều từng phách giữ nền hợp âm; ô hai thêm 4& dẫn câu
     comp: 'x.x.x.x.' + 'x.x.x.xx',
   },
   shuffle: {
-    label: 'Blues shuffle', hint: 'Nhịp chỏi chuẩn blues', beats: 4, subdiv: 3,
+    label: 'Blues shuffle', hint: t('Nhịp chỏi chuẩn blues'), beats: 4, subdiv: 3,
     kick: 'X.....x.....', snare: '...X.....X..', hat: 'x.xx.xx.xx.x',
     // nhịp lắc "dài – ngắn", nhấn 2 và 4
     comp: 'x.xX.xx.xX.x',
   },
   slowrock: {
-    label: 'Slow rock', hint: 'Chùm ba, hợp nhạc trữ tình', beats: 4, subdiv: 3,
+    label: 'Slow rock', hint: t('Chùm ba, hợp nhạc trữ tình'), beats: 4, subdiv: 3,
     kick: 'X.....x.x...', snare: '...X.....X..', hat: 'xxxxxxxxxxxx',
     // piano chùm ba "ta-ta-ta" suốt ô nhịp, nhấn đầu phách
     comp: 'XxxXxxXxxXxx',
   },
   train: {
-    label: 'Train (tàu hoả)', hint: 'Nhịp đồng quê kinh điển cho harp', beats: 4, subdiv: 4,
+    label: t('Train (tàu hoả)'), hint: t('Nhịp đồng quê kinh điển cho harp'), beats: 4, subdiv: 4,
     kick: 'X.......x.......', snare: 'xxXxxxXxxxXxxxXx',
     // đồng quê "bùm – chíc chíc": hợp âm ở 2, 2&, 4, 4&
     comp: '....X.x.....X.x.',
   },
   bolero: {
     // bass "bùm… bùm bùm" (1, 2&, 3), bongo martillo, conga nền, güiro + maracas
-    label: 'Bolero', hint: 'Bolero Việt', beats: 4, subdiv: 4,
+    label: 'Bolero', hint: t('Bolero Việt'), beats: 4, subdiv: 4,
     kick:   'X.....x.X.......' + 'X.....x.X.....x.',
     rim:    '....x.......x...' + '....x.......x.x.',
     bongo:  'f.t.f.s.f.t.f.o.' + 'f.t.f.s.f.t.s.oo',
@@ -87,7 +88,7 @@ export const PATTERNS: Record<Exclude<BeatStyle, 'none' | 'metronome'>, BeatPatt
   },
   rumba: {
     // rumba chậm: clave rumba 3-2, conga tumbao (úp–vỗ–mở mở), bass đảo phách ở 2& và 4&
-    label: 'Rumba', hint: 'Chậm, lả lơi, hợp nhạc trữ tình', beats: 4, subdiv: 4,
+    label: 'Rumba', hint: t('Chậm, lả lơi, hợp nhạc trữ tình'), beats: 4, subdiv: 4,
     kick:   'X.....x.X.....x.' + 'X.....x.X..x..x.',
     clave:  'X..x...x..x.x...' + 'X..x...x..x.x...',
     conga:  't.t.s.t.t.t.o.o.' + 't.t.s.t.t.t.o.oo',
@@ -99,7 +100,7 @@ export const PATTERNS: Record<Exclude<BeatStyle, 'none' | 'metronome'>, BeatPatt
   },
   chacha: {
     // chuông cowbell đều 4 phách, güiro dài–ngắn–ngắn, conga mở ở 4 và 4&, gõ vành nhấn "cha-cha" ở 4, 4&
-    label: 'Cha cha', hint: 'Cha-cha-cha ở phách 4', beats: 4, subdiv: 4,
+    label: 'Cha cha', hint: t('Cha-cha-cha ở phách 4'), beats: 4, subdiv: 4,
     kick:    'X.......X.......' + 'X.......X.....x.',
     cowbell: 'X...x...X...x...',
     guiro:   'X...x.x.X...x.x.',
@@ -111,7 +112,7 @@ export const PATTERNS: Record<Exclude<BeatStyle, 'none' | 'metronome'>, BeatPatt
   },
   tango: {
     // bass habanera "bùm — bum bùm bùm" rồi marcato; snare dằn 2, 4 và dồn (arrastre) vào phách 1
-    label: 'Tango', hint: 'Dằn từng phách, dồn trống vào đầu ô', beats: 4, subdiv: 4,
+    label: 'Tango', hint: t('Dằn từng phách, dồn trống vào đầu ô'), beats: 4, subdiv: 4,
     kick:  'X..xX.x.X...X...' + 'X..xX.x.X..xX.x.',
     snare: '....X.......X.xx' + '....X.......Xxxx',
     hat:   'x...x...x...x...',
@@ -120,7 +121,7 @@ export const PATTERNS: Record<Exclude<BeatStyle, 'none' | 'metronome'>, BeatPatt
   },
   bossa: {
     // bass "bùm… bum – bùm… bum" (1, 2&, 3, 4&), cross-stick theo clave bossa, guitar batida lệch nhịp
-    label: 'Bossa nova', hint: 'Nhẹ nhàng, lệch nhịp kiểu Brazil', beats: 4, subdiv: 4,
+    label: 'Bossa nova', hint: t('Nhẹ nhàng, lệch nhịp kiểu Brazil'), beats: 4, subdiv: 4,
     kick: 'X.....x.X.....x.' + 'X.....x.X.....x.',
     rim:  'x..x..x...x..x..' + 'x..x..x...x..x..',
     hat:  'x.x.x.x.x.x.x.x.',
@@ -128,7 +129,7 @@ export const PATTERNS: Record<Exclude<BeatStyle, 'none' | 'metronome'>, BeatPatt
   },
   disco: {
     // trống bass dậm đều 4 phách, hi-hat mở "xì" nửa sau phách, clap 2 & 4, bass nhảy quãng tám
-    label: 'Disco', hint: 'Dậm đều 4 phách, bass nhảy quãng tám', beats: 4, subdiv: 4,
+    label: 'Disco', hint: t('Dậm đều 4 phách, bass nhảy quãng tám'), beats: 4, subdiv: 4,
     kick:     'X...X...X...X...',
     snare:    '....x.......x...',
     clap:     '....X.......X...',
@@ -150,7 +151,7 @@ export const PATTERNS: Record<Exclude<BeatStyle, 'none' | 'metronome'>, BeatPatt
   },
   reggae: {
     // "one drop": kick + gõ vành chỉ ở phách 3, guitar skank chặt ở 2 & 4, bass lệch nhịp
-    label: 'Reggae', hint: 'One drop: trống ở phách 3, guitar chặt 2 & 4', beats: 4, subdiv: 4,
+    label: 'Reggae', hint: t('One drop: trống ở phách 3, guitar chặt 2 & 4'), beats: 4, subdiv: 4,
     kick:     '........X.......',
     rim:      '........X.......',
     hat:      'x.x.x.x.x.x.x.x.',
@@ -160,7 +161,7 @@ export const PATTERNS: Record<Exclude<BeatStyle, 'none' | 'metronome'>, BeatPatt
   },
   ska: {
     // guitar chặt hợp âm ở mọi nửa sau phách, snare 2 & 4, bass walking mỗi phách
-    label: 'Ska', hint: 'Nhanh, guitar chặt mọi nửa phách, bass walking', beats: 4, subdiv: 2,
+    label: 'Ska', hint: t('Nhanh, guitar chặt mọi nửa phách, bass walking'), beats: 4, subdiv: 2,
     kick:     'X...X...',
     snare:    '..X...X.',
     hat:      'xxxxxxxx',
@@ -169,7 +170,7 @@ export const PATTERNS: Record<Exclude<BeatStyle, 'none' | 'metronome'>, BeatPatt
   },
   country: {
     // two-beat "bùm – chát": bass gốc (1) ↔ quãng 5 (3), hợp âm ở 2 & 4, ô hai đi lên (walk-up) vào hợp âm sau
-    label: 'Country', hint: 'Bùm – chát, bass gốc ↔ quãng 5', beats: 4, subdiv: 4,
+    label: 'Country', hint: t('Bùm – chát, bass gốc ↔ quãng 5'), beats: 4, subdiv: 4,
     kick:     'X.......X.......',
     snare:    '....X.......X...',
     hat:      'x.x.x.x.x.x.x.x.',
@@ -178,7 +179,7 @@ export const PATTERNS: Record<Exclude<BeatStyle, 'none' | 'metronome'>, BeatPatt
   },
   march: {
     // oom-pah: bass gốc (1) ↔ quãng 5 (3), hợp âm "pah" 2 & 4, chũm chọe 2 & 4, snare dồn nhà binh
-    label: 'March (hành khúc)', hint: 'Oom-pah, snare dồn kiểu nhà binh', beats: 4, subdiv: 4,
+    label: t('March (hành khúc)'), hint: t('Oom-pah, snare dồn kiểu nhà binh'), beats: 4, subdiv: 4,
     kick:     'X.......X.......',
     openHat:  '....X.......X...',
     snare:    '..x.X..x..x.X...' + '..x.X..x..x.Xxxx',
@@ -187,7 +188,7 @@ export const PATTERNS: Record<Exclude<BeatStyle, 'none' | 'metronome'>, BeatPatt
   },
   polka: {
     // oom-pah nhanh: bass mọi phách gốc ↔ quãng 5, hợp âm "pah" nửa sau mỗi phách (tay phải accordion)
-    label: 'Polka', hint: 'Oom-pah nhanh, hợp âm nửa sau mỗi phách', beats: 4, subdiv: 2,
+    label: 'Polka', hint: t('Oom-pah nhanh, hợp âm nửa sau mỗi phách'), beats: 4, subdiv: 2,
     kick:     'X.x.X.x.',
     snare:    '.x.x.x.x',
     comp:     '.X.X.X.X',
@@ -195,7 +196,7 @@ export const PATTERNS: Record<Exclude<BeatStyle, 'none' | 'metronome'>, BeatPatt
   },
   samba: {
     // surdo nhẹ 1, 3 – nện 2, 4; ganzá rắc ¼ phách nhấn cuối phách; tamborim teleco-teco; bass "bùm… ba-bùm"
-    label: 'Samba', hint: 'Rộn ràng Brazil: surdo, ganzá, tamborim', beats: 4, subdiv: 4,
+    label: 'Samba', hint: t('Rộn ràng Brazil: surdo, ganzá, tamborim'), beats: 4, subdiv: 4,
     surdo:    'x...X...x...X...',
     kick:     'x..x....x..x....',
     shaker:   'xxxXxxxXxxxXxxxX',
@@ -205,7 +206,7 @@ export const PATTERNS: Record<Exclude<BeatStyle, 'none' | 'metronome'>, BeatPatt
   },
   salsa: {
     // clave son 3-2, conga tumbao, cowbell 4 phách, bass tumbao đón nhịp (5 ở 2&, gốc hợp âm ô sau ở 4), piano montuno
-    label: 'Salsa', hint: 'Clave 3-2, conga tumbao, bass đón nhịp', beats: 4, subdiv: 4,
+    label: 'Salsa', hint: t('Clave 3-2, conga tumbao, bass đón nhịp'), beats: 4, subdiv: 4,
     clave:    'X.....X.....X...' + '....X...X.......',
     conga:    't.t.s.t.t.t.o.o.' + 't.t.s.t.t.t.o.oo',
     cowbell:  'X...x...X...x...',
@@ -242,8 +243,8 @@ export function boPattern(p: BeatPattern): string | undefined {
 export const BO_PATTERN_LIST = BO_PATTERNS;
 
 export const STYLE_OPTIONS: { value: BeatStyle; label: string }[] = [
-  { value: 'none', label: 'Không beat' },
-  { value: 'metronome', label: 'Máy đếm nhịp' },
+  { value: 'none', label: t('Không beat') },
+  { value: 'metronome', label: t('Máy đếm nhịp') },
   ...Object.entries(PATTERNS).map(([value, p]) => ({ value: value as BeatStyle, label: p.label })),
 ];
 

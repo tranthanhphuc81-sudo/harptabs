@@ -15,6 +15,7 @@ import { MiniPlay } from '../components/PlayerBar';
 import { usePlayer } from '../components/usePlayer';
 import { Icon } from '../components/Icon';
 import { useAppState } from '../state';
+import { t as tx } from '../lib/i18n';
 
 /**
  * Bản thu → tab: thu âm ngay trong app hoặc chọn file âm thanh, máy dò giai điệu (lib/audioTranscribe.ts),
@@ -34,9 +35,9 @@ function detect(samples: Float32Array, sampleRate: number, kind: RecordingKind):
     w.onmessage = (e: MessageEvent<{ ok: boolean; notes?: DetectedNote[]; tempo?: TempoGuess; error?: string }>) => {
       w.terminate();
       if (e.data.ok && e.data.notes && e.data.tempo) resolve({ notes: e.data.notes, tempo: e.data.tempo });
-      else reject(new Error(e.data.error || 'Lỗi dò giai điệu'));
+      else reject(new Error(e.data.error || tx('Lỗi dò giai điệu')));
     };
-    w.onerror = (e) => { w.terminate(); reject(new Error(e.message || 'Lỗi dò giai điệu')); };
+    w.onerror = (e) => { w.terminate(); reject(new Error(e.message || tx('Lỗi dò giai điệu'))); };
     w.postMessage({ samples, sampleRate, kind }, [samples.buffer]);
   });
 }
@@ -79,13 +80,13 @@ export default function AudioImport({ initialFile }: { initialFile?: File }) {
     try {
       setStatus('decoding');
       const { samples, sampleRate } = await decodeAudio(blob);
-      if (samples.length < sampleRate * 3) throw new Error('Bản thu quá ngắn — thu ít nhất vài câu nhạc');
-      if (samples.length > sampleRate * 60 * 8) throw new Error('Bản thu dài quá 8 phút — cắt bớt rồi thử lại');
+      if (samples.length < sampleRate * 3) throw new Error(tx('Bản thu quá ngắn — thu ít nhất vài câu nhạc'));
+      if (samples.length > sampleRate * 60 * 8) throw new Error(tx('Bản thu dài quá 8 phút — cắt bớt rồi thử lại'));
       setStatus('analyzing');
       const r = await detect(samples, sampleRate, kind);
       if (r.notes.length < 4) throw new Error(kind === 'mix'
-        ? 'Không tách được giọng hát — thử bài có giọng hát rõ, hoặc tự hát / ngân nga lại giai điệu rồi thu.'
-        : 'Không nghe ra giai điệu — thu gần micro hơn, nơi yên tĩnh, hát / thổi từng nốt rõ ràng.');
+        ? tx('Không tách được giọng hát — thử bài có giọng hát rõ, hoặc tự hát / ngân nga lại giai điệu rồi thu.')
+        : tx('Không nghe ra giai điệu — thu gần micro hơn, nơi yên tĩnh, hát / thổi từng nốt rõ ràng.'));
       setNotes(r.notes);
       setGuess(r.tempo);
       setBpm(r.tempo.bpm);
@@ -122,7 +123,7 @@ export default function AudioImport({ initialFile }: { initialFile?: File }) {
       rec.current = { mr, stream, timer };
       setStatus('recording');
     } catch {
-      setError('Không mở được micro — kiểm tra quyền micro của trình duyệt / app');
+      setError(tx('Không mở được micro — kiểm tra quyền micro của trình duyệt / app'));
       setStatus('error');
     }
   };
@@ -149,7 +150,7 @@ export default function AudioImport({ initialFile }: { initialFile?: File }) {
   const save = async () => {
     if (!converted) return;
     const song = blankSong({
-      title: title.trim() || 'Bài từ bản thu',
+      title: title.trim() || tx('Bài từ bản thu'),
       artist: artist.trim() || undefined,
       harpKey: converted.harpKey,
       harpType: converted.harpType === 'diatonic' ? undefined : converted.harpType,
@@ -161,11 +162,11 @@ export default function AudioImport({ initialFile }: { initialFile?: File }) {
       body: converted.body,
       difficulty: difficultyOf(converted.fit.stats),
       source: 'import',
-      tags: ['Bản thu'],
-      notes: 'Tab dò từ bản thu — trường độ đã làm tròn theo phách. Nghe lại và sửa chỗ chưa đúng trong Sửa bài; thêm lời nếu cần.',
+      tags: [tx('Bản thu')],
+      notes: tx('Tab dò từ bản thu — trường độ đã làm tròn theo phách. Nghe lại và sửa chỗ chưa đúng trong Sửa bài; thêm lời nếu cần.'),
     });
     await db.songs.put(song);
-    toast('Đã lưu vào thư viện');
+    toast(tx('Đã lưu vào thư viện'));
     nav(`/song/${song.id}`);
   };
 
@@ -175,104 +176,102 @@ export default function AudioImport({ initialFile }: { initialFile?: File }) {
 
   return (
     <div className="ai-form">
-      <div className="segmented" role="group" aria-label="Loại bản thu">
-        <button type="button" className={kind === 'solo' ? 'on' : ''} aria-pressed={kind === 'solo'} disabled={busy || status === 'recording'} onClick={() => setKind('solo')}>Tôi tự hát / thổi</button>
-        <button type="button" className={kind === 'mix' ? 'on' : ''} aria-pressed={kind === 'mix'} disabled={busy || status === 'recording'} onClick={() => setKind('mix')}>Bài hát gốc (MP3)</button>
+      <div className="segmented" role="group" aria-label={tx('Loại bản thu')}>
+        <button type="button" className={kind === 'solo' ? 'on' : ''} aria-pressed={kind === 'solo'} disabled={busy || status === 'recording'} onClick={() => setKind('solo')}>{tx('Tôi tự hát / thổi')}</button>
+        <button type="button" className={kind === 'mix' ? 'on' : ''} aria-pressed={kind === 'mix'} disabled={busy || status === 'recording'} onClick={() => setKind('mix')}>{tx('Bài hát gốc (MP3)')}</button>
       </div>
       {kind === 'solo' ? (
         <p className="muted small">
-          Hát, ngân nga hoặc {BRAND.verb} {BRAND.noun} <strong>giai điệu</strong> (một giọng, không nhạc đệm) — thu ngay hoặc chọn file ghi âm có sẵn.
-          Hát đều nhịp, mỗi nốt rõ ràng, nơi yên tĩnh thì tab đúng nhất.
+          {tx('Hát, ngân nga hoặc {0} {1}', BRAND.verb, BRAND.noun)} <strong>{tx('giai điệu')}</strong> {tx('(một giọng, không nhạc đệm) — thu ngay hoặc chọn file ghi âm có sẵn. Hát đều nhịp, mỗi nốt rõ ràng, nơi yên tĩnh thì tab đúng nhất.')}
         </p>
       ) : (
         <p className="muted small">
-          Chọn file bài hát gốc (ca sĩ hát kèm nhạc đệm). Máy tự tách giọng hát chính — <strong>chỉ là bản nháp</strong>:
-          bài giọng hát rõ, nhạc đệm nhẹ thì được phần lớn giai điệu; nhạc đệm dày thì phải sửa nhiều. Bản tự hát lại luôn chính xác hơn.
+          {tx('Chọn file bài hát gốc (ca sĩ hát kèm nhạc đệm). Máy tự tách giọng hát chính —')} <strong>{tx('chỉ là bản nháp')}</strong>{tx(': bài giọng hát rõ, nhạc đệm nhẹ thì được phần lớn giai điệu; nhạc đệm dày thì phải sửa nhiều. Bản tự hát lại luôn chính xác hơn.')}
         </p>
       )}
       <div className="row gap wrap center">
         {status === 'recording' ? (
-          <button type="button" className="btn btn-primary" onClick={stop}><Icon name="stop" size={18} /> Dừng ({Math.floor(secs / 60)}:{String(secs % 60).padStart(2, '0')})</button>
+          <button type="button" className="btn btn-primary" onClick={stop}><Icon name="stop" size={18} /> {tx('Dừng ({0}:{1})', Math.floor(secs / 60), String(secs % 60).padStart(2, '0'))}</button>
         ) : (
-          <button type="button" className="btn btn-primary" disabled={busy} onClick={start}><Icon name="mic" size={18} /> Thu âm</button>
+          <button type="button" className="btn btn-primary" disabled={busy} onClick={start}><Icon name="mic" size={18} /> {tx('Thu âm')}</button>
         )}
         <button type="button" className="btn btn-ghost" disabled={busy || status === 'recording'} onClick={() => fileRef.current?.click()}>
-          <Icon name="music" size={18} /> {kind === 'mix' ? 'Chọn file bài hát' : 'Chọn file ghi âm'}
+          <Icon name="music" size={18} /> {kind === 'mix' ? tx('Chọn file bài hát') : tx('Chọn file ghi âm')}
         </button>
         <input ref={fileRef} type="file" accept="audio/*,.mp3,.m4a,.wav,.ogg,.aac,.webm,.flac" hidden
           onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) run(f, f.name); }} />
-        {busy && <span className="muted small">{status === 'decoding' ? 'Đang đọc file âm thanh…' : kind === 'mix' ? 'Đang tách giọng hát và dò nốt… (bài dài mất vài chục giây)' : 'Đang dò cao độ từng nốt…'}</span>}
+        {busy && <span className="muted small">{status === 'decoding' ? tx('Đang đọc file âm thanh…') : kind === 'mix' ? tx('Đang tách giọng hát và dò nốt… (bài dài mất vài chục giây)') : tx('Đang dò cao độ từng nốt…')}</span>}
       </div>
       {error && <div className="alert error" role="alert">{error}</div>}
-      {audioUrl && <audio className="audio-src" controls src={audioUrl} aria-label={fileName ? `Bản thu ${fileName}` : 'Bản thu'} />}
+      {audioUrl && <audio className="audio-src" controls src={audioUrl} aria-label={fileName ? tx('Bản thu {0}', fileName) : tx('Bản thu')} />}
 
       {converted && parsed && notes && (
         <>
           <div className="row gap wrap end-align">
             <label className="field grow">
-              <span className="field-label">Tên bài</span>
-              <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Tên bài hát" />
+              <span className="field-label">{tx('Tên bài')}</span>
+              <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder={tx('Tên bài hát')} />
             </label>
             <label className="field grow">
-              <span className="field-label">Tác giả / ca sĩ</span>
+              <span className="field-label">{tx('Tác giả / ca sĩ')}</span>
               <input value={artist} onChange={(e) => setArtist(e.target.value)} />
             </label>
           </div>
           <div className="row gap wrap end-align">
             <div className="field">
-              <span className="field-label">Tempo (bpm){guess && bpm !== guess.bpm ? '' : ' — máy đoán'}</span>
+              <span className="field-label">Tempo (bpm){guess && bpm !== guess.bpm ? '' : tx(' — máy đoán')}</span>
               <span className="row gap center">
                 <input type="number" inputMode="numeric" min={30} max={220} value={bpm} style={{ width: '5.5rem' }}
                   onChange={(e) => setTempo(Number(e.target.value) || bpm)} aria-label="Tempo" />
-                <button type="button" className="btn btn-ghost btn-sm" title="Nốt đang dài gấp đôi: tempo gấp đôi" onClick={() => setTempo(bpm * 2)}>×2</button>
-                <button type="button" className="btn btn-ghost btn-sm" title="Nốt đang ngắn một nửa: tempo một nửa" onClick={() => setTempo(bpm / 2)}>÷2</button>
+                <button type="button" className="btn btn-ghost btn-sm" title={tx('Nốt đang dài gấp đôi: tempo gấp đôi')} onClick={() => setTempo(bpm * 2)}>×2</button>
+                <button type="button" className="btn btn-ghost btn-sm" title={tx('Nốt đang ngắn một nửa: tempo một nửa')} onClick={() => setTempo(bpm / 2)}>÷2</button>
               </span>
             </div>
             <label className="field">
-              <span className="field-label">Nhịp</span>
+              <span className="field-label">{tx('Nhịp')}</span>
               <select value={timeSig} onChange={(e) => setTimeSig(e.target.value)}>
                 {TIME_SIGS.map((t) => <option key={t.value}>{t.value}</option>)}
               </select>
             </label>
             <label className="field">
-              <span className="field-label">Làm tròn tới</span>
+              <span className="field-label">{tx('Làm tròn tới')}</span>
               <select value={grid} onChange={(e) => setGrid(Number(e.target.value))}>
-                <option value={0.5}>Nửa phách (móc đơn)</option>
-                <option value={0.25}>1/4 phách (móc kép)</option>
+                <option value={0.5}>{tx('Nửa phách (móc đơn)')}</option>
+                <option value={0.25}>{tx('1/4 phách (móc kép)')}</option>
               </select>
             </label>
             <HarpTypeSelect value={harpType} onChange={setHarpType} />
-            <KeySelect value={target} onChange={setTarget} allowAuto label={`Chơi trên ${BRAND.noun}`} harpType={harpType} />
+            <KeySelect value={target} onChange={setTarget} allowAuto label={tx('Chơi trên {0}', BRAND.noun)} harpType={harpType} />
             {target !== 'auto' && (
               <label className="check">
                 <input type="checkbox" checked={allowTranspose} onChange={(e) => setAllowTranspose(e.target.checked)} />
-                Cho phép dịch giọng để dễ thổi
+                {tx('Cho phép dịch giọng để dễ thổi')}
               </label>
             )}
           </div>
 
-          <section className="ai-result" aria-label="Kết quả">
+          <section className="ai-result" aria-label={tx('Kết quả')}>
             <p className="muted">
               {harpName(converted.harpKey, converted.harpType)}
-              {converted.fit.shift % 12 !== 0 && `, đã dịch giọng ${converted.fit.shift > 0 ? '+' : ''}${converted.fit.shift} nửa cung`}
+              {converted.fit.shift % 12 !== 0 && tx(', đã dịch giọng {0}{1} nửa cung', converted.fit.shift > 0 ? '+' : '', converted.fit.shift)}
               {`, ${timeSig}, ${converted.bpm} bpm`}
-              {converted.songKey && `, giọng ${converted.songKey}`}
-              {converted.pickupBeats > 0 && `, lấy đà ${converted.pickupBeats} phách`}
+              {converted.songKey && tx(', giọng {0}', converted.songKey)}
+              {converted.pickupBeats > 0 && tx(', lấy đà {0} phách', converted.pickupBeats)}
             </p>
             <p className="small">
-              Dò được {notes.length} nốt. {stats && <>{stats.natural} nốt thường{stats.bends ? `, ${stats.bends} nốt bend` : ''}{stats.slides ? `, ${stats.slides} nốt gạt` : ''}</>}
-              {stats && stats.unplayable > 0 && `, ${stats.unplayable} nốt ngoài tầm ${BRAND.noun} (đã thành dấu nghỉ)`}.
+              {tx('Dò được')} {notes.length} {tx('nốt.')} {stats && <>{stats.natural} {tx('nốt thường')}{stats.bends ? tx(', {0} nốt bend', stats.bends) : ''}{stats.slides ? tx(', {0} nốt gạt', stats.slides) : ''}</>}
+              {stats && stats.unplayable > 0 && tx(', {0} nốt ngoài tầm {1} (đã thành dấu nghỉ)', stats.unplayable, BRAND.noun)}.
             </p>
             <ul className="warnings">
-              <li>Bấm <strong>Nghe thử</strong> và so với bản thu. Nốt nghe dài / ngắn gấp đôi thì bấm ×2 hoặc ÷2 ở ô Tempo.</li>
+              <li>{tx('Bấm')} <strong>{tx('Nghe thử')}</strong> {tx('và so với bản thu. Nốt nghe dài / ngắn gấp đôi thì bấm ×2 hoặc ÷2 ở ô Tempo.')}</li>
               {transcription?.warnings.map((w) => <li key={w}>{w}</li>)}
-              {stats && stats.unplayable > 0 && <li>{`Có nốt ngoài tầm ${BRAND.noun} — thử chọn ${BRAND.noun} khác hoặc cho phép dịch giọng.`}</li>}
-              <li>Tab không có lời — thêm lời trong trang Sửa bài sau khi lưu.</li>
+              {stats && stats.unplayable > 0 && <li>{tx('Có nốt ngoài tầm {0} — thử chọn {1} khác hoặc cho phép dịch giọng.', BRAND.noun, BRAND.noun)}</li>}
+              <li>{tx('Tab không có lời — thêm lời trong trang Sửa bài sau khi lưu.')}</li>
             </ul>
             <TabView parsed={parsed} flat={flat} active={player.active} size="s" showNames={settings.showNoteNames} nameStyle={settings.noteNames} harpType={converted.harpType} harpKey={converted.harpKey} />
             <div className="row gap preview-actions">
               <MiniPlay p={player} />
-              <button type="button" className="btn btn-primary" onClick={save}>Lưu vào thư viện</button>
+              <button type="button" className="btn btn-primary" onClick={save}>{tx('Lưu vào thư viện')}</button>
             </div>
           </section>
         </>

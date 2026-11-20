@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { Chord, chordName, ChordQuality, ChordSegment, diatonicChords, keyUsesFlats, NO_CHORD, Tonality } from '../audio/harmony';
+import { t } from '../lib/i18n';
 
 interface Props {
   seg: ChordSegment;
@@ -35,36 +36,36 @@ export function ChordPicker({ seg, tonality, where, onPick, onClose }: Props) {
 
   return (
     <dialog ref={ref} className="sheet" onClose={onClose} aria-labelledby="chord-title">
-      <h2 id="chord-title">Hợp âm {where}</h2>
+      <h2 id="chord-title">{t('Hợp âm {0}', where)}</h2>
       <p className="small muted">
-        Đang dùng <strong>{seg.chord.name}</strong> ({seg.manual ? 'bạn chọn' : 'tự đoán'}). Bass sẽ đánh theo hợp âm bạn chọn.
+        {t('Đang dùng')} <strong>{seg.chord.name}</strong> ({seg.manual ? t('bạn chọn') : t('tự đoán')}{t('). Bass sẽ đánh theo hợp âm bạn chọn.')}
       </p>
       <div className="field">
-        <span className="field-label">Hay dùng trong giọng này</span>
+        <span className="field-label">{t('Hay dùng trong giọng này')}</span>
         <div className="chord-grid">{inKey.map(chip)}</div>
-        <span className="field-label">Hợp âm 7 (nghe blues, dẫn về chủ)</span>
+        <span className="field-label">{t('Hợp âm 7 (nghe blues, dẫn về chủ)')}</span>
         <div className="chord-grid">{sevenths.map(chip)}</div>
       </div>
       <details>
-        <summary>Tất cả hợp âm</summary>
+        <summary>{t('Tất cả hợp âm')}</summary>
         <div className="field">
-          <span className="field-label">Trưởng</span>
+          <span className="field-label">{t('Trưởng')}</span>
           <div className="chord-grid">{all(false).map(chip)}</div>
-          <span className="field-label">Thứ</span>
+          <span className="field-label">{t('Thứ')}</span>
           <div className="chord-grid">{all(true).map(chip)}</div>
-          <span className="field-label">Hợp âm 7</span>
+          <span className="field-label">{t('Hợp âm 7')}</span>
           <div className="chord-grid">{all(false, true).map(chip)}</div>
           <span className="field-label">Jazz: maj7</span>
           <div className="chord-grid">{allQ('maj7').map(chip)}</div>
           <span className="field-label">Jazz: m7</span>
           <div className="chord-grid">{allQ('m7').map(chip)}</div>
-          <span className="field-label">Jazz: m7♭5 (nửa giảm)</span>
+          <span className="field-label">{t('Jazz: m7♭5 (nửa giảm)')}</span>
           <div className="chord-grid">{allQ('m7b5').map(chip)}</div>
         </div>
       </details>
       <div className="row gap wrap end">
-        <button type="button" className="btn btn-ghost" onClick={() => pick(NO_CHORD)}>Không đệm đoạn này</button>
-        <button type="button" className="btn btn-ghost" onClick={() => pick(null)} disabled={!seg.manual}>Để máy tự đoán</button>
+        <button type="button" className="btn btn-ghost" onClick={() => pick(NO_CHORD)}>{t('Không đệm đoạn này')}</button>
+        <button type="button" className="btn btn-ghost" onClick={() => pick(null)} disabled={!seg.manual}>{t('Để máy tự đoán')}</button>
         <button type="button" className="btn btn-primary" onClick={() => ref.current?.close()}>Xong</button>
       </div>
     </dialog>

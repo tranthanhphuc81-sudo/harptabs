@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { previewChord, previewNote } from '../audio/engine';
 import { KeyboardChord, leftHandChord } from '../lib/keyboardChord';
 import { HarpType, keyboardRange, midiToName, NoteNameStyle } from '../lib/harp';
+import { t as tx } from '../lib/i18n';
 
 /**
  * Bàn phím (pianica, organ, piano): hình bàn phím thu nhỏ dưới mỗi nốt (tô phím cần bấm) và sơ đồ bàn phím đầy đủ
@@ -67,14 +68,14 @@ export function PianoChart({ harpType, highlight = [], selected, nameStyle = 'le
         className={`pc-key ${black ? 'black' : 'white'}${on ? ' on' : ''}${selected === t ? ' sel' : ''}`}
         style={black ? { left: `calc(6px + ${whites.indexOf(m - 1) + 1} * var(--pc-w) - var(--pc-w) * 0.32)` } : undefined}
         onClick={interactive ? () => (onPick ? onPick(t) : previewNote(m)) : undefined}
-        aria-label={`Phím ${midiToName(m, nameStyle)}`}>
+        aria-label={tx('Phím {0}', midiToName(m, nameStyle))}>
         {!black && <span className="pc-name">{midiToName(m, nameStyle, m % 12 === 0)}</span>}
       </button>
     );
   };
   return (
     <div className="piano-wrap" ref={wrap}>
-      <div className="piano-chart" role="group" aria-label="Bàn phím" style={{ width: `calc(${whites.length} * var(--pc-w))` }}>
+      <div className="piano-chart" role="group" aria-label={tx('Bàn phím')} style={{ width: `calc(${whites.length} * var(--pc-w))` }}>
         {whites.map((m) => key(m, false))}
         {Array.from({ length: hi - lo + 1 }, (_, i) => lo + i).filter(isBlack).map((m) => key(m, true))}
       </div>
@@ -108,7 +109,7 @@ export function ChordKeys({ chord, nameStyle = 'letter' }: { chord: KeyboardChor
   return (
     <figure className="chord-keys">
       <svg width={whites.length * ww} height={wh + 16} viewBox={`0 0 ${whites.length * ww} ${wh + 16}`} role="img"
-        aria-label={`Tay trái bấm ${chord.notes.map((m) => midiToName(m, nameStyle)).join(', ')}`}>
+        aria-label={tx('Tay trái bấm {0}', chord.notes.map((m) => midiToName(m, nameStyle)).join(', '))}>
         {whites.map((m) => <rect key={m} x={xOf(m)} y={0} width={ww - 1} height={wh} rx={3} className={at(m) >= 0 ? 'pk-on' : 'pk-white'} />)}
         {blacks.map((m) => <rect key={m} x={xOf(m - 1) + ww * 0.66} y={0} width={ww * 0.68} height={wh * 0.6} rx={2} className={at(m) >= 0 ? 'pk-on' : 'pk-black'} />)}
         {whites.map((m) => label(m, false))}
@@ -128,14 +129,14 @@ export function KeyboardChordStrip({ names, nameStyle }: { names: string[]; name
   const chord = leftHandChord(cur)!;
   const pick = (n: string) => { setPicked(n); previewChord(leftHandChord(n)!.notes); };
   return (
-    <section className="kb-chords" aria-label="Hợp âm tay trái">
+    <section className="kb-chords" aria-label={tx('Hợp âm tay trái')}>
       <div className="kb-chord-names" role="tablist">
         {uniq.map((n) => (
           <button key={n} type="button" role="tab" aria-selected={n === cur} className={`cp-chip${n === cur ? ' on' : ''}`} onClick={() => pick(n)}>{n}</button>
         ))}
       </div>
       <ChordKeys chord={chord} nameStyle={nameStyle} />
-      <p className="small muted">Tay trái <strong>{cur}</strong>: {chord.notes.map((m, i) => `${midiToName(m, nameStyle)} (ngón ${chord.fingers[i]})`).join(' – ')}. Bấm ở đầu ô nhịp có hợp âm, giữ tới khi đổi hợp âm.</p>
+      <p className="small muted">{tx('Tay trái')} <strong>{cur}</strong>: {chord.notes.map((m, i) => tx('{0} (ngón {1})', midiToName(m, nameStyle), chord.fingers[i])).join(' – ')}{tx('. Bấm ở đầu ô nhịp có hợp âm, giữ tới khi đổi hợp âm.')}</p>
     </section>
   );
 }

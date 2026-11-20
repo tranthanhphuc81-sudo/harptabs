@@ -6,6 +6,7 @@ import type { Instrument } from '../audio/engine';
 import { nameToMidi } from './harp';
 import { midiPayload, parseMidi, readMidi } from './musicFile';
 import type { FlatEvent } from './tabText';
+import { t as tx } from './i18n';
 
 export type ArrVoice = Instrument | 'bass' | 'drum';
 
@@ -98,7 +99,7 @@ export function buildArrangement(bytes: Uint8Array, link: MidiLink, voices: ArrV
           voice,
         });
       }
-      if (count) parts.push({ id, name: tr.name || (ch === 9 ? 'Trống' : `Kênh ${ch + 1}`), voice: first!, chosen: pick ?? first!, notes: count });
+      if (count) parts.push({ id, name: tr.name || (ch === 9 ? tx('Trống') : tx('Kênh {0}', ch + 1)), voice: first!, chosen: pick ?? first!, notes: count });
     }
   });
   notes.sort((a, b) => a.beat - b.beat);

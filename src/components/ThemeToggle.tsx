@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useAppState } from '../state';
 import { Icon } from './Icon';
+import { t } from '../lib/i18n';
 
 const darkQuery = () => (typeof matchMedia === 'function' ? matchMedia('(prefers-color-scheme: dark)') : null);
 
@@ -16,7 +17,7 @@ export function ThemeToggle({ className = 'icon-btn' }: { className?: string }) 
     return () => q.removeEventListener('change', on);
   }, []);
   const dark = settings.theme === 'dark' || (settings.theme === 'system' && systemDark);
-  const label = dark ? 'Chuyển sang giao diện sáng' : 'Chuyển sang giao diện tối';
+  const label = dark ? t('Chuyển sang giao diện sáng') : t('Chuyển sang giao diện tối');
   return (
     <button type="button" className={className} onClick={() => update({ theme: dark ? 'light' : 'dark' })} aria-label={label} title={label}>
       <Icon name={dark ? 'sun' : 'moon'} />

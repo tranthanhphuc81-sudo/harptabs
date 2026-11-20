@@ -8,6 +8,7 @@ import { TokenText } from './TabView';
 import { joinToken, splitToken } from '../lib/tabEdit';
 import type { FlatEvent } from '../lib/tabText';
 import { Icon } from './Icon';
+import { t as tx } from '../lib/i18n';
 
 interface Props {
   /** nốt đang chọn (null: chưa chọn nốt nào) */
@@ -72,52 +73,52 @@ export function NoteEditor({ note, harpType, harpKey = 'C', nameStyle, playing, 
   const shown = pendPos ?? cur;
 
   return (
-    <div className="note-editor" role="group" aria-label="Sửa nốt đang chọn">
+    <div className="note-editor" role="group" aria-label={tx('Sửa nốt đang chọn')}>
       <div className="ne-head">
-        <strong>Sửa nốt</strong>
+        <strong>{tx('Sửa nốt')}</strong>
         {note ? (
           <span className="ne-cur">
-            {isRest ? 'nghỉ' : <>{note.token}{note.midi != null && <span className="muted"> ({midiToName(note.midi, nameStyle)})</span>}</>}
+            {isRest ? tx('nghỉ') : <>{note.token}{note.midi != null && <span className="muted"> ({midiToName(note.midi, nameStyle)})</span>}</>}
             {note.lyric ? <span className="muted"> · “{note.lyric}”</span> : null}
           </span>
-        ) : <span className="muted">Chạm vào nốt sai trên tab</span>}
+        ) : <span className="muted">{tx('Chạm vào nốt sai trên tab')}</span>}
         <span className="ne-nav">
-          <button type="button" className="icon-btn" onClick={() => onStep(-1)} disabled={!note} aria-label="Nốt trước">‹</button>
-          <button type="button" className="icon-btn" onClick={() => onStep(1)} disabled={!note} aria-label="Nốt sau">›</button>
-          <button type="button" className="btn btn-ghost btn-sm" onClick={onUndo} disabled={!canUndo} aria-label="Hoàn tác lần sửa trước">↶ Hoàn tác</button>
-          <button type="button" className="icon-btn" onClick={onClose} aria-label="Tắt chế độ sửa nốt"><Icon name="check" size={18} /></button>
+          <button type="button" className="icon-btn" onClick={() => onStep(-1)} disabled={!note} aria-label={tx('Nốt trước')}>‹</button>
+          <button type="button" className="icon-btn" onClick={() => onStep(1)} disabled={!note} aria-label={tx('Nốt sau')}>›</button>
+          <button type="button" className="btn btn-ghost btn-sm" onClick={onUndo} disabled={!canUndo} aria-label={tx('Hoàn tác lần sửa trước')}>{tx('↶ Hoàn tác')}</button>
+          <button type="button" className="icon-btn" onClick={onClose} aria-label={tx('Tắt chế độ sửa nốt')}><Icon name="check" size={18} /></button>
         </span>
       </div>
 
-      {playing && <button type="button" className="btn btn-ghost btn-sm" onClick={onPickPlaying}>Chọn nốt đang phát</button>}
+      {playing && <button type="button" className="btn btn-ghost btn-sm" onClick={onPickPlaying}>{tx('Chọn nốt đang phát')}</button>}
 
       {note && (
         <>
-          <div className={`keypad ne-keys${rec ? ' recorder' : ''}`} role="toolbar" aria-label={rec ? 'Chọn nốt' : 'Chọn lỗ'}>
+          <div className={`keypad ne-keys${rec ? ' recorder' : ''}`} role="toolbar" aria-label={rec ? tx('Chọn nốt') : tx('Chọn lỗ')}>
             {isDanBau(harpType) ? <BauChart harpKey={harpKey} nameStyle={nameStyle} selected={pend ?? note.token} onPick={pick} /> : isTranh(harpType) ? <TranhChart harpType={harpType} harpKey={harpKey} nameStyle={nameStyle} selected={pend ?? note.token} onPick={pick} /> : isKeyboard(harpType) ? <PianoChart harpType={harpType} nameStyle={nameStyle} selected={pend ?? note.token} onPick={pick} /> : fret ? <FretboardChart harpType={harpType} nameStyle={nameStyle} selected={pend ?? note.token} onPick={pick} maxFret={12} /> : rec ? recNotes.map((n) => (
-              <button type="button" key={n.token} className={`blow${(pend ?? note.token) === n.token ? ' on' : ''}`} onClick={() => pick(n.token)} aria-label={`Nốt ${n.token}`}><TokenText token={n.token} nameStyle={nameStyle} /></button>
+              <button type="button" key={n.token} className={`blow${(pend ?? note.token) === n.token ? ' on' : ''}`} onClick={() => pick(n.token)} aria-label={tx('Nốt {0}', n.token)}><TokenText token={n.token} nameStyle={nameStyle} /></button>
             )) : oneDir ? holes.map((h) => {
               const d = fixedDir(harpType, h) === 'draw';
-              return <button type="button" key={h} className={`${d ? 'draw' : 'blow'}${shown.hole === h ? ' on' : ''}`} onClick={() => setHole(h, d)} aria-label={`Lỗ ${h} ${d ? 'hút' : 'thổi'}`}>{d ? `−${h}` : h}</button>;
+              return <button type="button" key={h} className={`${d ? 'draw' : 'blow'}${shown.hole === h ? ' on' : ''}`} onClick={() => setHole(h, d)} aria-label={tx('Lỗ {0} {1}', h, d ? tx('hút') : tx('thổi'))}>{d ? `−${h}` : h}</button>;
             }) : <>
-              {holes.map((h) => <button type="button" key={h} className={`blow${(pend || !isRest) && !shown.draw && shown.hole === h ? ' on' : ''}`} onClick={() => setHole(h, false)} aria-label={`Thổi lỗ ${h}`}>{h}</button>)}
-              {holes.map((h) => <button type="button" key={-h} className={`draw${(pend || !isRest) && shown.draw && shown.hole === h ? ' on' : ''}`} onClick={() => setHole(h, true)} aria-label={`Hút lỗ ${h}`}>−{h}</button>)}
+              {holes.map((h) => <button type="button" key={h} className={`blow${(pend || !isRest) && !shown.draw && shown.hole === h ? ' on' : ''}`} onClick={() => setHole(h, false)} aria-label={tx('Thổi lỗ {0}', h)}>{h}</button>)}
+              {holes.map((h) => <button type="button" key={-h} className={`draw${(pend || !isRest) && shown.draw && shown.hole === h ? ' on' : ''}`} onClick={() => setHole(h, true)} aria-label={tx('Hút lỗ {0}', h)}>−{h}</button>)}
             </>}
           </div>
           {pend && (
             <div className="ne-row ne-pend">
-              <strong>Chọn: {fret ? `dây ${pend.split('.')[0]} phím ${pend.split('.')[1]}` : pend}</strong>
-              <button type="button" className="btn btn-primary btn-sm" onClick={() => { onToken(pend); setPend(null); }}>Thay nốt này</button>
-              <button type="button" className="btn btn-primary btn-sm" onClick={() => { onInsert(pend); setPend(null); }}>Chèn sau nốt này</button>
-              <button type="button" className="btn btn-ghost btn-sm" onClick={() => onHearToken(pend)}>Nghe lại</button>
-              <button type="button" className="btn btn-ghost btn-sm" onClick={() => setPend(null)}>Bỏ</button>
+              <strong>{tx('Chọn:')} {fret ? tx('dây {0} phím {1}', pend.split('.')[0], pend.split('.')[1]) : pend}</strong>
+              <button type="button" className="btn btn-primary btn-sm" onClick={() => { onToken(pend); setPend(null); }}>{tx('Thay nốt này')}</button>
+              <button type="button" className="btn btn-primary btn-sm" onClick={() => { onInsert(pend); setPend(null); }}>{tx('Chèn sau nốt này')}</button>
+              <button type="button" className="btn btn-ghost btn-sm" onClick={() => onHearToken(pend)}>{tx('Nghe lại')}</button>
+              <button type="button" className="btn btn-ghost btn-sm" onClick={() => setPend(null)}>{tx('Bỏ')}</button>
             </div>
           )}
           <div className="ne-row">
             {!trem && !rec && (chrom
-              ? <button type="button" className={`chip${shown.slide ? ' on' : ''}`} aria-pressed={shown.slide} disabled={shown.hole == null} onClick={() => withMod({ slide: !shown.slide })}>{isTwoRowChromatic(harpType) ? 'Hàng trên <' : 'Bấm gạt <'}</button>
+              ? <button type="button" className={`chip${shown.slide ? ' on' : ''}`} aria-pressed={shown.slide} disabled={shown.hole == null} onClick={() => withMod({ slide: !shown.slide })}>{isTwoRowChromatic(harpType) ? tx('Hàng trên <') : tx('Bấm gạt <')}</button>
               : <>
-                <button type="button" className={`chip${shown.bend === 0 && !shown.over ? ' on' : ''}`} disabled={shown.hole == null} onClick={() => withMod({ bend: 0, over: false })}>Thường</button>
+                <button type="button" className={`chip${shown.bend === 0 && !shown.over ? ' on' : ''}`} disabled={shown.hole == null} onClick={() => withMod({ bend: 0, over: false })}>{tx('Thường')}</button>
                 <button type="button" className={`chip${shown.bend === 1 ? ' on' : ''}`} disabled={shown.hole == null} onClick={() => withMod({ bend: 1, over: false })}>Bend ′</button>
                 <button type="button" className={`chip${shown.bend === 2 ? ' on' : ''}`} disabled={shown.hole == null} onClick={() => withMod({ bend: 2, over: false })}>Bend ″</button>
                 <button type="button" className={`chip${shown.over ? ' on' : ''}`} disabled={shown.hole == null} onClick={() => withMod({ bend: 0, over: true })}>Overblow</button>
@@ -128,7 +129,7 @@ export function NoteEditor({ note, harpType, harpKey = 'C', nameStyle, playing, 
               const bend = cur?.[2] ? (cur[2] === '+' ? 1 : -1) * Number(cur[3]) : 0;
               const setBend = (k: number) => { if (!cur) return; const t = `b${cur[1]}${k > 0 ? `+${k}` : k < 0 ? `-${-k}` : ''}`; if (pend) pick(t); else onToken(t); };
               return [-2, -1, 0, 1, 2, 3].map((k) => (
-                <button key={k} type="button" className={`chip${cur && bend === k ? ' on' : ''}`} disabled={!cur} onClick={() => setBend(k)}>{k === 0 ? 'Không nắn' : k > 0 ? `Nắn ↑${k}` : `Nắn ↓${-k}`}</button>
+                <button key={k} type="button" className={`chip${cur && bend === k ? ' on' : ''}`} disabled={!cur} onClick={() => setBend(k)}>{k === 0 ? tx('Không nắn') : k > 0 ? tx('Nắn ↑{0}', k) : tx('Nắn ↓{0}', -k)}</button>
               ));
             })()}
             {isTranh(harpType) && (() => {
@@ -136,21 +137,21 @@ export function NoteEditor({ note, harpType, harpKey = 'C', nameStyle, playing, 
               const base = /^(\d+)/.exec(pend ?? note.token ?? '')?.[1];
               const press = (pend ?? note.token ?? '').split('^').length - 1;
               const setPress = (k: number) => { if (!base) return; const t = base + '^'.repeat(k); if (pend) pick(t); else onToken(t); };
-              return ['Gảy thường', 'Nhấn ½', 'Nhấn 1'].map((label, k) => (
+              return [tx('Gảy thường'), tx('Nhấn ½'), tx('Nhấn 1')].map((label, k) => (
                 <button key={k} type="button" className={`chip${base && press === k ? ' on' : ''}`} disabled={!base} onClick={() => setPress(k)}>{label}</button>
               ));
             })()}
-            <button type="button" className={`chip${isRest ? ' on' : ''}`} aria-pressed={isRest} onClick={() => onToken(null)}>Nghỉ</button>
+            <button type="button" className={`chip${isRest ? ' on' : ''}`} aria-pressed={isRest} onClick={() => onToken(null)}>{tx('Nghỉ')}</button>
           </div>
           <div className="ne-row">
-            <span className="field-label">Dài</span>
+            <span className="field-label">{tx('Dài')}</span>
             {BEAT_CHOICES.map((b) => (
               <button type="button" key={b.v} className={`chip${Math.abs(note.beats - b.v) < 1e-6 ? ' on' : ''}`} onClick={() => onBeats(b.v)}>{b.label}</button>
             ))}
           </div>
           <div className="ne-row">
-            <button type="button" className="btn btn-ghost btn-sm" onClick={onDuplicate}>Thêm nốt giống sau nó</button>
-            <button type="button" className="btn btn-ghost btn-sm" onClick={onRemove}>Xoá nốt</button>
+            <button type="button" className="btn btn-ghost btn-sm" onClick={onDuplicate}>{tx('Thêm nốt giống sau nó')}</button>
+            <button type="button" className="btn btn-ghost btn-sm" onClick={onRemove}>{tx('Xoá nốt')}</button>
           </div>
         </>
       )}

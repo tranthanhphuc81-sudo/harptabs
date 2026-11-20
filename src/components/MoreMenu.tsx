@@ -4,6 +4,7 @@
  */
 import { ReactNode, useEffect, useRef, useState } from 'react';
 import { Icon } from './Icon';
+import { t } from '../lib/i18n';
 
 export interface MoreItem {
   icon: string;
@@ -14,7 +15,7 @@ export interface MoreItem {
   keepOpen?: boolean;
 }
 
-export function MoreMenu({ items, label = 'Thêm', footer }: { items: MoreItem[]; label?: string; footer?: ReactNode }) {
+export function MoreMenu({ items, label = t('Thêm'), footer }: { items: MoreItem[]; label?: string; footer?: ReactNode }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 

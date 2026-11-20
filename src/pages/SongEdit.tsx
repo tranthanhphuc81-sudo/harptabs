@@ -19,6 +19,7 @@ import { usePlayer } from '../components/usePlayer';
 import { previewNote } from '../audio/engine';
 import { useAppState } from '../state';
 import { clearDraft, loadDraft, saveDraft, SongDraft } from '../lib/drafts';
+import { LOCALE, t as tx } from '../lib/i18n';
 
 const DRAFT_DELAY = 400;
 
@@ -42,7 +43,7 @@ export default function SongEdit() {
     return () => { alive = false; };
   }, [id, settings.defaultHarpKey, settings.defaultHarpType]);
 
-  if (!song) return <div className="page"><p className="muted">Đang tải…</p></div>;
+  if (!song) return <div className="page"><p className="muted">{tx('Đang tải…')}</p></div>;
   return <Editor key={song.id} initial={song} isNew={!id} draft={draft} />;
 }
 
@@ -170,20 +171,20 @@ function Editor({ initial, isNew, draft }: { initial: Song; isNew: boolean; draf
   const fixFont = () => {
     if (!garbled) return;
     setS((prev) => ({ ...prev, body: garbled.fix(prev.body), title: garbled.fix(prev.title), artist: prev.artist && garbled.fix(prev.artist) }));
-    toast('Đã sửa lỗi font — xem lại rồi bấm Lưu bài');
+    toast(tx('Đã sửa lỗi font — xem lại rồi bấm Lưu bài'));
   };
 
   const errors = parsed.issues.filter((i) => i.level === 'error');
   const warnings = parsed.issues.filter((i) => i.level === 'warning');
 
   const save = async () => {
-    if (!s.title.trim()) { toast('Hãy đặt tên bài'); return; }
+    if (!s.title.trim()) { toast(tx('Hãy đặt tên bài')); return; }
     const tags = tagText.split(',').map((t) => t.trim()).filter(Boolean);
     const rec: Song = { ...s, title: s.title.trim(), tags, updatedAt: Date.now() };
     await db.songs.put(rec);
     latest.current = null;
     await clearDraft(draftId).catch(() => {});
-    toast(errors.length ? `Đã lưu (còn ${errors.length} lỗi ký hiệu)` : 'Đã lưu');
+    toast(errors.length ? tx('Đã lưu (còn {0} lỗi ký hiệu)', errors.length) : tx('Đã lưu'));
     nav(`/song/${rec.id}`, { replace: true });
   };
 
@@ -192,7 +193,7 @@ function Editor({ initial, isNew, draft }: { initial: Song; isNew: boolean; draf
     latest.current = null;
     await deleteSongs([s.id]);
     await clearDraft(draftId).catch(() => {});
-    toast('Đã xoá bài');
+    toast(tx('Đã xoá bài'));
     nav('/', { replace: true });
   };
 
@@ -200,28 +201,28 @@ function Editor({ initial, isNew, draft }: { initial: Song; isNew: boolean; draf
     <div className="page page-edit">
       <header className="page-head">
         <div className="row gap center">
-          <Link to={isNew ? '/' : `/song/${s.id}`} className="icon-btn" aria-label="Quay lại"><Icon name="back" /></Link>
-          <h1>{isNew ? 'Thêm bài' : 'Sửa bài'}</h1>
+          <Link to={isNew ? '/' : `/song/${s.id}`} className="icon-btn" aria-label={tx('Quay lại')}><Icon name="back" /></Link>
+          <h1>{isNew ? tx('Thêm bài') : tx('Sửa bài')}</h1>
         </div>
         <div className="head-actions">
           {!isNew && (
             <button type="button" className={`btn ${confirmDel ? 'btn-danger' : 'btn-ghost'}`} onClick={remove}>
-              <Icon name="trash" size={18} /> {confirmDel ? 'Bấm lần nữa để xoá' : 'Xoá'}
+              <Icon name="trash" size={18} /> {confirmDel ? tx('Bấm lần nữa để xoá') : tx('Xoá')}
             </button>
           )}
-          <button type="button" className="btn btn-primary" onClick={save}><Icon name="check" size={18} /> Lưu bài</button>
+          <button type="button" className="btn btn-primary" onClick={save}><Icon name="check" size={18} /> {tx('Lưu bài')}</button>
         </div>
       </header>
 
       {pendingDraft && (
         <div className="notice" role="status">
           <span>
-            Có bản {isNew ? 'soạn' : 'sửa'} dở chưa lưu{pendingDraft.song.title ? <> của <strong>{pendingDraft.song.title}</strong></> : ''} lúc {new Date(pendingDraft.savedAt).toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' })}.
-            {!isNew && pendingDraft.baseUpdatedAt !== initial.updatedAt && ' Bài đã được lưu lại sau đó, mở bản nháp sẽ thay nội dung hiện tại.'}
+            {tx('Có bản')} {isNew ? tx('soạn') : tx('sửa')} {tx('dở chưa lưu')}{pendingDraft.song.title ? <> {tx('của')} <strong>{pendingDraft.song.title}</strong></> : ''} {tx('lúc')} {new Date(pendingDraft.savedAt).toLocaleString(LOCALE, { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' })}.
+            {!isNew && pendingDraft.baseUpdatedAt !== initial.updatedAt && tx(' Bài đã được lưu lại sau đó, mở bản nháp sẽ thay nội dung hiện tại.')}
           </span>
           <span className="row gap">
-            <button type="button" className="btn btn-primary btn-sm" onClick={restoreDraft}>Mở lại</button>
-            <button type="button" className="btn btn-ghost btn-sm" onClick={discardDraft}>Bỏ</button>
+            <button type="button" className="btn btn-primary btn-sm" onClick={restoreDraft}>{tx('Mở lại')}</button>
+            <button type="button" className="btn btn-ghost btn-sm" onClick={discardDraft}>{tx('Bỏ')}</button>
           </span>
         </div>
       )}
@@ -229,37 +230,37 @@ function Editor({ initial, isNew, draft }: { initial: Song; isNew: boolean; draf
       {garbled && (
         <div className="notice" role="status">
           <span>
-            Lời / tên bài có vẻ bị lỗi font chữ Việt (bảng mã {VN_ENCODINGS.find((e) => e.value === garbled.enc)?.label ?? garbled.enc})
-            {garbledSample && <>, ví dụ “{garbledSample.from}” → “<strong>{garbledSample.to}</strong>”</>}.
+            {tx('Lời / tên bài có vẻ bị lỗi font chữ Việt (bảng mã')} {VN_ENCODINGS.find((e) => e.value === garbled.enc)?.label ?? garbled.enc})
+            {garbledSample && <>{tx(', ví dụ “{0}” → “', garbledSample.from)}<strong>{garbledSample.to}</strong>”</>}.
           </span>
-          <button type="button" className="btn btn-primary btn-sm" onClick={fixFont}>Sửa lỗi font</button>
+          <button type="button" className="btn btn-primary btn-sm" onClick={fixFont}>{tx('Sửa lỗi font')}</button>
         </div>
       )}
 
       <div className="edit-grid">
         <div className="edit-meta">
           <label className="field wide">
-            <span className="field-label">Tên bài</span>
-            <input value={s.title} onChange={(e) => set('title', e.target.value)} placeholder="Ví dụ: Amazing Grace" />
+            <span className="field-label">{tx('Tên bài')}</span>
+            <input value={s.title} onChange={(e) => set('title', e.target.value)} placeholder={tx('Ví dụ: Amazing Grace')} />
           </label>
           <label className="field wide">
-            <span className="field-label">Tác giả / ca sĩ</span>
+            <span className="field-label">{tx('Tác giả / ca sĩ')}</span>
             <input value={s.artist ?? ''} onChange={(e) => set('artist', e.target.value || undefined)} />
           </label>
           <HarpTypeSelect value={harpType} onChange={(t: HarpType) => setS((prev) => ({ ...prev, harpType: t === 'diatonic' ? undefined : t, position: t === 'diatonic' ? prev.position : 1, ...(isFixedKey(t) ? { harpKey: recorderKey(t) } : {}) }))} />
           <KeySelect value={s.harpKey} onChange={(k) => set('harpKey', k as HarpKey)} harpType={harpType} />
           {!chrom && !trem && !rec && (
             <label className="field">
-              <span className="field-label">Vị trí</span>
+              <span className="field-label">{tx('Vị trí')}</span>
               <select value={s.position ?? 1} onChange={(e) => set('position', Number(e.target.value) as 1 | 2 | 3)}>
-                <option value={1}>1 (thẳng)</option>
+                <option value={1}>{tx('1 (thẳng)')}</option>
                 <option value={2}>2 (cross harp)</option>
                 <option value={3}>3 (slant)</option>
               </select>
             </label>
           )}
           <label className="field">
-            <span className="field-label">Giọng bài</span>
+            <span className="field-label">{tx('Giọng bài')}</span>
             <input value={s.songKey ?? ''} onChange={(e) => set('songKey', e.target.value || undefined)} placeholder="C, Am…"
               onBlur={(e) => { const k = normalizeKey(e.target.value); if (k) set('songKey', k); }} />
           </label>
@@ -268,40 +269,40 @@ function Editor({ initial, isNew, draft }: { initial: Song; isNew: boolean; draf
             <input type="number" min={30} max={260} value={s.bpm} onChange={(e) => set('bpm', Math.min(260, Math.max(30, Number(e.target.value) || 90)))} />
           </label>
           <label className="field">
-            <span className="field-label">Nhịp</span>
+            <span className="field-label">{tx('Nhịp')}</span>
             <select value={s.timeSig} onChange={(e) => set('timeSig', e.target.value)}>
               {['2/4', '3/4', '4/4', '6/8'].map((t) => <option key={t}>{t}</option>)}
             </select>
           </label>
           <label className="field">
-            <span className="field-label">Phách lấy đà</span>
+            <span className="field-label">{tx('Phách lấy đà')}</span>
             <input type="number" min={0} max={8} step={0.5} value={s.pickupBeats} onChange={(e) => set('pickupBeats', Math.max(0, Number(e.target.value) || 0))} />
           </label>
           <div className="field">
-            <label className="field-label" htmlFor="song-style">Beat mẫu</label>
+            <label className="field-label" htmlFor="song-style">{tx('Beat mẫu')}</label>
             <div className="row gap">
               <select id="song-style" value={s.style} onChange={(e) => set('style', e.target.value as BeatStyle)}>
                 {STYLE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
               </select>
-              <button type="button" className="btn btn-ghost" title="Chọn kiểu nhịp hợp với bài" onClick={() => {
+              <button type="button" className="btn btn-ghost" title={tx('Chọn kiểu nhịp hợp với bài')} onClick={() => {
                 const g = suggestStyle({ ...s, tags: tagText.split(',').map((t) => t.trim()).filter(Boolean) }, flat);
                 set('style', g.style);
-                toast(`Tự chọn: ${STYLE_OPTIONS.find((o) => o.value === g.style)?.label} — ${g.reason}`);
-              }}>✨ Tự chọn</button>
+                toast(tx('Tự chọn: {0} — {1}', STYLE_OPTIONS.find((o) => o.value === g.style)?.label, g.reason));
+              }}>{tx('✨ Tự chọn')}</button>
             </div>
           </div>
           <label className="field">
-            <span className="field-label">Độ khó</span>
+            <span className="field-label">{tx('Độ khó')}</span>
             <select value={s.difficulty} onChange={(e) => set('difficulty', Number(e.target.value) as 1 | 2 | 3)}>
-              <option value={1}>Dễ</option><option value={2}>Vừa</option><option value={3}>Khó</option>
+              <option value={1}>{tx('Dễ')}</option><option value={2}>{tx('Vừa')}</option><option value={3}>{tx('Khó')}</option>
             </select>
           </label>
           <label className="field wide">
-            <span className="field-label">Thẻ (cách nhau bởi dấu phẩy)</span>
-            <input value={tagText} onChange={(e) => setTagText(e.target.value)} placeholder="trữ tình, bolero" />
+            <span className="field-label">{tx('Thẻ (cách nhau bởi dấu phẩy)')}</span>
+            <input value={tagText} onChange={(e) => setTagText(e.target.value)} placeholder={tx('trữ tình, bolero')} />
           </label>
           <label className="field wide">
-            <span className="field-label">Ghi chú tập luyện</span>
+            <span className="field-label">{tx('Ghi chú tập luyện')}</span>
             <textarea rows={2} value={s.notes ?? ''} onChange={(e) => set('notes', e.target.value || undefined)} />
           </label>
         </div>
@@ -309,83 +310,83 @@ function Editor({ initial, isNew, draft }: { initial: Song; isNew: boolean; draf
         {s.sheet !== undefined && (
           <div className="edit-body">
             <div className="field-label row between">
-              <span>Lời + hợp âm</span>
+              <span>{tx('Lời + hợp âm')}</span>
               <label className="capo-field">
-                <span>Mỗi hợp âm</span>
+                <span>{tx('Mỗi hợp âm')}</span>
                 <select value={s.sheetBeats ?? beatsPerBar(s.timeSig)} onChange={(e) => { const v = Number(e.target.value); set('sheetBeats', v === beatsPerBar(s.timeSig) ? undefined : v); }}>
-                  {beatsPerBar(s.timeSig) % 2 === 0 && <option value={beatsPerBar(s.timeSig) / 2}>Nửa ô nhịp</option>}
-                  <option value={beatsPerBar(s.timeSig)}>Một ô nhịp</option>
-                  <option value={beatsPerBar(s.timeSig) * 2}>Hai ô nhịp</option>
+                  {beatsPerBar(s.timeSig) % 2 === 0 && <option value={beatsPerBar(s.timeSig) / 2}>{tx('Nửa ô nhịp')}</option>}
+                  <option value={beatsPerBar(s.timeSig)}>{tx('Một ô nhịp')}</option>
+                  <option value={beatsPerBar(s.timeSig) * 2}>{tx('Hai ô nhịp')}</option>
                 </select>
               </label>
             </div>
-            <p className="small muted">Hợp âm trong ngoặc vuông chen trong lời: <code>[Am]Em ơi Hà [F]Nội phố</code>. Dòng <code># Điệp khúc</code> là tên đoạn.</p>
-            <textarea className="tab-input" rows={14} value={s.sheet} onChange={(e) => set('sheet', e.target.value)} spellCheck={false} aria-label="Lời + hợp âm" />
+            <p className="small muted">{tx('Hợp âm trong ngoặc vuông chen trong lời:')} <code>{tx('[Am]Em ơi Hà [F]Nội phố')}</code>{tx('. Dòng')} <code>{tx('# Điệp khúc')}</code> {tx('là tên đoạn.')}</p>
+            <textarea className="tab-input" rows={14} value={s.sheet} onChange={(e) => set('sheet', e.target.value)} spellCheck={false} aria-label={tx('Lời + hợp âm')} />
           </div>
         )}
 
         <div className="edit-body">
           <div className="field-label row between">
-            <span>Tab và lời</span>
+            <span>{tx('Tab và lời')}</span>
             <details className="syntax-help">
-              <summary>Cách ghi</summary>
+              <summary>{tx('Cách ghi')}</summary>
               <ul>
-                {isDanBau(harpType) && <li>Ghi <strong>điểm bồi</strong>: <code>b2</code> = 1/2 dây, <code>b3</code> = 1/3… <code>b8</code>; <code>b1</code> là dây buông. Nắn cần: <code>b4+2</code> lên 2 nửa cung, <code>b5-1</code> xuống nửa cung. Chạm sơ đồ bên dưới để nghe và thêm nốt, nút <strong>nắn ↑ / ↓</strong> để nắn.</li>}
-                {isTranh(harpType) && <li>Ghi <strong>số dây</strong>: <code>1</code> là dây trầm nhất. Nốt không có trên dây thì nhấn: <code>7^</code> nhấn nửa cung, <code>7^^</code> nhấn một cung. Chạm sơ đồ đàn bên dưới để nghe và thêm nốt, nút <strong>nhấn ↑</strong> để thêm nhấn.</li>}
-                {isKeyboard(harpType) && <li>Ghi <strong>tên nốt có quãng tám</strong>: <code>C4</code> (Đô giữa) <code>F#4</code> <code>Bb4</code> <code>C5</code>; {isPianica(harpType) ? <>pianica 32 phím từ <code>F3</code> tới <code>C6</code></> : harpType === 'piano88' ? <>piano 88 phím từ <code>A0</code> tới <code>C8</code></> : <>organ 61 phím từ <code>C2</code> tới <code>C7</code></>}. Chạm bàn phím bên dưới để nghe và thêm nốt.</li>}
-                {isFretted(harpType) && <li>Ghi <strong>dây.phím</strong>: <code>1.0</code> dây 1 (dây mảnh nhất) buông, <code>2.3</code> dây 2 phím 3{harpType === 'guitar6' ? <>, <code>6.3</code> dây 6 (dây Mi trầm) phím 3</> : <>; ukulele dây 4 là dây Sol</>}. Chạm cần đàn bên dưới để nghe và thêm nốt.</li>}
-                {isKalimba(harpType) && <li>Ghi <strong>số 1–7</strong> (Đô–Si theo tông kalimba), thêm <code>'</code> hoặc <code>°</code> để lên quãng tám: <code>1 2 3 5'</code>. <code>0</code> hoặc <code>r</code> là nghỉ.</li>}
-                {rec && !isKalimba(harpType) && !isFretted(harpType) && !isKeyboard(harpType) && !isTranh(harpType) && !isDanBau(harpType) && <li>Ghi <strong>tên nốt có quãng tám</strong>: <code>F4</code> <code>Bb4</code> <code>C#5</code> ({isSaoTruc(harpType) ? 'sáo trúc Đô từ G4: bịt hết lỗ ra Sol' : 'sáo alto từ F4 tới G6; soprano ghi từ C4'}). Dưới mỗi nốt app vẽ thế bấm.</li>}
+                {isDanBau(harpType) && <li>Ghi <strong>{tx('điểm bồi')}</strong>: <code>b2</code> {tx('= 1/2 dây,')} <code>b3</code> = 1/3… <code>b8</code>; <code>b1</code> {tx('là dây buông. Nắn cần:')} <code>b4+2</code> {tx('lên 2 nửa cung,')} <code>b5-1</code> {tx('xuống nửa cung. Chạm sơ đồ bên dưới để nghe và thêm nốt, nút')} <strong>{tx('nắn ↑ / ↓')}</strong> {tx('để nắn.')}</li>}
+                {isTranh(harpType) && <li>Ghi <strong>{tx('số dây')}</strong>: <code>1</code> {tx('là dây trầm nhất. Nốt không có trên dây thì nhấn:')} <code>7^</code> {tx('nhấn nửa cung,')} <code>7^^</code> {tx('nhấn một cung. Chạm sơ đồ đàn bên dưới để nghe và thêm nốt, nút')} <strong>{tx('nhấn ↑')}</strong> {tx('để thêm nhấn.')}</li>}
+                {isKeyboard(harpType) && <li>Ghi <strong>{tx('tên nốt có quãng tám')}</strong>: <code>C4</code> {tx('(Đô giữa)')} <code>F#4</code> <code>Bb4</code> <code>C5</code>; {isPianica(harpType) ? <>{tx('pianica 32 phím từ')} <code>F3</code> {tx('tới')} <code>C6</code></> : harpType === 'piano88' ? <>{tx('piano 88 phím từ')} <code>A0</code> {tx('tới')} <code>C8</code></> : <>{tx('organ 61 phím từ')} <code>C2</code> {tx('tới')} <code>C7</code></>}{tx('. Chạm bàn phím bên dưới để nghe và thêm nốt.')}</li>}
+                {isFretted(harpType) && <li>Ghi <strong>{tx('dây.phím')}</strong>: <code>1.0</code> {tx('dây 1 (dây mảnh nhất) buông,')} <code>2.3</code> {tx('dây 2 phím 3')}{harpType === 'guitar6' ? <>, <code>6.3</code> {tx('dây 6 (dây Mi trầm) phím 3')}</> : <>{tx('; ukulele dây 4 là dây Sol')}</>}{tx('. Chạm cần đàn bên dưới để nghe và thêm nốt.')}</li>}
+                {isKalimba(harpType) && <li>Ghi <strong>{tx('số 1–7')}</strong> {tx('(Đô–Si theo tông kalimba), thêm')} <code>'</code> {tx('hoặc')} <code>°</code> {tx('để lên quãng tám:')} <code>1 2 3 5'</code>. <code>0</code> {tx('hoặc')} <code>r</code> {tx('là nghỉ.')}</li>}
+                {rec && !isKalimba(harpType) && !isFretted(harpType) && !isKeyboard(harpType) && !isTranh(harpType) && !isDanBau(harpType) && <li>Ghi <strong>{tx('tên nốt có quãng tám')}</strong>: <code>F4</code> <code>Bb4</code> <code>C#5</code> ({isSaoTruc(harpType) ? tx('sáo trúc Đô từ G4: bịt hết lỗ ra Sol') : tx('sáo alto từ F4 tới G6; soprano ghi từ C4')}{tx('). Dưới mỗi nốt app vẽ thế bấm.')}</li>}
                 {rec ? null : trem
-                  ? <li>Kèn tremolo: lỗ lẻ là thổi, lỗ chẵn là hút. Gõ <code>3</code> hay <code>4</code> là đủ — app tự ghi lỗ hút thành <code>-4</code>. Kèn này không bend.</li>
+                  ? <li>{tx('Kèn tremolo: lỗ lẻ là thổi, lỗ chẵn là hút. Gõ')} <code>3</code> hay <code>4</code> {tx('là đủ — app tự ghi lỗ hút thành')} <code>-4</code>{tx('. Kèn này không bend.')}</li>
                   : twoRow
-                  ? <li>Tombo S-50: mỗi lỗ chỉ thổi hoặc chỉ hút (mỗi quãng tám 7 lỗ: thổi Đô, hút Rê, thổi Mi, hút Fa, thổi Sol, hút La, hút Si). Gõ <code>2</code> là đủ — app tự ghi lỗ hút thành <code>-2</code>.</li>
-                  : <li><code>4</code> thổi lỗ 4, <code>-4</code> hút lỗ 4</li>}
-                {isDanBau(harpType) && <><button type="button" onClick={() => pickMod('+')} aria-label="Nắn cần lên nửa cung">nắn ↑</button><button type="button" onClick={() => pickMod('-')} aria-label="Nắn cần xuống nửa cung">nắn ↓</button></>}
-            {isTranh(harpType) && <button type="button" onClick={() => pickMod('^')} aria-label="Nhấn (nửa cung, một cung, bỏ nhấn)">nhấn ↑</button>}
+                  ? <li>{tx('Tombo S-50: mỗi lỗ chỉ thổi hoặc chỉ hút (mỗi quãng tám 7 lỗ: thổi Đô, hút Rê, thổi Mi, hút Fa, thổi Sol, hút La, hút Si). Gõ')} <code>2</code> {tx('là đủ — app tự ghi lỗ hút thành')} <code>-2</code>.</li>
+                  : <li><code>4</code> {tx('thổi lỗ 4,')} <code>-4</code> {tx('hút lỗ 4')}</li>}
+                {isDanBau(harpType) && <><button type="button" onClick={() => pickMod('+')} aria-label={tx('Nắn cần lên nửa cung')}>{tx('nắn ↑')}</button><button type="button" onClick={() => pickMod('-')} aria-label={tx('Nắn cần xuống nửa cung')}>{tx('nắn ↓')}</button></>}
+            {isTranh(harpType) && <button type="button" onClick={() => pickMod('^')} aria-label={tx('Nhấn (nửa cung, một cung, bỏ nhấn)')}>{tx('nhấn ↑')}</button>}
             {trem || rec ? null : twoRow
-                  ? <li><code>1&lt;</code> lỗ 1 hàng trên (Đô#), <code>-2&lt;</code> lỗ 2 hàng trên (Rê#) — hàng trên cao hơn hàng dưới nửa cung</li>
+                  ? <li><code>1&lt;</code> {tx('lỗ 1 hàng trên (Đô#),')} <code>-2&lt;</code> {tx('lỗ 2 hàng trên (Rê#) — hàng trên cao hơn hàng dưới nửa cung')}</li>
                   : chrom
-                  ? <li><code>4&lt;</code> thổi lỗ 4 bấm nút gạt, <code>-4&lt;</code> hút bấm nút gạt (cao lên nửa cung)</li>
-                  : <li><code>-3'</code> bend nửa cung, <code>-3''</code> bend 1 cung, <code>6o</code> overblow</li>}
-                <li><code>4:2</code> giữ 2 phách, <code>4:0.5</code> nửa phách, <code>r</code> dấu nghỉ</li>
-                <li>Dòng ngay dưới dòng tab là lời. Gạch nối tách âm tiết: <code>Hap-py</code>; <code>_</code> là nốt luyến</li>
-                <li><code># Điệp khúc</code> để đặt tên đoạn; dòng trống để ngắt câu</li>
+                  ? <li><code>4&lt;</code> {tx('thổi lỗ 4 bấm nút gạt,')} <code>-4&lt;</code> {tx('hút bấm nút gạt (cao lên nửa cung)')}</li>
+                  : <li><code>-3'</code> {tx('bend nửa cung,')} <code>-3''</code> bend 1 cung, <code>6o</code> overblow</li>}
+                <li><code>4:2</code> {tx('giữ 2 phách,')} <code>4:0.5</code> {tx('nửa phách,')} <code>r</code> {tx('dấu nghỉ')}</li>
+                <li>{tx('Dòng ngay dưới dòng tab là lời. Gạch nối tách âm tiết:')} <code>Hap-py</code>; <code>_</code> {tx('là nốt luyến')}</li>
+                <li><code>{tx('# Điệp khúc')}</code> {tx('để đặt tên đoạn; dòng trống để ngắt câu')}</li>
               </ul>
             </details>
           </div>
-          <div className={`keypad${trem ? ' tremolo' : ''}${rec ? ' recorder' : ''}`} role="toolbar" aria-label="Bàn phím tab">
+          <div className={`keypad${trem ? ' tremolo' : ''}${rec ? ' recorder' : ''}`} role="toolbar" aria-label={tx('Bàn phím tab')}>
             {isDanBau(harpType) ? <BauChart harpKey={s.harpKey} nameStyle={settings.noteNames} onPick={pickHole} /> : isTranh(harpType) ? <TranhChart harpType={harpType} harpKey={s.harpKey} nameStyle={settings.noteNames} onPick={pickHole} /> : isKeyboard(harpType) ? <PianoChart harpType={harpType} nameStyle={settings.noteNames} onPick={pickHole} /> : isFretted(harpType) ? <FretboardChart harpType={harpType} nameStyle={settings.noteNames} onPick={pickHole} maxFret={12} /> : rec ? recNotes.map((n) => (
-              <button type="button" key={n.token} className="blow" onClick={() => pickHole(n.token)} aria-label={`Nốt ${n.token}`}><TokenText token={n.token} nameStyle={settings.noteNames} /></button>
+              <button type="button" key={n.token} className="blow" onClick={() => pickHole(n.token)} aria-label={tx('Nốt {0}', n.token)}><TokenText token={n.token} nameStyle={settings.noteNames} /></button>
             )) : trem || twoRow ? holes.map((h) => {
               const d = fixedDir(harpType, h) === 'draw';
-              return <button type="button" key={h} className={d ? 'draw' : 'blow'} onClick={() => pickHole(`${d ? '-' : ''}${h}`)} aria-label={`Lỗ ${h} ${d ? 'hút' : 'thổi'}`}>{d ? `−${h}` : h}</button>;
+              return <button type="button" key={h} className={d ? 'draw' : 'blow'} onClick={() => pickHole(`${d ? '-' : ''}${h}`)} aria-label={tx('Lỗ {0} {1}', h, d ? tx('hút') : tx('thổi'))}>{d ? `−${h}` : h}</button>;
             }) : <>
               <button type="button" className={`kp-mode${draw ? ' draw' : ''}`} onClick={() => setDraw(!draw)} aria-pressed={draw}>
-                {draw ? 'Hút' : 'Thổi'}
+                {draw ? tx('Hút') : tx('Thổi')}
               </button>
               {holes.map((h) => (
                 <button type="button" key={h} className={draw ? 'draw' : 'blow'} onClick={() => pickHole(`${draw ? '-' : ''}${h}`)}>{draw ? `−${h}` : h}</button>
               ))}
             </>}
             {trem || rec ? null : chrom
-              ? <button type="button" onClick={() => pickMod('<')} aria-label={twoRow ? 'Hàng trên' : 'Bấm nút gạt'}>&lt;</button>
-              : <button type="button" onClick={() => pickMod("'")} aria-label="Thêm bend">′</button>}
+              ? <button type="button" onClick={() => pickMod('<')} aria-label={twoRow ? tx('Hàng trên') : tx('Bấm nút gạt')}>&lt;</button>
+              : <button type="button" onClick={() => pickMod("'")} aria-label={tx('Thêm bend')}>′</button>}
             <button type="button" onClick={() => pickDur(':2')}>:2</button>
             <button type="button" onClick={() => pickDur(':0.5')}>:½</button>
-            <button type="button" onClick={() => insert('r')}>nghỉ</button>
-            <button type="button" onClick={() => insert('\n')} aria-label="Xuống dòng">↵</button>
+            <button type="button" onClick={() => insert('r')}>{tx('nghỉ')}</button>
+            <button type="button" onClick={() => insert('\n')} aria-label={tx('Xuống dòng')}>↵</button>
           </div>
           <div className="hear-row row gap wrap center">
-            <button type="button" className={`chip${hearFirst ? ' on' : ''}`} aria-pressed={hearFirst} onClick={toggleHearFirst}>Nghe trước khi thêm</button>
+            <button type="button" className={`chip${hearFirst ? ' on' : ''}`} aria-pressed={hearFirst} onClick={toggleHearFirst}>{tx('Nghe trước khi thêm')}</button>
             {hearFirst && (pend ? (
               <>
-                <span className="hear-cur">{pend.token}{pend.dur}{pendNote ? <span className="muted"> ({midiToName(pendNote.midi, settings.noteNames)})</span> : <span className="danger"> — {rec ? 'sáo' : 'kèn'} này không có nốt đó</span>}</span>
-                <button type="button" className="btn btn-ghost btn-sm" onClick={() => hear(pend.token)} disabled={!pendNote}>Nghe lại</button>
-                <button type="button" className="btn btn-primary btn-sm" onClick={addPending} disabled={!pendNote}>Thêm vào tab</button>
-                <button type="button" className="btn btn-ghost btn-sm" onClick={() => setPend(null)}>Bỏ</button>
+                <span className="hear-cur">{pend.token}{pend.dur}{pendNote ? <span className="muted"> ({midiToName(pendNote.midi, settings.noteNames)})</span> : <span className="danger"> — {rec ? tx('sáo') : tx('kèn')} {tx('này không có nốt đó')}</span>}</span>
+                <button type="button" className="btn btn-ghost btn-sm" onClick={() => hear(pend.token)} disabled={!pendNote}>{tx('Nghe lại')}</button>
+                <button type="button" className="btn btn-primary btn-sm" onClick={addPending} disabled={!pendNote}>{tx('Thêm vào tab')}</button>
+                <button type="button" className="btn btn-ghost btn-sm" onClick={() => setPend(null)}>{tx('Bỏ')}</button>
               </>
-            ) : <span className="muted small">Chạm {rec ? 'nốt' : 'lỗ'} để nghe, rồi bấm “Thêm vào tab”.</span>)}
+            ) : <span className="muted small">{tx('Chạm')} {rec ? tx('nốt') : tx('lỗ')} {tx('để nghe, rồi bấm “Thêm vào tab”.')}</span>)}
           </div>
           <textarea
             ref={taRef}
@@ -396,18 +397,18 @@ function Editor({ initial, isNew, draft }: { initial: Song; isNew: boolean; draf
             autoCapitalize="off"
             autoCorrect="off"
             rows={14}
-            placeholder={'# Đoạn 1\n4 4 -4 4 7 -7:2\nHap-py birth-day to you'}
-            aria-label="Nội dung tab"
+            placeholder={tx('# Đoạn 1\n4 4 -4 4 7 -7:2\nHap-py birth-day to you')}
+            aria-label={tx('Nội dung tab')}
           />
           {(errors.length > 0 || warnings.length > 0) && (
             <ul className="issues">
               {[...errors, ...warnings].map((i, k) => (
-                <li key={k} className={i.level}>Dòng {i.lineNo}: {i.message}</li>
+                <li key={k} className={i.level}>{tx('Dòng {0}: {1}', i.lineNo, i.message)}</li>
               ))}
             </ul>
           )}
           <div className="row between center preview-head">
-            <h2 className="h-small">Xem trước</h2>
+            <h2 className="h-small">{tx('Xem trước')}</h2>
             <MiniPlay p={preview} />
           </div>
           <TabView parsed={parsed} flat={flat} active={preview.active} showNames={settings.showNoteNames} nameStyle={settings.noteNames} size="s" harpType={harpType} harpKey={s.harpKey} />

@@ -3,6 +3,7 @@
  * và chấm mỗi tiếng sớm / muộn bao nhiêu mili giây, độ đều, có hay bị vội / kéo nhịp không.
  */
 
+import { t as tx } from './i18n';
 export interface RhythmPattern {
   id: string;
   label: string;
@@ -15,13 +16,13 @@ export interface RhythmPattern {
 
 const S = 2 / 3; // móc đôi swing: nốt sau rơi vào 2/3 phách
 export const RHYTHM_PATTERNS: RhythmPattern[] = [
-  { id: 'den', label: 'Nốt đen · 4/4', count: '1 2 3 4', beatsPerBar: 4, hits: [0, 1, 2, 3] },
-  { id: 'ba', label: 'Nhịp ba · 3/4', count: '1 2 3', beatsPerBar: 3, hits: [0, 1, 2] },
-  { id: 'trang', label: 'Nốt trắng (phách 1, 3)', count: '1 – 3 –', beatsPerBar: 4, hits: [0, 2] },
-  { id: 'moc', label: 'Móc đơn (hai tiếng mỗi phách)', count: '1 & 2 & 3 & 4 &', beatsPerBar: 4, hits: [0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5] },
-  { id: 'cham', label: 'Đen chấm dôi – móc', count: '1 – & 3 – &', beatsPerBar: 4, hits: [0, 1.5, 2, 3.5] },
-  { id: 'dao', label: 'Đảo phách (chỉ chơi "&")', count: '& & & &', beatsPerBar: 4, hits: [0.5, 1.5, 2.5, 3.5] },
-  { id: 'swing', label: 'Swing (nhịp lệch)', count: '1 – a 2 – a …', beatsPerBar: 4, hits: [0, S, 1, 1 + S, 2, 2 + S, 3, 3 + S] },
+  { id: 'den', label: tx('Nốt đen · 4/4'), count: '1 2 3 4', beatsPerBar: 4, hits: [0, 1, 2, 3] },
+  { id: 'ba', label: tx('Nhịp ba · 3/4'), count: '1 2 3', beatsPerBar: 3, hits: [0, 1, 2] },
+  { id: 'trang', label: tx('Nốt trắng (phách 1, 3)'), count: '1 – 3 –', beatsPerBar: 4, hits: [0, 2] },
+  { id: 'moc', label: tx('Móc đơn (hai tiếng mỗi phách)'), count: '1 & 2 & 3 & 4 &', beatsPerBar: 4, hits: [0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5] },
+  { id: 'cham', label: tx('Đen chấm dôi – móc'), count: '1 – & 3 – &', beatsPerBar: 4, hits: [0, 1.5, 2, 3.5] },
+  { id: 'dao', label: tx('Đảo phách (chỉ chơi "&")'), count: '& & & &', beatsPerBar: 4, hits: [0.5, 1.5, 2.5, 3.5] },
+  { id: 'swing', label: tx('Swing (nhịp lệch)'), count: '1 – a 2 – a …', beatsPerBar: 4, hits: [0, S, 1, 1 + S, 2, 2 + S, 3, 3 + S] },
 ];
 
 /* ---------- bắt tiếng gõ ---------- */
@@ -127,14 +128,14 @@ export function rhythmStats(r: { hits: HitResult[]; extra: number }): RhythmStat
 export function rhythmAdvice(s: RhythmStats): { ok: boolean; lines: string[] } {
   const lines: string[] = [];
   const pct = s.total ? Math.round((100 * s.good) / s.total) : 0;
-  lines.push(`Đúng nhịp ${s.good}/${s.total} tiếng (${pct}%), lệch ±${s.spread} ms.`);
-  if (s.caught < s.total * 0.7) lines.push(`Sót ${s.total - s.caught} tiếng: chơi rõ, dứt khoát hơn (hoặc để điện thoại gần nhạc cụ hơn).`);
-  if (s.mean <= -25) lines.push(`Hay vội: trung bình sớm ${-s.mean} ms. Thả lỏng, nghe hết tiếng gõ của máy rồi mới chơi.`);
-  else if (s.mean >= 25) lines.push(`Hay kéo: trung bình muộn ${s.mean} ms. Đếm thầm trước phách, chuẩn bị sẵn tay / hơi.`);
-  if (s.spread > 40) lines.push('Chưa đều: tiếng sớm tiếng muộn. Hạ tốc độ, đếm thành tiếng "1 & 2 &".');
-  if (s.extra > 2) lines.push(`Có ${s.extra} tiếng thừa: chỉ chơi đúng các vị trí trong mẫu.`);
+  lines.push(tx('Đúng nhịp {0}/{1} tiếng ({2}%), lệch ±{3} ms.', s.good, s.total, pct, s.spread));
+  if (s.caught < s.total * 0.7) lines.push(tx('Sót {0} tiếng: chơi rõ, dứt khoát hơn (hoặc để điện thoại gần nhạc cụ hơn).', s.total - s.caught));
+  if (s.mean <= -25) lines.push(tx('Hay vội: trung bình sớm {0} ms. Thả lỏng, nghe hết tiếng gõ của máy rồi mới chơi.', -s.mean));
+  else if (s.mean >= 25) lines.push(tx('Hay kéo: trung bình muộn {0} ms. Đếm thầm trước phách, chuẩn bị sẵn tay / hơi.', s.mean));
+  if (s.spread > 40) lines.push(tx('Chưa đều: tiếng sớm tiếng muộn. Hạ tốc độ, đếm thành tiếng "1 & 2 &".'));
+  if (s.extra > 2) lines.push(tx('Có {0} tiếng thừa: chỉ chơi đúng các vị trí trong mẫu.', s.extra));
   const ok = pct >= 80 && s.spread <= 35;
-  if (ok) lines.push('Rất tốt! Thử tăng tốc độ thêm 5 nhịp/phút.');
+  if (ok) lines.push(tx('Rất tốt! Thử tăng tốc độ thêm 5 nhịp/phút.'));
   return { ok, lines };
 }
 

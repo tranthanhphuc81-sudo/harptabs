@@ -7,9 +7,10 @@ import { encodeWav, mixRecording } from '../lib/wav';
 import { slugify } from '../lib/db';
 import { Icon } from './Icon';
 import { useAppState } from '../state';
+import { LOCALE, t as tx } from '../lib/i18n';
 
 const fmtTime = (s: number) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
-const fmtSize = (b: number) => (b < 1e6 ? `${Math.max(1, Math.round(b / 1e3))} KB` : `${(b / 1e6).toLocaleString('vi-VN', { maximumFractionDigits: 1 })} MB`);
+const fmtSize = (b: number) => (b < 1e6 ? `${Math.max(1, Math.round(b / 1e3))} KB` : `${(b / 1e6).toLocaleString(LOCALE, { maximumFractionDigits: 1 })} MB`);
 
 interface Loaded { id: number; accomp: Float32Array; voice: Float32Array | null; sampleRate: number }
 
@@ -115,46 +116,46 @@ export function RecordingsPanel({ songId, refreshKey, onClose }: { songId: strin
     if (loaded.current?.id === r.id) loaded.current = null;
     await deleteRecording(r.id!);
     setRows((rs) => rs?.filter((x) => x.id !== r.id) ?? null);
-    toast('Đã xoá bản thu');
+    toast(tx('Đã xoá bản thu'));
   }
 
   const commitLag = (r: Recording) => { const v = lag[r.id!]; if (v !== undefined && v !== r.voiceLagMs) void updateRecording(r.id!, { voiceLagMs: v }); };
 
   return (
     <dialog ref={ref} className="sheet recordings" onClose={() => { stop(); onClose(); }} aria-labelledby="rec-title">
-      <h2 id="rec-title">Bản thu</h2>
-      {!rows ? <p className="muted">Đang tải…</p> : !rows.length ? (
-        <p className="muted">Chưa có bản thu nào. Bấm <strong>⏺ Thu</strong> trong màn hình karaoke để vừa hát vừa thu.</p>
+      <h2 id="rec-title">{tx('Bản thu')}</h2>
+      {!rows ? <p className="muted">{tx('Đang tải…')}</p> : !rows.length ? (
+        <p className="muted">{tx('Chưa có bản thu nào. Bấm')} <strong>⏺ Thu</strong> {tx('trong màn hình karaoke để vừa hát vừa thu.')}</p>
       ) : (
         <ul className="rec-list">
           {rows.map((r) => (
             <li key={r.id} className={playing === r.id ? 'on' : ''}>
               <div className="row between center wrap gap">
                 <div>
-                  <strong>{new Date(r.createdAt).toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' })}</strong>
-                  <span className="muted small"> · {fmtTime(r.durationSec)} · {fmtSize(r.size)}{r.transpose ? ` · tông ${r.transpose > 0 ? '+' : ''}${r.transpose}` : ''}{r.score != null ? ` · ${r.score} điểm` : ''}</span>
+                  <strong>{new Date(r.createdAt).toLocaleString(LOCALE, { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' })}</strong>
+                  <span className="muted small"> · {fmtTime(r.durationSec)} · {fmtSize(r.size)}{r.transpose ? tx(' · tông {0}{1}', r.transpose > 0 ? '+' : '', r.transpose) : ''}{r.score != null ? tx(' · {0} điểm', r.score) : ''}</span>
                 </div>
                 <div className="row gap">
                   <button type="button" className="btn btn-primary btn-sm" disabled={busy === r.id} onClick={() => (playing === r.id ? stop() : play(r))}>
-                    <Icon name={playing === r.id ? 'stop' : 'play'} size={16} /> {playing === r.id ? 'Dừng' : busy === r.id ? 'Đang mở…' : 'Nghe'}
+                    <Icon name={playing === r.id ? 'stop' : 'play'} size={16} /> {playing === r.id ? tx('Dừng') : busy === r.id ? tx('Đang mở…') : 'Nghe'}
                   </button>
-                  <button type="button" className="btn btn-ghost btn-sm" disabled={busy === r.id} onClick={() => exportWav(r)} aria-label="Xuất file WAV"><Icon name="download" size={16} /> WAV</button>
-                  <button type="button" className={`btn btn-sm ${confirmDel === r.id ? 'btn-danger' : 'btn-ghost'}`} onClick={() => remove(r)} aria-label={confirmDel === r.id ? 'Bấm lần nữa để xoá' : 'Xoá bản thu'}>
-                    {confirmDel === r.id ? 'Xoá?' : <Icon name="trash" size={16} />}
+                  <button type="button" className="btn btn-ghost btn-sm" disabled={busy === r.id} onClick={() => exportWav(r)} aria-label={tx('Xuất file WAV')}><Icon name="download" size={16} /> WAV</button>
+                  <button type="button" className={`btn btn-sm ${confirmDel === r.id ? 'btn-danger' : 'btn-ghost'}`} onClick={() => remove(r)} aria-label={confirmDel === r.id ? tx('Bấm lần nữa để xoá') : tx('Xoá bản thu')}>
+                    {confirmDel === r.id ? tx('Xoá?') : <Icon name="trash" size={16} />}
                   </button>
                 </div>
               </div>
               {playing === r.id && (
                 <div className="rec-controls">
                   <label className="field">
-                    <span className="field-label">Giọng sớm / trễ: {lagOf(r) - r.voiceLagMs > 0 ? '+' : ''}{lagOf(r) - r.voiceLagMs} ms</span>
+                    <span className="field-label">{tx('Giọng sớm / trễ: {0}{1} ms', lagOf(r) - r.voiceLagMs > 0 ? '+' : '', lagOf(r) - r.voiceLagMs)}</span>
                     <input type="range" min={r.voiceLagMs - 300} max={r.voiceLagMs + 300} step={10} value={lagOf(r)}
                       onChange={(e) => setLag((m) => ({ ...m, [r.id!]: Number(e.target.value) }))}
                       onPointerUp={() => { commitLag(r); void play(r); }} onKeyUp={() => { commitLag(r); void play(r); }} />
                   </label>
-                  <label className="field"><span className="field-label">Giọng</span>
+                  <label className="field"><span className="field-label">{tx('Giọng')}</span>
                     <input type="range" min={0} max={1.5} step={0.05} value={voiceGain} onChange={(e) => setVoiceGain(Number(e.target.value))} /></label>
-                  <label className="field"><span className="field-label">Nhạc đệm</span>
+                  <label className="field"><span className="field-label">{tx('Nhạc đệm')}</span>
                     <input type="range" min={0} max={1.5} step={0.05} value={accompGain} onChange={(e) => setAccompGain(Number(e.target.value))} /></label>
                 </div>
               )}
@@ -162,7 +163,7 @@ export function RecordingsPanel({ songId, refreshKey, onClose }: { songId: strin
           ))}
         </ul>
       )}
-      <p className="muted small">Bản thu chỉ lưu trên máy này, không có trong file sao lưu hay link chia sẻ. Xuất WAV để giữ lại hoặc gửi cho người khác.</p>
+      <p className="muted small">{tx('Bản thu chỉ lưu trên máy này, không có trong file sao lưu hay link chia sẻ. Xuất WAV để giữ lại hoặc gửi cho người khác.')}</p>
       <div className="row gap end">
         <button type="button" className="btn btn-primary" onClick={() => ref.current?.close()}>Xong</button>
       </div>

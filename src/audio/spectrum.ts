@@ -1,5 +1,6 @@
 /** Phổ tần số từ micro (chạy hoàn toàn trên máy) — để nghe cả hợp âm nhiều nốt cùng lúc, việc mà dò cao độ một nốt (YIN) không làm được. */
 
+import { t as tx } from '../lib/i18n';
 export class MicSpectrum {
   private stream: MediaStream | null = null;
   private ctx: AudioContext | null = null;
@@ -10,7 +11,7 @@ export class MicSpectrum {
 
   async start() {
     if (this.stream) return;
-    if (!navigator.mediaDevices?.getUserMedia) throw new Error('Thiết bị không hỗ trợ micro trong trình duyệt này');
+    if (!navigator.mediaDevices?.getUserMedia) throw new Error(tx('Thiết bị không hỗ trợ micro trong trình duyệt này'));
     this.stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
     const AC = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
     this.ctx = new AC();

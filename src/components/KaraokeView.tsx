@@ -32,10 +32,11 @@ import { TokenText } from './TabView';
 import type { PlayerState } from './usePlayer';
 import { useFullscreen } from './useFullscreen';
 import { useWakeLock } from './useWakeLock';
+import { t as tx } from '../lib/i18n';
 
 const HOLES_LABEL: Record<KaraokeHoles, string> = IS_HARMONICA_APP
-  ? { same: 'Giữ số lỗ', myHarp: 'Xếp lại cho kèn đang xem', hide: 'Ẩn số lỗ' }
-  : { same: 'Giữ nốt như bài', myHarp: `Xếp lại cho ${BRAND.noun} đang xem`, hide: 'Ẩn nốt' };
+  ? { same: tx('Giữ số lỗ'), myHarp: tx('Xếp lại cho kèn đang xem'), hide: tx('Ẩn số lỗ') }
+  : { same: tx('Giữ nốt như bài'), myHarp: tx('Xếp lại cho {0} đang xem', BRAND.noun), hide: tx('Ẩn nốt') };
 
 /** tên hợp âm gắn vào âm tiết: khúc hợp âm bắt đầu trong âm tiết nào thì hiện trên âm tiết đó */
 function chordsByLine(lines: KLine[], segs: ChordSegment[]): Map<string, string> {
@@ -193,7 +194,7 @@ export default function KaraokeView({ song, original, flat, p, chordSegs, onClos
       .then(() => { if (!alive) mic.stop(); else setMicErr(null); })
       .catch((e: Error) => {
         if (!alive) return;
-        setMicErr(e.name === 'NotAllowedError' ? 'Cần cho phép dùng micro để chấm điểm' : e.message || 'Không mở được micro');
+        setMicErr(e.name === 'NotAllowedError' ? tx('Cần cho phép dùng micro để chấm điểm') : e.message || tx('Không mở được micro'));
         setScoring(false);
       });
     return () => { alive = false; mic.stop(); };
@@ -250,9 +251,9 @@ export default function KaraokeView({ song, original, flat, p, chordSegs, onClos
         mime: take.mime, blob: take.blob, voiceLagMs: take.voiceLagMs, transpose: t, score,
       });
       setRecRefresh((n) => n + 1);
-      toast('Đã lưu bản thu — bấm "Bản thu" để nghe lại');
+      toast(tx('Đã lưu bản thu — bấm "Bản thu" để nghe lại'));
     } catch (e) {
-      toast((e as Error).message || 'Không lưu được bản thu');
+      toast((e as Error).message || tx('Không lưu được bản thu'));
     }
   };
 
@@ -263,7 +264,7 @@ export default function KaraokeView({ song, original, flat, p, chordSegs, onClos
       await rec.start(!prefs.headphones, (settings.micLatencyMs ?? 60) + (settings.syncOffsetMs ?? 0));
     } catch (e) {
       const err = e as Error;
-      setMicErr(err.name === 'NotAllowedError' ? 'Cần cho phép dùng micro để thu âm' : err.message || 'Không mở được micro');
+      setMicErr(err.name === 'NotAllowedError' ? tx('Cần cho phép dùng micro để thu âm') : err.message || tx('Không mở được micro'));
       return;
     }
     rec.onLimit = () => pRef.current.stop();
@@ -382,13 +383,13 @@ export default function KaraokeView({ song, original, flat, p, chordSegs, onClos
     try {
       const bytes = new Uint8Array(await f.arrayBuffer());
       const link = matchMidiToTab(bytes, lyricFlat);
-      if (!link) { toast('File MIDI này không khớp với tab của bài — chọn đúng file đã dùng để nhập bài này'); return; }
+      if (!link) { toast(tx('File MIDI này không khớp với tab của bài — chọn đúng file đã dùng để nhập bài này')); return; }
       await saveMidiSource(original.id, f.name, bytes, link, tabSig(lyricFlat));
       const m = await loadMidiSource(original.id);
       setMidiSrc(m);
-      if (m) { setSrc('midi'); toast('Đã nối bản phối gốc'); }
+      if (m) { setSrc('midi'); toast(tx('Đã nối bản phối gốc')); }
     } catch (e) {
-      toast((e as Error).message || 'Không đọc được file MIDI');
+      toast((e as Error).message || tx('Không đọc được file MIDI'));
     }
   };
 
@@ -398,7 +399,7 @@ export default function KaraokeView({ song, original, flat, p, chordSegs, onClos
     if (!garbled) return;
     tp.stop();
     const fixed = { ...original, body: garbled.fix(original.body), title: garbled.fix(original.title), artist: original.artist && garbled.fix(original.artist), updatedAt: Date.now() };
-    try { await db.songs.put(fixed); toast('Đã sửa lỗi font chữ'); } catch { toast('Không lưu được'); }
+    try { await db.songs.put(fixed); toast(tx('Đã sửa lỗi font chữ')); } catch { toast(tx('Không lưu được')); }
   };
 
   // câu quá dài / chữ chỉnh to: tự thu nhỏ cho vừa khung (không tràn đè lên các nút)
@@ -479,50 +480,50 @@ export default function KaraokeView({ song, original, flat, p, chordSegs, onClos
     <div ref={rootRef} className="karaoke" role="dialog" aria-modal="true" aria-label={`Karaoke: ${original.title}`}
       style={{ '--kara-lyric': sizes.lyric, '--kara-holes': sizes.holes } as CSSProperties}>
       <header className="kara-head">
-        <button type="button" className="icon-btn" onClick={onClose} aria-label="Thoát karaoke"><Icon name="back" /></button>
+        <button type="button" className="icon-btn" onClick={onClose} aria-label={tx('Thoát karaoke')}><Icon name="back" /></button>
         <div className="kara-title">
           <strong>{original.title || 'Karaoke'}</strong>
           {original.artist && <span className="muted"> · {original.artist}</span>}
         </div>
         <div className="kara-tools">
-          <div className="kara-key" role="group" aria-label="Đổi tông cho hợp giọng">
-            <button type="button" className="icon-btn" disabled={mp3 || t <= -MAX_TRANSPOSE} onClick={() => update({ transpose: t - 1 })} aria-label="Hạ tông"><Icon name="minus" size={18} /></button>
-            <span className="kara-key-val" aria-live="polite">{mp3 ? 'Tông theo nhạc' : `Tông ${t > 0 ? `+${t}` : t}`}</span>
-            <button type="button" className="icon-btn" disabled={mp3 || t >= MAX_TRANSPOSE} onClick={() => update({ transpose: t + 1 })} aria-label="Nâng tông"><Icon name="plus" size={18} /></button>
+          <div className="kara-key" role="group" aria-label={tx('Đổi tông cho hợp giọng')}>
+            <button type="button" className="icon-btn" disabled={mp3 || t <= -MAX_TRANSPOSE} onClick={() => update({ transpose: t - 1 })} aria-label={tx('Hạ tông')}><Icon name="minus" size={18} /></button>
+            <span className="kara-key-val" aria-live="polite">{mp3 ? tx('Tông theo nhạc') : tx('Tông {0}', t > 0 ? `+${t}` : t)}</span>
+            <button type="button" className="icon-btn" disabled={mp3 || t >= MAX_TRANSPOSE} onClick={() => update({ transpose: t + 1 })} aria-label={tx('Nâng tông')}><Icon name="plus" size={18} /></button>
           </div>
-          <select className="chip-select" value={prefs.holes} onChange={(e) => update({ holes: e.target.value as KaraokeHoles })} aria-label="Cách hiện nốt">
+          <select className="chip-select" value={prefs.holes} onChange={(e) => update({ holes: e.target.value as KaraokeHoles })} aria-label={tx('Cách hiện nốt')}>
             {(Object.keys(HOLES_LABEL) as KaraokeHoles[]).map((k) => <option key={k} value={k}>{HOLES_LABEL[k]}</option>)}
           </select>
-          <button type="button" className={`chip${prefs.chords ? ' on' : ''}`} aria-pressed={prefs.chords} onClick={() => update({ chords: !prefs.chords })}>Hợp âm</button>
-          <button type="button" className={`chip${showSizes ? ' on' : ''}`} aria-expanded={showSizes} aria-controls="kara-sizes" onClick={() => setShowSizes((v) => !v)} title="Cỡ chữ">Aa</button>
+          <button type="button" className={`chip${prefs.chords ? ' on' : ''}`} aria-pressed={prefs.chords} onClick={() => update({ chords: !prefs.chords })}>{tx('Hợp âm')}</button>
+          <button type="button" className={`chip${showSizes ? ' on' : ''}`} aria-expanded={showSizes} aria-controls="kara-sizes" onClick={() => setShowSizes((v) => !v)} title={tx('Cỡ chữ')}>Aa</button>
           {(backing || midiSrc) && (
-            <div className="segmented" role="radiogroup" aria-label="Nguồn nhạc">
-              <button type="button" role="radio" aria-checked={src === 'synth'} className={src === 'synth' ? 'on' : ''} onClick={() => setSrc('synth')}>Tự đệm</button>
-              {midiSrc && <button type="button" role="radio" aria-checked={src === 'midi'} className={src === 'midi' ? 'on' : ''} onClick={() => setSrc('midi')}>MIDI gốc</button>}
+            <div className="segmented" role="radiogroup" aria-label={tx('Nguồn nhạc')}>
+              <button type="button" role="radio" aria-checked={src === 'synth'} className={src === 'synth' ? 'on' : ''} onClick={() => setSrc('synth')}>{tx('Tự đệm')}</button>
+              {midiSrc && <button type="button" role="radio" aria-checked={src === 'midi'} className={src === 'midi' ? 'on' : ''} onClick={() => setSrc('midi')}>{tx('MIDI gốc')}</button>}
               {backing && <button type="button" role="radio" aria-checked={src === 'mp3'} className={src === 'mp3' ? 'on' : ''} onClick={() => setSrc('mp3')}>MP3</button>}
             </div>
           )}
           {midi && (
-            <button type="button" className={`chip${showVoices ? ' on' : ''}`} aria-expanded={showVoices} aria-controls="kara-voices" onClick={() => setShowVoices((v) => !v)}>🎹 Nhạc cụ</button>
+            <button type="button" className={`chip${showVoices ? ' on' : ''}`} aria-expanded={showVoices} aria-controls="kara-voices" onClick={() => setShowVoices((v) => !v)}>{tx('🎹 Nhạc cụ')}</button>
           )}
           {!midiSrc && original.tags?.includes('MIDI') && (
-            <button type="button" className="chip" onClick={() => { tp.stop(); midiInput.current?.click(); }}>🎹 Nối file MIDI gốc</button>
+            <button type="button" className="chip" onClick={() => { tp.stop(); midiInput.current?.click(); }}>{tx('🎹 Nối file MIDI gốc')}</button>
           )}
           {/* không giới hạn loại file: nhiều máy Android không nhận ra .mid / .kar và làm mờ không cho chọn */}
           <input ref={midiInput} type="file" hidden onChange={(e) => void linkMidi(e.target.files?.[0])} />
-          <button type="button" className="chip" onClick={() => { tp.stop(); setShowBacking(true); }}>🎵 {backing ? 'Nhạc nền' : 'Thêm nhạc MP3'}</button>
+          <button type="button" className="chip" onClick={() => { tp.stop(); setShowBacking(true); }}>🎵 {backing ? tx('Nhạc nền') : tx('Thêm nhạc MP3')}</button>
           <button type="button" className={`chip${scoring ? ' on' : ''}`} aria-pressed={scoring} onClick={() => setScoring((v) => !v)}>
-            <Icon name="mic" size={15} /> Chấm điểm{scoring && live !== null ? ` · ${live}` : ''}
+            <Icon name="mic" size={15} /> {tx('Chấm điểm{0}', scoring && live !== null ? ` · ${live}` : '')}
           </button>
           {scoring && (
             <button type="button" className={`chip${prefs.headphones ? ' on' : ''}`} aria-pressed={prefs.headphones} onClick={() => update({ headphones: !prefs.headphones })}>
-              🎧 Đeo tai nghe
+              {tx('🎧 Đeo tai nghe')}
             </button>
           )}
         </div>
       </header>
       {showVoices && midi && arr && midiSrc && (
-        <div id="kara-voices" className="kara-sizes kara-voices" role="group" aria-label="Nhạc cụ từng bè">
+        <div id="kara-voices" className="kara-sizes kara-voices" role="group" aria-label={tx('Nhạc cụ từng bè')}>
           {arr.parts.map((part) => (
             <label key={part.id} className="kara-size">
               <span className="kv-name" title={part.name}>{part.name}</span>
@@ -532,8 +533,8 @@ export default function KaraokeView({ song, original, flat, p, chordSegs, onClos
                   if (e.target.value) v[part.id] = e.target.value; else delete v[part.id];
                   setSound({ voices: v });
                 }}>
-                <option value="">Tự chọn ({voiceLabel(part.voice)})</option>
-                <option value="off">Tắt bè này</option>
+                <option value="">{tx('Tự chọn ({0})', voiceLabel(part.voice))}</option>
+                <option value="off">{tx('Tắt bè này')}</option>
                 {part.voice !== 'drum' && <>
                   <option value="bass">Bass</option>
                   {INSTRUMENT_GROUPS.map((g) => (
@@ -547,59 +548,59 @@ export default function KaraokeView({ song, original, flat, p, chordSegs, onClos
           ))}
           <label className="check">
             <input type="checkbox" checked={midiSrc.soft !== false} onChange={(e) => setSound({ soft: e.target.checked })} />
-            Dịu tiếng (bớt chói)
+            {tx('Dịu tiếng (bớt chói)')}
           </label>
           {midiSrc.voices && Object.keys(midiSrc.voices).length > 0 && (
-            <button type="button" className="btn btn-ghost btn-sm" onClick={() => setSound({ voices: {} })}>Trả về tự chọn</button>
+            <button type="button" className="btn btn-ghost btn-sm" onClick={() => setSound({ voices: {} })}>{tx('Trả về tự chọn')}</button>
           )}
         </div>
       )}
       {showSizes && (
-        <div id="kara-sizes" className="kara-sizes" role="group" aria-label="Cỡ chữ">
+        <div id="kara-sizes" className="kara-sizes" role="group" aria-label={tx('Cỡ chữ')}>
           <label className="kara-size">
-            <span>Cỡ lời</span>
+            <span>{tx('Cỡ lời')}</span>
             <input type="range" min={LYRIC_SIZES.min} max={LYRIC_SIZES.max} step={0.1} value={sizes.lyric}
               onChange={(e) => updateSizes({ lyric: Number(e.target.value) })} aria-valuetext={`${Math.round(sizes.lyric * 100)}%`} />
             <output>{Math.round(sizes.lyric * 100)}%</output>
           </label>
           <label className="kara-size">
-            <span>Cỡ số lỗ</span>
+            <span>{tx('Cỡ số lỗ')}</span>
             <input type="range" min={HOLE_SIZES.min} max={HOLE_SIZES.max} step={0.1} value={sizes.holes}
               onChange={(e) => updateSizes({ holes: Number(e.target.value) })} aria-valuetext={`${Math.round(sizes.holes * 100)}%`} />
             <output>{Math.round(sizes.holes * 100)}%</output>
           </label>
           <button type="button" className="btn btn-ghost btn-sm" onClick={() => updateSizes(DEFAULT_KARAOKE_VIEW)}
-            disabled={sizes.lyric === 1 && sizes.holes === 1}>Mặc định</button>
+            disabled={sizes.lyric === 1 && sizes.holes === 1}>{tx('Mặc định')}</button>
         </div>
       )}
       {micErr && <p className="kara-note small danger" role="alert">{micErr}</p>}
       {garbled && (
         <p className="kara-note small" role="status">
-          Lời bị lỗi font chữ Việt. <button type="button" className="link-btn" onClick={() => void fixFont()}>Sửa lỗi font</button>
+          {tx('Lời bị lỗi font chữ Việt.')} <button type="button" className="link-btn" onClick={() => void fixFont()}>{tx('Sửa lỗi font')}</button>
         </p>
       )}
       {midi && midiSrc!.tabSig !== tabSig(lyricFlat) && (
-        <p className="kara-note small">Tab đã sửa sau khi nhập — bản phối gốc có thể lệch với lời.</p>
+        <p className="kara-note small">{tx('Tab đã sửa sau khi nhập — bản phối gốc có thể lệch với lời.')}</p>
       )}
-      {useMp3 && backing && bk.status === 'loading' && <p className="kara-note small">Đang mở nhạc nền…</p>}
+      {useMp3 && backing && bk.status === 'loading' && <p className="kara-note small">{tx('Đang mở nhạc nền…')}</p>}
       {useMp3 && backing && bk.status === 'error' && <p className="kara-note small danger" role="alert">{bk.error}</p>}
       {mp3 && backing!.tabSig !== tabSig(lyricFlat) && (
-        <p className="kara-note small">Tab đã sửa sau khi đồng bộ nhạc nền — lời có thể lệch. <button type="button" className="link-btn" onClick={() => setShowBacking(true)}>Đồng bộ lại</button></p>
+        <p className="kara-note small">{tx('Tab đã sửa sau khi đồng bộ nhạc nền — lời có thể lệch.')} <button type="button" className="link-btn" onClick={() => setShowBacking(true)}>{tx('Đồng bộ lại')}</button></p>
       )}
       {scoring && !prefs.headphones && (
-        <p className="kara-note small">Không đeo tai nghe: micro nghe lẫn nhạc đệm từ loa, máy đã bật khử tiếng vọng. Đeo tai nghe để chấm chính xác hơn.</p>
+        <p className="kara-note small">{tx('Không đeo tai nghe: micro nghe lẫn nhạc đệm từ loa, máy đã bật khử tiếng vọng. Đeo tai nghe để chấm chính xác hơn.')}</p>
       )}
 
       {t !== 0 && prefs.holes !== 'hide' && (
         <p className="kara-note small">
           {prefs.holes === 'same'
-            ? <>Đã đổi tông {t > 0 ? `+${t}` : t}: thổi đúng số lỗ này bằng <strong>{playHarp}</strong>.</>
-            : <>{IS_HARMONICA_APP ? 'Số lỗ' : 'Nốt'} xếp lại cho {harpName(song.harpKey, type).replace(/^Kèn/, 'kèn')}{missing > 0 ? ` — ${missing} nốt không có trên ${BRAND.noun} này (–)` : ''}.</>}
+            ? <>{tx('Đã đổi tông {0}: thổi đúng số lỗ này bằng', t > 0 ? `+${t}` : t)} <strong>{playHarp}</strong>.</>
+            : <>{IS_HARMONICA_APP ? tx('Số lỗ') : tx('Nốt')} {tx('xếp lại cho')} {harpName(song.harpKey, type).replace(/^Kèn/, 'kèn')}{missing > 0 ? tx(' — {0} nốt không có trên {1} này (–)', missing, BRAND.noun) : ''}.</>}
         </p>
       )}
 
       <main ref={stageRef} className="kara-stage" style={{ '--kara-fit': fit } as CSSProperties} onClick={() => !tp.playing && startFrom(shown)}>
-        {noLyrics && <p className="kara-hint">Bài chưa có lời — thêm lời dưới dòng tab trong Sửa bài để hát karaoke.</p>}
+        {noLyrics && <p className="kara-hint">{tx('Bài chưa có lời — thêm lời dưới dòng tab trong Sửa bài để hát karaoke.')}</p>}
         {tp.countIn != null
           ? <div className="kara-count big" aria-live="assertive">{tp.countIn}</div>
           : count != null && <div className="kara-count" aria-hidden="true">{'●'.repeat(count)}</div>}
@@ -611,7 +612,7 @@ export default function KaraokeView({ song, original, flat, p, chordSegs, onClos
           // guitar / ukulele: kèm sơ đồ hợp âm đang vang (theo capo của bài)
           const seg = isFretted(type) && chordSegs && n ? chordAt(transposeSpans(chordSegs, et - (song.capo ?? 0)), n.start) : null;
           return f && n?.midi != null ? (
-            <div className="kara-finger" aria-label={`Thế tay nốt ${n.token}`}>
+            <div className="kara-finger" aria-label={tx('Thế tay nốt {0}', n.token)}>
               {seg && seg.root >= 0 && <ChordDiagram name={seg.name} inst={type === 'ukulele4' ? 'ukulele' : 'guitar'} />}
               <FingeringIcon fingers={f} size="l" />
               <span>{midiToName(n.midi)}</span>
@@ -632,24 +633,24 @@ export default function KaraokeView({ song, original, flat, p, chordSegs, onClos
       )}
 
       <footer className="kara-foot">
-        <button type="button" className="btn btn-ghost" onClick={() => startFrom(Math.max(0, shown - 1))} disabled={shown === 0} aria-label="Câu trước">
-          <Icon name="back" size={18} /> Câu trước
+        <button type="button" className="btn btn-ghost" onClick={() => startFrom(Math.max(0, shown - 1))} disabled={shown === 0} aria-label={tx('Câu trước')}>
+          <Icon name="back" size={18} /> {tx('Câu trước')}
         </button>
-        <button type="button" className="kara-play" onClick={() => (tp.playing ? tp.stop() : startFrom(shown))} aria-label={tp.playing ? 'Dừng' : 'Hát'} disabled={useMp3 && !!backing && bk.status === 'loading'}>
+        <button type="button" className="kara-play" onClick={() => (tp.playing ? tp.stop() : startFrom(shown))} aria-label={tp.playing ? tx('Dừng') : tx('Hát')} disabled={useMp3 && !!backing && bk.status === 'loading'}>
           <Icon name={tp.playing ? 'stop' : 'play'} size={30} />
         </button>
-        <button type="button" className="btn btn-ghost" onClick={() => startFrom(0)} aria-label="Hát lại từ đầu">
-          <Icon name="loop" size={18} /> Từ đầu
+        <button type="button" className="btn btn-ghost" onClick={() => startFrom(0)} aria-label={tx('Hát lại từ đầu')}>
+          <Icon name="loop" size={18} /> {tx('Từ đầu')}
         </button>
         {recorderSupported() && (
           recording
-            ? <span className="kara-rec on" role="status"><span className="kara-rec-dot" aria-hidden="true" /> Đang thu {Math.floor(recElapsed / 60)}:{String(Math.floor(recElapsed % 60)).padStart(2, '0')}</span>
-            : <button type="button" className="btn btn-ghost kara-rec" onClick={() => void startRecording()} disabled={tp.playing} aria-label="Vừa hát vừa thu âm">
+            ? <span className="kara-rec on" role="status"><span className="kara-rec-dot" aria-hidden="true" /> {tx('Đang thu {0}:{1}', Math.floor(recElapsed / 60), String(Math.floor(recElapsed % 60)).padStart(2, '0'))}</span>
+            : <button type="button" className="btn btn-ghost kara-rec" onClick={() => void startRecording()} disabled={tp.playing} aria-label={tx('Vừa hát vừa thu âm')}>
                 <span className="kara-rec-dot" aria-hidden="true" /> Thu
               </button>
         )}
         <button type="button" className="btn btn-ghost" onClick={() => setShowRecs(true)}>
-          Bản thu{recCount ? ` (${recCount})` : ''}
+          {tx('Bản thu{0}', recCount ? ` (${recCount})` : '')}
         </button>
       </footer>
       {showBacking && (
@@ -671,11 +672,11 @@ export default function KaraokeView({ song, original, flat, p, chordSegs, onClos
 /** tên nhạc cụ hiện cho người dùng */
 function voiceLabel(v: ArrVoice): string {
   if (v === 'bass') return 'Bass';
-  if (v === 'drum') return 'Trống';
+  if (v === 'drum') return tx('Trống');
   return INSTRUMENT_OPTIONS.find((o) => o.value === v)?.label ?? v;
 }
 
-const verdict = (n: number) => (n >= 90 ? 'Hát hay quá!' : n >= 75 ? 'Tốt lắm!' : n >= 50 ? 'Khá rồi, tập thêm chút nữa' : 'Cứ hát chậm từng câu nhé');
+const verdict = (n: number) => (n >= 90 ? tx('Hát hay quá!') : n >= 75 ? tx('Tốt lắm!') : n >= 50 ? tx('Khá rồi, tập thêm chút nữa') : tx('Cứ hát chậm từng câu nhé'));
 
 /** Kết quả một lượt hát karaoke có chấm điểm */
 function KaraokeResult({ r, onRetry, onPick, onClose }: {
@@ -689,21 +690,21 @@ function KaraokeResult({ r, onRetry, onPick, onClose }: {
   const { s, rec, newBest } = r;
   return (
     <dialog ref={ref} className="sheet practice-result" onClose={onClose} aria-labelledby="kr-title">
-      <h2 id="kr-title">{s.finished ? 'Hát hết bài' : `Đã hát ${s.done}/${s.total} chữ`}</h2>
-      <div className="pr-score" aria-label={`${s.score} điểm`}><strong>{s.score}</strong><span>điểm</span></div>
+      <h2 id="kr-title">{s.finished ? tx('Hát hết bài') : tx('Đã hát {0}/{1} chữ', s.done, s.total)}</h2>
+      <div className="pr-score" aria-label={tx('{0} điểm', s.score)}><strong>{s.score}</strong><span>{tx('điểm')}</span></div>
       <p className="pr-verdict">
         {verdict(s.score)}
-        {s.finished && newBest && rec && rec.times > 1 && <span className="pr-best"> Điểm cao nhất mới!</span>}
+        {s.finished && newBest && rec && rec.times > 1 && <span className="pr-best"> {tx('Điểm cao nhất mới!')}</span>}
       </p>
       <dl className="storage-info">
-        <div><dt>Đúng cao độ</dt><dd>{Math.round(s.pitch * 100)}%</dd></div>
-        <div><dt>Vào nhịp, đủ hơi</dt><dd>{Math.round(s.timing * 100)}%</dd></div>
-        {rec && <div><dt>Bài này</dt><dd>cao nhất {rec.best} điểm · đã hát hết {rec.times} lần</dd></div>}
-        {!s.finished && <div><dt>Lưu ý</dt><dd className="muted">Chỉ lượt hát hết bài mới được ghi điểm.</dd></div>}
+        <div><dt>{tx('Đúng cao độ')}</dt><dd>{Math.round(s.pitch * 100)}%</dd></div>
+        <div><dt>{tx('Vào nhịp, đủ hơi')}</dt><dd>{Math.round(s.timing * 100)}%</dd></div>
+        {rec && <div><dt>{tx('Bài này')}</dt><dd>{tx('cao nhất {0} điểm · đã hát hết {1} lần', rec.best, rec.times)}</dd></div>}
+        {!s.finished && <div><dt>{tx('Lưu ý')}</dt><dd className="muted">{tx('Chỉ lượt hát hết bài mới được ghi điểm.')}</dd></div>}
       </dl>
       {s.weak.length > 0 && (
         <div>
-          <p className="field-label">Chữ hát chưa chuẩn — chạm để hát lại từ câu đó</p>
+          <p className="field-label">{tx('Chữ hát chưa chuẩn — chạm để hát lại từ câu đó')}</p>
           <div className="row gap wrap">
             {s.weak.map((w) => (
               <button key={`${w.li}.${w.si}`} type="button" className="chip" onClick={() => onPick(w.li)}>
@@ -714,8 +715,8 @@ function KaraokeResult({ r, onRetry, onPick, onClose }: {
         </div>
       )}
       <div className="row gap end">
-        <button type="button" className="btn btn-ghost" onClick={() => ref.current?.close()}>Đóng</button>
-        <button type="button" className="btn btn-primary" onClick={onRetry}>Hát lại từ đầu</button>
+        <button type="button" className="btn btn-ghost" onClick={() => ref.current?.close()}>{tx('Đóng')}</button>
+        <button type="button" className="btn btn-primary" onClick={onRetry}>{tx('Hát lại từ đầu')}</button>
       </div>
     </dialog>
   );

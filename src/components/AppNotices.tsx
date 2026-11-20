@@ -4,6 +4,7 @@ import { db } from '../lib/db';
 import { backupStatus, downloadBackup, loadBackupMeta, snoozeBackup } from '../lib/backup';
 import { applyUpdate, useUpdateReady } from '../lib/swUpdate';
 import { useAppState } from '../state';
+import { LOCALE, t } from '../lib/i18n';
 
 /** Có bản mới của app: người dùng tự bấm cập nhật khi đã lưu xong, không tự tải lại giữa chừng */
 export function UpdateNotice() {
@@ -12,10 +13,10 @@ export function UpdateNotice() {
   if (!ready || later) return null;
   return (
     <div className="notice" role="status">
-      <span>Có bản mới của app. Lưu bài đang sửa (nếu có) rồi bấm cập nhật.</span>
+      <span>{t('Có bản mới của app. Lưu bài đang sửa (nếu có) rồi bấm cập nhật.')}</span>
       <span className="row gap">
-        <button type="button" className="btn btn-primary btn-sm" onClick={applyUpdate}>Cập nhật</button>
-        <button type="button" className="btn btn-ghost btn-sm" onClick={() => setLater(true)}>Để sau</button>
+        <button type="button" className="btn btn-primary btn-sm" onClick={applyUpdate}>{t('Cập nhật')}</button>
+        <button type="button" className="btn btn-ghost btn-sm" onClick={() => setLater(true)}>{t('Để sau')}</button>
       </span>
     </div>
   );
@@ -32,12 +33,12 @@ export function BackupNotice() {
   return (
     <div className="notice" role="status">
       <span>
-        {status.changed} bài mới hoặc đã sửa {status.lastBackupAt ? `từ lần sao lưu ngày ${new Date(status.lastBackupAt).toLocaleDateString('vi-VN')}` : 'chưa từng được sao lưu'}.
-        {' '}Bài chỉ nằm trên máy này, nên xuất file sao lưu để khỏi mất.
+        {status.changed} {t('bài mới hoặc đã sửa')} {status.lastBackupAt ? t('từ lần sao lưu ngày {0}', new Date(status.lastBackupAt).toLocaleDateString(LOCALE)) : t('chưa từng được sao lưu')}.
+        {' '}{t('Bài chỉ nằm trên máy này, nên xuất file sao lưu để khỏi mất.')}
       </span>
       <span className="row gap">
-        <button type="button" className="btn btn-primary btn-sm" onClick={async () => toast(`Đã xuất ${await downloadBackup()} bài`)}>Sao lưu ngay</button>
-        <button type="button" className="btn btn-ghost btn-sm" onClick={() => void snoozeBackup()}>Nhắc sau</button>
+        <button type="button" className="btn btn-primary btn-sm" onClick={async () => toast(t('Đã xuất {0} bài', await downloadBackup()))}>{t('Sao lưu ngay')}</button>
+        <button type="button" className="btn btn-ghost btn-sm" onClick={() => void snoozeBackup()}>{t('Nhắc sau')}</button>
       </span>
     </div>
   );

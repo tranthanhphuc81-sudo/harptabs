@@ -8,6 +8,7 @@
  */
 import { harmonizeSegments, parseTonality, segKey, type ChordOverrides } from './harmony';
 import type { FlatEvent } from '../lib/tabText';
+import { t as tx } from '../lib/i18n';
 
 export const CHORD_TRUTH: Record<string, string[]> = {
   twinkle: ['C', 'F C', 'F C', 'G C', 'C F', 'C G', 'C F', 'C G', 'C', 'F C', 'F C', 'G C'],
@@ -72,7 +73,7 @@ export function scoreSong(s: BenchSong, truth: string[]): { right: number; total
     // hợp âm 7 át (G7) cùng chức năng với G: tính là đúng
     const name = g.chord.name;
     if (want.includes(name) || want.includes(name.replace(/^([A-G][#b]?)7$/, '$1')) || want.includes(`${name}7`)) right++;
-    else misses.push(`ô ${Math.floor((g.start - s.pickup) / s.bpb + 1e-6) + 1}: ${name} (chuẩn ${want.join('/')})`);
+    else misses.push(tx('ô {0}: {1} (chuẩn {2})', Math.floor((g.start - s.pickup) / s.bpb + 1e-6) + 1, name, want.join('/')));
   }
   return { right, total, misses };
 }

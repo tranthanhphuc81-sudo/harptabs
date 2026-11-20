@@ -11,6 +11,7 @@ import { MiniPlay } from '../components/PlayerBar';
 import { usePlayer } from '../components/usePlayer';
 import { Icon } from '../components/Icon';
 import { useAppState } from '../state';
+import { t as tx } from '../lib/i18n';
 
 /** Dán tab harmonica copy từ trang web / tin nhắn → chuyển sang định dạng của app */
 export default function PasteTab() {
@@ -58,10 +59,10 @@ export default function PasteTab() {
   const pasteFromClipboard = async () => {
     try {
       const t = await navigator.clipboard.readText();
-      if (!t.trim()) { toast('Bộ nhớ tạm đang trống — hãy copy tab trên trang web trước'); return; }
+      if (!t.trim()) { toast(tx('Bộ nhớ tạm đang trống — hãy copy tab trên trang web trước')); return; }
       setText(t); setTitle(null); setKey(null); setType(null);
     } catch {
-      toast('Không đọc được bộ nhớ tạm — nhấn giữ vào ô bên dưới rồi chọn Dán');
+      toast(tx('Không đọc được bộ nhớ tạm — nhấn giữ vào ô bên dưới rồi chọn Dán'));
     }
   };
 
@@ -69,7 +70,7 @@ export default function PasteTab() {
     if (!imp || !parsed || !imp.notes) return;
     const t = countTechniques(parsed);
     const song = blankSong({
-      title: songTitle.trim() || 'Bài dán',
+      title: songTitle.trim() || tx('Bài dán'),
       harpKey,
       harpType: harpType === 'diatonic' ? undefined : harpType,
       bpm: tempo,
@@ -78,11 +79,11 @@ export default function PasteTab() {
       body: imp.body,
       difficulty: difficultyOf(t),
       source: 'import',
-      tags: ['Dán tab'],
-      notes: hasDurations ? undefined : 'Tab dán từ mạng không ghi trường độ (mỗi nốt 1 phách) — tập bằng "Chờ nốt" hoặc chỉnh độ dài trong Sửa bài.',
+      tags: [tx('Dán tab')],
+      notes: hasDurations ? undefined : tx('Tab dán từ mạng không ghi trường độ (mỗi nốt 1 phách) — tập bằng "Chờ nốt" hoặc chỉnh độ dài trong Sửa bài.'),
     });
     await db.songs.put(song);
-    toast('Đã lưu vào thư viện');
+    toast(tx('Đã lưu vào thư viện'));
     nav(`/song/${song.id}`);
   };
 
@@ -90,67 +91,63 @@ export default function PasteTab() {
     <div className="ai-form">
       <form className="row gap wrap end-align" onSubmit={(e) => { e.preventDefault(); searchTabs(); }}>
         <label className="field grow">
-          <span className="field-label">Tìm tab trên mạng</span>
-          <input type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Tên bài, ví dụ: Tie a yellow ribbon" enterKeyHint="search" />
+          <span className="field-label">{tx('Tìm tab trên mạng')}</span>
+          <input type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder={tx('Tên bài, ví dụ: Tie a yellow ribbon')} enterKeyHint="search" />
         </label>
-        <button type="submit" className="btn btn-ghost" disabled={!query.trim()}><Icon name="search" size={18} /> Tìm</button>
+        <button type="submit" className="btn btn-ghost" disabled={!query.trim()}><Icon name="search" size={18} /> {tx('Tìm')}</button>
       </form>
       <p className="muted small">
-        Mở trang có tab, <strong>bôi đen phần tab → Chia sẻ → Harp Tab</strong>, hoặc Sao chép rồi quay lại bấm “Dán từ bộ nhớ”.
-        Copy tab harmonica trên trang web (kiểu <code>4 -4 5 -5</code>, <code>4↑ 4↓</code>, <code>B4 D4</code>, <code>-3b</code>…) rồi dán vào đây.
-        App tự nhận dòng tab, lời bài hát, tên bài và tông kèn nếu có ghi.
+        {tx('Mở trang có tab,')} <strong>{tx('bôi đen phần tab → Chia sẻ → Harp Tab')}</strong>{tx(', hoặc Sao chép rồi quay lại bấm “Dán từ bộ nhớ”. Copy tab harmonica trên trang web (kiểu')} <code>4 -4 5 -5</code>, <code>4↑ 4↓</code>, <code>B4 D4</code>, <code>-3b</code>{tx('…) rồi dán vào đây. App tự nhận dòng tab, lời bài hát, tên bài và tông kèn nếu có ghi.')}
       </p>
       <div className="row gap wrap">
-        <button type="button" className="btn btn-primary" onClick={pasteFromClipboard}><Icon name="download" size={18} /> Dán từ bộ nhớ</button>
-        {text && <button type="button" className="btn btn-ghost" onClick={() => { setText(''); setTitle(null); setKey(null); }}>Xoá</button>}
+        <button type="button" className="btn btn-primary" onClick={pasteFromClipboard}><Icon name="download" size={18} /> {tx('Dán từ bộ nhớ')}</button>
+        {text && <button type="button" className="btn btn-ghost" onClick={() => { setText(''); setTitle(null); setKey(null); }}>{tx('Xoá')}</button>}
       </div>
       {sharedUrl && !text && (
         <div className="alert" role="note">
-          Bạn vừa chia sẻ <strong>đường dẫn trang</strong>, chưa có nội dung tab. Hãy mở trang, <strong>bôi đen phần tab</strong> rồi bấm Chia sẻ → Harp Tab
-          (hoặc Sao chép rồi bấm “Dán từ bộ nhớ”). <a href={sharedUrl} target="_blank" rel="noreferrer">Mở lại trang</a>
+          {tx('Bạn vừa chia sẻ')} <strong>{tx('đường dẫn trang')}</strong>{tx(', chưa có nội dung tab. Hãy mở trang,')} <strong>{tx('bôi đen phần tab')}</strong> {tx('rồi bấm Chia sẻ → Harp Tab (hoặc Sao chép rồi bấm “Dán từ bộ nhớ”).')} <a href={sharedUrl} target="_blank" rel="noreferrer">{tx('Mở lại trang')}</a>
         </div>
       )}
       <label className="field">
-        <span className="field-label">Nội dung tab</span>
+        <span className="field-label">{tx('Nội dung tab')}</span>
         <textarea rows={8} value={text} onChange={(e) => setText(e.target.value)} spellCheck={false}
-          placeholder={'Ví dụ:\nTwinkle Twinkle Little Star\nKey: C\n4 4 6 6 -6 -6 6\nTwin-kle twin-kle lit-tle star'} />
+          placeholder={tx('Ví dụ:\nTwinkle Twinkle Little Star\nKey: C\n4 4 6 6 -6 -6 6\nTwin-kle twin-kle lit-tle star')} />
       </label>
 
       {imp && (
         imp.notes === 0 ? (
-          <div className="alert error" role="alert">Không thấy dòng tab nào. Tab cần có số lỗ kèn 1–10, ví dụ <code>4 -4 5 -5 6</code>.</div>
+          <div className="alert error" role="alert">{tx('Không thấy dòng tab nào. Tab cần có số lỗ kèn 1–10, ví dụ')} <code>4 -4 5 -5 6</code>.</div>
         ) : (
           <>
             <p className="small">
-              Nhận được <strong>{imp.tabLines} dòng tab, {imp.notes} nốt</strong>
-              {imp.harpKey && <> · tông kèn ghi trong bài: <strong>{imp.harpKey}</strong></>}
-              {!hasDurations && ' · không có trường độ, mỗi nốt tính 1 phách'}.
+              {tx('Nhận được')} <strong>{tx('{0} dòng tab, {1} nốt', imp.tabLines, imp.notes)}</strong>
+              {imp.harpKey && <> {tx('· tông kèn ghi trong bài:')} <strong>{imp.harpKey}</strong></>}
+              {!hasDurations && tx(' · không có trường độ, mỗi nốt tính 1 phách')}.
             </p>
             {imp.unknown.length > 0 && (
               <div className="alert" role="note">
-                Bỏ qua các ký hiệu không hiểu: {imp.unknown.map((u) => <code key={u}>{u}</code>).reduce<React.ReactNode[]>((a, c, i) => (i ? [...a, ' ', c] : [c]), [])}.
-                Nếu là nốt, hãy sửa trong ô trên hoặc sau khi lưu.
+                {tx('Bỏ qua các ký hiệu không hiểu:')} {imp.unknown.map((u) => <code key={u}>{u}</code>).reduce<React.ReactNode[]>((a, c, i) => (i ? [...a, ' ', c] : [c]), [])}{tx('. Nếu là nốt, hãy sửa trong ô trên hoặc sau khi lưu.')}
               </div>
             )}
             <div className="row gap wrap end-align">
               <label className="field grow">
-                <span className="field-label">Tên bài</span>
-                <input value={songTitle} onChange={(e) => setTitle(e.target.value)} placeholder="Tên bài hát" />
+                <span className="field-label">{tx('Tên bài')}</span>
+                <input value={songTitle} onChange={(e) => setTitle(e.target.value)} placeholder={tx('Tên bài hát')} />
               </label>
-              <HarpTypeSelect value={harpType} onChange={setType} label="Loại kèn trong bài" />
-              <KeySelect value={harpKey} onChange={(k) => k !== 'auto' && setKey(k)} label="Kèn trong bài" harpType={harpType} />
+              <HarpTypeSelect value={harpType} onChange={setType} label={tx('Loại kèn trong bài')} />
+              <KeySelect value={harpKey} onChange={(k) => k !== 'auto' && setKey(k)} label={tx('Kèn trong bài')} harpType={harpType} />
               <label className="field">
-                <span className="field-label">Tốc độ (bpm)</span>
+                <span className="field-label">{tx('Tốc độ (bpm)')}</span>
                 <input type="number" inputMode="numeric" min={30} max={260} value={tempo} onChange={(e) => setTempo(Math.min(260, Math.max(30, Number(e.target.value) || 90)))} />
               </label>
             </div>
             {parsed && (
-              <section className="ai-result" aria-label="Xem trước">
-                {!hasDurations && <p className="small muted">Mẹo: mở bài rồi bật <strong>Chờ nốt</strong> — app chờ bạn thổi đúng mới chuyển nốt, không cần nhịp.</p>}
+              <section className="ai-result" aria-label={tx('Xem trước')}>
+                {!hasDurations && <p className="small muted">{tx('Mẹo: mở bài rồi bật')} <strong>{tx('Chờ nốt')}</strong> {tx('— app chờ bạn thổi đúng mới chuyển nốt, không cần nhịp.')}</p>}
                 <TabView parsed={parsed} flat={flat} active={player.active} size="s" showNames={settings.showNoteNames} nameStyle={settings.noteNames} harpType={harpType} harpKey={harpKey} />
                 <div className="row gap preview-actions">
                   <MiniPlay p={player} />
-                  <button type="button" className="btn btn-primary" onClick={save}>Lưu vào thư viện</button>
+                  <button type="button" className="btn btn-primary" onClick={save}>{tx('Lưu vào thư viện')}</button>
                 </div>
               </section>
             )}

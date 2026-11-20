@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { strumPattern } from '../audio/patterns';
 import type { BeatStyle } from '../audio/patterns';
 import type { Accomp } from '../audio/engine';
+import { t } from '../lib/i18n';
 
 /**
  * Dải điệu quạt guitar: lấy đúng mẫu nhạc đệm đang đánh (src/audio/patterns.ts), mỗi ô một nhịp nhỏ,
@@ -45,7 +46,7 @@ export function StrumStrip({ style, beatsPerBar, pickupBeats, accomp, playing, b
     return () => cancelAnimationFrame(raf);
   }, [playing, beatAt, pickupBeats, subdiv, cells.length]);
   return (
-    <div className="strum-strip" role="img" aria-label={`Điệu quạt: ${cells.map((c) => c.mark).join(' ')}`}>
+    <div className="strum-strip" role="img" aria-label={t('Điệu quạt: {0}', cells.map((c) => c.mark).join(' '))}>
       {cells.map((c, i) => (
         <span key={i} className={`ss-cell${i === cur ? ' on' : ''}${c.mark === '·' ? ' rest' : ''}${c.soft ? ' soft' : ''}${c.hit && accomp === 'gobo' ? ' hit' : ''}${i % subdiv === 0 ? ' beat' : ''}`}>
           <b>{c.mark}</b>

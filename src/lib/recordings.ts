@@ -1,12 +1,13 @@
 /** Bản thu karaoke trên máy: thêm, liệt kê, xoá, dung lượng */
 import { db } from './db';
 import type { Recording } from './types';
+import { t } from './i18n';
 
 /** tối đa mỗi bản thu (phút) — 64 kbps ≈ 0,5 MB / phút */
 export const MAX_RECORD_MIN = 10;
 
 export class StorageFullError extends Error {
-  constructor() { super('Máy hết chỗ lưu bản thu — xoá bớt bản thu cũ trong Cài đặt → Dữ liệu'); }
+  constructor() { super(t('Máy hết chỗ lưu bản thu — xoá bớt bản thu cũ trong Cài đặt → Dữ liệu')); }
 }
 
 /** còn đủ chỗ lưu `bytes` không (chừa gấp đôi cho an toàn); trình duyệt không cho biết thì coi là đủ */

@@ -10,6 +10,7 @@ import { ChordInstrument, chordShape, shapeMidis } from '../data/chordShapes';
 import { ChordVerdict, issueText, judgeChord, openStrings, StrumDetector } from '../lib/chordPractice';
 import { midiToName } from '../lib/harp';
 import { useAppState } from '../state';
+import { t as tx } from '../lib/i18n';
 
 /**
  * Tập hợp âm guitar / ukulele: chọn hợp âm, bấm theo sơ đồ, quạt — app nghe phổ tiếng đàn và cho biết
@@ -21,7 +22,7 @@ type Stats = Record<string, { tries: number; ok: number }>;
 const loadStats = (): Stats => { try { return JSON.parse(localStorage.getItem(STATS_KEY) ?? '{}'); } catch { return {}; } };
 const saveStats = (s: Stats) => { try { localStorage.setItem(STATS_KEY, JSON.stringify(s)); } catch { /* không lưu được thì thôi */ } };
 
-const KIND_LABEL: Record<ChordVerdict['kind'], string> = { ok: 'Sạch — đủ tiếng các dây', issues: 'Chưa sạch', quiet: 'Nhỏ quá, chưa nghe rõ' };
+const KIND_LABEL: Record<ChordVerdict['kind'], string> = { ok: tx('Sạch — đủ tiếng các dây'), issues: tx('Chưa sạch'), quiet: tx('Nhỏ quá, chưa nghe rõ') };
 
 export default function ChordPractice() {
   const { settings } = useAppState();
@@ -65,7 +66,7 @@ export default function ChordPractice() {
     setErr(null);
     const m = new MicSpectrum();
     m.onFrame = (t, rms, mag, binHz) => frame.current(t, rms, mag, binHz);
-    try { await m.start(); mic.current = m; setOn(true); } catch (e) { setErr(e instanceof Error ? e.message : 'Không mở được micro'); }
+    try { await m.start(); mic.current = m; setOn(true); } catch (e) { setErr(e instanceof Error ? e.message : tx('Không mở được micro')); }
   };
   const stop = () => { mic.current?.stop(); mic.current = null; setOn(false); };
   const pick = (c: string) => { setChord(c); setResults([]); det.current = new StrumDetector(); };
@@ -81,24 +82,24 @@ export default function ChordPractice() {
     <div className="page chord-practice">
       <header className="page-head">
         <div>
-          <h1>Tập hợp âm</h1>
-          <p className="muted">Chọn hợp âm, bấm theo sơ đồ rồi quạt một lần, để đàn ngân. App nghe tiếng đàn và cho biết đã sạch chưa: dây nào câm, dây nào thừa, ngón nào bấm lệch.</p>
+          <h1>{tx('Tập hợp âm')}</h1>
+          <p className="muted">{tx('Chọn hợp âm, bấm theo sơ đồ rồi quạt một lần, để đàn ngân. App nghe tiếng đàn và cho biết đã sạch chưa: dây nào câm, dây nào thừa, ngón nào bấm lệch.')}</p>
         </div>
       </header>
 
       <div className="row gap wrap end-align">
-        <div className="segmented" role="tablist" aria-label="Loại đàn">
+        <div className="segmented" role="tablist" aria-label={tx('Loại đàn')}>
           <button type="button" role="tab" aria-selected={inst === 'guitar'} className={inst === 'guitar' ? 'on' : ''} onClick={() => setInst('guitar')}>Guitar</button>
           <button type="button" role="tab" aria-selected={inst === 'ukulele'} className={inst === 'ukulele' ? 'on' : ''} onClick={() => setInst('ukulele')}>Ukulele</button>
         </div>
         <button type="button" className={`btn btn-lg ${on ? 'btn-ghost' : 'btn-primary'}`} onClick={on ? stop : start}>
-          <Icon name="mic" size={20} /> {on ? 'Tắt micro' : 'Bật micro'}
+          <Icon name="mic" size={20} /> {on ? tx('Tắt micro') : tx('Bật micro')}
         </button>
-        {shape && <button type="button" className="btn btn-ghost" onClick={() => previewChord(shapeMidis(shape, inst))}>Nghe mẫu</button>}
+        {shape && <button type="button" className="btn btn-ghost" onClick={() => previewChord(shapeMidis(shape, inst))}>{tx('Nghe mẫu')}</button>}
       </div>
       {err && <div className="alert error" role="alert">{err}</div>}
 
-      <div className="cp-chords" role="tablist" aria-label="Hợp âm đang tập">
+      <div className="cp-chords" role="tablist" aria-label={tx('Hợp âm đang tập')}>
         {chords.map((c) => {
           const s = stats[`${inst}:${c}`];
           return (
@@ -114,20 +115,20 @@ export default function ChordPractice() {
           <ChordDiagram name={chord} inst={inst} />
           <div className="cp-neck">
             <FretboardChart harpType={inst === 'ukulele' ? 'ukulele4' : 'guitar6'} highlight={shapeTokens(shape)} nameStyle={settings.noteNames} maxFret={Math.max(5, ...shape) + 1} interactive={false} />
-            <p className="small muted">× = không quạt dây đó, ○ = dây buông. Quạt từ dây trầm nhất có tiếng xuống dây 1.</p>
+            <p className="small muted">{tx('× = không quạt dây đó, ○ = dây buông. Quạt từ dây trầm nhất có tiếng xuống dây 1.')}</p>
           </div>
         </section>
       )}
 
       <section className={`bp-result${last ? ` k-${last.kind === 'ok' ? 'ok' : last.kind === 'quiet' ? 'open' : 'muted'}` : ''}`} aria-live="polite">
-        {!on && !last && <p className="muted">Bật micro để bắt đầu. Đặt điện thoại cách đàn khoảng nửa mét, nơi yên tĩnh.</p>}
-        {on && !last && <p className="muted">Đang nghe… quạt hợp âm {chord} một lần.</p>}
+        {!on && !last && <p className="muted">{tx('Bật micro để bắt đầu. Đặt điện thoại cách đàn khoảng nửa mét, nơi yên tĩnh.')}</p>}
+        {on && !last && <p className="muted">{tx('Đang nghe… quạt hợp âm {0} một lần.', chord)}</p>}
         {last && <>
           <strong className="bp-kind">{KIND_LABEL[last.kind]}</strong>
-          {last.kind === 'quiet' && <p>Quạt mạnh hơn, hoặc để điện thoại gần đàn hơn.</p>}
+          {last.kind === 'quiet' && <p>{tx('Quạt mạnh hơn, hoặc để điện thoại gần đàn hơn.')}</p>}
           {last.issues.length > 0 && <ul className="cp-issues">{last.issues.map((x, i) => <li key={i}>{issueText(x, name)}</li>)}</ul>}
           {last.kind !== 'quiet' && shape && (
-            <div className="cp-levels" aria-label="Độ lớn từng dây">
+            <div className="cp-levels" aria-label={tx('Độ lớn từng dây')}>
               {shape.map((f, i) => {
                 const lv = last.levels[i];
                 const weak = last.issues.some((x) => x.kind === 'weak' && x.string === n - i);
@@ -144,24 +145,24 @@ export default function ChordPractice() {
         </>}
       </section>
 
-      <div className="bp-history" aria-label="Các lần quạt gần đây">
+      <div className="bp-history" aria-label={tx('Các lần quạt gần đây')}>
         {results.slice(0, 20).map((r, i) => <span key={i} className={`bp-dot k-${r.kind === 'ok' ? 'ok' : r.kind === 'quiet' ? 'open' : 'muted'}`} title={KIND_LABEL[r.kind]} />)}
       </div>
       <div className="row gap wrap center">
-        <span>{chord}: <strong>{st.ok}/{st.tries}</strong> lần sạch{st.tries ? ` (${Math.round((100 * st.ok) / st.tries)}%)` : ''}</span>
-        <button type="button" className="btn btn-ghost btn-sm" onClick={() => { setResults([]); const next = { ...stats }; delete next[statKey]; setStats(next); saveStats(next); }}>Xoá thống kê hợp âm này</button>
+        <span>{chord}: <strong>{st.ok}/{st.tries}</strong> {tx('lần sạch{0}', st.tries ? ` (${Math.round((100 * st.ok) / st.tries)}%)` : '')}</span>
+        <button type="button" className="btn btn-ghost btn-sm" onClick={() => { setResults([]); const next = { ...stats }; delete next[statKey]; setStats(next); saveStats(next); }}>{tx('Xoá thống kê hợp âm này')}</button>
       </div>
 
       <details className="card bp-tips">
-        <summary>Mẹo bấm hợp âm sạch</summary>
+        <summary>{tx('Mẹo bấm hợp âm sạch')}</summary>
         <ul>
-          <li>Bấm bằng <strong>đầu ngón tay</strong>, ngón dựng đứng như cái búa để không chạm dây bên cạnh.</li>
-          <li>Bấm <strong>sát phím đàn</strong> (thanh kim loại) phía thân đàn: đỡ tốn lực, tiếng không rè.</li>
-          <li>Quạt xong, gảy <strong>từng dây một</strong> từ dây trầm lên: dây nào câm hay rè là chỗ cần sửa ngón.</li>
-          <li>Ngón cái tay trái đặt sau cần đàn, ngang ngón giữa; đừng bóp cả bàn tay quanh cần.</li>
-          <li>Mỗi hợp âm: bấm, quạt, thả tay, bấm lại — lặp 10 lần. Sạch đều rồi mới sang hợp âm kế.</li>
+          <li>{tx('Bấm bằng')} <strong>{tx('đầu ngón tay')}</strong>{tx(', ngón dựng đứng như cái búa để không chạm dây bên cạnh.')}</li>
+          <li>{tx('Bấm')} <strong>{tx('sát phím đàn')}</strong> {tx('(thanh kim loại) phía thân đàn: đỡ tốn lực, tiếng không rè.')}</li>
+          <li>{tx('Quạt xong, gảy')} <strong>{tx('từng dây một')}</strong> {tx('từ dây trầm lên: dây nào câm hay rè là chỗ cần sửa ngón.')}</li>
+          <li>{tx('Ngón cái tay trái đặt sau cần đàn, ngang ngón giữa; đừng bóp cả bàn tay quanh cần.')}</li>
+          <li>{tx('Mỗi hợp âm: bấm, quạt, thả tay, bấm lại — lặp 10 lần. Sạch đều rồi mới sang hợp âm kế.')}</li>
         </ul>
-        <p className="small">Dây lên chưa chuẩn thì app dễ chấm sai: lên dây trước bằng <Link to="/tuner">Dò nốt</Link>. Cùng một nốt cách quãng tám (ví dụ hai nốt Đô trong hợp âm C) thì dây cao hơn không chấm riêng được.</p>
+        <p className="small">{tx('Dây lên chưa chuẩn thì app dễ chấm sai: lên dây trước bằng')} <Link to="/tuner">{tx('Dò nốt')}</Link>{tx('. Cùng một nốt cách quãng tám (ví dụ hai nốt Đô trong hợp âm C) thì dây cao hơn không chấm riêng được.')}</p>
       </details>
     </div>
   );

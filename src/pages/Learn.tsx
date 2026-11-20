@@ -13,6 +13,7 @@ import { MiniPlay } from '../components/PlayerBar';
 import { usePlayer } from '../components/usePlayer';
 import { Icon } from '../components/Icon';
 import { useAppState } from '../state';
+import { t } from '../lib/i18n';
 
 /** **đậm** và `mã` trong nội dung bài học */
 function rich(text: string): ReactNode {
@@ -33,8 +34,8 @@ function LogCard() {
   const st = streak(log, today);
   return (
     <Link to="/nhat-ky" className="jam-card log-card">
-      <strong><Icon name="check" size={20} /> Nhật ký luyện tập</strong>
-      <span>Hôm nay {mins} / {log.goalMin ?? DEFAULT_GOAL_MIN} phút{st ? ` · ${st} ngày tập liền` : ''}. Xem bài tập gợi ý cho hôm nay và tiến bộ từng tuần.</span>
+      <strong><Icon name="check" size={20} /> {t('Nhật ký luyện tập')}</strong>
+      <span>{t('Hôm nay')} {mins} / {log.goalMin ?? DEFAULT_GOAL_MIN} {t('phút')}{st ? t(' · {0} ngày tập liền', st) : ''}{t('. Xem bài tập gợi ý cho hôm nay và tiến bộ từng tuần.')}</span>
     </Link>
   );
 }
@@ -44,43 +45,43 @@ export default function Learn() {
     <div className="page page-learn">
       <header className="page-head">
         <div>
-          <h1>Học {BRAND.verb} {BRAND.instrument}</h1>
-          <p className="muted">Kỹ thuật, thủ thuật và mẹo, kèm bài tập nghe được. Tất cả dùng offline.{IS_RECORDER_APP || IS_KALIMBA_APP || IS_GUITAR_APP || IS_PIANICA_APP || IS_TRANH_APP || IS_ORGAN_APP ? '' : ' Chơi kèn chromatic: xem nhóm bài cuối.'}</p>
+          <h1>{t('Học {0} {1}', BRAND.verb, BRAND.instrument)}</h1>
+          <p className="muted">{t('Kỹ thuật, thủ thuật và mẹo, kèm bài tập nghe được. Tất cả dùng offline.')}{IS_RECORDER_APP || IS_KALIMBA_APP || IS_GUITAR_APP || IS_PIANICA_APP || IS_TRANH_APP || IS_ORGAN_APP ? '' : t(' Chơi kèn chromatic: xem nhóm bài cuối.')}</p>
         </div>
       </header>
       {/* các bài tập có micro: lưới 2 cột trên điện thoại, mô tả gọn 3 dòng — danh sách bài học hiện lên sớm hơn */}
-      <section className="practice" aria-label="Luyện tập">
+      <section className="practice" aria-label={t('Luyện tập')}>
       <LogCard />
       <div className="practice-grid">
       <Link to="/nghe-dap" className="jam-card">
-        <strong><Icon name="mic" size={20} /> Tập nghe – đáp</strong>
-        <span>Máy chơi một câu ngắn, bạn nghe rồi chơi lại; app nghe micro chấm từng nốt, sai thì chỉ chỗ bấm. Luyện tai và thuộc vị trí nốt, 7 cấp từ 1 nốt tới câu 4 nốt.</span>
+        <strong><Icon name="mic" size={20} /> {t('Tập nghe – đáp')}</strong>
+        <span>{t('Máy chơi một câu ngắn, bạn nghe rồi chơi lại; app nghe micro chấm từng nốt, sai thì chỉ chỗ bấm. Luyện tai và thuộc vị trí nốt, 7 cấp từ 1 nốt tới câu 4 nốt.')}</span>
       </Link>
       <Link to="/tap-nhip" className="jam-card">
-        <strong><Icon name="wave" size={20} /> Tập nhịp</strong>
-        <span>Máy đếm nhịp chạy, bạn chơi theo mẫu (nốt đen, móc đơn, đảo phách, swing…); app nghe và báo mỗi tiếng sớm / muộn bao nhiêu mili giây, có hay vội hay kéo không.</span>
+        <strong><Icon name="wave" size={20} /> {t('Tập nhịp')}</strong>
+        <span>{t('Máy đếm nhịp chạy, bạn chơi theo mẫu (nốt đen, móc đơn, đảo phách, swing…); app nghe và báo mỗi tiếng sớm / muộn bao nhiêu mili giây, có hay vội hay kéo không.')}</span>
       </Link>
       {!IS_TRANH_APP && <Link to="/jam" className="jam-card">
-        <strong><Icon name="music" size={20} /> {IS_RECORDER_APP ? 'Tập ngẫu hứng jazz' : IS_KALIMBA_APP ? 'Tập ngẫu hứng blues' : 'Tập ngẫu hứng blues & jazz'}</strong>
-        <span>{IS_KALIMBA_APP ? 'Nền nhạc 12 ô nhịp, tô các phím ngũ cung 1 2 3 5 6 trên cây đàn (gảy phím nào cũng hợp), máy hỏi – bạn đáp và lick mẫu ghi bằng tab số.' : IS_GUITAR_APP ? 'Nền nhạc 12 ô nhịp và các vòng jazz, thang âm blues trên cần đàn, máy hỏi – bạn đáp và lick mẫu xếp theo dây.phím.' : IS_RECORDER_APP ? 'Nền nhạc swing các vòng ii–V–I, thế bấm các nốt của hợp âm đang vang, máy hỏi – bạn đáp và lick mẫu.' : `Nền nhạc 12 ô nhịp, thang âm blues trên ${BRAND.noun} của bạn, máy hỏi – bạn đáp và lick mẫu; có cả chế độ jazz.`}</span>
+        <strong><Icon name="music" size={20} /> {IS_RECORDER_APP ? t('Tập ngẫu hứng jazz') : IS_KALIMBA_APP ? t('Tập ngẫu hứng blues') : t('Tập ngẫu hứng blues & jazz')}</strong>
+        <span>{IS_KALIMBA_APP ? t('Nền nhạc 12 ô nhịp, tô các phím ngũ cung 1 2 3 5 6 trên cây đàn (gảy phím nào cũng hợp), máy hỏi – bạn đáp và lick mẫu ghi bằng tab số.') : IS_GUITAR_APP ? t('Nền nhạc 12 ô nhịp và các vòng jazz, thang âm blues trên cần đàn, máy hỏi – bạn đáp và lick mẫu xếp theo dây.phím.') : IS_RECORDER_APP ? t('Nền nhạc swing các vòng ii–V–I, thế bấm các nốt của hợp âm đang vang, máy hỏi – bạn đáp và lick mẫu.') : t('Nền nhạc 12 ô nhịp, thang âm blues trên {0} của bạn, máy hỏi – bạn đáp và lick mẫu; có cả chế độ jazz.', BRAND.noun)}</span>
       </Link>}
       {IS_TRANH_APP && <Link to="/tap-boi-am" className="jam-card">
-        <strong><Icon name="wave" size={20} /> Tập bồi âm, nắn cần đàn bầu</strong>
-        <span>Bật micro, gảy từng điểm bồi: app nghe và cho biết ra đúng tiếng bồi chưa, sai do chạm lệch, ấn mạnh hay nhầm điểm. Chế độ nắn cần: thước cao độ báo đang thiếu, đủ hay quá.</span>
+        <strong><Icon name="wave" size={20} /> {t('Tập bồi âm, nắn cần đàn bầu')}</strong>
+        <span>{t('Bật micro, gảy từng điểm bồi: app nghe và cho biết ra đúng tiếng bồi chưa, sai do chạm lệch, ấn mạnh hay nhầm điểm. Chế độ nắn cần: thước cao độ báo đang thiếu, đủ hay quá.')}</span>
       </Link>}
       {IS_TRANH_APP && <Link to="/tap-cao-do?mode=bend" className="jam-card">
-        <strong><Icon name="sliders" size={20} /> Tập nhấn đàn tranh</strong>
-        <span>Gảy dây rồi nhấn: thước cao độ báo nhấn thiếu, đủ hay quá cho các nốt Fa, Si… (nửa cung, một cung).</span>
+        <strong><Icon name="sliders" size={20} /> {t('Tập nhấn đàn tranh')}</strong>
+        <span>{t('Gảy dây rồi nhấn: thước cao độ báo nhấn thiếu, đủ hay quá cho các nốt Fa, Si… (nửa cung, một cung).')}</span>
       </Link>}
       {!IS_TRANH_APP && !IS_GUITAR_APP && !IS_KALIMBA_APP && !IS_ORGAN_APP && <Link to="/tap-cao-do" className="jam-card">
-        <strong><Icon name="sliders" size={20} /> {IS_RECORDER_APP || IS_PIANICA_APP ? 'Tập giữ hơi nốt dài' : 'Tập bend và giữ hơi'}</strong>
+        <strong><Icon name="sliders" size={20} /> {IS_RECORDER_APP || IS_PIANICA_APP ? t('Tập giữ hơi nốt dài') : t('Tập bend và giữ hơi')}</strong>
         <span>{IS_RECORDER_APP || IS_PIANICA_APP
-          ? 'Thổi một nốt thật đều và lâu: app đo giữ được bao lâu, cao độ có chao, có non / già không. Bài khởi động tốt nhất mỗi buổi tập.'
-          : 'Bend từng lỗ với thước cao độ báo thiếu – đúng – quá; và giữ nốt dài: app đo giữ được bao lâu, cao độ có chao không.'}</span>
+          ? t('Thổi một nốt thật đều và lâu: app đo giữ được bao lâu, cao độ có chao, có non / già không. Bài khởi động tốt nhất mỗi buổi tập.')
+          : t('Bend từng lỗ với thước cao độ báo thiếu – đúng – quá; và giữ nốt dài: app đo giữ được bao lâu, cao độ có chao không.')}</span>
       </Link>}
       {IS_GUITAR_APP && <Link to="/tap-hop-am" className="jam-card">
-        <strong><Icon name="music" size={20} /> Tập hợp âm với micro</strong>
-        <span>Bấm theo sơ đồ, quạt một lần: app nghe và chỉ ra dây nào câm, dây × nào bị quạt trúng, ngón nào bấm lệch phím; đếm tỉ lệ sạch từng hợp âm.</span>
+        <strong><Icon name="music" size={20} /> {t('Tập hợp âm với micro')}</strong>
+        <span>{t('Bấm theo sơ đồ, quạt một lần: app nghe và chỉ ra dây nào câm, dây × nào bị quạt trúng, ngón nào bấm lệch phím; đếm tỉ lệ sạch từng hợp âm.')}</span>
       </Link>}
       </div>
       </section>
@@ -93,7 +94,7 @@ export default function Learn() {
                 <Link to={`/learn/${l.id}`} className="lesson-row">
                   <span className="lr-title">{l.title}</span>
                   <span className="lr-sum">{l.summary}</span>
-                  <span className="lr-min">{l.minutes} phút</span>
+                  <span className="lr-min">{t('{0} phút', l.minutes)}</span>
                 </Link>
               </li>
             ))}
@@ -117,7 +118,7 @@ function LessonTab({ b }: { b: Extract<Block, { t: 'tab' }> }) {
   return (
     <figure className="lesson-tab">
       <figcaption className="row between center gap">
-        <span>{b.caption ?? 'Bài tập'} <span className="muted">({harpName(key, type).replace(/^Kèn/, 'kèn')}, {b.bpm ?? 80} bpm)</span></span>
+        <span>{b.caption ?? t('Bài tập')} <span className="muted">({harpName(key, type).replace(/^Kèn/, 'kèn')}, {b.bpm ?? 80} bpm)</span></span>
         <MiniPlay p={p} />
       </figcaption>
       <TabView parsed={parsed} flat={flat} active={p.active} size="s" showNames={settings.showNoteNames} nameStyle={settings.noteNames} harpType={type} harpKey={key} />
@@ -130,7 +131,7 @@ function PositionsTable() {
     <div className="table-wrap">
       <table className="positions">
         <thead>
-          <tr><th scope="col">Kèn</th><th scope="col">Vị trí 1</th><th scope="col">Vị trí 2</th><th scope="col">Vị trí 3</th></tr>
+          <tr><th scope="col">{t('Kèn')}</th><th scope="col">{t('Vị trí 1')}</th><th scope="col">{t('Vị trí 2')}</th><th scope="col">{t('Vị trí 3')}</th></tr>
         </thead>
         <tbody>
           {HARP_KEYS.map((k) => (
@@ -152,7 +153,7 @@ export function LessonPage() {
   const { settings } = useAppState();
   const idx = LESSONS.findIndex((l) => l.id === lessonId);
   const lesson = LESSONS[idx];
-  if (!lesson) return <div className="page"><p>Không tìm thấy bài học.</p><Link to="/learn" className="btn btn-ghost">Về danh sách</Link></div>;
+  if (!lesson) return <div className="page"><p>{t('Không tìm thấy bài học.')}</p><Link to="/learn" className="btn btn-ghost">{t('Về danh sách')}</Link></div>;
   const next = LESSONS[idx + 1];
   const prev = LESSONS[idx - 1];
 
@@ -160,7 +161,7 @@ export function LessonPage() {
     <article className="page page-lesson">
       <header className="page-head">
         <div className="row gap center">
-          <Link to="/learn" className="icon-btn" aria-label="Về danh sách bài học"><Icon name="back" /></Link>
+          <Link to="/learn" className="icon-btn" aria-label={t('Về danh sách bài học')}><Icon name="back" /></Link>
           <div>
             <p className="muted small">{lesson.group}</p>
             <h1>{lesson.title}</h1>
@@ -177,8 +178,8 @@ export function LessonPage() {
               const L = b.ordered ? 'ol' : 'ul';
               return <L key={i}>{b.items.map((it, j) => <li key={j}>{rich(it)}</li>)}</L>;
             }
-            case 'tip': return <aside key={i} className="callout tip"><strong>Mẹo</strong>{rich(b.text)}</aside>;
-            case 'warn': return <aside key={i} className="callout warn"><strong>Lưu ý</strong>{rich(b.text)}</aside>;
+            case 'tip': return <aside key={i} className="callout tip"><strong>{t('Mẹo')}</strong>{rich(b.text)}</aside>;
+            case 'warn': return <aside key={i} className="callout warn"><strong>{t('Lưu ý')}</strong>{rich(b.text)}</aside>;
             case 'tab': return <LessonTab key={i} b={b} />;
             case 'diagram': return <HarpDiagram key={i} harpKey={b.harpKey ?? 'C'} harpType={b.harpType} showAdvanced={b.advanced ?? true} nameStyle={settings.noteNames} />;
             case 'positions': return <PositionsTable key={i} />;
@@ -186,9 +187,9 @@ export function LessonPage() {
           }
         })}
       </div>
-      <nav className="lesson-nav" aria-label="Chuyển bài học">
+      <nav className="lesson-nav" aria-label={t('Chuyển bài học')}>
         {prev ? <Link to={`/learn/${prev.id}`} className="btn btn-ghost"><Icon name="back" size={16} /> {prev.title}</Link> : <span />}
-        {next && <Link to={`/learn/${next.id}`} className="btn btn-primary">Bài tiếp: {next.title}</Link>}
+        {next && <Link to={`/learn/${next.id}`} className="btn btn-primary">{t('Bài tiếp: {0}', next.title)}</Link>}
       </nav>
     </article>
   );

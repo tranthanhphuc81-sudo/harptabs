@@ -6,6 +6,7 @@ import { chordShape, ChordInstrument, shapeMidis } from '../data/chordShapes';
 import { GUITAR_FRETS, GUITAR_STRING_NAMES, GUITAR_TUNING, parseFretToken, UKULELE_FRETS, UKULELE_STRING_NAMES, UKULELE_TUNING } from '../data/guitar';
 import { fretToken } from '../data/guitar';
 import { HarpType, midiToName, NoteNameStyle } from '../lib/harp';
+import { t as tx } from '../lib/i18n';
 
 /**
  * Guitar / ukulele: hình cần đàn dưới nốt, sơ đồ cần đàn (chạm để nghe / chọn nốt), sơ đồ hợp âm.
@@ -25,7 +26,7 @@ export function FretTokenText({ token, strings = 6 }: { token: string; strings?:
   const p = parseFretToken(token);
   if (!p) return <>{token}</>;
   return (
-    <span className={`tok-gtr s${strings}`} aria-label={`dây ${p.string} phím ${p.fret}`}>
+    <span className={`tok-gtr s${strings}`} aria-label={tx('dây {0} phím {1}', p.string, p.fret)}>
       {Array.from({ length: strings }, (_, i) => (
         <span key={i} className="gl">
           <i />{i + 1 === p.string && <b>{p.fret}</b>}<i />
@@ -67,7 +68,7 @@ export function FretboardChart({ harpType, highlight = [], selected, nameStyle =
   const last = Math.min(frets, maxFret ?? frets);
   return (
     <div className="fretboard-wrap">
-      <div className="fretboard" role="grid" aria-label="Sơ đồ cần đàn" style={{ gridTemplateColumns: `1.6em repeat(${last + 1}, minmax(2.3em, 1fr))` }}>
+      <div className="fretboard" role="grid" aria-label={tx('Sơ đồ cần đàn')} style={{ gridTemplateColumns: `1.6em repeat(${last + 1}, minmax(2.3em, 1fr))` }}>
         <span className="fb-corner" />
         {Array.from({ length: last + 1 }, (_, f) => <span key={`h${f}`} className={`fb-head${MARKERS.includes(f) ? ' mark' : ''}`}>{f}</span>)}
         {tuning.map((open, si) => [
@@ -79,7 +80,7 @@ export function FretboardChart({ harpType, highlight = [], selected, nameStyle =
               <button key={t} type="button" role="gridcell" tabIndex={interactive ? 0 : -1}
                 className={`fb-cell${f === 0 ? ' open' : ''}${on ? ' on' : ''}${selected === t ? ' sel' : ''}`}
                 onClick={interactive ? () => (onPick ? onPick(t) : previewNote(open + f)) : undefined}
-                aria-label={`Dây ${si + 1} phím ${f}: ${midiToName(open + f, nameStyle)}`}>
+                aria-label={tx('Dây {0} phím {1}: {2}', si + 1, f, midiToName(open + f, nameStyle))}>
                 {midiToName(open + f, nameStyle, false)}
               </button>
             );
@@ -163,7 +164,7 @@ export function ChordDiagram({ name, inst, size = 'm', onPlay, selected }: { nam
     </svg>
   );
   return (
-    <button type="button" className={`chord-box${selected ? ' on' : ''}`} onClick={onPlay ?? (() => previewChord(shapeMidis(shape, inst)))} aria-label={`Hợp âm ${name}, chạm để nghe`} aria-pressed={selected}>
+    <button type="button" className={`chord-box${selected ? ' on' : ''}`} onClick={onPlay ?? (() => previewChord(shapeMidis(shape, inst)))} aria-label={tx('Hợp âm {0}, chạm để nghe', name)} aria-pressed={selected}>
       <span className="cb-name">{name}</span>
       {body}
     </button>
@@ -185,13 +186,13 @@ export function ChordStrip({ names, inst }: { names: string[]; inst: ChordInstru
   const maxFret = shape ? Math.max(5, ...shape) + 1 : 5;
   return (
     <>
-      <div className="chord-strip" role="list" aria-label="Thế hợp âm trong bài">
+      <div className="chord-strip" role="list" aria-label={tx('Thế hợp âm trong bài')}>
         {uniq.map((n) => <ChordDiagram key={n} name={n} inst={inst} selected={picked === n} onPlay={() => pick(n)} />)}
       </div>
-      <p className="small"><Link to={`/tap-hop-am?inst=${inst}&c=${encodeURIComponent(uniq.join(','))}`}>Tập bấm sạch các hợp âm này với micro →</Link></p>
+      <p className="small"><Link to={`/tap-hop-am?inst=${inst}&c=${encodeURIComponent(uniq.join(','))}`}>{tx('Tập bấm sạch các hợp âm này với micro →')}</Link></p>
       {picked && shape && (
         <div className="chord-on-neck">
-          <p className="small muted">Thế <strong>{picked}</strong> trên cần đàn (cùng hướng với tab: dây 1 ở trên). Ô sáng là chỗ bấm, cột 0 là dây buông.</p>
+          <p className="small muted">{tx('Thế')} <strong>{picked}</strong> {tx('trên cần đàn (cùng hướng với tab: dây 1 ở trên). Ô sáng là chỗ bấm, cột 0 là dây buông.')}</p>
           <FretboardChart harpType={inst === 'ukulele' ? 'ukulele4' : 'guitar6'} highlight={shapeTokens(shape)} nameStyle={settings.noteNames} maxFret={maxFret} />
         </div>
       )}

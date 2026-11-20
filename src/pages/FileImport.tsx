@@ -17,6 +17,7 @@ import { Icon } from '../components/Icon';
 import { useAppState } from '../state';
 import { saveMidiSource } from '../lib/midiSources';
 import { tabSig } from '../lib/backings';
+import { t } from '../lib/i18n';
 
 /**
  * Nhập file nhạc dạng dữ liệu (MusicXML / MIDI) → tab. File ghi sẵn từng nốt nên chính xác tuyệt đối,
@@ -52,7 +53,7 @@ export default function FileImport({ onImages, onAudio }: { onImages?: (files: F
     if (audio && onAudio) { onAudio(audio); return; }
     const f = list.find((x) => !isImage(x));
     if (!f) {
-      if (images.length) setError('Ảnh / PDF bản nhạc hãy mở ở mục "Quét nhạc".');
+      if (images.length) setError(t('Ảnh / PDF bản nhạc hãy mở ở mục "Quét nhạc".'));
       return;
     }
     setBusy(true);
@@ -68,7 +69,7 @@ export default function FileImport({ onImages, onAudio }: { onImages?: (files: F
       setArtist(mf.artist ?? '');
     } catch (e) {
       setFile(null);
-      setError((e as Error).message || 'Không đọc được file');
+      setError((e as Error).message || t('Không đọc được file'));
     } finally {
       setBusy(false);
     }
@@ -82,7 +83,7 @@ export default function FileImport({ onImages, onAudio }: { onImages?: (files: F
       setFile(mf);
       if (!title.trim() || title === file?.title) setTitle(mf.title);
     } catch (e) {
-      setError((e as Error).message || 'Không đọc được file');
+      setError((e as Error).message || t('Không đọc được file'));
     }
   };
 
@@ -99,7 +100,7 @@ export default function FileImport({ onImages, onAudio }: { onImages?: (files: F
   const save = async () => {
     if (!converted || !file) return;
     const song = blankSong({
-      title: title.trim() || 'Bài nhập từ file',
+      title: title.trim() || t('Bài nhập từ file'),
       artist: artist.trim() || undefined,
       harpKey: converted.harpKey,
       harpType: converted.harpType === 'diatonic' ? undefined : converted.harpType,
@@ -113,7 +114,7 @@ export default function FileImport({ onImages, onAudio }: { onImages?: (files: F
       source: 'import',
       tags: [file.kind === 'midi' ? 'MIDI' : 'MusicXML'],
       notes: file.kind === 'midi'
-        ? 'Nhập từ file MIDI — trường độ đã làm tròn theo phách; nghe lại nếu bài có nhịp phức tạp.'
+        ? t('Nhập từ file MIDI — trường độ đã làm tròn theo phách; nghe lại nếu bài có nhịp phức tạp.')
         : undefined,
     });
     await db.songs.put(song);
@@ -121,7 +122,7 @@ export default function FileImport({ onImages, onAudio }: { onImages?: (files: F
       // không giữ được file gốc thì bài vẫn lưu bình thường (karaoke dùng đệm tự tạo)
       await saveMidiSource(song.id, fileName, bytes, { melodyPart: partId, startBeat: transcription.startBeat, shift: converted.fit.shift }, tabSig(flat)).catch(() => {});
     }
-    toast('Đã lưu vào thư viện');
+    toast(t('Đã lưu vào thư viện'));
     nav(`/song/${song.id}`);
   };
 
@@ -132,7 +133,7 @@ export default function FileImport({ onImages, onAudio }: { onImages?: (files: F
     <div className="ai-form">
       <div className="row gap wrap center">
         <button type="button" className="btn btn-primary" disabled={busy} onClick={() => inputRef.current?.click()}>
-          <Icon name="music" size={18} /> {file ? 'Chọn file khác' : 'Chọn file nhạc / ảnh'}
+          <Icon name="music" size={18} /> {file ? t('Chọn file khác') : t('Chọn file nhạc / ảnh')}
         </button>
         {fileName && <span className="muted small">{fileName}</span>}
         <input ref={inputRef} type="file" hidden multiple={!!onImages} onChange={(e) => open(e.target.files)}
@@ -141,9 +142,9 @@ export default function FileImport({ onImages, onAudio }: { onImages?: (files: F
       {/* nhận những loại file nào: gọn từng dòng thay cho đoạn giải thích dài (nút chọn file nằm trên cùng) */}
       {!file && (
         <ul className="file-kinds small">
-          <li><strong>MusicXML, MIDI</strong> <span className="muted">(.musicxml .mxl .mid) — tab đúng tuyệt đối, không phải đoán</span></li>
-          {onImages && <li><strong>Ảnh, PDF bản nhạc</strong> <span className="muted">(.jpg .png .pdf, nhiều trang) — quét nốt ngay trên máy</span></li>}
-          {onAudio && <li><strong>Âm thanh</strong> <span className="muted">(.mp3 .m4a .wav) — dò giai điệu, ra bản nháp</span></li>}
+          <li><strong>MusicXML, MIDI</strong> <span className="muted">{t('(.musicxml .mxl .mid) — tab đúng tuyệt đối, không phải đoán')}</span></li>
+          {onImages && <li><strong>{t('Ảnh, PDF bản nhạc')}</strong> <span className="muted">{t('(.jpg .png .pdf, nhiều trang) — quét nốt ngay trên máy')}</span></li>}
+          {onAudio && <li><strong>{t('Âm thanh')}</strong> <span className="muted">{t('(.mp3 .m4a .wav) — dò giai điệu, ra bản nháp')}</span></li>}
         </ul>
       )}
       {error && <div className="alert error" role="alert">{error}</div>}
@@ -153,22 +154,22 @@ export default function FileImport({ onImages, onAudio }: { onImages?: (files: F
         <>
           <div className="row gap wrap end-align">
             <label className="field grow">
-              <span className="field-label">Tên bài</span>
-              <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Tên bài hát" />
+              <span className="field-label">{t('Tên bài')}</span>
+              <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder={t('Tên bài hát')} />
             </label>
             <label className="field grow">
-              <span className="field-label">Tác giả</span>
+              <span className="field-label">{t('Tác giả')}</span>
               <input value={artist} onChange={(e) => setArtist(e.target.value)} />
             </label>
           </div>
           <div className="row gap wrap end-align">
             {file.parts.length > 1 && (
               <label className="field grow">
-                <span className="field-label">Bè giai điệu</span>
+                <span className="field-label">{t('Bè giai điệu')}</span>
                 <select value={partId} onChange={(e) => setPartId(e.target.value)}>
                   {file.parts.map((p) => (
                     <option key={p.id} value={p.id}>
-                      {p.name} — {p.notes} nốt, {midiToName(p.low)}–{midiToName(p.high)}{p.id === file.melodyPart ? ' (máy đoán là giai điệu)' : ''}
+                      {p.name} — {p.notes} {t('nốt,')} {midiToName(p.low)}–{midiToName(p.high)}{p.id === file.melodyPart ? t(' (máy đoán là giai điệu)') : ''}
                     </option>
                   ))}
                 </select>
@@ -176,52 +177,52 @@ export default function FileImport({ onImages, onAudio }: { onImages?: (files: F
             )}
             {file.kind === 'midi' && (
               <label className="field grow">
-                <span className="field-label">Lọc giọng phụ cao: {['tắt', 'nhẹ', 'vừa', 'mạnh'][backing]}</span>
-                <input type="range" min={0} max={3} step={1} value={backing} onChange={(e) => setBacking(Number(e.target.value))} aria-label="Mức lọc giọng phụ" />
-                <span className="small muted">Kéo lên nếu nghe có nốt cao vút lên đột ngột (giọng đệm / hoạ âm lẫn trong file). Mức mạnh còn nối các nốt ngắn lặp lại (nghe như nói lắp) thành một nốt.</span>
+                <span className="field-label">{t('Lọc giọng phụ cao:')} {[t('tắt'), t('nhẹ'), t('vừa'), t('mạnh')][backing]}</span>
+                <input type="range" min={0} max={3} step={1} value={backing} onChange={(e) => setBacking(Number(e.target.value))} aria-label={t('Mức lọc giọng phụ')} />
+                <span className="small muted">{t('Kéo lên nếu nghe có nốt cao vút lên đột ngột (giọng đệm / hoạ âm lẫn trong file). Mức mạnh còn nối các nốt ngắn lặp lại (nghe như nói lắp) thành một nốt.')}</span>
               </label>
             )}
             {file.encoding && (
               <label className="field">
-                <span className="field-label">Bảng mã lời</span>
+                <span className="field-label">{t('Bảng mã lời')}</span>
                 <select value={file.encoding} onChange={(e) => void reencode(e.target.value as VnEncoding)}>
                   {VN_ENCODINGS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
                 </select>
-                <span className="small muted">Lời bị vỡ dấu (kiểu “Toâi”, “T«i”) thì chọn bảng mã khác.</span>
+                <span className="small muted">{t('Lời bị vỡ dấu (kiểu “Toâi”, “T«i”) thì chọn bảng mã khác.')}</span>
               </label>
             )}
             <HarpTypeSelect value={harpType} onChange={setHarpType} />
-            <KeySelect value={target} onChange={setTarget} allowAuto label={`Chơi trên ${BRAND.noun}`} harpType={harpType} />
+            <KeySelect value={target} onChange={setTarget} allowAuto label={t('Chơi trên {0}', BRAND.noun)} harpType={harpType} />
             {target !== 'auto' && (
               <label className="check">
                 <input type="checkbox" checked={allowTranspose} onChange={(e) => setAllowTranspose(e.target.checked)} />
-                Cho phép dịch giọng để dễ thổi
+                {t('Cho phép dịch giọng để dễ thổi')}
               </label>
             )}
           </div>
 
-          <section className="ai-result" aria-label="Kết quả">
+          <section className="ai-result" aria-label={t('Kết quả')}>
             <p className="muted">
               {harpName(converted.harpKey, converted.harpType)}
-              {converted.fit.shift % 12 !== 0 && `, đã dịch giọng ${converted.fit.shift > 0 ? '+' : ''}${converted.fit.shift} nửa cung`}
+              {converted.fit.shift % 12 !== 0 && t(', đã dịch giọng {0}{1} nửa cung', converted.fit.shift > 0 ? '+' : '', converted.fit.shift)}
               {`, ${converted.timeSig}, ${converted.bpm} bpm`}
-              {converted.songKey && `, giọng ${converted.songKey}`}
+              {converted.songKey && t(', giọng {0}', converted.songKey)}
             </p>
             <p className="small">
-              {converted.fit.stats.natural} nốt thường, {converted.fit.stats.bends} nốt bend
-              {converted.fit.stats.unplayable > 0 && `, ${converted.fit.stats.unplayable} nốt ngoài tầm ${BRAND.noun} (đã thành dấu nghỉ)`}.
+              {converted.fit.stats.natural} {t('nốt thường,')} {converted.fit.stats.bends} {t('nốt bend')}
+              {converted.fit.stats.unplayable > 0 && t(', {0} nốt ngoài tầm {1} (đã thành dấu nghỉ)', converted.fit.stats.unplayable, BRAND.noun)}.
             </p>
             {(converted.fit.stats.unplayable > 0 || noLyrics || (file.parts.length > 1 && part)) && (
               <ul className="warnings">
-                {file.parts.length > 1 && <li>File có {file.parts.length} bè — nghe thử, nếu không phải giai điệu chính thì chọn bè khác ở trên.</li>}
-                {converted.fit.stats.unplayable > 0 && <li>{`Có nốt ngoài tầm ${BRAND.noun} — thử chọn ${BRAND.noun} khác hoặc cho phép dịch giọng.`}</li>}
-                {noLyrics && <li>File không có lời — thêm lời trong trang Sửa bài nếu cần.</li>}
+                {file.parts.length > 1 && <li>{t('File có {0} bè — nghe thử, nếu không phải giai điệu chính thì chọn bè khác ở trên.', file.parts.length)}</li>}
+                {converted.fit.stats.unplayable > 0 && <li>{t('Có nốt ngoài tầm {0} — thử chọn {1} khác hoặc cho phép dịch giọng.', BRAND.noun, BRAND.noun)}</li>}
+                {noLyrics && <li>{t('File không có lời — thêm lời trong trang Sửa bài nếu cần.')}</li>}
               </ul>
             )}
             <TabView parsed={parsed} flat={flat} active={player.active} size="s" showNames={settings.showNoteNames} nameStyle={settings.noteNames} harpType={converted.harpType} harpKey={converted.harpKey} />
             <div className="row gap preview-actions">
               <MiniPlay p={player} />
-              <button type="button" className="btn btn-primary" onClick={save}>Lưu vào thư viện</button>
+              <button type="button" className="btn btn-primary" onClick={save}>{t('Lưu vào thư viện')}</button>
             </div>
           </section>
         </>
@@ -232,10 +233,10 @@ export default function FileImport({ onImages, onAudio }: { onImages?: (files: F
 
 /** Nơi tìm file nhạc dạng dữ liệu (MusicXML / MIDI) + mẹo chuyển PDF thành MusicXML */
 const SOURCES: { name: string; url: string; what: string }[] = [
-  { name: 'Cùng Tập Nhạc', url: 'https://cungtapnhac.com/nhac-midi', what: 'Kho nhạc MIDI và sheet nhạc Việt. Tìm tên bài → mở mục Nhạc MIDI → tải file .mid về máy.' },
-  { name: 'MuseScore.com', url: 'https://musescore.com/sheetmusic', what: 'Kho lớn nhất, có nhiều bài Việt do người dùng soạn. Mở bài → Download → MusicXML hoặc MIDI (cần tài khoản miễn phí; một số bài chỉ dành cho gói Pro).' },
-  { name: 'IMSLP', url: 'https://imslp.org', what: 'Thư viện nhạc cổ điển hết bản quyền. Phần lớn là PDF, một số bài có MusicXML / MIDI.' },
-  { name: 'Mutopia Project', url: 'https://www.mutopiaproject.org', what: 'Nhạc cổ điển, dân ca hết bản quyền — có sẵn file MIDI.' },
+  { name: t('Cùng Tập Nhạc'), url: 'https://cungtapnhac.com/nhac-midi', what: t('Kho nhạc MIDI và sheet nhạc Việt. Tìm tên bài → mở mục Nhạc MIDI → tải file .mid về máy.') },
+  { name: 'MuseScore.com', url: 'https://musescore.com/sheetmusic', what: t('Kho lớn nhất, có nhiều bài Việt do người dùng soạn. Mở bài → Download → MusicXML hoặc MIDI (cần tài khoản miễn phí; một số bài chỉ dành cho gói Pro).') },
+  { name: 'IMSLP', url: 'https://imslp.org', what: t('Thư viện nhạc cổ điển hết bản quyền. Phần lớn là PDF, một số bài có MusicXML / MIDI.') },
+  { name: 'Mutopia Project', url: 'https://www.mutopiaproject.org', what: t('Nhạc cổ điển, dân ca hết bản quyền — có sẵn file MIDI.') },
 ];
 
 function FileSources() {
@@ -251,24 +252,24 @@ function FileSources() {
   };
   return (
     <details className="syntax-help file-sources">
-      <summary>Lấy file MusicXML / MIDI ở đâu?</summary>
+      <summary>{t('Lấy file MusicXML / MIDI ở đâu?')}</summary>
       <form className="row gap wrap end-align" onSubmit={(e) => { e.preventDefault(); search('cungtapnhac'); }}>
         <label className="field grow">
-          <span className="field-label">Tìm theo tên bài</span>
-          <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Ví dụ: Diễm xưa" enterKeyHint="search" />
+          <span className="field-label">{t('Tìm theo tên bài')}</span>
+          <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder={t('Ví dụ: Diễm xưa')} enterKeyHint="search" />
         </label>
-        <button type="submit" className="btn btn-ghost" disabled={!q.trim()}><Icon name="search" size={18} /> Trên Cùng Tập Nhạc</button>
-        <button type="button" className="btn btn-ghost" disabled={!q.trim()} onClick={() => search('any')}>Mọi trang</button>
+        <button type="submit" className="btn btn-ghost" disabled={!q.trim()}><Icon name="search" size={18} /> {t('Trên Cùng Tập Nhạc')}</button>
+        <button type="button" className="btn btn-ghost" disabled={!q.trim()} onClick={() => search('any')}>{t('Mọi trang')}</button>
       </form>
       <ul>
         {SOURCES.map((s) => (
           <li key={s.url}><a href={s.url} target="_blank" rel="noreferrer">{s.name}</a> — {s.what}</li>
         ))}
       </ul>
-      <p className="small"><strong>Tự soạn bài?</strong> Phần mềm soạn nhạc (MuseScore, Sibelius, Finale…) đều xuất được: File → Export → MusicXML hoặc MIDI.</p>
-      <p className="small"><strong>Cách tải về điện thoại rồi mở trong app:</strong> tải file (.mxl, .musicxml hoặc .mid) về máy → quay lại đây bấm <strong>Chọn file nhạc</strong> → chọn file vừa tải trong mục Tải xuống.</p>
-      <p className="small"><strong>Chỉ có bản PDF đẹp?</strong> Mở bằng <a href="https://musescore.org" target="_blank" rel="noreferrer">MuseScore</a> (miễn phí, trên máy tính: File → Import PDF) hoặc <a href="https://audiveris.github.io/audiveris/" target="_blank" rel="noreferrer">Audiveris</a>, sửa vài chỗ sai rồi File → Export → MusicXML. PDF in sắc nét đọc chính xác hơn nhiều so với ảnh chụp.</p>
-      <p className="small muted">Bài còn bản quyền: chỉ dùng để tự tập, không chia sẻ lại file.</p>
+      <p className="small"><strong>{t('Tự soạn bài?')}</strong> {t('Phần mềm soạn nhạc (MuseScore, Sibelius, Finale…) đều xuất được: File → Export → MusicXML hoặc MIDI.')}</p>
+      <p className="small"><strong>{t('Cách tải về điện thoại rồi mở trong app:')}</strong> {t('tải file (.mxl, .musicxml hoặc .mid) về máy → quay lại đây bấm')} <strong>{t('Chọn file nhạc')}</strong> {t('→ chọn file vừa tải trong mục Tải xuống.')}</p>
+      <p className="small"><strong>{t('Chỉ có bản PDF đẹp?')}</strong> {t('Mở bằng')} <a href="https://musescore.org" target="_blank" rel="noreferrer">MuseScore</a> {t('(miễn phí, trên máy tính: File → Import PDF) hoặc')} <a href="https://audiveris.github.io/audiveris/" target="_blank" rel="noreferrer">Audiveris</a>{t(', sửa vài chỗ sai rồi File → Export → MusicXML. PDF in sắc nét đọc chính xác hơn nhiều so với ảnh chụp.')}</p>
+      <p className="small muted">{t('Bài còn bản quyền: chỉ dùng để tự tập, không chia sẻ lại file.')}</p>
     </details>
   );
 }

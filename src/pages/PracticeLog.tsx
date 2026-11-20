@@ -8,13 +8,14 @@ import {
   Activity, ACTIVITY_LABEL, activityTotals, bestStreak, DEFAULT_GOAL_MIN, lastDays, loadLog, Metric, metricValue, METRICS, onLogChange, setGoal, streak,
 } from '../lib/practiceLog';
 import { useAppState } from '../state';
+import { t } from '../lib/i18n';
 
 /**
  * Nhật ký luyện tập: hôm nay tập bao nhiêu phút so với mục tiêu, chuỗi ngày tập liền, biểu đồ 7 ngày,
  * thời gian từng hoạt động, kết quả các bài tập (tuần này so với tuần trước) và bài tập gợi ý cho hôm nay.
  */
 const WEEKDAY = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
-const fmtMin = (secs: number) => (secs < 60 ? `${Math.round(secs)} giây` : `${Math.round(secs / 60)} phút`);
+const fmtMin = (secs: number) => (secs < 60 ? t('{0} giây', Math.round(secs)) : t('{0} phút', Math.round(secs / 60)));
 
 interface PlanItem { to: string; label: string; act: Activity; min: number; why: string }
 
@@ -38,17 +39,17 @@ export default function PracticeLog() {
 
   // bài tập gợi ý hôm nay: khởi động theo nhạc cụ, nghe – đáp, bài đang tập
   const plan: PlanItem[] = [];
-  if (IS_GUITAR_APP) plan.push({ to: '/tap-hop-am', label: 'Khởi động: bấm hợp âm sạch', act: 'hop-am', min: 3, why: 'Quạt từng hợp âm của bài đang tập cho tới khi sạch.' });
+  if (IS_GUITAR_APP) plan.push({ to: '/tap-hop-am', label: t('Khởi động: bấm hợp âm sạch'), act: 'hop-am', min: 3, why: t('Quạt từng hợp âm của bài đang tập cho tới khi sạch.') });
   else if (IS_TRANH_APP) plan.push(isDanBau(settings.defaultHarpType)
-    ? { to: '/tap-boi-am', label: 'Khởi động: bồi âm, nắn cần', act: 'boi-am', min: 3, why: 'Mỗi điểm bồi vài lần, rồi nắn cần vài nốt.' }
-    : { to: '/tap-cao-do?mode=bend', label: 'Khởi động: tập nhấn', act: 'cao-do', min: 3, why: 'Nhấn Fa, Si cho tới khi vào vùng xanh.' });
-  else if (IS_ORGAN_APP) plan.push({ to: '/', label: 'Khởi động: thang âm Đô hai tay', act: 'bai-hat', min: 3, why: 'Mở bài "Thang âm Đô trưởng", chơi chậm, luồn ngón đều.' });
-  else if (!IS_KALIMBA_APP) plan.push({ to: '/tap-cao-do?mode=hold', label: 'Khởi động: giữ nốt dài', act: 'cao-do', min: 3, why: '5 nốt, mỗi nốt giữ 4 giây cho thật đều.' });
-  if (IS_KALIMBA_APP || IS_ORGAN_APP) plan.push({ to: '/tap-nhip', label: 'Khởi động: tập nhịp', act: 'nhip', min: 3, why: 'Nốt đen rồi móc đơn, tốc độ vừa phải.' });
-  plan.push({ to: '/nghe-dap', label: 'Nghe – đáp', act: 'nghe-dap', min: 3, why: 'Luyện tai và thuộc vị trí nốt.' });
+    ? { to: '/tap-boi-am', label: t('Khởi động: bồi âm, nắn cần'), act: 'boi-am', min: 3, why: t('Mỗi điểm bồi vài lần, rồi nắn cần vài nốt.') }
+    : { to: '/tap-cao-do?mode=bend', label: t('Khởi động: tập nhấn'), act: 'cao-do', min: 3, why: t('Nhấn Fa, Si cho tới khi vào vùng xanh.') });
+  else if (IS_ORGAN_APP) plan.push({ to: '/', label: t('Khởi động: thang âm Đô hai tay'), act: 'bai-hat', min: 3, why: t('Mở bài "Thang âm Đô trưởng", chơi chậm, luồn ngón đều.') });
+  else if (!IS_KALIMBA_APP) plan.push({ to: '/tap-cao-do?mode=hold', label: t('Khởi động: giữ nốt dài'), act: 'cao-do', min: 3, why: t('5 nốt, mỗi nốt giữ 4 giây cho thật đều.') });
+  if (IS_KALIMBA_APP || IS_ORGAN_APP) plan.push({ to: '/tap-nhip', label: t('Khởi động: tập nhịp'), act: 'nhip', min: 3, why: t('Nốt đen rồi móc đơn, tốc độ vừa phải.') });
+  plan.push({ to: '/nghe-dap', label: t('Nghe – đáp'), act: 'nghe-dap', min: 3, why: t('Luyện tai và thuộc vị trí nốt.') });
   plan.push(recent?.lastPracticedAt
-    ? { to: `/song/${recent.id}`, label: `Bài đang tập: ${recent.title}`, act: 'bai-hat', min: IS_KALIMBA_APP ? 7 : 5, why: 'Chơi theo, chậm lại ở đoạn khó.' }
-    : { to: '/', label: 'Chọn một bài và chơi theo', act: 'bai-hat', min: IS_KALIMBA_APP ? 7 : 5, why: 'Bài ngắn, quen thuộc là dễ vào nhất.' });
+    ? { to: `/song/${recent.id}`, label: t('Bài đang tập: {0}', recent.title), act: 'bai-hat', min: IS_KALIMBA_APP ? 7 : 5, why: t('Chơi theo, chậm lại ở đoạn khó.') }
+    : { to: '/', label: t('Chọn một bài và chơi theo'), act: 'bai-hat', min: IS_KALIMBA_APP ? 7 : 5, why: t('Bài ngắn, quen thuộc là dễ vào nhất.') });
 
   const metrics = (Object.keys(METRICS) as Metric[])
     .map((m) => ({ m, now: metricValue(log, m, days.map((d) => d.key)), before: metricValue(log, m, prev.map((d) => d.key)) }))
@@ -63,33 +64,33 @@ export default function PracticeLog() {
     <div className="page practice-log">
       <header className="page-head">
         <div>
-          <h1>Nhật ký luyện tập</h1>
-          <p className="muted">App tự ghi thời gian khi bạn chơi theo bài, ngẫu hứng hoặc dùng các trang tập có micro, cùng kết quả từng bài tập. Nhật ký lưu trong máy này.</p>
+          <h1>{t('Nhật ký luyện tập')}</h1>
+          <p className="muted">{t('App tự ghi thời gian khi bạn chơi theo bài, ngẫu hứng hoặc dùng các trang tập có micro, cùng kết quả từng bài tập. Nhật ký lưu trong máy này.')}</p>
         </div>
       </header>
 
       <section className="pl-today">
         <div className="pl-big">
           <strong>{fmtMin(todaySecs)}</strong>
-          <span>hôm nay / mục tiêu {goal} phút</span>
+          <span>{t('hôm nay / mục tiêu {0} phút', goal)}</span>
           <div className="pp-bar"><span className={todaySecs >= goal * 60 ? 'full' : ''} style={{ width: `${Math.min(100, (100 * todaySecs) / (goal * 60))}%` }} /></div>
         </div>
         <div className="pl-big">
-          <strong>{st} ngày</strong>
-          <span>tập liền{best > st ? ` · dài nhất ${best} ngày` : ''}</span>
-          {st > 0 && todaySecs < 60 && <span className="small muted">Tập hôm nay để giữ chuỗi!</span>}
+          <strong>{t('{0} ngày', st)}</strong>
+          <span>{t('tập liền')}{best > st ? t(' · dài nhất {0} ngày', best) : ''}</span>
+          {st > 0 && todaySecs < 60 && <span className="small muted">{t('Tập hôm nay để giữ chuỗi!')}</span>}
         </div>
       </section>
 
       <section className="card">
-        <h2>Bài tập hôm nay</h2>
+        <h2>{t('Bài tập hôm nay')}</h2>
         <ol className="pl-plan">
           {plan.map((x) => {
             const done = (todayLog?.by[x.act] ?? 0) >= x.min * 60;
             return (
               <li key={x.to + x.label} className={done ? 'done' : ''}>
                 <Link to={x.to}><strong>{done ? '✓ ' : ''}{x.label}</strong></Link>
-                <span className="small muted"> · {x.min} phút. {x.why}</span>
+                <span className="small muted"> {t('· {0} phút. {1}', x.min, x.why)}</span>
               </li>
             );
           })}
@@ -97,8 +98,8 @@ export default function PracticeLog() {
       </section>
 
       <section className="card">
-        <h2>7 ngày qua</h2>
-        <div className="pl-chart" role="img" aria-label={`Số phút tập 7 ngày qua: ${days.map((d) => Math.round(d.secs / 60)).join(', ')}`}>
+        <h2>{t('7 ngày qua')}</h2>
+        <div className="pl-chart" role="img" aria-label={t('Số phút tập 7 ngày qua: {0}', days.map((d) => Math.round(d.secs / 60)).join(', '))}>
           {days.map((d, i) => (
             <div key={d.key} className={`pl-col${i === 6 ? ' today' : ''}`}>
               <small>{d.secs >= 60 ? Math.round(d.secs / 60) : ''}</small>
@@ -110,7 +111,7 @@ export default function PracticeLog() {
             </div>
           ))}
         </div>
-        <p className="small muted">Tổng tuần: <strong>{fmtMin(weekSecs)}</strong>. Vạch ngang là mục tiêu mỗi ngày; cột xanh là ngày đạt mục tiêu.</p>
+        <p className="small muted">{t('Tổng tuần:')} <strong>{fmtMin(weekSecs)}</strong>{t('. Vạch ngang là mục tiêu mỗi ngày; cột xanh là ngày đạt mục tiêu.')}</p>
         {Object.keys(week).length > 0 && (
           <ul className="pl-acts">
             {(Object.entries(week) as [Activity, number][]).sort((a, b) => b[1] - a[1]).map(([a, s]) => <li key={a}><span>{ACTIVITY_LABEL[a]}</span><strong>{fmtMin(s)}</strong></li>)}
@@ -120,9 +121,9 @@ export default function PracticeLog() {
 
       {metrics.length > 0 && (
         <section className="card">
-          <h2>Kết quả bài tập</h2>
+          <h2>{t('Kết quả bài tập')}</h2>
           <table className="pl-metrics">
-            <thead><tr><th /><th>7 ngày qua</th><th>7 ngày trước</th></tr></thead>
+            <thead><tr><th /><th>{t('7 ngày qua')}</th><th>{t('7 ngày trước')}</th></tr></thead>
             <tbody>
               {metrics.map(({ m, now, before }) => {
                 const up = now !== null && before !== null && now > before;
@@ -142,13 +143,13 @@ export default function PracticeLog() {
 
       <div className="row gap wrap end-align">
         <label className="field" htmlFor="pl-goal">
-          <span className="field-label">Mục tiêu mỗi ngày</span>
+          <span className="field-label">{t('Mục tiêu mỗi ngày')}</span>
           <select id="pl-goal" value={goal} onChange={(e) => setGoal(Number(e.target.value))}>
-            {[5, 10, 15, 20, 30, 45, 60].map((m) => <option key={m} value={m}>{m} phút</option>)}
+            {[5, 10, 15, 20, 30, 45, 60].map((m) => <option key={m} value={m}>{t('{0} phút', m)}</option>)}
           </select>
         </label>
       </div>
-      <p className="small muted">Mẹo: tập ngắn mà đều mỗi ngày hiệu quả hơn tập dồn một buổi dài. Chỉ tính giờ khi đang phát nhạc hoặc đang bật micro ở trang tập; tập dưới 1 phút trong ngày không tính vào chuỗi.</p>
+      <p className="small muted">{t('Mẹo: tập ngắn mà đều mỗi ngày hiệu quả hơn tập dồn một buổi dài. Chỉ tính giờ khi đang phát nhạc hoặc đang bật micro ở trang tập; tập dưới 1 phút trong ngày không tính vào chuỗi.')}</p>
     </div>
   );
 }

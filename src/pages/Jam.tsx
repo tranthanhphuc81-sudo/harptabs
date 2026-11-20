@@ -21,6 +21,7 @@ import { useWakeLock } from '../components/useWakeLock';
 import { Icon } from '../components/Icon';
 import { useAppState } from '../state';
 import { parseTab } from '../lib/tabText';
+import { t as tx } from '../lib/i18n';
 
 /**
  * Tập ngẫu hứng blues: nền nhạc 12 ô nhịp chạy lặp (vị trí 2), hiện hợp âm đang vang và các lỗ thang âm blues để tự thổi;
@@ -124,56 +125,56 @@ function BluesJam() {
   return (
     <>
       {rec
-        ? <p className="muted small">Blues giọng <strong>{songKey}</strong> trên {harpName(harpKey, harpType).toLowerCase()}. {IS_GUITAR_APP ? 'Lick được xếp lên cần đàn (dây.phím) theo giọng bạn chọn.' : 'Lick được đổi sang tên nốt và thế bấm theo giọng bạn chọn.'}</p>
-        : kal ? <p className="muted small">Blues giọng <strong>{songKey}</strong> trên {harpName(harpKey, harpType)}. Kalimba không có nốt giáng nên tập bằng thang ngũ cung 1 2 3 5 6: gảy nốt nào trong đó cũng hợp nền nhạc.</p>
-        : <p className="muted small">Vị trí 2: {harpName(harpKey)} chơi blues giọng <strong>{songKey}</strong>. Tab tính theo lỗ nên đổi kèn vẫn thổi y như vậy.</p>}
-      {!rec && !kal && settings.defaultHarpType !== 'diatonic' && <p className="alert">Trang này dành cho kèn diatonic 10 lỗ (kiểu blues phổ biến nhất).</p>}
+        ? <p className="muted small">{tx('Blues giọng')} <strong>{songKey}</strong> {tx('trên')} {harpName(harpKey, harpType).toLowerCase()}. {IS_GUITAR_APP ? tx('Lick được xếp lên cần đàn (dây.phím) theo giọng bạn chọn.') : tx('Lick được đổi sang tên nốt và thế bấm theo giọng bạn chọn.')}</p>
+        : kal ? <p className="muted small">{tx('Blues giọng')} <strong>{songKey}</strong> {tx('trên {0}. Kalimba không có nốt giáng nên tập bằng thang ngũ cung 1 2 3 5 6: gảy nốt nào trong đó cũng hợp nền nhạc.', harpName(harpKey, harpType))}</p>
+        : <p className="muted small">{tx('Vị trí 2: {0} chơi blues giọng', harpName(harpKey))} <strong>{songKey}</strong>{tx('. Tab tính theo lỗ nên đổi kèn vẫn thổi y như vậy.')}</p>}
+      {!rec && !kal && settings.defaultHarpType !== 'diatonic' && <p className="alert">{tx('Trang này dành cho kèn diatonic 10 lỗ (kiểu blues phổ biến nhất).')}</p>}
 
       <div className="row gap wrap end-align">
         {rec ? <>
           <HarpTypeSelect value={harpType} onChange={(t) => isFixedKey(t) && setHarpType(t)} />
           <label className="field">
-            <span className="field-label">Giọng blues</span>
+            <span className="field-label">{tx('Giọng blues')}</span>
             <select value={recTonic} onChange={(e) => setRecTonic(Number(e.target.value))}>
               {Array.from({ length: 12 }, (_, i) => <option key={i} value={i}>{chordName(i, false, usesFlats(i))}</option>)}
             </select>
           </label>
         </> : kal ? <>
           <HarpTypeSelect value={harpType} onChange={(t) => isKalimba(t) && setHarpType(t)} />
-          <KeySelect value={harpKey} onChange={(k) => k !== 'auto' && setHarpKey(k)} label="Tông kalimba" harpType={harpType} />
-        </> : <KeySelect value={harpKey} onChange={(k) => k !== 'auto' && setHarpKey(k)} label="Kèn của bạn" />}
-        <div className="segmented" role="tablist" aria-label="Chế độ">
-          <button type="button" role="tab" aria-selected={tab === 'jam'} className={tab === 'jam' ? 'on' : ''} onClick={() => setTab('jam')}>Jam 12 ô</button>
-          <button type="button" role="tab" aria-selected={tab === 'licks'} className={tab === 'licks' ? 'on' : ''} onClick={() => setTab('licks')}>Thư viện lick</button>
+          <KeySelect value={harpKey} onChange={(k) => k !== 'auto' && setHarpKey(k)} label={tx('Tông kalimba')} harpType={harpType} />
+        </> : <KeySelect value={harpKey} onChange={(k) => k !== 'auto' && setHarpKey(k)} label={tx('Kèn của bạn')} />}
+        <div className="segmented" role="tablist" aria-label={tx('Chế độ')}>
+          <button type="button" role="tab" aria-selected={tab === 'jam'} className={tab === 'jam' ? 'on' : ''} onClick={() => setTab('jam')}>{tx('Jam 12 ô')}</button>
+          <button type="button" role="tab" aria-selected={tab === 'licks'} className={tab === 'licks' ? 'on' : ''} onClick={() => setTab('licks')}>{tx('Thư viện lick')}</button>
         </div>
       </div>
 
       {tab === 'jam' ? (
         <>
           <div className="row gap wrap center">
-            <div className="segmented" role="group" aria-label="Kiểu khung">
-              <button type="button" className={variant === 'basic' ? 'on' : ''} aria-pressed={variant === 'basic'} onClick={() => setVariant('basic')}>Cơ bản</button>
+            <div className="segmented" role="group" aria-label={tx('Kiểu khung')}>
+              <button type="button" className={variant === 'basic' ? 'on' : ''} aria-pressed={variant === 'basic'} onClick={() => setVariant('basic')}>{tx('Cơ bản')}</button>
               <button type="button" className={variant === 'quick' ? 'on' : ''} aria-pressed={variant === 'quick'} onClick={() => setVariant('quick')}>Quick change</button>
             </div>
-            <button type="button" className={`chip${callResponse ? ' on' : ''}`} aria-pressed={callResponse} onClick={() => setCallResponse(!callResponse)}>Máy hỏi, bạn đáp</button>
-            {callResponse && <button type="button" className="btn btn-ghost btn-sm" onClick={() => setSeed((s) => s + 1)}>Đổi câu hỏi</button>}
+            <button type="button" className={`chip${callResponse ? ' on' : ''}`} aria-pressed={callResponse} onClick={() => setCallResponse(!callResponse)}>{tx('Máy hỏi, bạn đáp')}</button>
+            {callResponse && <button type="button" className="btn btn-ghost btn-sm" onClick={() => setSeed((s) => s + 1)}>{tx('Đổi câu hỏi')}</button>}
           </div>
 
           <div className="jam-now" aria-live="polite">
             <div>
-              <span className="muted small">{bar != null ? `Ô ${bar + 1}/12` : p.countIn != null ? `Đếm vào ${p.countIn}` : 'Bấm phát để bắt đầu'}</span>
+              <span className="muted small">{bar != null ? tx('Ô {0}/12', bar + 1) : p.countIn != null ? tx('Đếm vào {0}', p.countIn) : tx('Bấm phát để bắt đầu')}</span>
               <strong className="jam-chord">{p.chord ?? chords[0]}</strong>
-              {bar != null && <span className="muted small">tiếp: {chords[(bar + 1) % BARS]}</span>}
+              {bar != null && <span className="muted small">{tx('tiếp: {0}', chords[(bar + 1) % BARS])}</span>}
             </div>
             {callResponse && bar != null && (
-              <span className={`jam-turn${callNow ? '' : ' you'}`}>{callNow ? `Máy hỏi: ${callNow.lick.title}` : 'Lượt bạn đáp!'}</span>
+              <span className={`jam-turn${callNow ? '' : ' you'}`}>{callNow ? tx('Máy hỏi: {0}', callNow.lick.title) : tx('Lượt bạn đáp!')}</span>
             )}
           </div>
 
           {/* nút phát ngay dưới dòng "Bấm phát để bắt đầu", không che khung 12 ô; cuộn xuống thì dính mép trên */}
           <PlayerBar p={p} className="pin-top" />
 
-          <ol className="jam-grid" aria-label="Khung 12 ô nhịp">
+          <ol className="jam-grid" aria-label={tx('Khung 12 ô nhịp')}>
             {chords.map((c, i) => (
               <li key={i} className={`${bar === i ? 'on' : ''}${callResponse && isCallBar(i) ? ' call' : ''}`}>
                 <span className="jg-n">{i + 1}</span>
@@ -184,26 +185,26 @@ function BluesJam() {
           </ol>
 
           <section>
-            <h2 className="h-small">{kal ? 'Thang ngũ cung' : 'Thang âm blues'} trên {BRAND.noun} của bạn</h2>
-            <p className="small muted">Khi nền nhạc chạy, {BRAND.verb} nốt nào trong các ô sáng cũng hợp. Chạm vào ô để nghe.</p>
+            <h2 className="h-small">{kal ? tx('Thang ngũ cung') : tx('Thang âm blues')} {tx('trên')} {BRAND.noun} {tx('của bạn')}</h2>
+            <p className="small muted">{tx('Khi nền nhạc chạy, {0} nốt nào trong các ô sáng cũng hợp. Chạm vào ô để nghe.', BRAND.verb)}</p>
             <HarpDiagram harpKey={harpKey} harpType={harpType} highlight={scale} nameStyle={settings.noteNames} />
             <p className="small">
-              Nốt hợp âm đang vang (dừng câu ở đây nghe "chắc"):{' '}
-              {tones.length ? tones.map((t) => <span key={t} className="jam-tone"><TokenText token={t} nameStyle={settings.noteNames} /></span>) : <span className="muted">phát nhạc để xem</span>}
+              {tx('Nốt hợp âm đang vang (dừng câu ở đây nghe "chắc"):')}{' '}
+              {tones.length ? tones.map((t) => <span key={t} className="jam-tone"><TokenText token={t} nameStyle={settings.noteNames} /></span>) : <span className="muted">{tx('phát nhạc để xem')}</span>}
             </p>
-            <p className="small muted">Mẹo: chơi 2 ô, nghỉ 2 ô; lặp lại câu của mình rồi đổi một chút (nhịp, độ dài{rec || kal ? '' : ', bend'}). Khoảng lặng cũng là nhạc.</p>
+            <p className="small muted">{tx('Mẹo: chơi 2 ô, nghỉ 2 ô; lặp lại câu của mình rồi đổi một chút (nhịp, độ dài{0}). Khoảng lặng cũng là nhạc.', rec || kal ? '' : ', bend')}</p>
           </section>
         </>
       ) : (
         <>
           <div className="row gap wrap center">
-            <div className="segmented" role="group" aria-label="Mức độ">
-              {(['Tất cả', 'Dễ', 'Vừa', 'Khó'] as const).map((label, i) => (
+            <div className="segmented" role="group" aria-label={tx('Mức độ')}>
+              {([tx('Tất cả'), tx('Dễ'), tx('Vừa'), tx('Khó')] as const).map((label, i) => (
                 <button key={label} type="button" className={level === i ? 'on' : ''} aria-pressed={level === i} onClick={() => setLevel(i as 0 | 1 | 2 | 3)}>{label}</button>
               ))}
             </div>
-            <select value={place} onChange={(e) => setPlace(e.target.value as Lick['over'] | 'all')} aria-label="Chỗ dùng trong khung">
-              <option value="all">Mọi chỗ trong khung</option>
+            <select value={place} onChange={(e) => setPlace(e.target.value as Lick['over'] | 'all')} aria-label={tx('Chỗ dùng trong khung')}>
+              <option value="all">{tx('Mọi chỗ trong khung')}</option>
               {(Object.keys(LICK_PLACES) as Lick['over'][]).map((k) => <option key={k} value={k}>{LICK_PLACES[k]}</option>)}
             </select>
           </div>
@@ -213,23 +214,23 @@ function BluesJam() {
               <li key={l.id}>
                 <button type="button" className={`lick-row${l.id === lick.id ? ' on' : ''}`} onClick={() => setLickId(l.id)} aria-pressed={l.id === lick.id}>
                   <span className="lk-title">{l.title}</span>
-                  <span className="lk-meta">{['', 'Dễ', 'Vừa', 'Khó'][l.level]} · {LICK_PLACES[l.over]}{pins.includes(l.id) ? ' · đã ghim' : ''}</span>
+                  <span className="lk-meta">{['', tx('Dễ'), tx('Vừa'), tx('Khó')][l.level]} · {LICK_PLACES[l.over]}{pins.includes(l.id) ? tx(' · đã ghim') : ''}</span>
                 </button>
               </li>
             ))}
-            {!shown.length && <li className="muted small">Không có lick nào hợp bộ lọc.</li>}
+            {!shown.length && <li className="muted small">{tx('Không có lick nào hợp bộ lọc.')}</li>}
           </ul>
 
           <section className="lick-detail">
             <h2 className="h-small">{lick.title}</h2>
-            <p className="small muted">{LICK_PLACES[lick.over]} · nền: {lickDegrees(lick).map((d) => chordName((tonic + { I: 0, IV: 5, V: 7 }[d]) % 12, false, flats, true)).join(' → ')}</p>
+            <p className="small muted">{tx('{0} · nền: {1}', LICK_PLACES[lick.over], lickDegrees(lick).map((d) => chordName((tonic + { I: 0, IV: 5, V: 7 }[d]) % 12, false, flats, true)).join(' → '))}</p>
             <TabView parsed={lickParsed} flat={lickFlat} active={lickActive != null && lickActive >= 0 ? lickActive : null} size="m" showNames={settings.showNoteNames} nameStyle={settings.noteNames} harpType={harpType} harpKey={harpKey} />
             {lick.tip && <p className="small">{lick.tip}</p>}
             <div className="row gap wrap">
-              <button type="button" className={`chip${!p.opts.melody ? ' on' : ''}`} aria-pressed={!p.opts.melody} onClick={() => setOpts({ melody: !p.opts.melody })}>Tắt giai điệu, tôi tự {BRAND.verb}</button>
-              <button type="button" className={`chip${pins.includes(lick.id) ? ' on' : ''}`} aria-pressed={pins.includes(lick.id)} onClick={() => togglePin(lick.id)}>Dùng trong hỏi–đáp</button>
+              <button type="button" className={`chip${!p.opts.melody ? ' on' : ''}`} aria-pressed={!p.opts.melody} onClick={() => setOpts({ melody: !p.opts.melody })}>{tx('Tắt giai điệu, tôi tự {0}', BRAND.verb)}</button>
+              <button type="button" className={`chip${pins.includes(lick.id) ? ' on' : ''}`} aria-pressed={pins.includes(lick.id)} onClick={() => togglePin(lick.id)}>{tx('Dùng trong hỏi–đáp')}</button>
             </div>
-            <p className="small muted">Bấm phát: lick lặp liên tục trên nền nhạc. Nghe vài lượt, rồi tắt giai điệu và {BRAND.verb} theo.</p>
+            <p className="small muted">{tx('Bấm phát: lick lặp liên tục trên nền nhạc. Nghe vài lượt, rồi tắt giai điệu và {0} theo.', BRAND.verb)}</p>
           </section>
         </>
       )}
@@ -251,11 +252,11 @@ export default function Jam() {
     <div className="page page-jam">
       <header className="page-head">
         <div className="row gap center">
-          <Link to="/learn" className="icon-btn" aria-label="Về trang Học"><Icon name="back" /></Link>
-          <h1>Tập ngẫu hứng</h1>
+          <Link to="/learn" className="icon-btn" aria-label={tx('Về trang Học')}><Icon name="back" /></Link>
+          <h1>{tx('Tập ngẫu hứng')}</h1>
         </div>
         {!IS_KALIMBA_APP && (
-          <div className="segmented" role="tablist" aria-label="Thể loại">
+          <div className="segmented" role="tablist" aria-label={tx('Thể loại')}>
             <button type="button" role="tab" aria-selected={genre === 'blues'} className={genre === 'blues' ? 'on' : ''} onClick={() => pick('blues')}>Blues</button>
             <button type="button" role="tab" aria-selected={genre === 'jazz'} className={genre === 'jazz' ? 'on' : ''} onClick={() => pick('jazz')}>Jazz</button>
           </div>

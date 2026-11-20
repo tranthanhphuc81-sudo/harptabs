@@ -4,6 +4,7 @@
  *  - Giữ nốt dài: thổi / kéo một nốt thật đều — đo giữ được bao lâu và cao độ chao bao nhiêu (sáo, kèn, pianica)
  */
 import { HarpNote, HarpType, isDanBau, isFretted, isKalimba, isOrgan, isTranh } from './harp';
+import { t as tx } from './i18n';
 
 /** nhạc cụ có bài giữ nốt dài: nhạc cụ hơi (kèn, sáo, pianica) — đàn dây gảy và kalimba nốt tắt dần nên không tập kiểu này */
 export const canHoldNote = (t: HarpType) => !isFretted(t) && !isKalimba(t) && !isTranh(t) && !isDanBau(t) && !isOrgan(t);
@@ -144,8 +145,8 @@ export class NoteHold {
 
 /** nhận xét một lần giữ nốt */
 export function holdGrade(r: HoldResult): { ok: boolean; text: string } {
-  const steady = r.spread <= 8 ? 'rất vững' : r.spread <= 15 ? 'vững' : 'còn chao';
-  const tune = Math.abs(r.drift) <= 15 ? 'đúng cao độ' : r.drift < 0 ? `non ${-r.drift} cent (hơi yếu hoặc chưa bịt kín)` : `già ${r.drift} cent (hơi mạnh quá)`;
+  const steady = r.spread <= 8 ? tx('rất vững') : r.spread <= 15 ? tx('vững') : tx('còn chao');
+  const tune = Math.abs(r.drift) <= 15 ? tx('đúng cao độ') : r.drift < 0 ? tx('non {0} cent (hơi yếu hoặc chưa bịt kín)', -r.drift) : tx('già {0} cent (hơi mạnh quá)', r.drift);
   const ok = r.secs >= HOLD_GOAL && r.spread <= 15 && Math.abs(r.drift) <= 25;
-  return { ok, text: `Giữ ${r.secs} giây, ${steady} (chao ±${r.spread} cent), ${tune}.` };
+  return { ok, text: tx('Giữ {0} giây, {1} (chao ±{2} cent), {3}.', r.secs, steady, r.spread, tune) };
 }

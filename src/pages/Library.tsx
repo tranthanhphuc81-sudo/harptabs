@@ -13,6 +13,7 @@ import { KeyPlate } from '../components/KeySelect';
 import { useAppState } from '../state';
 import { useScrollHint } from '../components/useScrollHint';
 import { PATTERNS } from '../audio/patterns';
+import { t as tx } from '../lib/i18n';
 
 type Sort = 'recent' | 'title' | 'title-desc' | 'practiced';
 const SORTS: Sort[] = ['recent', 'title', 'title-desc', 'practiced'];
@@ -26,7 +27,7 @@ function loadSort(): Sort {
   } catch { return 'title'; }
 }
 
-const DIFF = ['', 'Dễ', 'Vừa', 'Khó'];
+const DIFF = ['', tx('Dễ'), tx('Vừa'), tx('Khó')];
 
 /** bộ lọc + vị trí cuộn lúc mở một bài — đọc lại khi quay về thư viện bằng nút quay lại (chỉ trong phiên này) */
 interface LibrarySnap { q: string; fav: boolean; key: string; kind: '' | 'diatonic' | 'chromatic' | 'tremolo'; diff: number; itype: HarpType | ''; y: number }
@@ -39,8 +40,8 @@ function writeSnap(v: LibrarySnap) {
 }
 
 function styleLabel(s: Song['style']) {
-  if (s === 'none') return 'Không beat';
-  if (s === 'metronome') return 'Đếm nhịp';
+  if (s === 'none') return tx('Không beat');
+  if (s === 'metronome') return tx('Đếm nhịp');
   return PATTERNS[s]?.label ?? s;
 }
 
@@ -101,7 +102,7 @@ export default function Library() {
     if (!confirmDel) { setConfirmDel(true); setTimeout(() => setConfirmDel(false), 4000); return; }
     const n = picked.size;
     await deleteSongs([...picked]);
-    toast(`Đã xoá ${n} bài`);
+    toast(tx('Đã xoá {0} bài', n));
     stopSelecting();
   };
 
@@ -127,9 +128,9 @@ export default function Library() {
     if (!f) return;
     try {
       const r = await importBackup(JSON.parse(await f.text()));
-      toast(`Đã nhập ${r.added} bài mới, cập nhật ${r.updated} bài${r.practice ? '; đã khôi phục nhật ký luyện tập' : ''}`);
+      toast(tx('Đã nhập {0} bài mới, cập nhật {1} bài{2}', r.added, r.updated, r.practice ? tx('; đã khôi phục nhật ký luyện tập') : ''));
     } catch (e) {
-      toast((e as Error).message || 'File không hợp lệ');
+      toast((e as Error).message || tx('File không hợp lệ'));
     } finally {
       if (fileRef.current) fileRef.current.value = '';
     }
@@ -139,21 +140,21 @@ export default function Library() {
     <div className="page">
       <header className="page-head">
         <div>
-          <h1>Bài hát</h1>
-          <p className="muted">{!songs ? 'Đang tải…' : filtering ? `${list.length} / ${songs.length} bài khớp bộ lọc` : `${songs.length} bài trong máy`}</p>
+          <h1>{tx('Bài hát')}</h1>
+          <p className="muted">{!songs ? tx('Đang tải…') : filtering ? tx('{0} / {1} bài khớp bộ lọc', list.length, songs.length) : tx('{0} bài trong máy', songs.length)}</p>
         </div>
         <div className="head-actions">
           <ThemeToggle className="btn btn-ghost theme-btn" />
           {!!songs?.length && (
             <button type="button" className={`btn btn-ghost${selecting ? ' on' : ''}`} aria-pressed={selecting} onClick={() => (selecting ? stopSelecting() : setSelecting(true))}>
-              <Icon name="check" size={18} /> <span className="btn-label">{selecting ? 'Xong' : 'Chọn'}</span>
+              <Icon name="check" size={18} /> <span className="btn-label">{selecting ? 'Xong' : tx('Chọn')}</span>
             </button>
           )}
-          <button type="button" className="btn btn-ghost" title="Nhập file sao lưu (.json)" onClick={() => fileRef.current?.click()}>
-            <Icon name="upload" size={18} /> <span className="btn-label">Nhập file</span>
+          <button type="button" className="btn btn-ghost" title={tx('Nhập file sao lưu (.json)')} onClick={() => fileRef.current?.click()}>
+            <Icon name="upload" size={18} /> <span className="btn-label">{tx('Nhập file')}</span>
           </button>
           <button type="button" className="btn btn-primary" onClick={() => nav('/new')}>
-            <Icon name="plus" size={18} /> Thêm bài
+            <Icon name="plus" size={18} /> {tx('Thêm bài')}
           </button>
           <input ref={fileRef} type="file" accept=".json,application/json" hidden onChange={(e) => onImport(e.target.files?.[0])} />
         </div>
@@ -164,46 +165,46 @@ export default function Library() {
       <div className="filters">
         <label className="search">
           <Icon name="search" size={18} />
-          <span className="sr-only">Tìm bài</span>
-          <input type="search" placeholder="Tìm theo tên, tác giả, thẻ" value={q} onChange={(e) => setQ(e.target.value)} />
+          <span className="sr-only">{tx('Tìm bài')}</span>
+          <input type="search" placeholder={tx('Tìm theo tên, tác giả, thẻ')} value={q} onChange={(e) => setQ(e.target.value)} />
         </label>
         <div className="filter-row scroll-row" ref={filterRef}>
           <button type="button" className={`chip${fav ? ' on' : ''}`} aria-pressed={fav} onClick={() => setFav(!fav)}>
-            <Icon name="star" size={15} filled={fav} /> Yêu thích
+            <Icon name="star" size={15} filled={fav} /> {tx('Yêu thích')}
           </button>
           {IS_HARMONICA_APP && <>
-          <select aria-label="Lọc theo loại kèn" value={kind} onChange={(e) => setKind(e.target.value as typeof kind)} className="chip-select">
-            <option value="">Mọi loại kèn</option>
+          <select aria-label={tx('Lọc theo loại kèn')} value={kind} onChange={(e) => setKind(e.target.value as typeof kind)} className="chip-select">
+            <option value="">{tx('Mọi loại kèn')}</option>
             <option value="diatonic">Diatonic</option>
             <option value="chromatic">Chromatic</option>
             <option value="tremolo">Tremolo</option>
           </select>
-          <select aria-label="Lọc theo kèn" value={key} onChange={(e) => setKey(e.target.value)} className="chip-select">
-            <option value="">Mọi kèn</option>
-            {HARP_KEYS.map((k) => <option key={k} value={k}>Kèn {k}</option>)}
+          <select aria-label={tx('Lọc theo kèn')} value={key} onChange={(e) => setKey(e.target.value)} className="chip-select">
+            <option value="">{tx('Mọi kèn')}</option>
+            {HARP_KEYS.map((k) => <option key={k} value={k}>{tx('Kèn {0}', k)}</option>)}
           </select>
           </>}
           {types.length > 0 && (
-            <select aria-label={`Lọc theo loại ${BRAND.noun}`} value={itype} onChange={(e) => setItype(e.target.value as HarpType | '')} className={`chip-select${itype ? ' on' : ''}`}>
-              <option value="">Mọi loại {BRAND.noun}</option>
+            <select aria-label={tx('Lọc theo loại {0}', BRAND.noun)} value={itype} onChange={(e) => setItype(e.target.value as HarpType | '')} className={`chip-select${itype ? ' on' : ''}`}>
+              <option value="">{tx('Mọi loại {0}', BRAND.noun)}</option>
               {types.map(([t, n]) => <option key={t} value={t}>{HARP_TYPE_LABEL[t]} ({n})</option>)}
             </select>
           )}
-          <select aria-label="Lọc theo độ khó" value={diff} onChange={(e) => setDiff(Number(e.target.value))} className="chip-select">
-            <option value={0}>Mọi độ khó</option>
-            <option value={1}>Dễ</option>
-            <option value={2}>Vừa</option>
-            <option value={3}>Khó</option>
+          <select aria-label={tx('Lọc theo độ khó')} value={diff} onChange={(e) => setDiff(Number(e.target.value))} className="chip-select">
+            <option value={0}>{tx('Mọi độ khó')}</option>
+            <option value={1}>{tx('Dễ')}</option>
+            <option value={2}>{tx('Vừa')}</option>
+            <option value={3}>{tx('Khó')}</option>
           </select>
-          <select aria-label="Sắp xếp" value={sort} onChange={(e) => setSort(e.target.value as Sort)} className="chip-select">
-            <option value="recent">Mới sửa</option>
-            <option value="practiced">Mới tập</option>
-            <option value="title">Tên A–Z</option>
-            <option value="title-desc">Tên Z–A</option>
+          <select aria-label={tx('Sắp xếp')} value={sort} onChange={(e) => setSort(e.target.value as Sort)} className="chip-select">
+            <option value="recent">{tx('Mới sửa')}</option>
+            <option value="practiced">{tx('Mới tập')}</option>
+            <option value="title">{tx('Tên A–Z')}</option>
+            <option value="title-desc">{tx('Tên Z–A')}</option>
           </select>
           {filtering && (
             <button type="button" className="chip chip-clear" onClick={clearFilters}>
-              <Icon name="close" size={14} /> Bỏ lọc
+              <Icon name="close" size={14} /> {tx('Bỏ lọc')}
             </button>
           )}
         </div>
@@ -213,16 +214,16 @@ export default function Library() {
         <div className="empty">
           {songs.length === 0 ? (
             <>
-              <p>Thư viện đang trống. Thêm bài đầu tiên bằng tay, hoặc mở file nhạc / chụp khuông nhạc để app chuyển thành tab.</p>
+              <p>{tx('Thư viện đang trống. Thêm bài đầu tiên bằng tay, hoặc mở file nhạc / chụp khuông nhạc để app chuyển thành tab.')}</p>
               <div className="row gap">
-                <Link to="/new" className="btn btn-primary">Thêm bài</Link>
-                <Link to="/ai" className="btn btn-ghost">Nhập bài</Link>
+                <Link to="/new" className="btn btn-primary">{tx('Thêm bài')}</Link>
+                <Link to="/ai" className="btn btn-ghost">{tx('Nhập bài')}</Link>
               </div>
             </>
           ) : (
             <div className="row gap wrap">
-              <p>Không có bài nào khớp bộ lọc.</p>
-              <button type="button" className="btn btn-ghost" onClick={clearFilters}>Bỏ lọc</button>
+              <p>{tx('Không có bài nào khớp bộ lọc.')}</p>
+              <button type="button" className="btn btn-ghost" onClick={clearFilters}>{tx('Bỏ lọc')}</button>
             </div>
           )}
         </div>
@@ -238,8 +239,8 @@ export default function Library() {
               <KeyPlate k={s.harpKey} type={s.harpType} />
               <span className="sr-body">
                 <span className="sr-title">
-                  {s.title || 'Chưa đặt tên'}
-                  {s.favorite && <Icon name="star" size={14} filled label="Yêu thích" />}
+                  {s.title || tx('Chưa đặt tên')}
+                  {s.favorite && <Icon name="star" size={14} filled label={tx('Yêu thích')} />}
                 </span>
                 {s.artist && <span className="sr-artist">{s.artist}</span>}
                 <span className="sr-meta">
@@ -249,7 +250,7 @@ export default function Library() {
                   <span>{styleLabel(s.style)}</span>
                   {isChromatic(s.harpType) && <span>Chromatic</span>}
                   {isTremolo(s.harpType) && <span>Tremolo</span>}
-                  {!isChromatic(s.harpType) && !isTremolo(s.harpType) && s.position && s.position > 1 && <span>Vị trí {s.position}</span>}
+                  {!isChromatic(s.harpType) && !isTremolo(s.harpType) && s.position && s.position > 1 && <span>{tx('Vị trí {0}', s.position)}</span>}
                 </span>
               </span>
             </Link>
@@ -258,13 +259,13 @@ export default function Library() {
       </ul>
 
       {selecting && (
-        <div className="select-bar" role="toolbar" aria-label="Xoá bài đã chọn">
-          <span className="grow">Đã chọn <strong>{picked.size}</strong> bài</span>
+        <div className="select-bar" role="toolbar" aria-label={tx('Xoá bài đã chọn')}>
+          <span className="grow">{tx('Đã chọn')} <strong>{picked.size}</strong> {tx('bài')}</span>
           <button type="button" className="btn btn-ghost" onClick={() => setPicked(picked.size === list.length ? new Set() : new Set(list.map((s) => s.id)))}>
-            {picked.size === list.length && list.length ? 'Bỏ chọn' : 'Chọn tất cả'}
+            {picked.size === list.length && list.length ? tx('Bỏ chọn') : tx('Chọn tất cả')}
           </button>
           <button type="button" className="btn btn-danger" disabled={!picked.size} onClick={removePicked}>
-            <Icon name="trash" size={18} /> {confirmDel ? `Bấm lần nữa để xoá ${picked.size} bài` : `Xoá ${picked.size || ''} bài`}
+            <Icon name="trash" size={18} /> {confirmDel ? tx('Bấm lần nữa để xoá {0} bài', picked.size) : tx('Xoá {0} bài', picked.size || '')}
           </button>
         </div>
       )}

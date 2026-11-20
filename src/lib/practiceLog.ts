@@ -3,28 +3,29 @@
  * Lưu trong máy (localStorage) — mỗi điện thoại một nhật ký riêng.
  */
 import { useEffect } from 'react';
+import { t } from './i18n';
 
 export type Activity = 'bai-hat' | 'ngau-hung' | 'nghe-dap' | 'nhip' | 'cao-do' | 'hop-am' | 'boi-am';
 
 export const ACTIVITY_LABEL: Record<Activity, string> = {
-  'bai-hat': 'Chơi theo bài',
-  'ngau-hung': 'Ngẫu hứng',
-  'nghe-dap': 'Nghe – đáp',
-  'nhip': 'Tập nhịp',
-  'cao-do': 'Tập cao độ',
-  'hop-am': 'Tập hợp âm',
-  'boi-am': 'Bồi âm, nắn cần',
+  'bai-hat': t('Chơi theo bài'),
+  'ngau-hung': t('Ngẫu hứng'),
+  'nghe-dap': t('Nghe – đáp'),
+  'nhip': t('Tập nhịp'),
+  'cao-do': t('Tập cao độ'),
+  'hop-am': t('Tập hợp âm'),
+  'boi-am': t('Bồi âm, nắn cần'),
 };
 
 /** kết quả bài tập: rate = tỉ lệ đúng (ghi 1 / 0), avg = trung bình (giây…), count = đếm số lần đạt */
 export const METRICS = {
-  'nghe-dap': { label: 'Nghe – đáp đúng', kind: 'rate' },
-  'nhip': { label: 'Gõ đúng nhịp', kind: 'rate' },
-  'hop-am': { label: 'Quạt hợp âm sạch', kind: 'rate' },
-  'boi-am': { label: 'Bồi âm đúng', kind: 'rate' },
-  'giu-not': { label: 'Giữ nốt dài', kind: 'avg', unit: 'giây' },
-  'bend': { label: 'Bend / nhấn đạt', kind: 'count', unit: 'lần' },
-  'nan-can': { label: 'Nắn cần đạt', kind: 'count', unit: 'lần' },
+  'nghe-dap': { label: t('Nghe – đáp đúng'), kind: 'rate' },
+  'nhip': { label: t('Gõ đúng nhịp'), kind: 'rate' },
+  'hop-am': { label: t('Quạt hợp âm sạch'), kind: 'rate' },
+  'boi-am': { label: t('Bồi âm đúng'), kind: 'rate' },
+  'giu-not': { label: t('Giữ nốt dài'), kind: 'avg', unit: t('giây') },
+  'bend': { label: t('Bend / nhấn đạt'), kind: 'count', unit: t('lần') },
+  'nan-can': { label: t('Nắn cần đạt'), kind: 'count', unit: t('lần') },
 } as const;
 export type Metric = keyof typeof METRICS;
 

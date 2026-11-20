@@ -5,6 +5,7 @@
 import { BRAND } from '../appConfig';
 import { sanitizeSong } from './db';
 import type { Song } from './types';
+import { t } from './i18n';
 
 export const APP_URL = BRAND.url;
 /** link dài quá thì một số app nhắn tin cắt mất */
@@ -65,8 +66,8 @@ export async function shareLink(song: Song): Promise<string> {
 export async function shareSong(song: Song): Promise<{ status: 'shared' | 'copied' | 'cancelled' | 'too-long' | 'failed'; url: string; text: string }> {
   const url = await shareLink(song);
   const done = (status: 'shared' | 'copied' | 'cancelled' | 'too-long' | 'failed') => ({ status, url, text });
-  const title = song.title || `Bài ${BRAND.instrument}`;
-  const text = `🎵 ${title}${song.artist ? ` — ${song.artist}` : ''} · tab ${BRAND.instrument}. Bấm link để mở trong ${BRAND.name}:`;
+  const title = song.title || t('Bài {0}', BRAND.instrument);
+  const text = t('🎵 {0}{1} · tab {2}. Bấm link để mở trong {3}:', title, song.artist ? ` — ${song.artist}` : '', BRAND.instrument, BRAND.name);
   if (url.length > MAX_LINK) return done('too-long');
   if (typeof navigator !== 'undefined' && navigator.share) {
     try {

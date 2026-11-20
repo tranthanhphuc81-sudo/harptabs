@@ -2,14 +2,15 @@ import { useEffect } from 'react';
 import { APP, BRAND, TAB_SAMPLE } from '../appConfig';
 import { useScrollHint } from './useScrollHint';
 import { APP_PALETTE, PALETTES, PaletteId, ThemeMode } from '../lib/themes';
+import { t } from '../lib/i18n';
 
 // bảng màu riêng của nhạc cụ này đứng đầu
 const ORDERED = [...PALETTES].sort((a, b) => Number(b.id === APP_PALETTE[APP]) - Number(a.id === APP_PALETTE[APP]));
 
 const MODES: { value: ThemeMode; label: string }[] = [
-  { value: 'system', label: 'Theo máy' },
-  { value: 'light', label: 'Sáng' },
-  { value: 'dark', label: 'Tối' },
+  { value: 'system', label: t('Theo máy') },
+  { value: 'light', label: t('Sáng') },
+  { value: 'dark', label: t('Tối') },
 ];
 
 /** Một nửa ô xem trước: dùng đúng màu thật của bảng (CSS dựng từ lib/themes.ts) */
@@ -42,14 +43,14 @@ export function ThemePicker({ palette, mode, onPalette, onMode }: {
   }, []);
   return (
     <div className="theme-picker">
-      <div className="segmented" role="radiogroup" aria-label="Sáng hay tối">
+      <div className="segmented" role="radiogroup" aria-label={t('Sáng hay tối')}>
         {MODES.map((m) => (
           <button key={m.value} type="button" role="radio" aria-checked={mode === m.value} className={mode === m.value ? 'on' : ''} onClick={() => onMode(m.value)}>
             {m.label}
           </button>
         ))}
       </div>
-      <div className="theme-grid scroll-row" ref={gridRef} role="radiogroup" aria-label="Bảng màu">
+      <div className="theme-grid scroll-row" ref={gridRef} role="radiogroup" aria-label={t('Bảng màu')}>
         {ORDERED.map((p) => (
           <button key={p.id} type="button" role="radio" aria-checked={palette === p.id} className={`theme-card${palette === p.id ? ' on' : ''}`} onClick={() => onPalette(p.id)}>
             <span className="tc-preview" aria-hidden="true">
@@ -57,7 +58,7 @@ export function ThemePicker({ palette, mode, onPalette, onMode }: {
               <Half id={p.id} mode="dark" />
             </span>
             <span className="tc-text">
-              <span className="tc-name">{p.name}{p.id === APP_PALETTE[APP] && <span className="tc-default"> · hợp {BRAND.noun}</span>}</span>
+              <span className="tc-name">{p.name}{p.id === APP_PALETTE[APP] && <span className="tc-default"> {t('· hợp {0}', BRAND.noun)}</span>}</span>
               <span className="tc-hint">{p.hint}</span>
             </span>
           </button>

@@ -9,6 +9,7 @@ import { BauIcon } from './DanBau';
 import { parseBauFingers } from '../data/danbau';
 import { parseTranhFingers } from '../data/tranh';
 import { TokenText } from './TabView';
+import { t } from '../lib/i18n';
 
 /**
  * Hình thế bấm: sáo dọc 8 lỗ = ngón cái (lỗ sau, lệch trái) rồi 7 lỗ trước — 3 lỗ tay trái, khoảng hở, 4 lỗ tay phải;
@@ -107,7 +108,7 @@ export function KalimbaChart({ harpKey = 'C', harpType = 'kalimba17', highlight 
   const layout = [...harpLayout(harpKey, harpType)].sort((a, b) => a.hole - b.hole);
   const center = Math.floor(layout.length / 2);
   return (
-    <div className="kalimba-chart" role="list" aria-label="Sơ đồ kalimba">
+    <div className="kalimba-chart" role="list" aria-label={t('Sơ đồ kalimba')}>
       {layout.map((n) => (
         <button key={n.token} type="button" role="listitem" className={`kc-tine${highlight.includes(n.token) ? ' on' : ''}`}
           style={{ height: `${100 - Math.abs(n.hole - 1 - center) * 4.5}%` }}
@@ -132,11 +133,11 @@ export function RecorderChart({ harpType, harpKey = 'C', highlight = [], nameSty
   const layout = harpLayout(fingeringKey(harpType, harpKey), harpType);
   const written = (midi: number) => (harpType === 'recorderSoprano' ? midi - 12 : midi);
   return (
-    <div className="recorder-chart" role="list" aria-label="Bảng thế bấm sáo">
+    <div className="recorder-chart" role="list" aria-label={t('Bảng thế bấm sáo')}>
       {layout.map((n) => (
         <button key={n.token} type="button" role="listitem" className={`rc-note${highlight.includes(n.token) ? ' on' : ''} rc-${n.technique}`}
           onClick={interactive ? () => previewNote(n.midi) : undefined} tabIndex={interactive ? 0 : -1}
-          aria-label={`${midiToName(written(n.midi), nameStyle)}${n.technique === 'fingered' ? '' : `, ${n.technique === 'halfHole' ? 'bịt nửa lỗ' : n.technique === 'crossFingered' ? 'thế chéo' : 'quãng cao'}`}`}>
+          aria-label={`${midiToName(written(n.midi), nameStyle)}${n.technique === 'fingered' ? '' : `, ${n.technique === 'halfHole' ? t('bịt nửa lỗ') : n.technique === 'crossFingered' ? t('thế chéo') : t('quãng cao')}`}`}>
           <FingeringIcon fingers={n.fingers!} size="s" />
           <span className="rc-name">{midiToName(written(n.midi), nameStyle)}</span>
         </button>

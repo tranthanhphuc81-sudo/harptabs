@@ -14,6 +14,7 @@
  * Mọi toạ độ là trên ảnh đã chuẩn hoá (khoảng cách dòng kẻ ≈ TARGET_SPACE px).
  */
 import type { AiTranscription } from '../../shared/ai';
+import { t as tx } from './i18n';
 
 export const TARGET_SPACE = 13.5;
 
@@ -1878,13 +1879,13 @@ export function toTranscription(
     last = n.rest ? null : e;
   }
   return {
-    title: opts.title || 'Bài quét',
+    title: opts.title || tx('Bài quét'),
     songKey: keyName(opts.keySig),
     tempo: opts.tempo,
     timeSignature: opts.timeSig,
     pickupBeats: opts.pickupBeats ?? 0,
     confidence: 1,
-    warnings: again ? [`Đã mở dấu nhắc lại: ${again} nốt được chơi thêm lần hai (lời lần hai để trống).`] : [],
-    sections: [{ name: 'Đoạn 1', lines: lines.filter((l) => l.notes.length).map((l) => ({ notes: l.notes })) }],
+    warnings: again ? [tx('Đã mở dấu nhắc lại: {0} nốt được chơi thêm lần hai (lời lần hai để trống).', again)] : [],
+    sections: [{ name: tx('Đoạn 1'), lines: lines.filter((l) => l.notes.length).map((l) => ({ notes: l.notes })) }],
   };
 }

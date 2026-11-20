@@ -7,6 +7,7 @@ import { HARP_TYPES, normalizeKey } from './harp';
 import { AiLogEntry, Backing, DEFAULT_SETTINGS, MidiSource, Recording, Settings, Song } from './types';
 import type { SongScan } from './scanStore';
 import { BeatStyle, PATTERNS } from '../audio/patterns';
+import { t as tx } from './i18n';
 
 interface KV { key: string; value: unknown }
 
@@ -211,7 +212,7 @@ function sanitizeChords(v: unknown): Record<string, string> | undefined {
 export async function importBackup(json: unknown): Promise<{ added: number; updated: number; skipped: number; practice: boolean }> {
   const obj = json as Partial<BackupFile>;
   if (!obj || obj.app !== 'harptabs' || !Array.isArray(obj.songs)) {
-    throw new Error(`File không đúng định dạng sao lưu của ${BRAND.name}`);
+    throw new Error(tx('File không đúng định dạng sao lưu của {0}', BRAND.name));
   }
   let added = 0, updated = 0, skipped = 0;
   await db.transaction('rw', db.songs, async () => {

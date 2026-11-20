@@ -5,6 +5,7 @@
 import { audio, backingBus } from './engine';
 import { heardTime } from './latency';
 import { beatAt, secAt, TempoMap } from '../lib/tempoMap';
+import { t } from '../lib/i18n';
 
 /** phát sớm hơn câu được chọn chừng này (giây) cho kịp vào */
 const LEAD_IN = 1.5;
@@ -64,6 +65,6 @@ export async function decodeBacking(blob: Blob): Promise<AudioBuffer> {
   try {
     return await audio().decodeAudioData(await blob.arrayBuffer());
   } catch {
-    throw new Error('Không đọc được file nhạc này — thử file .mp3, .m4a hoặc .wav');
+    throw new Error(t('Không đọc được file nhạc này — thử file .mp3, .m4a hoặc .wav'));
   }
 }

@@ -14,6 +14,7 @@ import { useWakeLock } from '../components/useWakeLock';
 import { HarpKey, HarpType, harpLayout, isDanBau, keyOffset, isFretted, isTranh, midiToHz, midiToName } from '../lib/harp';
 import { BendDrill, bendDrills, canHoldNote, BendHold, bendStatus, BendStatus, HOLD_GOAL, HoldResult, holdGrade, NoteHold } from '../lib/pitchPractice';
 import { useAppState } from '../state';
+import { t as tx } from '../lib/i18n';
 
 /**
  * Tập cao độ với micro: bend kèn harmonica / nhấn dây đàn tranh (thước cao độ báo thiếu – đúng – quá),
@@ -25,20 +26,20 @@ const canBend = (t: HarpType, k: HarpKey) => bendDrills(harpLayout(k, t), t, key
 
 const BEST_KEY = 'harptabs.pitchPractice';
 const loadBest = (): Record<string, number> => { try { return JSON.parse(localStorage.getItem(BEST_KEY) ?? '{}'); } catch { return {}; } };
-const STATUS_LABEL: Record<BendStatus, string> = { none: 'Đang nghe…', under: 'Thiếu', ok: 'Đúng', over: 'Quá' };
+const STATUS_LABEL: Record<BendStatus, string> = { none: tx('Đang nghe…'), under: tx('Thiếu'), ok: tx('Đúng'), over: tx('Quá') };
 
 function bendAdvice(status: BendStatus, d: BendDrill, type: HarpType): string {
   const tranh = isTranh(type);
   const draw = d.token.startsWith('-');
   switch (status) {
-    case 'none': return tranh ? `Gảy dây ${d.baseToken} rồi tay trái nhấn dây (phía trái nhạn).` : `${draw ? 'Hút' : 'Thổi'} nốt ${d.baseToken} cho sạch rồi bend xuống.`;
-    case 'ok': return 'Đúng rồi — giữ yên!';
+    case 'none': return tranh ? tx('Gảy dây {0} rồi tay trái nhấn dây (phía trái nhạn).', d.baseToken) : tx('{0} nốt {1} cho sạch rồi bend xuống.', draw ? tx('Hút') : tx('Thổi'), d.baseToken);
+    case 'ok': return tx('Đúng rồi — giữ yên!');
     case 'under':
-      if (tranh) return 'Thiếu: nhấn thêm một chút.';
-      return draw ? 'Bend chưa đủ sâu: kéo lưỡi về sau thêm (nói "i" → "u"), hạ hàm, hơi tụt xuống họng. Đừng hút mạnh hơn.' : 'Bend chưa đủ: đẩy lưỡi lên gần răng cửa, nén hơi thêm. Đừng thổi mạnh hơn.';
+      if (tranh) return tx('Thiếu: nhấn thêm một chút.');
+      return draw ? tx('Bend chưa đủ sâu: kéo lưỡi về sau thêm (nói "i" → "u"), hạ hàm, hơi tụt xuống họng. Đừng hút mạnh hơn.') : tx('Bend chưa đủ: đẩy lưỡi lên gần răng cửa, nén hơi thêm. Đừng thổi mạnh hơn.');
     case 'over':
-      if (tranh) return 'Quá tay: nhấn nhẹ lại.';
-      return 'Bend quá sâu: nhả bớt, lưỡi nhích về lại một chút.';
+      if (tranh) return tx('Quá tay: nhấn nhẹ lại.');
+      return tx('Bend quá sâu: nhả bớt, lưỡi nhích về lại một chút.');
   }
 }
 
@@ -136,24 +137,24 @@ export default function PitchPractice() {
     setErr(null);
     const m = new MicPitch({ minHz: lowHz });
     m.onReading = (r) => frameRef.current(performance.now() / 1000, r ? r.midi : null);
-    try { await m.start(); mic.current = m; setOn(true); } catch (e) { setErr(e instanceof Error ? e.message : 'Không mở được micro'); }
+    try { await m.start(); mic.current = m; setOn(true); } catch (e) { setErr(e instanceof Error ? e.message : tx('Không mở được micro')); }
   };
   const stop = () => { mic.current?.stop(); mic.current = null; setOn(false); setMidi(null); setLive(null); };
   useEffect(() => { if (mic.current) { stop(); void start(); } }, [lowHz]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const name = (m: number) => midiToName(m, settings.noteNames, false);
   const tranh = isTranh(type);
-  const bendWord = tranh ? 'Nhấn' : 'Bend';
+  const bendWord = tranh ? tx('Nhấn') : 'Bend';
   const unsupported = !hasBend && !hasHold;
 
   return (
     <div className="page pitch-practice">
       <header className="page-head">
         <div>
-          <h1>{curMode === 'bend' ? `Tập ${bendWord.toLowerCase()}` : 'Tập giữ nốt dài'}</h1>
+          <h1>{curMode === 'bend' ? tx('Tập {0}', bendWord.toLowerCase()) : tx('Tập giữ nốt dài')}</h1>
           <p className="muted">{curMode === 'bend'
-            ? `Thước cao độ cho thấy đang thiếu, đủ hay quá so với nốt cần ra. Giữ đúng nửa giây là một lần đạt.`
-            : `Chọn một nốt, ${tranh ? 'gảy' : 'thổi'} thật đều và lâu nhất có thể. App đo giữ được bao lâu, cao độ có chao không. Mục tiêu: ${HOLD_GOAL} giây, chao dưới ±15 cent.`}</p>
+            ? tx('Thước cao độ cho thấy đang thiếu, đủ hay quá so với nốt cần ra. Giữ đúng nửa giây là một lần đạt.')
+            : tx('Chọn một nốt, {0} thật đều và lâu nhất có thể. App đo giữ được bao lâu, cao độ có chao không. Mục tiêu: {1} giây, chao dưới ±15 cent.', tranh ? tx('gảy') : tx('thổi'), HOLD_GOAL)}</p>
         </div>
       </header>
 
@@ -161,26 +162,26 @@ export default function PitchPractice() {
         <HarpTypeSelect value={type} onChange={(t) => { setType(t); setDrillIdx(0); setHoldIdx(null); }} id="pp-type" />
         <KeySelect value={key} onChange={(k) => k !== 'auto' && setKey(k as HarpKey)} id="pp-key" harpType={type} />
         {!unsupported && <button type="button" className={`btn btn-lg ${on ? 'btn-ghost' : 'btn-primary'}`} onClick={on ? stop : start}>
-          <Icon name="mic" size={20} /> {on ? 'Tắt micro' : 'Bật micro'}
+          <Icon name="mic" size={20} /> {on ? tx('Tắt micro') : tx('Bật micro')}
         </button>}
       </div>
       {err && <div className="alert error" role="alert">{err}</div>}
 
       {unsupported && <div className="card">
-        {isDanBau(type) ? <p>Đàn bầu có trang tập riêng: <Link to="/tap-boi-am">Tập bồi âm, nắn cần</Link>.</p>
-          : isFretted(type) ? <p>Guitar / ukulele: dùng <Link to="/tap-hop-am">Tập hợp âm</Link>.</p>
-          : <p>Loại nhạc cụ này không có bài tập cao độ (nốt cố định). Chọn loại khác ở trên.</p>}
+        {isDanBau(type) ? <p>{tx('Đàn bầu có trang tập riêng:')} <Link to="/tap-boi-am">{tx('Tập bồi âm, nắn cần')}</Link>.</p>
+          : isFretted(type) ? <p>{tx('Guitar / ukulele: dùng')} <Link to="/tap-hop-am">{tx('Tập hợp âm')}</Link>.</p>
+          : <p>{tx('Loại nhạc cụ này không có bài tập cao độ (nốt cố định). Chọn loại khác ở trên.')}</p>}
       </div>}
 
       {hasBend && hasHold && (
-        <div className="segmented bp-mode" role="tablist" aria-label="Bài tập">
+        <div className="segmented bp-mode" role="tablist" aria-label={tx('Bài tập')}>
           <button type="button" role="tab" aria-selected={curMode === 'bend'} className={curMode === 'bend' ? 'on' : ''} onClick={() => setMode('bend')}>{bendWord}</button>
-          <button type="button" role="tab" aria-selected={curMode === 'hold'} className={curMode === 'hold' ? 'on' : ''} onClick={() => setMode('hold')}>Giữ nốt dài</button>
+          <button type="button" role="tab" aria-selected={curMode === 'hold'} className={curMode === 'hold' ? 'on' : ''} onClick={() => setMode('hold')}>{tx('Giữ nốt dài')}</button>
         </div>
       )}
 
       {curMode === 'bend' && d && <>
-        <div className="segmented bp-nodes pp-drills" role="tablist" aria-label="Nốt cần tập">
+        <div className="segmented bp-nodes pp-drills" role="tablist" aria-label={tx('Nốt cần tập')}>
           {drills.map((x, i) => (
             <button key={x.token} type="button" role="tab" aria-selected={x === d} className={x === d ? 'on' : ''} onClick={() => setDrillIdx(i)}>
               <span className="bp-frac"><TokenText token={x.token} /></span>
@@ -190,10 +191,10 @@ export default function PitchPractice() {
         </div>
         <section className="bp-target">
           <p>
-            {tranh ? <>Gảy dây <strong>{d.baseToken}</strong> ({name(d.base)}), tay trái nhấn cho cao lên {d.bend === 1 ? 'nửa cung' : 'một cung'} tới <strong>{name(d.target)}</strong>.</>
-              : <>{d.token.startsWith('-') ? 'Hút' : 'Thổi'} <strong>{d.baseToken}</strong> ({name(d.base)}), rồi bend xuống {-d.bend === 1 ? 'nửa cung' : -d.bend === 2 ? 'một cung' : 'một cung rưỡi'} tới <strong>{name(d.target)}</strong>.</>}
+            {tranh ? <>{tx('Gảy dây')} <strong>{d.baseToken}</strong> ({name(d.base)}{tx('), tay trái nhấn cho cao lên')} {d.bend === 1 ? tx('nửa cung') : tx('một cung')} {tx('tới')} <strong>{name(d.target)}</strong>.</>
+              : <>{d.token.startsWith('-') ? tx('Hút') : tx('Thổi')} <strong>{d.baseToken}</strong> ({name(d.base)}{tx('), rồi bend xuống')} {-d.bend === 1 ? tx('nửa cung') : -d.bend === 2 ? tx('một cung') : tx('một cung rưỡi')} {tx('tới')} <strong>{name(d.target)}</strong>.</>}
           </p>
-          <button type="button" className="btn btn-ghost btn-sm" onClick={() => { previewNote(d.base, 0.7); setTimeout(() => previewNote(d.target, 1.2), 750); }}>Nghe mẫu</button>
+          <button type="button" className="btn btn-ghost btn-sm" onClick={() => { previewNote(d.base, 0.7); setTimeout(() => previewNote(d.target, 1.2), 750); }}>{tx('Nghe mẫu')}</button>
         </section>
         <BendMeter base={d.base} target={d.target} midi={midi} name={name} />
         {(() => {
@@ -201,36 +202,36 @@ export default function PitchPractice() {
           const cls = flash || st.status === 'ok' ? ' k-ok' : st.status === 'none' ? '' : ' k-open';
           return (
             <section className={`bp-result${on ? cls : ''}`} aria-live="polite">
-              {!on ? <p className="muted">Bật micro để bắt đầu. Nơi yên tĩnh, điện thoại cách khoảng một gang tay.</p> : <>
-                <strong className="bp-kind">{flash ? 'Đạt!' : STATUS_LABEL[st.status]}{!flash && st.status !== 'none' ? ` (${st.cents > 0 ? '+' : ''}${st.cents} cent)` : ''}</strong>
-                <p>{flash ? (tranh ? 'Giữ đúng được nửa giây. Nhả tay, gảy lại để tập lần nữa.' : 'Giữ đúng được nửa giây. Nhả về nốt gốc rồi bend lại.') : bendAdvice(st.status, d, type)}</p>
+              {!on ? <p className="muted">{tx('Bật micro để bắt đầu. Nơi yên tĩnh, điện thoại cách khoảng một gang tay.')}</p> : <>
+                <strong className="bp-kind">{flash ? tx('Đạt!') : STATUS_LABEL[st.status]}{!flash && st.status !== 'none' ? ` (${st.cents > 0 ? '+' : ''}${st.cents} cent)` : ''}</strong>
+                <p>{flash ? (tranh ? tx('Giữ đúng được nửa giây. Nhả tay, gảy lại để tập lần nữa.') : tx('Giữ đúng được nửa giây. Nhả về nốt gốc rồi bend lại.')) : bendAdvice(st.status, d, type)}</p>
               </>}
             </section>
           );
         })()}
-        {droneOk && <label className="check"><input type="checkbox" checked={drone} onChange={(e) => setDrone(e.target.checked)} /> Tiếng bass nền (nốt chủ ngân trầm)</label>}
+        {droneOk && <label className="check"><input type="checkbox" checked={drone} onChange={(e) => setDrone(e.target.checked)} /> {tx('Tiếng bass nền (nốt chủ ngân trầm)')}</label>}
         <p className="small muted">{tranh
-          ? 'Nhấn cách nhạn khoảng một gang tay, ngón trỏ + giữa ấn đều. Nhấn một cung cần lực mạnh hơn nhiều so với nửa cung.'
-          : 'Bend bằng hình dạng khoang miệng, không phải bằng sức hút. Đau họng hay kèn kêu tịt là đang hút quá mạnh — nghỉ một chút.'}</p>
+          ? tx('Nhấn cách nhạn khoảng một gang tay, ngón trỏ + giữa ấn đều. Nhấn một cung cần lực mạnh hơn nhiều so với nửa cung.')
+          : tx('Bend bằng hình dạng khoang miệng, không phải bằng sức hút. Đau họng hay kèn kêu tịt là đang hút quá mạnh — nghỉ một chút.')}</p>
       </>}
 
       {curMode === 'hold' && holdNote && <>
         <label className="field" htmlFor="pp-note">
-          <span className="field-label">Nốt</span>
+          <span className="field-label">{tx('Nốt')}</span>
           <select id="pp-note" value={hi} onChange={(e) => setHoldIdx(Number(e.target.value))}>
-            {holdNotes.map((n, i) => <option key={n.token} value={i}>{n.token === midiToName(n.midi) ? midiToName(n.midi, settings.noteNames) : `${n.token} · ${midiToName(n.midi, settings.noteNames)}`}{best[`${type}:${n.midi}`] ? ` (kỷ lục ${best[`${type}:${n.midi}`]}s)` : ''}</option>)}
+            {holdNotes.map((n, i) => <option key={n.token} value={i}>{n.token === midiToName(n.midi) ? midiToName(n.midi, settings.noteNames) : `${n.token} · ${midiToName(n.midi, settings.noteNames)}`}{best[`${type}:${n.midi}`] ? tx(' (kỷ lục {0}s)', best[`${type}:${n.midi}`]) : ''}</option>)}
           </select>
         </label>
         <section className="bp-target">
           {holdNote.fingers && <FingeringIcon fingers={holdNote.fingers} size="l" />}
-          <p>{holdNote.token !== midiToName(holdNote.midi) && <><strong><TokenText token={holdNote.token} /></strong> · </>}<strong>{midiToName(holdNote.midi, settings.noteNames)}</strong>. Hít sâu, {tranh ? 'gảy' : 'thổi'} nhẹ và đều, giữ tới khi hết hơi.</p>
-          <button type="button" className="btn btn-ghost btn-sm" onClick={() => previewNote(holdNote.midi, 2)}>Nghe mẫu</button>
+          <p>{holdNote.token !== midiToName(holdNote.midi) && <><strong><TokenText token={holdNote.token} /></strong> · </>}<strong>{midiToName(holdNote.midi, settings.noteNames)}</strong>{tx('. Hít sâu,')} {tranh ? tx('gảy') : tx('thổi')} {tx('nhẹ và đều, giữ tới khi hết hơi.')}</p>
+          <button type="button" className="btn btn-ghost btn-sm" onClick={() => previewNote(holdNote.midi, 2)}>{tx('Nghe mẫu')}</button>
         </section>
         <div className="pp-hold" aria-live="off">
           <div className="pp-bar"><span style={{ width: `${Math.min(100, (100 * (live?.secs ?? 0)) / HOLD_GOAL)}%` }} className={live && live.secs >= HOLD_GOAL ? 'full' : ''} /></div>
           <div className="pp-nums">
             <strong>{(live?.secs ?? 0).toFixed(1)}s</strong>
-            <span>{live ? `${live.cents > 0 ? '+' : ''}${live.cents} cent · chao ±${live.spread}` : on ? (midi !== null ? `Đang ra ${midiToName(Math.round(midi), settings.noteNames)} — chưa đúng nốt` : 'Đang nghe…') : 'Bật micro để bắt đầu'}</span>
+            <span>{live ? `${live.cents > 0 ? '+' : ''}${live.cents} cent · chao ±${live.spread}` : on ? (midi !== null ? tx('Đang ra {0} — chưa đúng nốt', midiToName(Math.round(midi), settings.noteNames)) : tx('Đang nghe…')) : tx('Bật micro để bắt đầu')}</span>
           </div>
           <div className="cents-meter" aria-hidden="true">
             <div className="cm-track"><div className="cm-center" /><div className="cm-needle" style={{ left: `${50 + Math.max(-50, Math.min(50, live?.cents ?? 0))}%`, opacity: live ? 1 : 0 }} /></div>
@@ -241,8 +242,8 @@ export default function PitchPractice() {
             {holds.map((r, i) => { const g = holdGrade(r); return <li key={i} className={g.ok ? 'ok' : ''}>{g.ok ? '✓ ' : ''}{g.text}</li>; })}
           </ul>
         )}
-        {droneOk && <label className="check"><input type="checkbox" checked={drone} onChange={(e) => setDrone(e.target.checked)} /> Tiếng bass nền (nốt chủ ngân trầm)</label>}
-        <p className="small muted">Kỷ lục chỉ tính lần giữ vững (chao dưới ±15 cent). Giữ nốt dài đều là bài khởi động tốt nhất mỗi buổi tập: 5 nốt, mỗi nốt 3 lần.</p>
+        {droneOk && <label className="check"><input type="checkbox" checked={drone} onChange={(e) => setDrone(e.target.checked)} /> {tx('Tiếng bass nền (nốt chủ ngân trầm)')}</label>}
+        <p className="small muted">{tx('Kỷ lục chỉ tính lần giữ vững (chao dưới ±15 cent). Giữ nốt dài đều là bài khởi động tốt nhất mỗi buổi tập: 5 nốt, mỗi nốt 3 lần.')}</p>
       </>}
     </div>
   );

@@ -11,6 +11,7 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import { UpdateNotice } from './components/AppNotices';
 import Library from './pages/Library';
 import SongView from './pages/SongView';
+import { t } from './lib/i18n';
 
 // các trang ít mở hơn: tải khi cần để app mở nhanh (service worker vẫn lưu sẵn để chạy offline)
 const SongEdit = lazy(() => import('./pages/SongEdit'));
@@ -29,11 +30,11 @@ const SettingsPage = lazy(() => import('./pages/Settings'));
 const SharedSong = lazy(() => import('./pages/SharedSong'));
 
 const NAV = [
-  { to: '/', icon: 'library', label: 'Bài hát', end: true },
-  { to: '/ai', icon: 'scan', label: 'Nhập bài' },
-  { to: '/learn', icon: 'learn', label: 'Học' },
-  { to: '/tuner', icon: 'mic', label: 'Dò nốt' },
-  { to: '/settings', icon: 'settings', label: 'Cài đặt' },
+  { to: '/', icon: 'library', label: t('Bài hát'), end: true },
+  { to: '/ai', icon: 'scan', label: t('Nhập bài') },
+  { to: '/learn', icon: 'learn', label: t('Học') },
+  { to: '/tuner', icon: 'mic', label: t('Dò nốt') },
+  { to: '/settings', icon: 'settings', label: t('Cài đặt') },
 ];
 
 function Shell() {
@@ -57,7 +58,7 @@ function Shell() {
 
   return (
     <div className="app">
-      <nav className="nav" aria-label="Điều hướng chính">
+      <nav className="nav" aria-label={t('Điều hướng chính')}>
         <div className="nav-brand" aria-hidden="true">
           <img className="brand-icon" src={`${import.meta.env.BASE_URL}${ICON_DIR}icon.svg`} alt="" width={36} height={36} />
           <span className="brand-name">{BRAND.line1}<br />{BRAND.line2}</span>
@@ -72,8 +73,8 @@ function Shell() {
       </nav>
       <main className="main">
         <UpdateNotice />
-        {!online && <div className="offline-pill" role="status">Đang offline — mọi thứ vẫn dùng được, trừ phần nhờ AI</div>}
-        {err && <div className="alert error">Không mở được kho dữ liệu trên máy: {err}. Hãy tắt chế độ ẩn danh hoặc cho phép lưu trữ.</div>}
+        {!online && <div className="offline-pill" role="status">{t('Đang offline — mọi thứ vẫn dùng được, trừ phần nhờ AI')}</div>}
+        {err && <div className="alert error">{t('Không mở được kho dữ liệu trên máy: {0}. Hãy tắt chế độ ẩn danh hoặc cho phép lưu trữ.', err)}</div>}
         {ready && (
           <ErrorBoundary key={pathname}>
           <Suspense fallback={<div className="page" aria-busy="true" />}>

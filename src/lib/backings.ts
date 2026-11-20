@@ -4,6 +4,7 @@ import { hasRoom, StorageFullError } from './recordings';
 import type { FlatEvent } from './tabText';
 import type { TempoMap } from './tempoMap';
 import type { Backing } from './types';
+import { t } from './i18n';
 
 export const MAX_BACKING_MB = 20;
 export const MAX_BACKING_MIN = 8;
@@ -17,8 +18,8 @@ export function tabSig(flat: FlatEvent[]): string {
 }
 
 export function checkBackingFile(file: { size: number; type: string; name: string }): string | null {
-  if (file.size > MAX_BACKING_MB * 1e6) return `File quá lớn (tối đa ${MAX_BACKING_MB} MB)`;
-  if (file.type && !file.type.startsWith('audio/') && !/\.(mp3|m4a|aac|wav|ogg|opus|flac)$/i.test(file.name)) return 'Chỉ nhận file âm thanh (mp3, m4a, wav, ogg…)';
+  if (file.size > MAX_BACKING_MB * 1e6) return t('File quá lớn (tối đa {0} MB)', MAX_BACKING_MB);
+  if (file.type && !file.type.startsWith('audio/') && !/\.(mp3|m4a|aac|wav|ogg|opus|flac)$/i.test(file.name)) return t('Chỉ nhận file âm thanh (mp3, m4a, wav, ogg…)');
   return null;
 }
 

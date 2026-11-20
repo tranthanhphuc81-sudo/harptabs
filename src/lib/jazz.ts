@@ -6,6 +6,7 @@ import { chordIntervals, ChordOverrides, chordName, ChordQuality, segKey } from 
 import { HarpKey, harpLayout, HarpNote, HarpType, midiToName, nameToMidi, recorderKey, techniqueCost } from './harp';
 import { bestTabs } from './converter';
 import { BAR_BEATS, lickEvents, usesFlats } from './blues';
+import { t as tx } from './i18n';
 
 /** '' trưởng, 'm' thứ, '7' át, và các loại jazz */
 export type JazzQuality = '' | 'm' | '7' | ChordQuality;
@@ -26,15 +27,15 @@ const bar = (deg: number, q: JazzQuality): ProgChord => ({ deg, q, beats: BAR_BE
 const half = (deg: number, q: JazzQuality): ProgChord => ({ deg, q, beats: BAR_BEATS / 2 });
 
 export const PROGRESSIONS: Progression[] = [
-  { id: 'ii-v-i', title: 'ii – V – I trưởng', hint: 'Vòng quan trọng nhất của jazz: Dm7 → G7 → Cmaj7.',
+  { id: 'ii-v-i', title: tx('ii – V – I trưởng'), hint: tx('Vòng quan trọng nhất của jazz: Dm7 → G7 → Cmaj7.'),
     chords: [bar(2, 'm7'), bar(7, '7'), bar(0, 'maj7'), bar(0, 'maj7')] },
-  { id: 'ii-v-i-minor', title: 'ii – V – i thứ', hint: 'Bản thứ, nghe buồn và "đêm": Dm7♭5 → G7 → Cm7.', minor: true,
+  { id: 'ii-v-i-minor', title: tx('ii – V – i thứ'), hint: tx('Bản thứ, nghe buồn và "đêm": Dm7♭5 → G7 → Cm7.'), minor: true,
     chords: [bar(2, 'm7b5'), bar(7, '7'), bar(0, 'm7'), bar(0, 'm7')] },
-  { id: 'i-vi-ii-v', title: 'I – vi – ii – V', hint: 'Vòng xoay 2 ô, nền của rất nhiều bài (rhythm changes, nhạc vàng cũng hay dùng).',
+  { id: 'i-vi-ii-v', title: 'I – vi – ii – V', hint: tx('Vòng xoay 2 ô, nền của rất nhiều bài (rhythm changes, nhạc vàng cũng hay dùng).'),
     chords: [0, 1, 2, 3].flatMap(() => [half(0, 'maj7'), half(9, 'm7'), half(2, 'm7'), half(7, '7')]) },
-  { id: 'autumn', title: 'Kiểu Autumn Leaves', hint: 'Đi vòng quãng 4: ii–V–I trưởng rồi ii–V–i của giọng thứ tương ứng.',
+  { id: 'autumn', title: tx('Kiểu Autumn Leaves'), hint: tx('Đi vòng quãng 4: ii–V–I trưởng rồi ii–V–i của giọng thứ tương ứng.'),
     chords: [bar(2, 'm7'), bar(7, '7'), bar(0, 'maj7'), bar(5, 'maj7'), bar(11, 'm7b5'), bar(4, '7'), bar(9, 'm7'), bar(9, 'm7')] },
-  { id: 'jazz-blues', title: 'Jazz blues 12 ô', hint: 'Blues 12 ô thêm hợp âm nối kiểu jazz (bebop blues).',
+  { id: 'jazz-blues', title: tx('Jazz blues 12 ô'), hint: tx('Blues 12 ô thêm hợp âm nối kiểu jazz (bebop blues).'),
     chords: [bar(0, '7'), bar(5, '7'), bar(0, '7'), half(7, 'm7'), half(0, '7'), bar(5, '7'), bar(6, 'dim7'), bar(0, '7'), bar(9, '7'),
       bar(2, 'm7'), bar(7, '7'), half(0, '7'), half(9, '7'), half(2, 'm7'), half(7, '7')] },
 ];
