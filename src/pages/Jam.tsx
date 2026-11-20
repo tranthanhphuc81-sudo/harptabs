@@ -22,6 +22,7 @@ import { Icon } from '../components/Icon';
 import { useAppState } from '../state';
 import { parseTab } from '../lib/tabText';
 import { t as tx } from '../lib/i18n';
+import { localizeLick, tl } from '../lib/i18nData';
 
 /**
  * Tập ngẫu hứng blues: nền nhạc 12 ô nhịp chạy lặp (vị trí 2), hiện hợp âm đang vang và các lỗ thang âm blues để tự thổi;
@@ -33,7 +34,8 @@ const loadPins = (): string[] => { try { return JSON.parse(localStorage.getItem(
 const savePins = (ids: string[]) => { try { localStorage.setItem(PIN_KEY, JSON.stringify(ids)); } catch { /* không lưu được thì thôi */ } };
 
 // kalimba: lick riêng ghi bằng tab số (thang ngũ cung), các app khác: lick kèn đổi theo nhạc cụ
-const LICKS = IS_KALIMBA_APP ? KALIMBA_LICKS : HARP_LICKS;
+const LICKS = (IS_KALIMBA_APP ? KALIMBA_LICKS : HARP_LICKS).map(localizeLick);
+const placeName = (k: Lick['over']) => tl(LICK_PLACES[k]);
 
 /** chọn lick cho các ô "hỏi": ưu tiên lick đã ghim, đổi vòng theo `seed` */
 function pickCalls(seed: number, pins: string[]) {
@@ -205,7 +207,7 @@ function BluesJam() {
             </div>
             <select value={place} onChange={(e) => setPlace(e.target.value as Lick['over'] | 'all')} aria-label={tx('Chỗ dùng trong khung')}>
               <option value="all">{tx('Mọi chỗ trong khung')}</option>
-              {(Object.keys(LICK_PLACES) as Lick['over'][]).map((k) => <option key={k} value={k}>{LICK_PLACES[k]}</option>)}
+              {(Object.keys(LICK_PLACES) as Lick['over'][]).map((k) => <option key={k} value={k}>{placeName(k)}</option>)}
             </select>
           </div>
 
@@ -214,7 +216,7 @@ function BluesJam() {
               <li key={l.id}>
                 <button type="button" className={`lick-row${l.id === lick.id ? ' on' : ''}`} onClick={() => setLickId(l.id)} aria-pressed={l.id === lick.id}>
                   <span className="lk-title">{l.title}</span>
-                  <span className="lk-meta">{['', tx('Dễ'), tx('Vừa'), tx('Khó')][l.level]} · {LICK_PLACES[l.over]}{pins.includes(l.id) ? tx(' · đã ghim') : ''}</span>
+                  <span className="lk-meta">{['', tx('Dễ'), tx('Vừa'), tx('Khó')][l.level]} · {placeName(l.over)}{pins.includes(l.id) ? tx(' · đã ghim') : ''}</span>
                 </button>
               </li>
             ))}
@@ -223,7 +225,7 @@ function BluesJam() {
 
           <section className="lick-detail">
             <h2 className="h-small">{lick.title}</h2>
-            <p className="small muted">{tx('{0} · nền: {1}', LICK_PLACES[lick.over], lickDegrees(lick).map((d) => chordName((tonic + { I: 0, IV: 5, V: 7 }[d]) % 12, false, flats, true)).join(' → '))}</p>
+            <p className="small muted">{tx('{0} · nền: {1}', placeName(lick.over), lickDegrees(lick).map((d) => chordName((tonic + { I: 0, IV: 5, V: 7 }[d]) % 12, false, flats, true)).join(' → '))}</p>
             <TabView parsed={lickParsed} flat={lickFlat} active={lickActive != null && lickActive >= 0 ? lickActive : null} size="m" showNames={settings.showNoteNames} nameStyle={settings.noteNames} harpType={harpType} harpKey={harpKey} />
             {lick.tip && <p className="small">{lick.tip}</p>}
             <div className="row gap wrap">

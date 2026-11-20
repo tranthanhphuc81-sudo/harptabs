@@ -3,6 +3,7 @@ import type { ChordSegment } from '../audio/harmony';
 import type { BeatStyle } from '../audio/patterns';
 import type { FlatEvent, ParsedTab } from '../lib/tabText';
 import { t } from '../lib/i18n';
+import { tl } from '../lib/i18nData';
 
 /**
  * Bảng lời + hợp âm kiểu sách đệm hát: tên hợp âm đặt trên chữ đúng chỗ đổi hợp âm.
@@ -82,7 +83,7 @@ export const ChordSheet = memo(function ChordSheet({ parsed, flat, segs, active,
     <div className="chord-sheet">
       {sections.map((sec, si) => (
         <section key={si} className="cs-sec">
-          {sec.title && <h3 className="cs-title">{sec.title}</h3>}
+          {sec.title && <h3 className="cs-title">{tl(sec.title)}</h3>}
           {sec.lines.map((items, li) => {
             const end = (k: number) => (items[k + 1]?.fi ?? Infinity);
             return (

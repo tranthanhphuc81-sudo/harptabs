@@ -8,6 +8,7 @@ import { AiLogEntry, Backing, DEFAULT_SETTINGS, MidiSource, Recording, Settings,
 import type { SongScan } from './scanStore';
 import { BeatStyle, PATTERNS } from '../audio/patterns';
 import { t as tx } from './i18n';
+import { localizeSample } from './i18nData';
 
 interface KV { key: string; value: unknown }
 
@@ -38,6 +39,8 @@ class HarpDB extends Dexie {
 }
 
 export const db = new HarpDB();
+// bài mẫu: hiện tên / tác giả / ghi chú bằng tiếng Anh khi đang dùng English (câu người dùng đã sửa thì giữ nguyên)
+db.songs.hook('reading', (s) => localizeSample(s));
 
 export function newId(): string {
   if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) return crypto.randomUUID();

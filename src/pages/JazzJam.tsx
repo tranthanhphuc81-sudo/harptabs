@@ -3,7 +3,11 @@ import { usePracticeTimer } from '../lib/practiceLog';
 import { HarpKey, HarpType, isTremolo, keyOffset, pitchClassName } from '../lib/harp';
 import { BAR_BEATS, jamEvents, lickEvents } from '../lib/blues';
 import { chordAtBeat, chordTones, lickToTab, PlacedChord, progressionBars, progressionChords, progressionOverrides, PROGRESSIONS } from '../lib/jazz';
-import { JazzLick, jazzLickPlace, JAZZ_LICKS } from '../data/jazzLicks';
+import { JazzLick, jazzLickPlace as rawPlace, JAZZ_LICKS as RAW_JAZZ_LICKS } from '../data/jazzLicks';
+import { localizeLick, tl } from '../lib/i18nData';
+
+const JAZZ_LICKS = RAW_JAZZ_LICKS.map(localizeLick);
+const jazzLickPlace = (l: JazzLick) => tl(rawPlace(l));
 import { chordName } from '../audio/harmony';
 import { HarpDiagram } from '../components/HarpDiagram';
 import { HarpTypeSelect, KeySelect } from '../components/KeySelect';

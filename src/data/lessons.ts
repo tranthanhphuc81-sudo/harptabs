@@ -8,6 +8,7 @@ import { TRANH_LESSON_GROUPS, TRANH_LESSONS } from './tranhLessons';
 import { KALIMBA_LESSON_GROUPS, KALIMBA_LESSONS } from './kalimbaLessons';
 import { RECORDER_LESSON_GROUPS, RECORDER_LESSONS } from './recorderLessons';
 import type { HarpKey, HarpType } from '../lib/harp';
+import { tl } from '../lib/i18nData';
 
 export type Block =
   | { t: 'p'; text: string }
@@ -653,5 +654,18 @@ const HARMONICA_LESSONS: Lesson[] = [
 ];
 
 /** bộ bài học theo app: Sổ Tab Sáo dùng bài học sáo dọc */
-export const LESSON_GROUPS = IS_RECORDER_APP ? RECORDER_LESSON_GROUPS : IS_KALIMBA_APP ? KALIMBA_LESSON_GROUPS : IS_GUITAR_APP ? GUITAR_LESSON_GROUPS : IS_PIANICA_APP ? PIANICA_LESSON_GROUPS : IS_ORGAN_APP ? ORGAN_LESSON_GROUPS : IS_TRANH_APP ? TRANH_LESSON_GROUPS : HARMONICA_LESSON_GROUPS;
-export const LESSONS: Lesson[] = IS_RECORDER_APP ? RECORDER_LESSONS : IS_KALIMBA_APP ? KALIMBA_LESSONS : IS_GUITAR_APP ? GUITAR_LESSONS : IS_PIANICA_APP ? PIANICA_LESSONS : IS_ORGAN_APP ? ORGAN_LESSONS : IS_TRANH_APP ? TRANH_LESSONS : HARMONICA_LESSONS;
+const RAW_GROUPS = IS_RECORDER_APP ? RECORDER_LESSON_GROUPS : IS_KALIMBA_APP ? KALIMBA_LESSON_GROUPS : IS_GUITAR_APP ? GUITAR_LESSON_GROUPS : IS_PIANICA_APP ? PIANICA_LESSON_GROUPS : IS_ORGAN_APP ? ORGAN_LESSON_GROUPS : IS_TRANH_APP ? TRANH_LESSON_GROUPS : HARMONICA_LESSON_GROUPS;
+const RAW_LESSONS: Lesson[] = IS_RECORDER_APP ? RECORDER_LESSONS : IS_KALIMBA_APP ? KALIMBA_LESSONS : IS_GUITAR_APP ? GUITAR_LESSONS : IS_PIANICA_APP ? PIANICA_LESSONS : IS_ORGAN_APP ? ORGAN_LESSONS : IS_TRANH_APP ? TRANH_LESSONS : HARMONICA_LESSONS;
+
+/** bản dịch tiếng Anh (khi đang dùng English); tab trong bài giữ nguyên */
+function localizeBlock(b: Block): Block {
+  switch (b.t) {
+    case 'p': case 'h': case 'tip': case 'warn': return { ...b, text: tl(b.text) };
+    case 'list': return { ...b, items: b.items.map((x) => tl(x)) };
+    case 'tab': return { ...b, caption: tl(b.caption) };
+    case 'link': return { ...b, label: tl(b.label), text: tl(b.text) };
+    default: return b;
+  }
+}
+export const LESSON_GROUPS = RAW_GROUPS.map((g) => tl(g));
+export const LESSONS: Lesson[] = RAW_LESSONS.map((l) => ({ ...l, group: tl(l.group), title: tl(l.title), summary: tl(l.summary), blocks: l.blocks.map(localizeBlock) }));

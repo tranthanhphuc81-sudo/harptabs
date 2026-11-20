@@ -51,6 +51,7 @@ import { suggestInstrument, suggestStyle } from '../audio/suggest';
 import { useAutoScroll } from '../components/useAutoScroll';
 import { AUTO_SCROLL_MAX, AUTO_SCROLL_MIN, clampScrollPct } from '../lib/autoScroll';
 import { t as tx } from '../lib/i18n';
+import { tl } from '../lib/i18nData';
 
 // màn hình karaoke: tải khi mở
 const KaraokeView = lazy(() => import('../components/KaraokeView'));
@@ -108,7 +109,7 @@ function SongPlayerView({ song, original, fit, view, choice, onChoice }: {
   }, [song.sheet, song.sheetBeats, bpb]);
   const melodyFlat = useMemo(() => sheetData?.flat ?? flatten(parsed), [parsed, sheetData]);
   const stats = useMemo(() => countTechniques(parsed), [parsed]);
-  const sections = useMemo(() => parsed.sections.map((s) => s.title), [parsed]);
+  const sections = useMemo(() => parsed.sections.map((s) => tl(s.title)), [parsed]);
   const chordOverrides = sheetData?.overrides ?? song.chords;
   // guitar / ukulele: "Đệm rải" thay giai điệu bằng tab rải hợp âm sinh từ các khúc hợp âm của bài
   const canArp = isFretted(harpType);
@@ -215,7 +216,7 @@ function SongPlayerView({ song, original, fit, view, choice, onChoice }: {
     const useLine = parsed.sections.length === 1 || inSec.length > 48;
     const group = useLine ? sameLine : inSec;
     const first = group[0], last = group[group.length - 1];
-    const title = parsed.sections[f.sectionIndex]?.title;
+    const title = tl(parsed.sections[f.sectionIndex]?.title);
     return { start: first.start, end: last.start + last.beats, label: useLine ? tx('dòng này') : title || tx('đoạn {0}', f.sectionIndex + 1) };
   };
   const loopInfo = p.opts.loop ? sectionRange(focus ?? p.active) : null;

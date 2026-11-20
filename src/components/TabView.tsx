@@ -6,6 +6,7 @@ import { BAU_GLYPH } from './DanBau';
 import { FlatEvent, ParsedTab, TabLine } from '../lib/tabText';
 import type { ChordSegment } from '../audio/harmony';
 import { t } from '../lib/i18n';
+import { tl } from '../lib/i18nData';
 
 interface Props {
   parsed: ParsedTab;
@@ -216,7 +217,7 @@ function TabViewInner({ parsed, flat, active, selected, onNoteClick, showNames, 
     <div ref={ref} className={`tabview size-${size}${compact ? ' compact' : ''}`}>
       {parsed.sections.map((sec, si) => (
         <section key={si} className="tab-section">
-          {sec.title && <h3 className="tab-section-title">{sec.title}</h3>}
+          {sec.title && <h3 className="tab-section-title">{tl(sec.title)}</h3>}
           {sec.lines.map((line, li) =>
             line.kind === 'note' ? (
               <p key={li} className="tab-note-line">{line.text}</p>

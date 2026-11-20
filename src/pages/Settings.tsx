@@ -189,7 +189,7 @@ export default function SettingsPage() {
             <label className="field">
               <span className="field-label">{tx('Sáo trúc: bịt hết lỗ ra nốt')}</span>
               <select value={s.saoTrucClosed ?? 5} onChange={(e) => update({ saoTrucClosed: Number(e.target.value) })}>
-                {DEGREE_NAMES.map((n, i) => <option key={n} value={i + 1}>{n} {i === 4 ? tx('(sáo Đô bịt hết ra Sol — phổ biến)') : tx('(sáo Đô bịt hết ra {0})', n)}</option>)}
+                {DEGREE_NAMES.map((n, i) => <option key={n} value={i + 1}>{tx(n)} {i === 4 ? tx('(sáo Đô bịt hết ra Sol — phổ biến)') : tx('(sáo Đô bịt hết ra {0})', tx(n))}</option>)}
               </select>
               <span className="small muted">{tx('Tính theo tông sáo: sáo Đô chọn "Sol" thì bịt hết lỗ ra Sol, mở dần ra La, Si, Đô…')}</span>
             </label>
