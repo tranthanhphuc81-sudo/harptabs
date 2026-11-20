@@ -1,6 +1,6 @@
 # Harmonica Tabs – Sổ Tab — Google Play listing (English, en-US)
 
-Thêm làm bản dịch trên Play Console: **Main store listing → Manage translations → Add your own translations → English (United States)**. Dùng chung ảnh với bản tiếng Việt (ảnh chụp là giao diện tiếng Việt — mô tả đã ghi rõ).
+Thêm làm bản dịch trên Play Console: **Main store listing → Manage translations → Add your own translations → English (United States)**. Ảnh dùng bản giao diện tiếng Anh: ảnh bìa `store/harmonica/feature-en.png`, ảnh chụp `store/harmonica/screenshots-en/`.
 
 ## App name (23/30)
 
@@ -14,10 +14,10 @@ Harmonica Tabs – Sổ Tab
 Harmonica tabs with backing tracks, tuner, bend trainer and sheet scanner.
 ```
 
-## Full description (2188/4000)
+## Full description (2181/4000)
 
 ```text
-Note: the app interface is in Vietnamese. Tabs, note names, chord names and the music itself work the same in any language.
+Available in English and Vietnamese: the app follows your phone's language, and you can switch any time in Settings.
 
 Sổ Tab Harmonica is a songbook and practice partner for the 10-hole diatonic, 12/16-hole chromatic and 16/21/24-hole tremolo harmonica (major and minor tunings).
 

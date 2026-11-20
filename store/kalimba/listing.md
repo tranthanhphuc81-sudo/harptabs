@@ -14,7 +14,7 @@ Sổ Tab Kalimba
 Tab số kalimba 17, 10, 8 phím có hình phím cần gảy; nhạc đệm, chỉnh dây.
 ```
 
-## Mô tả đầy đủ (1857/4000)
+## Mô tả đầy đủ (1912/4000)
 
 ```text
 Sổ Tab Kalimba là sổ bài và người bạn tập cho kalimba 17 phím, 10 phím và 8 phím, giọng trưởng, chọn được tông đàn.
@@ -47,6 +47,7 @@ LUYỆN TẬP MỖI NGÀY
 
 GỌN NHẸ, RIÊNG TƯ
 • Chạy offline, không cần tài khoản, không quảng cáo.
+• Có giao diện tiếng Anh (English): đổi trong Cài đặt.
 • Bài hát, bản thu và cài đặt lưu trên máy; sao lưu ra file khi cần.
 • Tính năng AI (đọc ảnh, nhớ bài theo tên) là tuỳ chọn, chỉ dùng khi bạn bấm.
 • Bài mẫu là các bài thuộc phạm vi công cộng.

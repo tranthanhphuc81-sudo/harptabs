@@ -4,11 +4,27 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Sổ Tab — tab nhạc cụ</title>
-<meta name="description" content="Bộ 7 app tập nhạc cụ miễn phí, chạy offline: harmonica, sáo, kalimba, guitar / ukulele, kèn pianica, đàn tranh, đàn bầu, organ / piano. Tab dễ đọc, phát nhạc đệm, karaoke, dò nốt, bài học.">
-<meta property="og:title" content="Sổ Tab — tab nhạc cụ">
-<meta property="og:description" content="7 app tập nhạc cụ miễn phí, chạy offline: harmonica, sáo, kalimba, guitar / ukulele, kèn pianica, đàn tranh, đàn bầu, organ / piano.">
+<meta name="description" content="Bộ 7 app tập nhạc cụ miễn phí, chạy offline: harmonica, sáo, kalimba, guitar / ukulele, kèn pianica, đàn tranh, đàn bầu, organ / piano. Tab dễ đọc, phát nhạc đệm, karaoke, dò nốt, bài học. Có tiếng Việt và tiếng Anh.">
+<meta property="og:title" content="Sổ Tab — tab nhạc cụ · instrument tabs">
+<meta property="og:description" content="7 app tập nhạc cụ miễn phí, chạy offline · 7 free offline apps for harmonica, recorder, kalimba, guitar / ukulele, melodica, đàn tranh, đàn bầu, keyboard / piano.">
 <meta property="og:image" content="https://sotab.pages.dev/icons/harmonica.png">
+<link rel="alternate" hreflang="vi" href="https://sotab.pages.dev/?lang=vi">
+<link rel="alternate" hreflang="en" href="https://sotab.pages.dev/?lang=en">
 <link rel="icon" href="icons/harmonica.png">
+<script>
+  // ngôn ngữ trang: ?lang= → đã chọn trước đó → máy có tiếng Việt / múi giờ Việt Nam → còn lại tiếng Anh
+  (function () {
+    var lang = null;
+    try { var q = new URLSearchParams(location.search).get('lang'); if (q === 'vi' || q === 'en') { lang = q; localStorage.setItem('sotab-lang', q); } } catch (e) {}
+    if (!lang) try { var s = localStorage.getItem('sotab-lang'); if (s === 'vi' || s === 'en') lang = s; } catch (e) {}
+    if (!lang) {
+      var langs = navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language || ''];
+      var tz = ''; try { tz = Intl.DateTimeFormat().resolvedOptions().timeZone; } catch (e) {}
+      lang = langs.some(function (l) { return /^vi\b/i.test(l); }) || tz === 'Asia/Ho_Chi_Minh' || tz === 'Asia/Saigon' ? 'vi' : 'en';
+    }
+    document.documentElement.lang = lang;
+  })();
+</script>
 <style>
   :root {
     --bg: #eef1f2; --surface: #ffffff; --ink: #17212a; --ink-2: #5a6773; --line: #e1e6ea;
@@ -22,16 +38,23 @@
     }
   }
   :root[data-theme="dark"] { --bg: #11181e; --surface: #1a232b; --ink: #e8edf1; --ink-2: #9aa7b3; --line: #2a3640; --hero: #0b1116; color-scheme: dark; }
+  /* song ngữ: chỉ hiện phần đúng ngôn ngữ của trang */
+  html[lang="vi"] body [lang="en"], html[lang="en"] body [lang="vi"] { display: none !important; }
   * { box-sizing: border-box; }
   body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
   a { color: inherit; }
   .wrap { max-width: 1040px; margin: 0 auto; padding: 0 16px; }
   header.hero { background: var(--hero); color: var(--hero-ink); padding: 44px 0 52px; }
+  .hero-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 18px; }
   .hero h1 { margin: 0 0 8px; font-size: clamp(1.9rem, 5vw, 2.8rem); line-height: 1.15; letter-spacing: -0.01em; }
   .hero p { margin: 0; max-width: 40em; color: #c5ced6; font-size: 1.05rem; }
-  .hero .icons { display: flex; gap: 10px; margin-bottom: 18px; }
+  .hero .icons { display: flex; gap: 10px; flex-wrap: wrap; }
   .hero .icons img { width: 44px; height: 44px; border-radius: 11px; }
-  @media (max-width: 420px) { .hero .icons { gap: 7px; flex-wrap: wrap; } .hero .icons img { width: 38px; height: 38px; border-radius: 10px; } }
+  .lang-switch { flex: none; display: inline-flex; border: 1.5px solid rgba(255,255,255,0.25); border-radius: 999px; overflow: hidden; }
+  .lang-switch button { all: unset; cursor: pointer; padding: 6px 12px; font-size: 0.85rem; font-weight: 700; color: #c5ced6; }
+  .lang-switch button[aria-pressed="true"] { background: rgba(255,255,255,0.16); color: #fff; }
+  .lang-switch button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+  @media (max-width: 420px) { .hero .icons { gap: 7px; } .hero .icons img { width: 38px; height: 38px; border-radius: 10px; } }
   .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
   .chips span { padding: 4px 12px; border-radius: 999px; background: rgba(255,255,255,0.09); font-size: 0.88rem; }
   main { padding: 28px 0 40px; }
@@ -69,22 +92,29 @@
 <body>
 <header class="hero">
   <div class="wrap">
-    <div class="icons" aria-hidden="true">
-      <img src="icons/harmonica.png" alt=""><img src="icons/sao.png" alt=""><img src="icons/kalimba.png" alt=""><img src="icons/guitar.png" alt=""><img src="icons/pianica.png" alt=""><img src="icons/tranh.png" alt=""><img src="icons/organ.png" alt="">
+    <div class="hero-top">
+      <div class="icons" aria-hidden="true">
+        <img src="icons/harmonica.png" alt=""><img src="icons/sao.png" alt=""><img src="icons/kalimba.png" alt=""><img src="icons/guitar.png" alt=""><img src="icons/pianica.png" alt=""><img src="icons/tranh.png" alt=""><img src="icons/organ.png" alt="">
+      </div>
+      <div class="lang-switch" role="group" aria-label="Ngôn ngữ · Language">
+        <button type="button" data-set-lang="vi">Tiếng Việt</button><button type="button" data-set-lang="en">English</button>
+      </div>
     </div>
-    <h1>Sổ Tab — tập nhạc cụ dễ như đọc chữ</h1>
-    <p>Bảy app miễn phí cho harmonica, sáo, kalimba, guitar / ukulele, kèn pianica, đàn tranh, đàn bầu và organ / piano. Tab dễ đọc kèm hình cách bấm, phát nhạc đệm để tập theo, karaoke, dò nốt bằng micro và bài học từ đầu. Chạy được không cần mạng.</p>
-    <div class="chips"><span>Miễn phí, không quảng cáo</span><span>Chạy offline</span><span>Android · iPhone · máy tính</span><span>Nhập bài từ MIDI, ảnh bản nhạc, mp3</span></div>
+    <h1><span lang="vi">Sổ Tab — tập nhạc cụ dễ như đọc chữ</span><span lang="en">Sổ Tab — learn an instrument as easily as reading</span></h1>
+    <p lang="vi">Bảy app miễn phí cho harmonica, sáo, kalimba, guitar / ukulele, kèn pianica, đàn tranh, đàn bầu và organ / piano. Tab dễ đọc kèm hình cách bấm, phát nhạc đệm để tập theo, karaoke, dò nốt bằng micro và bài học từ đầu. Chạy được không cần mạng.</p>
+    <p lang="en">Seven free apps for harmonica, recorder &amp; flute, kalimba, guitar / ukulele, melodica, the Vietnamese đàn tranh and đàn bầu, and keyboard / piano. Easy-to-read tabs with fingering pictures, backing tracks to play along with, karaoke, a microphone tuner and lessons from the very start. Works without an internet connection.</p>
+    <div class="chips" lang="vi"><span>Miễn phí, không quảng cáo</span><span>Chạy offline</span><span>Android · iPhone · máy tính</span><span>Nhập bài từ MIDI, ảnh bản nhạc, mp3</span><span>Tiếng Việt · English</span></div>
+    <div class="chips" lang="en"><span>Free, no ads</span><span>Works offline</span><span>Android · iPhone · computer</span><span>Import from MIDI, sheet music photos, mp3</span><span>English · Tiếng Việt</span></div>
   </div>
 </header>
 
 <main class="wrap">
-  <h2>Chọn nhạc cụ của bạn</h2>
+  <h2><span lang="vi">Chọn nhạc cụ của bạn</span><span lang="en">Choose your instrument</span></h2>
   <div class="apps" id="apps"></div>
 
-  <h2>Cách cài lên điện thoại</h2>
+  <h2><span lang="vi">Cách cài lên điện thoại</span><span lang="en">How to install on your phone</span></h2>
   <div class="steps">
-    <div class="card">
+    <div class="card" lang="vi">
       <h3>Android — cài APK</h3>
       <ol>
         <li>Bấm <strong>Tải APK</strong> của app bạn muốn.</li>
@@ -92,7 +122,15 @@
         <li>Bấm <strong>Cài đặt</strong>. App tự cập nhật nội dung mỗi khi có bản mới.</li>
       </ol>
     </div>
-    <div class="card">
+    <div class="card" lang="en">
+      <h3>Android — install the APK</h3>
+      <ol>
+        <li>Tap <strong>Download APK</strong> for the app you want.</li>
+        <li>Open the downloaded file. The first time, your phone asks to allow installs from the browser: choose <strong>Allow</strong>.</li>
+        <li>Tap <strong>Install</strong>. The app updates its content by itself whenever there's a new version.</li>
+      </ol>
+    </div>
+    <div class="card" lang="vi">
       <h3>iPhone, iPad — thêm vào màn hình chính</h3>
       <ol>
         <li>Mở <strong>Mở app</strong> bằng Safari.</li>
@@ -100,70 +138,121 @@
         <li>Chọn <strong>Thêm vào MH chính</strong>. App mở như app thường và chạy offline.</li>
       </ol>
     </div>
-    <div class="card">
+    <div class="card" lang="en">
+      <h3>iPhone, iPad — add to Home Screen</h3>
+      <ol>
+        <li>Open <strong>Open app</strong> in Safari.</li>
+        <li>Tap the <strong>Share</strong> button (the square with an arrow).</li>
+        <li>Choose <strong>Add to Home Screen</strong>. The app opens like a normal app and works offline.</li>
+      </ol>
+    </div>
+    <div class="card" lang="vi">
       <h3>Máy tính</h3>
       <p>Bấm <strong>Mở app</strong> là dùng ngay trên trình duyệt. Chrome / Edge có nút <strong>Cài đặt</strong> ở thanh địa chỉ để cài thành app riêng.</p>
     </div>
+    <div class="card" lang="en">
+      <h3>Computer</h3>
+      <p>Click <strong>Open app</strong> to use it right in your browser. Chrome / Edge have an <strong>Install</strong> button in the address bar to install it as its own app.</p>
+    </div>
   </div>
 
-  <h2>Câu hỏi thường gặp</h2>
-  <details><summary>Có mất phí không?</summary><p>Không. Cả bảy app miễn phí, không quảng cáo, không cần tài khoản.</p></details>
-  <details><summary>Không có mạng thì dùng được không?</summary><p>Được. Mở app một lần khi có mạng, sau đó tập bài, phát nhạc đệm, karaoke, dò nốt đều chạy offline. Chỉ phần nhập bài bằng AI cần mạng.</p></details>
-  <details><summary>Bài của tôi lưu ở đâu?</summary><p>Ngay trên máy của bạn. Vào Cài đặt → Sao lưu để xuất file, chuyển sang máy khác hoặc gửi cho bạn bè.</p></details>
-  <details><summary>Tôi có bài nhạc giấy, đưa vào app thế nào?</summary><p>Vào Nhập bài: chụp ảnh khuông nhạc (app tự đọc nốt), mở file MIDI / MusicXML, thu âm mình hát hoặc chọn file mp3, hoặc dán tab copy từ mạng. App guitar còn nhận bài lời + hợp âm.</p></details>
-  <details><summary>Dùng nhiều nhạc cụ thì sao?</summary><p>Cài nhiều app cùng lúc được. Bài của app này mở được ở app khác: app tự xếp lại nốt cho nhạc cụ đó.</p></details>
+  <h2><span lang="vi">Câu hỏi thường gặp</span><span lang="en">Frequently asked questions</span></h2>
+  <div lang="vi">
+    <details><summary>Có mất phí không?</summary><p>Không. Cả bảy app miễn phí, không quảng cáo, không cần tài khoản.</p></details>
+    <details><summary>Không có mạng thì dùng được không?</summary><p>Được. Mở app một lần khi có mạng, sau đó tập bài, phát nhạc đệm, karaoke, dò nốt đều chạy offline. Chỉ phần nhập bài bằng AI cần mạng.</p></details>
+    <details><summary>Bài của tôi lưu ở đâu?</summary><p>Ngay trên máy của bạn. Vào Cài đặt → Sao lưu để xuất file, chuyển sang máy khác hoặc gửi cho bạn bè.</p></details>
+    <details><summary>Tôi có bài nhạc giấy, đưa vào app thế nào?</summary><p>Vào Nhập bài: chụp ảnh khuông nhạc (app tự đọc nốt), mở file MIDI / MusicXML, thu âm mình hát hoặc chọn file mp3, hoặc dán tab copy từ mạng. App guitar còn nhận bài lời + hợp âm.</p></details>
+    <details><summary>Dùng nhiều nhạc cụ thì sao?</summary><p>Cài nhiều app cùng lúc được. Bài của app này mở được ở app khác: app tự xếp lại nốt cho nhạc cụ đó.</p></details>
+    <details><summary>App có tiếng Anh không?</summary><p>Có. App theo ngôn ngữ của máy; muốn đổi thì vào Cài đặt → Ngôn ngữ · Language.</p></details>
+  </div>
+  <div lang="en">
+    <details><summary>Does it cost anything?</summary><p>No. All seven apps are free, with no ads and no account needed.</p></details>
+    <details><summary>Can I use it without internet?</summary><p>Yes. Open the app once while online; after that, practicing songs, backing tracks, karaoke and the tuner all work offline. Only importing songs with AI needs a connection.</p></details>
+    <details><summary>Where are my songs stored?</summary><p>Right on your device. Go to Settings → Backup to export a file, move it to another device or send it to friends.</p></details>
+    <details><summary>I have printed sheet music — how do I get it into the app?</summary><p>Go to Import: photograph the sheet (the app reads the notes), open a MIDI / MusicXML file, record yourself singing or pick an mp3, or paste a tab copied from the web. The guitar app also accepts lyrics + chords.</p></details>
+    <details><summary>What if I play several instruments?</summary><p>You can install several apps side by side. A song from one app opens in another: the app re-maps the notes for that instrument.</p></details>
+    <details><summary>Is the app in English?</summary><p>Yes. The app follows your phone's language; to switch, go to Settings → Ngôn ngữ · Language.</p></details>
+  </div>
 </main>
 
 <footer>
-  <div class="wrap">Sổ Tab · mã nguồn chung cho cả bảy app · <a href="https://github.com/tranthanhphuc81-sudo/harptabs/releases">Tất cả bản APK</a></div>
+  <div class="wrap"><span lang="vi">Sổ Tab · mã nguồn chung cho cả bảy app · <a href="https://github.com/tranthanhphuc81-sudo/harptabs/releases">Tất cả bản APK</a></span><span lang="en">Sổ Tab · one codebase for all seven apps · <a href="https://github.com/tranthanhphuc81-sudo/harptabs/releases">All APK releases</a></span></div>
 </footer>
 
 <script>
-  // bảy app: màu riêng (màu nhấn của bảng màu mặc định trong app), tên, nhạc cụ, điểm chính, link web, tiền tố tag APK trên GitHub Releases
+  // bảy app: màu riêng (màu nhấn của bảng màu mặc định trong app), tên, nhạc cụ, điểm chính (vi / en), link web, tiền tố tag APK trên GitHub Releases
   const APPS = [
-    { id: 'harmonica', color: '#d08a1e', ink: '#1d1406', name: 'Sổ Tab Harmonica', inst: 'Kèn harmonica diatonic 10 lỗ, chromatic, tremolo 16 / 21 / 24 lỗ', url: 'https://harptabs.pages.dev/', tag: 'apk',
-      points: ['Tab số lỗ thổi / hút, bend, nút gạt', 'Tự chọn kèn hợp nhất cho từng bài', 'Học bend, overblow, blues 12 ô nhịp'] },
-    { id: 'sao', color: '#2f7d55', ink: '#ffffff', name: 'Sổ Tab Sáo', inst: 'Sáo dọc soprano / alto / tenor / bass, sáo trúc 6 lỗ, ocarina 12 lỗ', url: 'https://sotabsao.pages.dev/', tag: 'sao-apk',
-      points: ['Tên nốt kèm hình thế bấm dưới mỗi nốt', 'Bấm kiểu Baroque hoặc German', 'Sáo trúc chọn tông, ocarina 12 lỗ alto Đô'] },
-    { id: 'kalimba', color: '#a35a1f', ink: '#ffffff', name: 'Sổ Tab Kalimba', inst: 'Kalimba 17, 10, 8 phím', url: 'https://sotabkalimba.pages.dev/', tag: 'kalimba-apk',
-      points: ['Tab số 1–7 có chấm như số khắc trên đàn', 'Hình phím cần gảy dưới mỗi nốt', 'Dò nốt để chỉnh dây từng phím'] },
-    { id: 'guitar', color: '#d9620f', ink: '#1f0e03', name: 'Sổ Tab Guitar', inst: 'Guitar 6 dây, ukulele 4 dây', url: 'https://sotabguitar.pages.dev/', tag: 'guitar-apk',
-      points: ['Tab dây.phím, sơ đồ hợp âm, capo', 'Dán bài lời + hợp âm để tập đệm hát', 'Điệu quạt chạy theo nhạc đệm'] },
-    { id: 'pianica', color: '#1766c2', ink: '#ffffff', name: 'Sổ Tab Pianica', inst: 'Kèn pianica (melodica) 32 / 37 phím', url: 'https://sotabpianica.pages.dev/', tag: 'pianica-apk',
-      points: ['Tên nốt kèm hình bàn phím tô phím cần bấm', 'Chạm bàn phím để nghe, soạn bài', 'Bài học cho học sinh mới tập'] },
-    { id: 'tranh', color: '#a3231a', ink: '#ffffff', name: 'Sổ Tab Đàn Tranh – Đàn Bầu', inst: 'Đàn tranh 16 – 22 dây (dây Bắc / Đảo), đàn bầu', url: 'https://sotabdantranh.pages.dev/', tag: 'tranh-apk',
-      points: ['Tab số dây kèm dấu nhấn nửa cung, một cung', 'Hình dây đàn dưới mỗi nốt, sơ đồ đàn chạm để nghe', 'Đàn bầu: điểm bồi ½ ⅓ ¼… kèm nắn cần'] },
-    { id: 'organ', color: '#8a2a3e', ink: '#ffffff', name: 'Sổ Tab Organ', inst: 'Đàn organ 61 phím, piano 88 phím', url: 'https://sotaborgan.pages.dev/', tag: 'organ-apk',
-      points: ['Tên nốt kèm hình bàn phím, tay phải chơi giai điệu', 'Hợp âm tay trái tô trên bàn phím kèm số ngón', 'Bài học từ năm ngón tới đệm tự động'] },
+    { id: 'harmonica', color: '#d08a1e', ink: '#1d1406', url: 'https://harptabs.pages.dev/', tag: 'apk',
+      vi: { name: 'Sổ Tab Harmonica', inst: 'Kèn harmonica diatonic 10 lỗ, chromatic, tremolo 16 / 21 / 24 lỗ', points: ['Tab số lỗ thổi / hút, bend, nút gạt', 'Tự chọn kèn hợp nhất cho từng bài', 'Học bend, overblow, blues 12 ô nhịp'] },
+      en: { name: 'Harmonica Tabs', inst: '10-hole diatonic, chromatic, 16 / 21 / 24-hole tremolo harmonica', points: ['Hole-number tabs for blow / draw, bends, slide', 'Picks the best harmonica for each song', 'Learn bends, overblows, 12-bar blues'] } },
+    { id: 'sao', color: '#2f7d55', ink: '#ffffff', url: 'https://sotabsao.pages.dev/', tag: 'sao-apk',
+      vi: { name: 'Sổ Tab Sáo', inst: 'Sáo dọc soprano / alto / tenor / bass, sáo trúc 6 lỗ, ocarina 12 lỗ', points: ['Tên nốt kèm hình thế bấm dưới mỗi nốt', 'Bấm kiểu Baroque hoặc German', 'Sáo trúc chọn tông, ocarina 12 lỗ alto Đô'] },
+      en: { name: 'Recorder & Flute Tabs', inst: 'Soprano / alto / tenor / bass recorder, 6-hole bamboo flute, 12-hole ocarina', points: ['Note names with a fingering picture under each note', 'Baroque or German fingering', 'Bamboo flute in any key, 12-hole alto C ocarina'] } },
+    { id: 'kalimba', color: '#a35a1f', ink: '#ffffff', url: 'https://sotabkalimba.pages.dev/', tag: 'kalimba-apk',
+      vi: { name: 'Sổ Tab Kalimba', inst: 'Kalimba 17, 10, 8 phím', points: ['Tab số 1–7 có chấm như số khắc trên đàn', 'Hình phím cần gảy dưới mỗi nốt', 'Dò nốt để chỉnh dây từng phím'] },
+      en: { name: 'Kalimba Tabs', inst: '17, 10 and 8-key kalimba', points: ['Number tabs 1–7 with dots, like the numbers on the tines', 'The tine to pluck pictured under each note', 'Tuner to tune each tine'] } },
+    { id: 'guitar', color: '#d9620f', ink: '#1f0e03', url: 'https://sotabguitar.pages.dev/', tag: 'guitar-apk',
+      vi: { name: 'Sổ Tab Guitar', inst: 'Guitar 6 dây, ukulele 4 dây', points: ['Tab dây.phím, sơ đồ hợp âm, capo', 'Dán bài lời + hợp âm để tập đệm hát', 'Điệu quạt chạy theo nhạc đệm'] },
+      en: { name: 'Guitar & Ukulele Tabs', inst: '6-string guitar, 4-string ukulele', points: ['string.fret tabs, chord diagrams, capo', 'Paste lyrics + chords to practice accompanying', 'Strum patterns that follow the backing'] } },
+    { id: 'pianica', color: '#1766c2', ink: '#ffffff', url: 'https://sotabpianica.pages.dev/', tag: 'pianica-apk',
+      vi: { name: 'Sổ Tab Pianica', inst: 'Kèn pianica (melodica) 32 / 37 phím', points: ['Tên nốt kèm hình bàn phím tô phím cần bấm', 'Chạm bàn phím để nghe, soạn bài', 'Bài học cho học sinh mới tập'] },
+      en: { name: 'Melodica Tabs', inst: '32 / 37-key melodica (pianica)', points: ['Note names with a keyboard picture of the key to press', 'Tap the keyboard to hear notes and write songs', 'Lessons for beginner students'] } },
+    { id: 'tranh', color: '#a3231a', ink: '#ffffff', url: 'https://sotabdantranh.pages.dev/', tag: 'tranh-apk',
+      vi: { name: 'Sổ Tab Đàn Tranh – Đàn Bầu', inst: 'Đàn tranh 16 – 22 dây (dây Bắc / Đảo), đàn bầu', points: ['Tab số dây kèm dấu nhấn nửa cung, một cung', 'Hình dây đàn dưới mỗi nốt, sơ đồ đàn chạm để nghe', 'Đàn bầu: điểm bồi ½ ⅓ ¼… kèm nắn cần'] },
+      en: { name: 'Đàn Tranh & Đàn Bầu', inst: 'Vietnamese zither with 16 – 22 strings (Northern / Southern tuning), monochord', points: ['String-number tabs with half-step and whole-step press marks', 'String picture under each note, tap the diagram to hear', 'Đàn bầu: harmonic points ½ ⅓ ¼… with rod bends'] } },
+    { id: 'organ', color: '#8a2a3e', ink: '#ffffff', url: 'https://sotaborgan.pages.dev/', tag: 'organ-apk',
+      vi: { name: 'Sổ Tab Organ', inst: 'Đàn organ 61 phím, piano 88 phím', points: ['Tên nốt kèm hình bàn phím, tay phải chơi giai điệu', 'Hợp âm tay trái tô trên bàn phím kèm số ngón', 'Bài học từ năm ngón tới đệm tự động'] },
+      en: { name: 'Keyboard & Piano Tabs', inst: '61-key keyboard, 88-key piano', points: ['Note names with a keyboard picture, melody in the right hand', 'Left-hand chords shown on the keyboard with finger numbers', 'Lessons from five fingers to auto accompaniment'] } },
   ];
-  const SHOTS = [[1, 'trang bài hát'], [2, 'thư viện bài'], [3, 'luyện tập']];
+  const UI = {
+    vi: { title: 'Sổ Tab — tab nhạc cụ', open: 'Mở app', apk: 'Tải APK', ver: 'bản ', shots: ['trang bài hát', 'thư viện bài', 'luyện tập'] },
+    en: { title: 'Sổ Tab — instrument tabs', open: 'Open app', apk: 'Download APK', ver: 'v', shots: ['song page', 'song library', 'practice'] },
+  };
   const RELEASES = 'https://github.com/tranthanhphuc81-sudo/harptabs/releases';
   const esc = (s) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+  let releases = [];
 
-  document.getElementById('apps').innerHTML = APPS.map((a) => `
-    <article class="app" style="--app:${a.color};--app-ink:${a.ink}">
-      <div class="top"><img src="icons/${a.id}.png" alt=""><div><h3>${esc(a.name)}</h3><p class="inst">${esc(a.inst)}</p></div></div>
-      <div class="shots">${SHOTS.map(([n, label]) => `<a href="shots/${a.id}-${n}.webp" target="_blank" rel="noopener"><img src="shots/${a.id}-${n}.webp" width="360" height="640" loading="lazy" decoding="async" alt="${esc(a.name)}: ${label}"></a>`).join('')}</div>
-      <ul>${a.points.map((p) => `<li>${esc(p)}</li>`).join('')}</ul>
-      <div class="btns">
-        <a class="btn primary" href="${a.url}">Mở app</a>
-        <a class="btn ghost" id="apk-${a.id}" href="${RELEASES}?q=${a.tag}-v&amp;expanded=true">Tải APK <small>Android</small></a>
-      </div>
-    </article>`).join('');
+  function render() {
+    const lang = document.documentElement.lang === 'en' ? 'en' : 'vi';
+    const ui = UI[lang];
+    const suffix = lang === 'en' ? '.en' : '';
+    document.title = ui.title;
+    document.querySelectorAll('[data-set-lang]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.setLang === lang)));
+    document.getElementById('apps').innerHTML = APPS.map((a) => {
+      const t = a[lang];
+      return `
+      <article class="app" style="--app:${a.color};--app-ink:${a.ink}">
+        <div class="top"><img src="icons/${a.id}.png" alt=""><div><h3>${esc(t.name)}</h3><p class="inst">${esc(t.inst)}</p></div></div>
+        <div class="shots">${ui.shots.map((label, i) => `<a href="shots/${a.id}-${i + 1}${suffix}.webp" target="_blank" rel="noopener"><img src="shots/${a.id}-${i + 1}${suffix}.webp" width="360" height="640" loading="lazy" decoding="async" alt="${esc(t.name)}: ${label}"></a>`).join('')}</div>
+        <ul>${t.points.map((p) => `<li>${esc(p)}</li>`).join('')}</ul>
+        <div class="btns">
+          <a class="btn primary" href="${a.url}?lang=${lang}">${ui.open}</a>
+          <a class="btn ghost" id="apk-${a.id}" href="${RELEASES}?q=${a.tag}-v&amp;expanded=true">${ui.apk} <small>Android</small></a>
+        </div>
+      </article>`;
+    }).join('');
+    // nút Tải APK trỏ thẳng tới file .apk mới nhất của từng app; không lấy được thì giữ link trang Releases
+    for (const a of APPS) {
+      const rel = releases.find((r) => r.tag_name.startsWith(`${a.tag}-v`));
+      const apk = rel && rel.assets.find((x) => x.name.endsWith('.apk'));
+      if (!apk) continue;
+      const el = document.getElementById(`apk-${a.id}`);
+      el.href = apk.browser_download_url;
+      el.innerHTML = `${ui.apk} <small>${esc(rel.tag_name.replace(`${a.tag}-v`, ui.ver))} · ${(apk.size / 1048576).toFixed(1)} MB</small>`;
+    }
+  }
 
-  // nút Tải APK trỏ thẳng tới file .apk mới nhất của từng app; không lấy được thì giữ link trang Releases
+  document.querySelectorAll('[data-set-lang]').forEach((b) => b.addEventListener('click', () => {
+    document.documentElement.lang = b.dataset.setLang;
+    try { localStorage.setItem('sotab-lang', b.dataset.setLang); } catch (e) {}
+    const u = new URL(location.href); u.searchParams.set('lang', b.dataset.setLang); history.replaceState(null, '', u);
+    render();
+  }));
+  render();
+
   fetch('https://api.github.com/repos/tranthanhphuc81-sudo/harptabs/releases?per_page=60')
     .then((r) => (r.ok ? r.json() : []))
-    .then((list) => {
-      for (const a of APPS) {
-        const rel = list.find((r) => r.tag_name.startsWith(`${a.tag}-v`));
-        const apk = rel && rel.assets.find((x) => x.name.endsWith('.apk'));
-        if (!apk) continue;
-        const el = document.getElementById(`apk-${a.id}`);
-        el.href = apk.browser_download_url;
-        el.innerHTML = `Tải APK <small>${esc(rel.tag_name.replace(`${a.tag}-v`, 'bản '))} · ${(apk.size / 1048576).toFixed(1)} MB</small>`;
-      }
-    })
+    .then((list) => { releases = Array.isArray(list) ? list : []; render(); })
     .catch(() => {});
 </script>
 </body>

@@ -1,6 +1,6 @@
 # Đàn Tranh & Đàn Bầu – Sổ Tab — Google Play listing (English, en-US)
 
-Thêm làm bản dịch trên Play Console: **Main store listing → Manage translations → Add your own translations → English (United States)**. Dùng chung ảnh với bản tiếng Việt (ảnh chụp là giao diện tiếng Việt — mô tả đã ghi rõ).
+Thêm làm bản dịch trên Play Console: **Main store listing → Manage translations → Add your own translations → English (United States)**. Ảnh dùng bản giao diện tiếng Anh: ảnh bìa `store/tranh/feature-en.png`, ảnh chụp `store/tranh/screenshots-en/`.
 
 ## App name (28/30)
 
@@ -14,10 +14,10 @@ Thêm làm bản dịch trên Play Console: **Main store listing → Manage tran
 Tabs for the Vietnamese zither (đàn tranh) and monochord (đàn bầu), with tuner.
 ```
 
-## Full description (2232/4000)
+## Full description (2225/4000)
 
 ```text
-Note: the app interface is in Vietnamese. Tabs, note names, chord names and the music itself work the same in any language.
+Available in English and Vietnamese: the app follows your phone's language, and you can switch any time in Settings.
 
 Sổ Tab Đàn Tranh – Đàn Bầu is a songbook and practice partner for the Vietnamese zither đàn tranh (16/17 strings, plus 19/21/22-string models) and the monochord đàn bầu.
 

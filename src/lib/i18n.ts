@@ -26,6 +26,14 @@ function initial(): Lang {
   // vite.config.ts cũng nạp file này (qua themes.ts) — lúc đó không có import.meta.env
   const env = (import.meta as { env?: { MODE?: string } }).env;
   if (!env || env.MODE === 'test') return 'vi';
+  // link từ trang giới thiệu: ?lang=en / ?lang=vi — nhớ luôn lựa chọn này
+  try {
+    const q = new URLSearchParams(location.search).get('lang');
+    if (q === 'vi' || q === 'en') {
+      try { localStorage.setItem(KEY, q); } catch { /* chế độ riêng tư */ }
+      return q;
+    }
+  } catch { /* không có location */ }
   const s = saved();
   if (s) return s;
   try {
@@ -56,14 +64,18 @@ export function setLang(lang: Lang | null) {
  * Dịch một câu. {0}, {1}… thay bằng tham số; trong bản dịch có thể viết {0|song|songs} để chọn số ít / số nhiều theo tham số đó.
  */
 export function t(s: string, ...args: (string | number | boolean | null | undefined)[]): string {
-  let out = LANG === 'en' ? (EN[s] ?? s) : s;
+  // 'Tông {0}||nhạc cụ': phần sau "||" chỉ để tách nghĩa khi dịch, tiếng Việt không hiện
+  const cut = s.indexOf('||');
+  let out = LANG === 'en' ? (EN[s] ?? (cut >= 0 ? s.slice(0, cut) : s)) : cut >= 0 ? s.slice(0, cut) : s;
   if (args.length) {
-    out = out.replace(/\{(\d+)(?:\|([^|}]*)\|([^}]*))?\}/g, (m: string, i: string, one?: string, many?: string) => {
+    // {0^}: viết hoa chữ đầu của tham số ("{0^} type" → "Harmonica type")
+    out = out.replace(/\{(\d+)(\^)?(?:\|([^|}]*)\|([^}]*))?\}/g, (m: string, i: string, cap?: string, one?: string, many?: string) => {
       if (+i >= args.length) return m;
       const v = args[+i];
       if (one !== undefined) return Number(v) === 1 ? one : many!;
       // như JSX: null / undefined / false không hiện gì
-      return v === null || v === undefined || v === false || v === true ? '' : String(v);
+      const str = v === null || v === undefined || v === false || v === true ? '' : String(v);
+      return cap ? str.charAt(0).toUpperCase() + str.slice(1) : str;
     });
   }
   return out;

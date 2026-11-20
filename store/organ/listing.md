@@ -14,7 +14,7 @@ Sổ Tab Organ
 Tab organ 61 phím, piano 88 phím có số ngón, hợp âm tay trái, nhạc đệm.
 ```
 
-## Mô tả đầy đủ (1851/4000)
+## Mô tả đầy đủ (1906/4000)
 
 ```text
 Sổ Tab Organ là sổ bài và người bạn tập cho đàn organ (keyboard) 61 phím và piano 88 phím.
@@ -47,6 +47,7 @@ LUYỆN TẬP MỖI NGÀY
 
 GỌN NHẸ, RIÊNG TƯ
 • Chạy offline, không cần tài khoản, không quảng cáo.
+• Có giao diện tiếng Anh (English): đổi trong Cài đặt.
 • Bài hát, bản thu và cài đặt lưu trên máy; sao lưu ra file khi cần.
 • Tính năng AI (đọc ảnh, nhớ bài theo tên) là tuỳ chọn, chỉ dùng khi bạn bấm.
 • Bài mẫu là các bài thuộc phạm vi công cộng.

@@ -19,7 +19,7 @@ interface Item {
 /** điệu quạt / gõ gợi ý theo kiểu nhịp (↓ quạt xuống, ↑ quạt lên, B = gảy dây trầm) */
 export function strumHint(style: BeatStyle, timeSig: string): { name: string; pattern: string } {
   const beats = Number(timeSig.split('/')[0]) || 4;
-  if (style === 'waltz' || beats === 3) return { name: 'Valse', pattern: t('B ↓ ↓  (1 trầm, 2 – 3 quạt)') };
+  if (style === 'waltz' || beats === 3) return { name: t('Valse'), pattern: t('B ↓ ↓  (1 trầm, 2 – 3 quạt)') };
   if (beats === 6 || style === 'slowrock') return { name: 'Slow rock', pattern: t('B ↓ ↓ ↑ ↓ ↓  mỗi nửa ô') };
   switch (style) {
     case 'bolero': return { name: 'Bolero', pattern: 'B ↓↑ ↓  B ↓↑ ↓↑' };

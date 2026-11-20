@@ -14,7 +14,7 @@ Sổ Tab Sáo
 Tab sáo dọc, sáo trúc, ocarina kèm hình thế bấm; nhạc đệm, dò nốt, học thổi.
 ```
 
-## Mô tả đầy đủ (1812/4000)
+## Mô tả đầy đủ (1867/4000)
 
 ```text
 Sổ Tab Sáo là sổ bài và người bạn tập cho sáo dọc (soprano, alto, tenor, bass), sáo trúc 6 lỗ và ocarina 12 lỗ.
@@ -48,6 +48,7 @@ LUYỆN TẬP MỖI NGÀY
 
 GỌN NHẸ, RIÊNG TƯ
 • Chạy offline, không cần tài khoản, không quảng cáo.
+• Có giao diện tiếng Anh (English): đổi trong Cài đặt.
 • Bài hát, bản thu và cài đặt lưu trên máy; sao lưu ra file khi cần.
 • Tính năng AI (đọc ảnh, nhớ bài theo tên) là tuỳ chọn, chỉ dùng khi bạn bấm.
 • Bài mẫu là các bài thuộc phạm vi công cộng.

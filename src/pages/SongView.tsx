@@ -959,7 +959,7 @@ function ViewAsBar({ original, viewed, view, fit, choice, onChoice, onSaved }: {
         </label>
         {manual && !isFixedKey(type) && (
           <label className="field viewas-field">
-            <span className="field-label">{isKalimba(type) ? tx('Tông kalimba') : isSaoTruc(type) ? tx('Tông sáo') : tx('Tông {0}', BRAND.noun)}</span>
+            <span className="field-label">{isKalimba(type) ? tx('Tông kalimba') : isSaoTruc(type) ? tx('Tông sáo') : tx('Tông {0}||nhạc cụ', BRAND.noun)}</span>
             <select value={key} onChange={(e) => set({ key: e.target.value as HarpKey })}>
               {HARP_KEYS.map((k) => <option key={k} value={k}>{isKalimba(type) ? `Kalimba ${k}` : isSaoTruc(type) ? tx('Sáo {0}', k) : isTranh(type) || isDanBau(type) ? tx('Đàn {0}', k) : tx('Kèn {0}', harpKeyLabel(k, type))}</option>)}
             </select>

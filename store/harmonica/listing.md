@@ -14,7 +14,7 @@ Sổ Tab Harmonica
 Tab harmonica có nhạc đệm, dò nốt, tập bend, quét khuông nhạc thành tab.
 ```
 
-## Mô tả đầy đủ (1866/4000)
+## Mô tả đầy đủ (1921/4000)
 
 ```text
 Sổ Tab Harmonica là sổ bài và người bạn tập cho kèn harmonica: diatonic 10 lỗ, chromatic 12 / 16 lỗ và tremolo 16 / 21 / 24 lỗ (cả giọng trưởng và giọng thứ).
@@ -47,6 +47,7 @@ LUYỆN TẬP MỖI NGÀY
 
 GỌN NHẸ, RIÊNG TƯ
 • Chạy offline, không cần tài khoản, không quảng cáo.
+• Có giao diện tiếng Anh (English): đổi trong Cài đặt.
 • Bài hát, bản thu và cài đặt lưu trên máy; sao lưu ra file khi cần.
 • Tính năng AI (đọc ảnh, nhớ bài theo tên) là tuỳ chọn, chỉ dùng khi bạn bấm.
 • Bài mẫu là các bài thuộc phạm vi công cộng.

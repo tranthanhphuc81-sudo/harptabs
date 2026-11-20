@@ -327,6 +327,9 @@ export const EN: Record<string, string> = {
   "Hạ tông": "Key down",
   "Tông theo nhạc": "Key of the music",
   "Tông {0}": "Key {0}",
+  "Tông {0}||nhạc cụ": "{0^} key",
+  "Valse 3/4": "Waltz 3/4",
+  "Valse": "Waltz",
   "Nâng tông": "Key up",
   "Cách hiện nốt": "Note display",
   "Hợp âm": "Chords",
@@ -399,7 +402,7 @@ export const EN: Record<string, string> = {
   "Sáo {0}": "Recorder in {0}",
   "Đàn {0}": "Instrument in {0}",
   "Kèn {0}": "Harmonica in {0}",
-  "Loại {0}": "{0} type",
+  "Loại {0}": "{0^} type",
   "Bầu": "Bau",
   // components/LyricEditor.tsx
   "Sửa lời": "Edit lyrics",

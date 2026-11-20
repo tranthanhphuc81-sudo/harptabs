@@ -160,7 +160,7 @@ export default function EarPractice() {
       <header className="page-head">
         <div>
           <h1>{tx('Tập nghe – đáp')}</h1>
-          <p className="muted">{tx('Máy chơi nốt chủ làm mốc rồi một câu ngắn. Bạn nghe và chơi lại trên')} {/^(guitar|ukulele|kalimba|tranh|danbau|organ|piano)/.test(type) ? tx('đàn') : /^(recorder|saoTruc)/.test(type) ? tx('sáo') : /^ocarina/.test(type) ? 'ocarina' : tx('kèn')} {tx('của mình — app nghe và chấm từng nốt. Luyện tai và thuộc vị trí nốt.')}</p>
+          <p className="muted">{tx('Máy chơi nốt chủ làm mốc rồi một câu ngắn. Bạn nghe và chơi lại trên')} {/^(guitar|ukulele|kalimba|tranh|danbau|organ|piano)/.test(type) ? tx('đàn') : /^(recorder|saoTruc)/.test(type) ? tx('sáo') : /^ocarina/.test(type) ? 'ocarina' : /^pianica/.test(type) ? 'pianica' : tx('kèn')} {tx('của mình — app nghe và chấm từng nốt. Luyện tai và thuộc vị trí nốt.')}</p>
         </div>
       </header>
 

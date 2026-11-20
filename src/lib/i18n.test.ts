@@ -9,6 +9,9 @@ describe('i18n', () => {
     expect(t('{0}{1} ms', '+', 20)).toBe('+20 ms');
     // như JSX: null / undefined không hiện gì
     expect(t('Bài {0}', null)).toBe('Bài ');
+    // phần ngữ cảnh sau "||" không hiện; {0^} viết hoa chữ đầu tham số
+    expect(t('Tông {0}||nhạc cụ', 'kèn')).toBe('Tông kèn');
+    expect(t('{0^} mới', 'bài')).toBe('Bài mới');
   });
 
   it('đoán ngôn ngữ theo máy', () => {

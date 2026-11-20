@@ -216,7 +216,7 @@ export const PATTERNS: Record<Exclude<BeatStyle, 'none' | 'metronome'>, BeatPatt
   },
   waltz: {
     // "um" = bass phách 1 (gốc / quãng 5 xen kẽ từng ô), "pa pa" = hợp âm đệm phách 2, 3
-    label: 'Valse 3/4', hint: 'Um-pa-pa', beats: 3, subdiv: 2,
+    label: t('Valse 3/4'), hint: 'Um-pa-pa', beats: 3, subdiv: 2,
     kick:   'X.....' + 'X.....',
     comp:   '..x.x.' + '..x.x.',
     hat:    '..x.x.' + '..x.xx',

@@ -1,6 +1,6 @@
 # Guitar & Ukulele Tabs – Sổ Tab — Google Play listing (English, en-US)
 
-Thêm làm bản dịch trên Play Console: **Main store listing → Manage translations → Add your own translations → English (United States)**. Dùng chung ảnh với bản tiếng Việt (ảnh chụp là giao diện tiếng Việt — mô tả đã ghi rõ).
+Thêm làm bản dịch trên Play Console: **Main store listing → Manage translations → Add your own translations → English (United States)**. Ảnh dùng bản giao diện tiếng Anh: ảnh bìa `store/guitar/feature-en.png`, ảnh chụp `store/guitar/screenshots-en/`.
 
 ## App name (30/30)
 
@@ -14,10 +14,10 @@ Guitar & Ukulele Tabs – Sổ Tab
 Guitar and ukulele tabs, chord charts, capo, chord sheets with backing, tuner.
 ```
 
-## Full description (2214/4000)
+## Full description (2207/4000)
 
 ```text
-Note: the app interface is in Vietnamese. Tabs, note names, chord names and the music itself work the same in any language.
+Available in English and Vietnamese: the app follows your phone's language, and you can switch any time in Settings.
 
 Sổ Tab Guitar is a songbook and practice partner for 6-string guitar and 4-string ukulele.
 

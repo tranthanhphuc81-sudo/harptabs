@@ -1,6 +1,6 @@
 # Melodica Tabs – Sổ Tab — Google Play listing (English, en-US)
 
-Thêm làm bản dịch trên Play Console: **Main store listing → Manage translations → Add your own translations → English (United States)**. Dùng chung ảnh với bản tiếng Việt (ảnh chụp là giao diện tiếng Việt — mô tả đã ghi rõ).
+Thêm làm bản dịch trên Play Console: **Main store listing → Manage translations → Add your own translations → English (United States)**. Ảnh dùng bản giao diện tiếng Anh: ảnh bìa `store/pianica/feature-en.png`, ảnh chụp `store/pianica/screenshots-en/`.
 
 ## App name (22/30)
 
@@ -14,10 +14,10 @@ Melodica Tabs – Sổ Tab
 Melodica (pianica) 32/37-key tabs with keyboard pictures and finger numbers.
 ```
 
-## Full description (2060/4000)
+## Full description (2053/4000)
 
 ```text
-Note: the app interface is in Vietnamese. Tabs, note names, chord names and the music itself work the same in any language.
+Available in English and Vietnamese: the app follows your phone's language, and you can switch any time in Settings.
 
 Sổ Tab Pianica is a songbook and practice partner for the 32-key and 37-key melodica (pianica).
 

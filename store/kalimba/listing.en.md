@@ -1,6 +1,6 @@
 # Kalimba Tabs – Sổ Tab — Google Play listing (English, en-US)
 
-Thêm làm bản dịch trên Play Console: **Main store listing → Manage translations → Add your own translations → English (United States)**. Dùng chung ảnh với bản tiếng Việt (ảnh chụp là giao diện tiếng Việt — mô tả đã ghi rõ).
+Thêm làm bản dịch trên Play Console: **Main store listing → Manage translations → Add your own translations → English (United States)**. Ảnh dùng bản giao diện tiếng Anh: ảnh bìa `store/kalimba/feature-en.png`, ảnh chụp `store/kalimba/screenshots-en/`.
 
 ## App name (21/30)
 
@@ -14,10 +14,10 @@ Kalimba Tabs – Sổ Tab
 Number tabs for 17, 10 and 8-key kalimba with the tine to pluck under each note.
 ```
 
-## Full description (2190/4000)
+## Full description (2183/4000)
 
 ```text
-Note: the app interface is in Vietnamese. Tabs, note names, chord names and the music itself work the same in any language.
+Available in English and Vietnamese: the app follows your phone's language, and you can switch any time in Settings.
 
 Sổ Tab Kalimba is a songbook and practice partner for 17-key, 10-key and 8-key kalimbas in any major key.
 

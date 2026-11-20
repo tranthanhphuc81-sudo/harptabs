@@ -1,6 +1,6 @@
 # Recorder & Flute Tabs – Sổ Tab — Google Play listing (English, en-US)
 
-Thêm làm bản dịch trên Play Console: **Main store listing → Manage translations → Add your own translations → English (United States)**. Dùng chung ảnh với bản tiếng Việt (ảnh chụp là giao diện tiếng Việt — mô tả đã ghi rõ).
+Thêm làm bản dịch trên Play Console: **Main store listing → Manage translations → Add your own translations → English (United States)**. Ảnh dùng bản giao diện tiếng Anh: ảnh bìa `store/recorder/feature-en.png`, ảnh chụp `store/recorder/screenshots-en/`.
 
 ## App name (30/30)
 
@@ -14,10 +14,10 @@ Recorder & Flute Tabs – Sổ Tab
 Recorder, bamboo flute and ocarina tabs with fingering charts and a tuner.
 ```
 
-## Full description (2119/4000)
+## Full description (2112/4000)
 
 ```text
-Note: the app interface is in Vietnamese. Tabs, note names, chord names and the music itself work the same in any language.
+Available in English and Vietnamese: the app follows your phone's language, and you can switch any time in Settings.
 
 Sổ Tab Sáo is a songbook and practice partner for the recorder (soprano, alto, tenor, bass), the Vietnamese 6-hole bamboo flute (sáo trúc) and the 12-hole ocarina.
 

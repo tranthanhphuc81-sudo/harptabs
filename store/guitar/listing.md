@@ -14,7 +14,7 @@ Sổ Tab Guitar
 Tab guitar, ukulele, sơ đồ hợp âm, capo, lời + hợp âm có nhạc đệm, lên dây.
 ```
 
-## Mô tả đầy đủ (1858/4000)
+## Mô tả đầy đủ (1913/4000)
 
 ```text
 Sổ Tab Guitar là sổ bài và người bạn tập cho guitar 6 dây và ukulele 4 dây.
@@ -48,6 +48,7 @@ LUYỆN TẬP MỖI NGÀY
 
 GỌN NHẸ, RIÊNG TƯ
 • Chạy offline, không cần tài khoản, không quảng cáo.
+• Có giao diện tiếng Anh (English): đổi trong Cài đặt.
 • Bài hát, bản thu và cài đặt lưu trên máy; sao lưu ra file khi cần.
 • Tính năng AI (đọc ảnh, nhớ bài theo tên) là tuỳ chọn, chỉ dùng khi bạn bấm.
 • Bài mẫu là các bài thuộc phạm vi công cộng.

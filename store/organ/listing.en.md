@@ -1,6 +1,6 @@
 # Keyboard & Piano Tabs – Sổ Tab — Google Play listing (English, en-US)
 
-Thêm làm bản dịch trên Play Console: **Main store listing → Manage translations → Add your own translations → English (United States)**. Dùng chung ảnh với bản tiếng Việt (ảnh chụp là giao diện tiếng Việt — mô tả đã ghi rõ).
+Thêm làm bản dịch trên Play Console: **Main store listing → Manage translations → Add your own translations → English (United States)**. Ảnh dùng bản giao diện tiếng Anh: ảnh bìa `store/organ/feature-en.png`, ảnh chụp `store/organ/screenshots-en/`.
 
 ## App name (30/30)
 
@@ -14,10 +14,10 @@ Keyboard & Piano Tabs – Sổ Tab
 Keyboard (61 keys) and piano (88 keys) tabs with finger numbers and chords.
 ```
 
-## Full description (2156/4000)
+## Full description (2149/4000)
 
 ```text
-Note: the app interface is in Vietnamese. Tabs, note names, chord names and the music itself work the same in any language.
+Available in English and Vietnamese: the app follows your phone's language, and you can switch any time in Settings.
 
 Sổ Tab Organ is a songbook and practice partner for 61-key keyboards and 88-key pianos.
 

@@ -13,7 +13,7 @@ interface Props {
   harpType?: HarpType;
 }
 
-export function KeySelect({ value, onChange, allowAuto, id, label = tx('Tông {0}', BRAND.noun), harpType }: Props) {
+export function KeySelect({ value, onChange, allowAuto, id, label = tx('Tông {0}||nhạc cụ', BRAND.noun), harpType }: Props) {
   // sáo dọc chỉ có một tông (alto Fa, soprano Đô): không cần chọn
   if (isFixedKey(harpType)) return null;
   return (
